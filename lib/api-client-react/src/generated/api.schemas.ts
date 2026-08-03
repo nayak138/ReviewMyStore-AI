@@ -103,3 +103,125 @@ export interface AdminOverview {
   totalSuspendedOrganizations: number;
 }
 
+export type BusinessStatus = typeof BusinessStatus[keyof typeof BusinessStatus];
+
+
+export const BusinessStatus = {
+  ACTIVE: 'ACTIVE',
+  SUSPENDED: 'SUSPENDED',
+  DISABLED: 'DISABLED',
+} as const;
+
+export interface Business {
+  id: string;
+  organizationId: string;
+  name: string;
+  category: string;
+  /** @nullable */
+  googlePlaceId: string | null;
+  slug: string;
+  /** @nullable */
+  logoUrl: string | null;
+  /** @nullable */
+  coverImageUrl: string | null;
+  /** @nullable */
+  brandColor: string | null;
+  /** @nullable */
+  welcomeMessage: string | null;
+  status: BusinessStatus;
+  /** @nullable */
+  archivedAt: string | null;
+  /** @nullable */
+  deletedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface BusinessListResult {
+  businesses: Business[];
+}
+
+export interface BusinessCreateInput {
+  /** @minLength 1 */
+  name: string;
+  /** @minLength 1 */
+  category: string;
+  /** @nullable */
+  googlePlaceId?: string | null;
+  /**
+     * @minLength 1
+     * @pattern ^[a-z0-9]+(?:-[a-z0-9]+)*$
+     */
+  slug: string;
+  /** @nullable */
+  logoUrl?: string | null;
+  /** @nullable */
+  coverImageUrl?: string | null;
+  /** @nullable */
+  brandColor?: string | null;
+  /** @nullable */
+  welcomeMessage?: string | null;
+}
+
+export interface BusinessUpdateInput {
+  /** @minLength 1 */
+  name?: string;
+  /** @minLength 1 */
+  category?: string;
+  /** @nullable */
+  googlePlaceId?: string | null;
+  /**
+     * @minLength 1
+     * @pattern ^[a-z0-9]+(?:-[a-z0-9]+)*$
+     */
+  slug?: string;
+  /** @nullable */
+  logoUrl?: string | null;
+  /** @nullable */
+  coverImageUrl?: string | null;
+  /** @nullable */
+  brandColor?: string | null;
+  /** @nullable */
+  welcomeMessage?: string | null;
+}
+
+export interface BusinessStatusInput {
+  status: BusinessStatus;
+}
+
+export interface RecentActivityItem {
+  id: string;
+  type: string;
+  message: string;
+  createdAt: string;
+}
+
+export interface DashboardSummary {
+  totalBusinesses: number;
+  activeBusinesses: number;
+  activeCampaigns: number;
+  qrScans: number;
+  aiReviewsGenerated: number;
+  needsOnboarding: boolean;
+  recentActivity: RecentActivityItem[];
+}
+
+export interface UploadUrlRequest {
+  /** @minLength 1 */
+  name: string;
+  /** @minimum 1 */
+  size: number;
+  /** @minLength 1 */
+  contentType: string;
+}
+
+export interface UploadUrlResponse {
+  uploadURL: string;
+  objectPath: string;
+  metadata?: UploadUrlRequest;
+}
+
+export type ListBusinessesParams = {
+includeArchived?: boolean;
+};
+

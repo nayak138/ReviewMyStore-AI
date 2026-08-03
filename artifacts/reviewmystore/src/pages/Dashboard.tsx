@@ -1,68 +1,38 @@
-import { useState } from "react";
-import { useAuth, useClerk } from "@clerk/react";
-import { Redirect, Link, useLocation } from "wouter";
+import { useAuth } from "@clerk/react";
+import { Redirect, Link } from "wouter";
 import { 
-  LayoutDashboard, 
   Store, 
   Megaphone, 
   QrCode, 
-  SmartphoneNfc, 
-  BarChart3, 
-  ShoppingCart,
-  LogOut,
-  Settings,
-  ShieldAlert,
-  Menu,
-  X
+  MessageSquareHeart,
+  TrendingUp,
+  Clock,
+  ArrowRight,
+  SmartphoneNfc
 } from "lucide-react";
 import { 
-  useGetCurrentUser, 
-  getGetCurrentUserQueryKey,
-  useGetAdminOverview,
-  getGetAdminOverviewQueryKey
+  useGetDashboardSummary,
+  getGetDashboardSummaryQueryKey
 } from "@workspace/api-client-react";
-import { ThemeToggle } from "@/components/theme-toggle";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { AppLayout } from "@/components/layout/app-layout";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-
-const NAV_ITEMS = [
-  { name: "Dashboard", icon: LayoutDashboard, href: "/dashboard", active: true },
-  { name: "Businesses", icon: Store, href: "/businesses", active: false },
-  { name: "Campaigns", icon: Megaphone, href: "/campaigns", active: false },
-  { name: "QR Codes", icon: QrCode, href: "/qr-codes", active: false },
-  { name: "NFC Devices", icon: SmartphoneNfc, href: "/nfc-devices", active: false },
-  { name: "Analytics", icon: BarChart3, href: "/analytics", active: false },
-  { name: "Orders", icon: ShoppingCart, href: "/orders", active: false },
-];
 
 export default function Dashboard() {
   const { isLoaded, isSignedIn } = useAuth();
-  const { signOut } = useClerk();
-  const [location] = useLocation();
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  const { data: sessionInfo, isLoading: isSessionLoading } = useGetCurrentUser({
+  const { data: summary, isLoading } = useGetDashboardSummary({
     query: {
       enabled: !!isSignedIn,
-      queryKey: getGetCurrentUserQueryKey(),
-    }
-  });
-
-  const isSuperAdmin = sessionInfo?.user?.role === "SUPER_ADMIN";
-
-  const { data: adminOverview, isLoading: isAdminLoading } = useGetAdminOverview({
-    query: {
-      enabled: isSuperAdmin,
-      queryKey: getGetAdminOverviewQueryKey(),
+      queryKey: getGetDashboardSummaryQueryKey(),
     }
   });
 
   if (!isLoaded) {
     return (
-      <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="w-8 h-8 rounded-full border-4 border-primary border-t-transparent animate-spin" />
       </div>
     );
@@ -72,271 +42,223 @@ export default function Dashboard() {
     return <Redirect to="/sign-in" />;
   }
 
-  const handleSignOut = () => {
-    signOut({ redirectUrl: "/" });
-  };
+  // Redirect to onboarding if needed
+  if (summary && summary.needsOnboarding) {
+    return <Redirect to="/onboarding" />;
+  }
+
+  const statCards = [
+    { 
+      title: "Total Businesses", 
+      value: summary?.totalBusinesses ?? 0, 
+      icon: Store,
+      color: "text-primary",
+      bgColor: "bg-primary/10",
+      ready: true
+    },
+    { 
+      title: "Active Businesses", 
+      value: summary?.activeBusinesses ?? 0, 
+      icon: TrendingUp,
+      color: "text-emerald-500",
+      bgColor: "bg-emerald-500/10",
+      ready: true
+    },
+    { 
+      title: "Active Campaigns", 
+      value: summary?.activeCampaigns ?? 0, 
+      icon: Megaphone,
+      color: "text-amber-500",
+      bgColor: "bg-amber-500/10",
+      ready: false,
+      label: "Coming soon"
+    },
+    { 
+      title: "QR Scans", 
+      value: summary?.qrScans ?? 0, 
+      icon: QrCode,
+      color: "text-blue-500",
+      bgColor: "bg-blue-500/10",
+      ready: false,
+      label: "Coming soon"
+    },
+    { 
+      title: "AI Reviews Generated", 
+      value: summary?.aiReviewsGenerated ?? 0, 
+      icon: MessageSquareHeart,
+      color: "text-purple-500",
+      bgColor: "bg-purple-500/10",
+      ready: false,
+      label: "Coming soon"
+    },
+  ];
 
   return (
-    <div className="min-h-[100dvh] flex bg-zinc-50 dark:bg-zinc-950">
-      {/* Mobile Menu Overlay */}
-      {mobileMenuOpen && (
-        <div className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm md:hidden" onClick={() => setMobileMenuOpen(false)} />
-      )}
-
-      {/* Sidebar */}
-      <aside className={cn(
-        "fixed inset-y-0 left-0 z-50 w-64 border-r border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 flex flex-col transform transition-transform duration-200 ease-in-out md:relative md:transform-none",
-        mobileMenuOpen ? "translate-x-0" : "-translate-x-full"
-      )}>
-        <div className="h-16 flex items-center justify-between px-6 border-b border-zinc-200 dark:border-zinc-800">
-          <div className="flex items-center gap-2">
-            <img src={`${import.meta.env.BASE_URL}logo.svg`} alt="Logo" className="w-6 h-6" />
-            <span className="font-semibold text-sm tracking-tight text-zinc-900 dark:text-zinc-50">ReviewMyStore</span>
+    <AppLayout title="Dashboard">
+      <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+        
+        {/* Welcome & Action Area */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <h2 className="text-3xl font-bold tracking-tight text-foreground">
+              Overview
+            </h2>
+            <p className="text-muted-foreground mt-1">
+              Monitor your locations, scans, and review campaigns.
+            </p>
           </div>
-          <button className="md:hidden text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-50" onClick={() => setMobileMenuOpen(false)}>
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-
-        <nav className="flex-1 overflow-y-auto p-4 space-y-1">
-          {NAV_ITEMS.map((item) => (
-            <Link key={item.name} href={item.active ? item.href : "#"}>
-              <div
-                className={cn(
-                  "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors relative group",
-                  item.active
-                    ? "bg-primary/10 text-primary dark:bg-primary/20"
-                    : "text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800/50",
-                  !item.active && "opacity-75 cursor-not-allowed"
-                )}
-                onClick={(e) => {
-                  if (!item.active) e.preventDefault();
-                  else setMobileMenuOpen(false);
-                }}
-              >
-                <item.icon className="w-4 h-4" />
-                {item.name}
-                {!item.active && (
-                  <span className="absolute right-3 opacity-0 group-hover:opacity-100 transition-opacity text-[10px] bg-zinc-200 dark:bg-zinc-700 px-1.5 py-0.5 rounded text-zinc-600 dark:text-zinc-300">
-                    Coming soon
-                  </span>
-                )}
-              </div>
-            </Link>
-          ))}
-        </nav>
-
-        <div className="p-4 border-t border-zinc-200 dark:border-zinc-800">
-          <Button 
-            variant="ghost" 
-            className="w-full justify-start text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-50"
-            onClick={handleSignOut}
-          >
-            <LogOut className="w-4 h-4 mr-2" />
-            Sign Out
+          <Button className="hidden md:flex shadow-sm">
+            Quick Actions
+            <ArrowRight className="w-4 h-4 ml-2" />
           </Button>
         </div>
-      </aside>
 
-      {/* Main Content */}
-      <main className="flex-1 flex flex-col min-w-0 h-[100dvh] overflow-hidden">
-        <header className="h-16 shrink-0 flex items-center justify-between px-4 md:px-8 border-b border-zinc-200 dark:border-zinc-800 bg-white/50 dark:bg-zinc-900/20 backdrop-blur-sm sticky top-0 z-10">
-          <div className="flex items-center gap-3">
-            <button className="md:hidden text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-50" onClick={() => setMobileMenuOpen(true)}>
-              <Menu className="w-5 h-5" />
-            </button>
-            <h1 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Dashboard</h1>
-          </div>
-          <div className="flex items-center gap-4">
-            <ThemeToggle />
-          </div>
-        </header>
-
-        <div className="flex-1 overflow-y-auto p-4 md:p-8">
-          <div className="max-w-5xl mx-auto space-y-8">
-            
-            {/* Welcome Section */}
-            <div className="flex items-start justify-between">
-              <div>
-                <h2 className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-white">
-                  {isSessionLoading ? <Skeleton className="h-9 w-64" /> : `Welcome back, ${sessionInfo?.user?.name.split(' ')[0]}`}
-                </h2>
-                <p className="text-zinc-600 dark:text-zinc-400 mt-2">
-                  Here is what's happening with your account today.
-                </p>
-              </div>
-            </div>
-
-            {/* Profile & Org Cards */}
-            <div className="grid md:grid-cols-2 gap-6">
-              
-              {/* User Profile Card */}
-              <Card className="shadow-sm">
-                <CardHeader>
-                  <CardTitle className="text-lg flex items-center justify-between">
-                    Your Profile
-                    {isSessionLoading ? (
-                      <Skeleton className="h-5 w-16" />
-                    ) : (
-                      <Badge variant={isSuperAdmin ? "destructive" : "secondary"}>
-                        {sessionInfo?.user?.role}
-                      </Badge>
-                    )}
-                  </CardTitle>
-                  <CardDescription>Personal details and preferences</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  {isSessionLoading ? (
-                    <div className="space-y-4">
-                      <Skeleton className="h-4 w-full" />
-                      <Skeleton className="h-4 w-2/3" />
-                    </div>
-                  ) : (
-                    <div className="space-y-4">
-                      <div>
-                        <div className="text-sm font-medium text-zinc-500 dark:text-zinc-400">Name</div>
-                        <div className="text-base text-zinc-900 dark:text-zinc-50">{sessionInfo?.user?.name}</div>
-                      </div>
-                      <div>
-                        <div className="text-sm font-medium text-zinc-500 dark:text-zinc-400">Email</div>
-                        <div className="text-base text-zinc-900 dark:text-zinc-50">{sessionInfo?.user?.email}</div>
-                      </div>
-                      <div>
-                        <div className="text-sm font-medium text-zinc-500 dark:text-zinc-400">Member Since</div>
-                        <div className="text-base text-zinc-900 dark:text-zinc-50">
-                          {new Date(sessionInfo?.user?.createdAt || "").toLocaleDateString()}
-                        </div>
-                      </div>
-                    </div>
-                  )}
+        {/* Stats Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+          {isLoading ? (
+            Array.from({ length: 5 }).map((_, i) => (
+              <Card key={i} className="shadow-sm border-border">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <Skeleton className="h-4 w-24" />
+                    <Skeleton className="h-10 w-10 rounded-full" />
+                  </div>
+                  <Skeleton className="h-8 w-16" />
                 </CardContent>
               </Card>
-
-              {/* Organization Card */}
-              <Card className="shadow-sm">
-                <CardHeader>
-                  <CardTitle className="text-lg flex items-center justify-between">
-                    Workspace
-                    {!isSessionLoading && sessionInfo?.organization && (
-                      <Badge variant="outline" className="bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800">
-                        {sessionInfo.organization.plan} PLAN
-                      </Badge>
-                    )}
-                  </CardTitle>
-                  <CardDescription>
-                    {isSuperAdmin ? "Platform administrative context" : "Your primary business organization"}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  {isSessionLoading ? (
-                    <div className="space-y-4">
-                      <Skeleton className="h-4 w-full" />
-                      <Skeleton className="h-4 w-2/3" />
-                    </div>
-                  ) : sessionInfo?.organization ? (
-                    <div className="space-y-4">
-                      <div>
-                        <div className="text-sm font-medium text-zinc-500 dark:text-zinc-400">Organization Name</div>
-                        <div className="text-base text-zinc-900 dark:text-zinc-50 font-medium">
-                          {sessionInfo.organization.name}
-                        </div>
-                      </div>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <div className="text-sm font-medium text-zinc-500 dark:text-zinc-400">Status</div>
-                          <div className="text-base text-zinc-900 dark:text-zinc-50 flex items-center gap-2">
-                            <span className="w-2 h-2 rounded-full bg-emerald-500" />
-                            {sessionInfo.organization.status}
-                          </div>
-                        </div>
-                        <div>
-                          <div className="text-sm font-medium text-zinc-500 dark:text-zinc-400">Subscription</div>
-                          <div className="text-base text-zinc-900 dark:text-zinc-50 capitalize">
-                            {sessionInfo.organization.subscriptionStatus.toLowerCase()}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  ) : isSuperAdmin ? (
-                    <div className="flex flex-col items-center justify-center h-full text-center py-6">
-                      <ShieldAlert className="w-8 h-8 text-zinc-400 dark:text-zinc-500 mb-3" />
-                      <p className="text-zinc-600 dark:text-zinc-400 text-sm">
-                        Super Admins operate globally and are not bound to a single organization.
-                      </p>
-                    </div>
-                  ) : (
-                    <div className="flex flex-col items-center justify-center h-full text-center py-6">
-                      <p className="text-zinc-600 dark:text-zinc-400 text-sm mb-4">
-                        Setting up your workspace...
-                      </p>
-                      <div className="w-6 h-6 rounded-full border-2 border-primary border-t-transparent animate-spin mx-auto" />
+            ))
+          ) : (
+            statCards.map((stat, i) => (
+              <Card 
+                key={i} 
+                className={cn(
+                  "shadow-sm border-border transition-all duration-300",
+                  stat.ready ? "hover:shadow-md hover:border-primary/20" : "opacity-80 grayscale-[0.2]"
+                )}
+                style={{ animationDelay: `${i * 50}ms` }}
+              >
+                <CardContent className="p-6 relative overflow-hidden group">
+                  {!stat.ready && (
+                    <div className="absolute top-2 right-2 px-2 py-0.5 rounded text-[10px] font-semibold bg-secondary text-secondary-foreground z-10">
+                      {stat.label}
                     </div>
                   )}
+                  
+                  <div className="flex items-center justify-between mb-2 relative z-10">
+                    <div className="text-sm font-medium text-muted-foreground">{stat.title}</div>
+                    <div className={cn("w-10 h-10 rounded-full flex items-center justify-center transition-transform group-hover:scale-110", stat.bgColor, stat.color)}>
+                      <stat.icon className="w-5 h-5" />
+                    </div>
+                  </div>
+                  
+                  <div className={cn("text-3xl font-bold relative z-10", !stat.ready && "text-muted-foreground")}>
+                    {stat.value}
+                  </div>
                 </CardContent>
               </Card>
-
-            </div>
-
-            {/* Admin Overview (Only for SUPER_ADMIN) */}
-            {isSuperAdmin && (
-              <div className="space-y-4">
-                <div className="flex items-center gap-2">
-                  <ShieldAlert className="w-5 h-5 text-destructive" />
-                  <h3 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Platform Overview</h3>
-                </div>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  {isAdminLoading ? (
-                    Array.from({ length: 4 }).map((_, i) => (
-                      <Card key={i} className="shadow-sm">
-                        <CardContent className="p-6">
-                          <Skeleton className="h-8 w-16 mb-2" />
-                          <Skeleton className="h-4 w-24" />
-                        </CardContent>
-                      </Card>
-                    ))
-                  ) : (
-                    <>
-                      <Card className="shadow-sm">
-                        <CardContent className="p-6">
-                          <div className="text-3xl font-bold text-zinc-900 dark:text-zinc-50 mb-1">
-                            {adminOverview?.totalOrganizations || 0}
-                          </div>
-                          <div className="text-sm font-medium text-zinc-500 dark:text-zinc-400">Total Organizations</div>
-                        </CardContent>
-                      </Card>
-                      <Card className="shadow-sm">
-                        <CardContent className="p-6">
-                          <div className="text-3xl font-bold text-zinc-900 dark:text-zinc-50 mb-1">
-                            {adminOverview?.totalOwners || 0}
-                          </div>
-                          <div className="text-sm font-medium text-zinc-500 dark:text-zinc-400">Total Owners</div>
-                        </CardContent>
-                      </Card>
-                      <Card className="shadow-sm">
-                        <CardContent className="p-6">
-                          <div className="text-3xl font-bold text-zinc-900 dark:text-zinc-50 mb-1">
-                            {adminOverview?.totalSuperAdmins || 0}
-                          </div>
-                          <div className="text-sm font-medium text-zinc-500 dark:text-zinc-400">Super Admins</div>
-                        </CardContent>
-                      </Card>
-                      <Card className="shadow-sm">
-                        <CardContent className="p-6">
-                          <div className="text-3xl font-bold text-destructive mb-1">
-                            {adminOverview?.totalSuspendedOrganizations || 0}
-                          </div>
-                          <div className="text-sm font-medium text-zinc-500 dark:text-zinc-400">Suspended Orgs</div>
-                        </CardContent>
-                      </Card>
-                    </>
-                  )}
-                </div>
-              </div>
-            )}
-
-          </div>
+            ))
+          )}
         </div>
-      </main>
-    </div>
+
+        {/* Main Content Area */}
+        <div className="grid lg:grid-cols-3 gap-6">
+          
+          {/* Recent Activity */}
+          <Card className="lg:col-span-2 shadow-sm border-border">
+            <CardHeader>
+              <CardTitle>Recent Activity</CardTitle>
+              <CardDescription>Latest updates across your businesses.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {isLoading ? (
+                <div className="space-y-4">
+                  {Array.from({ length: 3 }).map((_, i) => (
+                    <div key={i} className="flex gap-4">
+                      <Skeleton className="w-10 h-10 rounded-full shrink-0" />
+                      <div className="space-y-2 flex-1">
+                        <Skeleton className="h-4 w-3/4" />
+                        <Skeleton className="h-3 w-1/4" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : summary?.recentActivity && summary.recentActivity.length > 0 ? (
+                <div className="space-y-6 relative before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-border before:to-transparent">
+                  {summary.recentActivity.map((activity, i) => (
+                    <div key={activity.id} className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
+                      {/* Icon */}
+                      <div className="flex items-center justify-center w-10 h-10 rounded-full border-4 border-card bg-primary/10 text-primary shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 z-10">
+                        <Store className="w-4 h-4" />
+                      </div>
+                      
+                      {/* Content */}
+                      <div className="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] p-4 rounded-xl border border-border bg-card shadow-sm transition-all hover:shadow-md">
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="font-semibold text-sm capitalize">{activity.type.toLowerCase()}</span>
+                          <time className="text-xs text-muted-foreground flex items-center">
+                            <Clock className="w-3 h-3 mr-1" />
+                            {new Date(activity.createdAt).toLocaleDateString()}
+                          </time>
+                        </div>
+                        <p className="text-sm text-muted-foreground">{activity.message}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-12 text-center">
+                  <div className="w-12 h-12 rounded-full bg-secondary flex items-center justify-center text-muted-foreground mb-4">
+                    <Store className="w-6 h-6" />
+                  </div>
+                  <h3 className="font-semibold text-foreground">No activity yet</h3>
+                  <p className="text-sm text-muted-foreground mt-1 max-w-sm">
+                    As you add locations and generate QR codes, your recent activity will appear here.
+                  </p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Setup Guide / Quick Links */}
+          <Card className="shadow-sm border-border h-fit">
+            <CardHeader>
+              <CardTitle>Quick Links</CardTitle>
+              <CardDescription>Useful resources to get started.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <Link href="/businesses" className="flex items-center gap-3 p-3 rounded-lg border border-border hover:bg-secondary/50 transition-colors group">
+                <div className="w-8 h-8 rounded bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                  <Store className="w-4 h-4" />
+                </div>
+                <div className="flex-1">
+                  <h4 className="text-sm font-semibold group-hover:text-primary transition-colors">Manage Businesses</h4>
+                  <p className="text-xs text-muted-foreground">Add or edit your locations</p>
+                </div>
+                <ArrowRight className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
+              </Link>
+              <div className="flex items-center gap-3 p-3 rounded-lg border border-border border-dashed opacity-60">
+                <div className="w-8 h-8 rounded bg-secondary text-secondary-foreground flex items-center justify-center shrink-0">
+                  <QrCode className="w-4 h-4" />
+                </div>
+                <div className="flex-1">
+                  <h4 className="text-sm font-semibold">Print QR Codes</h4>
+                  <p className="text-xs text-muted-foreground">Coming in next sprint</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 p-3 rounded-lg border border-border border-dashed opacity-60">
+                <div className="w-8 h-8 rounded bg-secondary text-secondary-foreground flex items-center justify-center shrink-0">
+                  <SmartphoneNfc className="w-4 h-4" />
+                </div>
+                <div className="flex-1">
+                  <h4 className="text-sm font-semibold">Order NFC Cards</h4>
+                  <p className="text-xs text-muted-foreground">Coming in next sprint</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          
+        </div>
+      </div>
+    </AppLayout>
   );
 }

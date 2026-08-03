@@ -1,8 +1,8 @@
-import { useEffect, useRef } from "react";
+import { Switch, Route, Redirect, useLocation, Router as WouterRouter } from 'wouter';
 import { ClerkProvider, SignIn, SignUp, Show, useClerk } from '@clerk/react';
 import { publishableKeyFromHost } from '@clerk/react/internal';
 import { shadcn } from '@clerk/themes';
-import { Switch, Route, Redirect, useLocation, Router as WouterRouter } from 'wouter';
+import { useEffect, useRef } from 'react';
 import { QueryClient, QueryClientProvider, useQueryClient } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -11,6 +11,8 @@ import { ThemeProvider } from "@/components/theme-provider";
 // Import pages
 import Marketing from "./pages/Marketing";
 import Dashboard from "./pages/Dashboard";
+import Onboarding from "./pages/Onboarding";
+import Businesses from "./pages/Businesses";
 import NotFound from "./pages/not-found";
 
 const queryClient = new QueryClient({
@@ -51,14 +53,14 @@ const clerkAppearance = {
   },
   variables: {
     colorPrimary: "hsl(226, 100%, 55%)",
-    colorForeground: "hsl(240, 10%, 3.9%)",
-    colorMutedForeground: "hsl(240, 3.8%, 46.1%)",
+    colorForeground: "hsl(226, 45%, 12%)",
+    colorMutedForeground: "hsl(220, 10%, 46%)",
     colorDanger: "hsl(0, 84.2%, 60.2%)",
-    colorBackground: "hsl(0, 0%, 100%)",
+    colorBackground: "hsl(220, 20%, 97%)",
     colorInput: "hsl(0, 0%, 100%)",
-    colorInputForeground: "hsl(240, 10%, 3.9%)",
-    colorNeutral: "hsl(240, 5.9%, 90%)",
-    fontFamily: "Inter, sans-serif",
+    colorInputForeground: "hsl(226, 45%, 12%)",
+    colorNeutral: "hsl(220, 15%, 90%)",
+    fontFamily: "'Plus Jakarta Sans', sans-serif",
     borderRadius: "0.5rem",
   },
   elements: {
@@ -92,7 +94,7 @@ const clerkAppearance = {
 
 function SignInPage() {
   return (
-    <div className="flex min-h-[100dvh] items-center justify-center bg-zinc-50 dark:bg-zinc-900 px-4 py-12">
+    <div className="flex min-h-[100dvh] items-center justify-center bg-background px-4 py-12">
       <SignIn routing="path" path={`${basePath}/sign-in`} signUpUrl={`${basePath}/sign-up`} />
     </div>
   );
@@ -100,7 +102,7 @@ function SignInPage() {
 
 function SignUpPage() {
   return (
-    <div className="flex min-h-[100dvh] items-center justify-center bg-zinc-50 dark:bg-zinc-900 px-4 py-12">
+    <div className="flex min-h-[100dvh] items-center justify-center bg-background px-4 py-12">
       <SignUp routing="path" path={`${basePath}/sign-up`} signInUrl={`${basePath}/sign-in`} />
     </div>
   );
@@ -150,6 +152,8 @@ function AppRouter() {
       
       {/* Protected Routes */}
       <Route path="/dashboard" component={Dashboard} />
+      <Route path="/onboarding" component={Onboarding} />
+      <Route path="/businesses" component={Businesses} />
       
       <Route component={NotFound} />
     </Switch>

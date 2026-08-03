@@ -62,3 +62,308 @@ export const GetAdminOverviewResponse = zod.object({
 })
 
 
+/**
+ * Returns non-deleted businesses belonging to the caller's Organization. Archived businesses are included with archivedAt set; use the includeArchived=false query param to exclude them.
+ * @summary List businesses for the caller's organization
+ */
+export const listBusinessesQueryIncludeArchivedDefault = true;
+
+export const ListBusinessesQueryParams = zod.object({
+  "includeArchived": zod.coerce.boolean().default(listBusinessesQueryIncludeArchivedDefault)
+})
+
+export const ListBusinessesResponse = zod.object({
+  "businesses": zod.array(zod.object({
+  "id": zod.uuid(),
+  "organizationId": zod.uuid(),
+  "name": zod.string(),
+  "category": zod.string(),
+  "googlePlaceId": zod.string().nullable(),
+  "slug": zod.string(),
+  "logoUrl": zod.string().nullable(),
+  "coverImageUrl": zod.string().nullable(),
+  "brandColor": zod.string().nullable(),
+  "welcomeMessage": zod.string().nullable(),
+  "status": zod.enum(['ACTIVE', 'SUSPENDED', 'DISABLED']),
+  "archivedAt": zod.coerce.date().nullable(),
+  "deletedAt": zod.coerce.date().nullable(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+}))
+})
+
+
+/**
+ * @summary Create a business under the caller's organization
+ */
+
+
+
+
+export const createBusinessBodySlugRegExp = new RegExp('^[a-z0-9]+(?:-[a-z0-9]+)*$');
+
+
+export const CreateBusinessBody = zod.object({
+  "name": zod.string().min(1),
+  "category": zod.string().min(1),
+  "googlePlaceId": zod.string().nullish(),
+  "slug": zod.string().min(1).regex(createBusinessBodySlugRegExp),
+  "logoUrl": zod.string().nullish(),
+  "coverImageUrl": zod.string().nullish(),
+  "brandColor": zod.string().nullish(),
+  "welcomeMessage": zod.string().nullish()
+})
+
+export const CreateBusinessResponse = zod.object({
+  "id": zod.uuid(),
+  "organizationId": zod.uuid(),
+  "name": zod.string(),
+  "category": zod.string(),
+  "googlePlaceId": zod.string().nullable(),
+  "slug": zod.string(),
+  "logoUrl": zod.string().nullable(),
+  "coverImageUrl": zod.string().nullable(),
+  "brandColor": zod.string().nullable(),
+  "welcomeMessage": zod.string().nullable(),
+  "status": zod.enum(['ACTIVE', 'SUSPENDED', 'DISABLED']),
+  "archivedAt": zod.coerce.date().nullable(),
+  "deletedAt": zod.coerce.date().nullable(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Get a single business by id
+ */
+export const GetBusinessParams = zod.object({
+  "id": zod.uuid()
+})
+
+export const GetBusinessResponse = zod.object({
+  "id": zod.uuid(),
+  "organizationId": zod.uuid(),
+  "name": zod.string(),
+  "category": zod.string(),
+  "googlePlaceId": zod.string().nullable(),
+  "slug": zod.string(),
+  "logoUrl": zod.string().nullable(),
+  "coverImageUrl": zod.string().nullable(),
+  "brandColor": zod.string().nullable(),
+  "welcomeMessage": zod.string().nullable(),
+  "status": zod.enum(['ACTIVE', 'SUSPENDED', 'DISABLED']),
+  "archivedAt": zod.coerce.date().nullable(),
+  "deletedAt": zod.coerce.date().nullable(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Edit a business
+ */
+export const UpdateBusinessParams = zod.object({
+  "id": zod.uuid()
+})
+
+
+
+
+
+export const updateBusinessBodySlugRegExp = new RegExp('^[a-z0-9]+(?:-[a-z0-9]+)*$');
+
+
+export const UpdateBusinessBody = zod.object({
+  "name": zod.string().min(1).optional(),
+  "category": zod.string().min(1).optional(),
+  "googlePlaceId": zod.string().nullish(),
+  "slug": zod.string().min(1).regex(updateBusinessBodySlugRegExp).optional(),
+  "logoUrl": zod.string().nullish(),
+  "coverImageUrl": zod.string().nullish(),
+  "brandColor": zod.string().nullish(),
+  "welcomeMessage": zod.string().nullish()
+})
+
+export const UpdateBusinessResponse = zod.object({
+  "id": zod.uuid(),
+  "organizationId": zod.uuid(),
+  "name": zod.string(),
+  "category": zod.string(),
+  "googlePlaceId": zod.string().nullable(),
+  "slug": zod.string(),
+  "logoUrl": zod.string().nullable(),
+  "coverImageUrl": zod.string().nullable(),
+  "brandColor": zod.string().nullable(),
+  "welcomeMessage": zod.string().nullable(),
+  "status": zod.enum(['ACTIVE', 'SUSPENDED', 'DISABLED']),
+  "archivedAt": zod.coerce.date().nullable(),
+  "deletedAt": zod.coerce.date().nullable(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Soft-delete a business
+ */
+export const DeleteBusinessParams = zod.object({
+  "id": zod.uuid()
+})
+
+export const DeleteBusinessResponse = zod.void()
+
+
+/**
+ * @summary Archive a business
+ */
+export const ArchiveBusinessParams = zod.object({
+  "id": zod.uuid()
+})
+
+export const ArchiveBusinessResponse = zod.object({
+  "id": zod.uuid(),
+  "organizationId": zod.uuid(),
+  "name": zod.string(),
+  "category": zod.string(),
+  "googlePlaceId": zod.string().nullable(),
+  "slug": zod.string(),
+  "logoUrl": zod.string().nullable(),
+  "coverImageUrl": zod.string().nullable(),
+  "brandColor": zod.string().nullable(),
+  "welcomeMessage": zod.string().nullable(),
+  "status": zod.enum(['ACTIVE', 'SUSPENDED', 'DISABLED']),
+  "archivedAt": zod.coerce.date().nullable(),
+  "deletedAt": zod.coerce.date().nullable(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Restore an archived business
+ */
+export const RestoreBusinessParams = zod.object({
+  "id": zod.uuid()
+})
+
+export const RestoreBusinessResponse = zod.object({
+  "id": zod.uuid(),
+  "organizationId": zod.uuid(),
+  "name": zod.string(),
+  "category": zod.string(),
+  "googlePlaceId": zod.string().nullable(),
+  "slug": zod.string(),
+  "logoUrl": zod.string().nullable(),
+  "coverImageUrl": zod.string().nullable(),
+  "brandColor": zod.string().nullable(),
+  "welcomeMessage": zod.string().nullable(),
+  "status": zod.enum(['ACTIVE', 'SUSPENDED', 'DISABLED']),
+  "archivedAt": zod.coerce.date().nullable(),
+  "deletedAt": zod.coerce.date().nullable(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Enable, suspend, or disable a business
+ */
+export const SetBusinessStatusParams = zod.object({
+  "id": zod.uuid()
+})
+
+export const SetBusinessStatusBody = zod.object({
+  "status": zod.enum(['ACTIVE', 'SUSPENDED', 'DISABLED'])
+})
+
+export const SetBusinessStatusResponse = zod.object({
+  "id": zod.uuid(),
+  "organizationId": zod.uuid(),
+  "name": zod.string(),
+  "category": zod.string(),
+  "googlePlaceId": zod.string().nullable(),
+  "slug": zod.string(),
+  "logoUrl": zod.string().nullable(),
+  "coverImageUrl": zod.string().nullable(),
+  "brandColor": zod.string().nullable(),
+  "welcomeMessage": zod.string().nullable(),
+  "status": zod.enum(['ACTIVE', 'SUSPENDED', 'DISABLED']),
+  "archivedAt": zod.coerce.date().nullable(),
+  "deletedAt": zod.coerce.date().nullable(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+/**
+ * activeCampaigns, qrScans, and aiReviewsGenerated are placeholders (always 0) until their respective sprints are built.
+ * @summary Dashboard card counts and recent activity for the caller's organization
+ */
+export const GetDashboardSummaryResponse = zod.object({
+  "totalBusinesses": zod.int(),
+  "activeBusinesses": zod.int(),
+  "activeCampaigns": zod.int(),
+  "qrScans": zod.int(),
+  "aiReviewsGenerated": zod.int(),
+  "needsOnboarding": zod.boolean(),
+  "recentActivity": zod.array(zod.object({
+  "id": zod.string(),
+  "type": zod.string(),
+  "message": zod.string(),
+  "createdAt": zod.coerce.date()
+}))
+})
+
+
+/**
+ * Returns a presigned GCS URL for direct upload. The client sends JSON
+ * metadata here, then uploads the file directly to the returned URL.
+ * @summary Request a presigned URL for file upload
+ */
+
+
+
+
+
+export const RequestUploadUrlBody = zod.object({
+  "name": zod.string().min(1),
+  "size": zod.int().min(1),
+  "contentType": zod.string().min(1)
+})
+
+
+
+
+
+
+export const RequestUploadUrlResponse = zod.object({
+  "uploadURL": zod.url(),
+  "objectPath": zod.string(),
+  "metadata": zod.object({
+  "name": zod.string().min(1),
+  "size": zod.int().min(1),
+  "contentType": zod.string().min(1)
+}).optional()
+})
+
+
+/**
+ * @summary Serve a public asset from PUBLIC_OBJECT_SEARCH_PATHS
+ */
+export const GetPublicObjectParams = zod.object({
+  "filePath": zod.coerce.string()
+})
+
+export const GetPublicObjectResponse = zod.unknown()
+
+
+/**
+ * @summary Serve an object entity from PRIVATE_OBJECT_DIR
+ */
+export const GetStorageObjectParams = zod.object({
+  "objectPath": zod.coerce.string()
+})
+
+export const GetStorageObjectResponse = zod.unknown()
+
+
