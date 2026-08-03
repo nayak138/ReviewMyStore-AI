@@ -1,0 +1,383 @@
+# Sprint 3 – Smart Business Discovery, Campaign Management & AI Review Flow
+
+## Objective
+
+Sprint 3 should transform ReviewMyStore.ai from a dashboard application into a working MVP.
+
+The outcome of this sprint should be that a business owner can:
+
+1. Find their business using Google Search.
+2. Create and manage Campaigns.
+3. Configure Keywords.
+4. Share a Review Page.
+5. Generate an AI-powered Google Review.
+6. Copy the review.
+7. Redirect customers to the official Google Review page.
+
+Do NOT implement QR Analytics, NFC Analytics, Orders, Billing, Subscriptions or Super Admin enhancements in this sprint.
+
+---
+
+# 1. Global Design System
+
+Before adding new pages, improve the reusable UI components so all future pages inherit the same design language.
+
+## Design Inspiration
+
+The application should feel inspired by:
+
+- Google Material Design 3
+- Google Business Profile
+- Google Analytics
+- Stripe Dashboard
+- Linear
+- Notion
+
+Do NOT copy Google's branding.
+
+Create a premium SaaS interface that feels familiar, trustworthy and modern.
+
+---
+
+## Typography
+
+Use **Inter** as the primary font.
+
+Improve heading hierarchy.
+
+Improve spacing between sections.
+
+Maintain consistent font weights throughout the application.
+
+---
+
+## Colors
+
+Use design tokens instead of hardcoded colors.
+
+Primary Blue
+
+#4285F4
+
+Success
+
+#34A853
+
+Warning
+
+#FBBC05
+
+Danger
+
+#EA4335
+
+Dark Background
+
+#111827
+
+Dark Card
+
+#1F2937
+
+Maintain proper contrast in both Light and Dark mode.
+
+---
+
+## Components
+
+Improve and standardize:
+
+- Buttons
+- Cards
+- Inputs
+- Dropdowns
+- Dialogs
+- Tables
+- Badges
+- Toast Notifications
+- Empty States
+- Loading Skeletons
+
+Do not redesign existing pages.
+
+Instead, improve the reusable components so future pages automatically inherit the improved design.
+
+---
+
+# 2. Smart Business Discovery
+
+Replace manual business creation with a smarter onboarding flow.
+
+Landing Page should include:
+
+"Find Your Business"
+
+Search input using Google Places Autocomplete.
+
+When a business is selected:
+
+Retrieve:
+
+- Business Name
+- Address
+- Category
+- Google Place ID
+- Website
+- Phone Number
+- Google Rating
+- Review Count
+- Primary Business Image (if available)
+
+Temporarily store this information until registration is complete.
+
+---
+
+# 3. Registration Flow
+
+Registration should only ask for:
+
+- Name
+- Email
+- Password
+
+(or Clerk Google Login)
+
+After successful registration:
+
+Automatically continue to onboarding.
+
+---
+
+# 4. Smart Onboarding
+
+Pre-fill all available business information using Google Places.
+
+Allow the user to edit every field before saving.
+
+Fields:
+
+- Business Name
+- Category
+- Address
+- Google Place ID
+- Phone
+- Website
+- Brand Color
+- Logo
+- Cover Image
+- Welcome Message
+
+If the user skips Google Search, allow manual entry exactly as Sprint 2 currently supports.
+
+---
+
+# 5. Campaign Management
+
+Every Business can own multiple Campaigns.
+
+Campaign Examples:
+
+- Reception
+- Checkout Counter
+- Table 1
+- Waiting Area
+- Hotel Lobby
+- Salon Reception
+
+Campaign Fields:
+
+- Campaign Name
+- Description
+- Campaign Type
+- Status
+- Created Date
+- Updated Date
+
+Campaign Status:
+
+- Draft
+- Active
+- Archived
+- Disabled
+
+Functions:
+
+- Create
+- Edit
+- Archive
+- Restore
+- Delete
+- Search
+- Filter
+
+---
+
+# 6. Keyword Management
+
+Each Campaign owns Keywords.
+
+Two Categories:
+
+Product / Service
+
+Experience
+
+Allow:
+
+- Create
+- Edit
+- Delete
+- Reorder
+- Enable
+- Disable
+- Bulk Add
+
+Support Custom Keywords.
+
+---
+
+# 7. Customer Review Page
+
+Route:
+
+/review/:businessSlug/:campaignSlug
+
+Mobile-first design.
+
+Display:
+
+- Business Logo
+- Business Name
+- Welcome Message
+- Campaign Name
+- Keyword Selection
+
+Allow:
+
+- Multi-select keyword chips
+- Custom keyword input
+
+---
+
+# 8. AI Review Generation
+
+Continue using the AI Service abstraction.
+
+Never call the AI provider directly.
+
+Generate:
+
+- Natural sounding review
+- 2–3 sentences
+- Human tone
+- No emojis
+- No hashtags
+- No fake claims
+- Never mention AI
+
+Allow:
+
+- Generate
+- Edit
+- Regenerate (Maximum 3)
+
+---
+
+# 9. Copy & Redirect
+
+Primary Button:
+
+Copy & Post to Google
+
+Workflow:
+
+1. Copy review to clipboard.
+2. Show success toast.
+3. Redirect to:
+
+https://search.google.com/local/writereview?placeid={google_place_id}
+
+Must work reliably on desktop and mobile browsers.
+
+---
+
+# 10. Dashboard Improvements
+
+Do not redesign the dashboard.
+
+Improve usefulness.
+
+Dashboard Hero
+
+Welcome back, {First Name} 👋
+
+Let's help your business collect more Google Reviews today.
+
+Dashboard Cards
+
+Use placeholder values where necessary.
+
+Display:
+
+- Total Businesses
+- Google Reviews
+- AI Reviews Generated
+- QR Scans
+- NFC Taps
+
+Quick Actions
+
+- Create Business
+- Create Campaign
+- Generate QR (Coming Soon)
+- Order NFC Standee (Coming Soon)
+
+Recent Activity
+
+Use placeholder data until Analytics is implemented.
+
+---
+
+# 11. Architecture
+
+Continue following:
+
+- PROJECT_RULES.md
+- REPLIT_AGENT_GUIDE.md
+
+Requirements:
+
+- TypeScript Strict Mode
+- Service Layer Architecture
+- Repository Pattern
+- Zod Validation
+- Reusable Components
+- RBAC
+- Organization Isolation
+
+No duplicated logic.
+
+---
+
+# 12. Stop Conditions
+
+When Sprint 3 is complete:
+
+- Run the application.
+- Fix all TypeScript errors.
+- Fix all build errors.
+- Verify:
+  - Google Business Search
+  - Registration
+  - Smart Onboarding
+  - Campaign CRUD
+  - Keyword CRUD
+  - Customer Review Page
+  - AI Review Generation
+  - Copy & Redirect
+  - Responsive Layout
+  - Dark Mode
+
+Stop immediately after Sprint 3.
+
+Wait for my approval before implementing Sprint 4.
