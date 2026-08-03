@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "ReviewMyStore.ai"
+description = "A multi-tenant SaaS that helps local businesses (cafes, salons, clinics, gyms, hotels, retail) collect more Google Reviews. Customers scan a QR code or tap an NFC tag, pick a few keywords about their experience, and get an AI-drafted, editable review before being redirected to the business's Google review page. Business owners manage their organizations, locations, campaigns, and review-generation performance from a dashboard; a super admin oversees the whole platform."
+version = "1.0.0"
+id = "artifacts/reviewmystore"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 25504
+
+[services.development]
+run = "pnpm --filter @workspace/reviewmystore run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/reviewmystore", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/reviewmystore/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "25504"
+BASE_PATH = "/"

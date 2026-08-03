@@ -10,6 +10,10 @@ servers:
 tags:
   - name: health
     description: Health operations
+  - name: auth
+    description: Authentication and session bootstrap
+  - name: admin
+    description: Super admin platform operations
 paths:
   /healthz:
     get:
@@ -24,6 +28,59 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /v1/auth/me:
+    get:
+      operationId: getCurrentUser
+      tags: [auth]
+      summary: Get the current authenticated user
+      description: >
+        Returns the authenticated user's profile and organization. On a
+        user's first authenticated request, the backend automatically
+        provisions their Organization + Owner record (or assigns the
+        Super Admin role when the email is platform-preauthorized).
+      responses:
+        "200":
+          description: Current user session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SessionInfo"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /v1/admin/overview:
+    get:
+      operationId: getAdminOverview
+      tags: [admin]
+      summary: Platform-wide counts (Super Admin only)
+      description: >
+        Lightweight platform snapshot used to verify Super Admin RBAC.
+        Only accessible to users with role SUPER_ADMIN.
+      responses:
+        "200":
+          description: Platform overview
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminOverview"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Not authorized (requires SUPER_ADMIN role)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +91,150 @@ components:
       required:
         - status
 
+    ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        code:
+          type: string
+        message:
+          type: string
+      required:
+        - success
+        - code
+        - message
+
+    UserRole:
+      type: string
+      enum: [SUPER_ADMIN, OWNER]
+
+    OrganizationStatus:
+      type: string
+      enum: [ACTIVE, SUSPENDED]
+
+    OrganizationPlan:
+      type: string
+      enum: [STARTER, GROWTH, PRO, ENTERPRISE]
+
+    SubscriptionStatus:
+      type: string
+      enum: [TRIALING, ACTIVE, PAST_DUE, CANCELED]
+
+    Organization:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        slug:
+          type: string
+        status:
+          $ref: "#/components/schemas/OrganizationStatus"
+        plan:
+          $ref: "#/components/schemas/OrganizationPlan"
+        subscriptionStatus:
+          $ref: "#/components/schemas/SubscriptionStatus"
+        aiQuota:
+          type: integer
+        businessesLimit:
+          type: integer
+        startDate:
+          type: ["string", "null"]
+          format: date-time
+        renewalDate:
+          type: ["string", "null"]
+          format: date-time
+        expiryDate:
+          type: ["string", "null"]
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - name
+        - slug
+        - status
+        - plan
+        - subscriptionStatus
+        - aiQuota
+        - businessesLimit
+        - startDate
+        - renewalDate
+        - expiryDate
+        - createdAt
+        - updatedAt
+
+    UserStatus:
+      type: string
+      enum: [ACTIVE, SUSPENDED]
+
+    UserProfile:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        organizationId:
+          type: ["string", "null"]
+          format: uuid
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+        role:
+          $ref: "#/components/schemas/UserRole"
+        status:
+          $ref: "#/components/schemas/UserStatus"
+        lastLoginAt:
+          type: ["string", "null"]
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - organizationId
+        - name
+        - email
+        - role
+        - status
+        - lastLoginAt
+        - createdAt
+
+    SessionInfo:
+      type: object
+      properties:
+        user:
+          $ref: "#/components/schemas/UserProfile"
+        organization:
+          oneOf:
+            - $ref: "#/components/schemas/Organization"
+            - type: "null"
+      required:
+        - user
+        - organization
+
+    AdminOverview:
+      type: object
+      properties:
+        totalOrganizations:
+          type: integer
+        totalOwners:
+          type: integer
+        totalSuperAdmins:
+          type: integer
+        totalSuspendedOrganizations:
+          type: integer
+      required:
+        - totalOrganizations
+        - totalOwners
+        - totalSuperAdmins
+        - totalSuspendedOrganizations

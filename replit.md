@@ -1,44 +1,62 @@
-# [Project name]
+# ReviewMyStore.ai
 
-_Replace the heading above with the project's name, and this line with one sentence describing what this app does for users._
+Multi-tenant SaaS that helps local businesses collect more Google Reviews using AI-assisted review drafting, QR codes, and NFC "tap to review" standees.
 
 ## Run & Operate
 
-- `pnpm --filter @workspace/api-server run dev` — run the API server (port 5000)
+- `pnpm --filter @workspace/api-server run dev` — run the API server
+- `pnpm --filter @workspace/reviewmystore run dev` — run the web app
 - `pnpm run typecheck` — full typecheck across all packages
 - `pnpm run build` — typecheck + build all packages
 - `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from the OpenAPI spec
 - `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
 - Required env: `DATABASE_URL` — Postgres connection string
+- Required secrets: `CLERK_SECRET_KEY`, `CLERK_PUBLISHABLE_KEY`, `VITE_CLERK_PUBLISHABLE_KEY` (Replit-managed Clerk)
+- Optional env: `SUPER_ADMIN_EMAILS` — comma-separated emails that get provisioned as platform SUPER_ADMIN on first sign-in instead of getting their own Organization
 
 ## Stack
 
 - pnpm workspaces, Node.js 24, TypeScript 5.9
 - API: Express 5
 - DB: PostgreSQL + Drizzle ORM
-- Validation: Zod (`zod/v4`), `drizzle-zod`
+- Auth: Replit-managed Clerk (cookie-based sessions on web), bridged to a local `users` table for app-level roles/RBAC
+- Validation: Zod v4 (`zod/v4`), `drizzle-zod`
 - API codegen: Orval (from OpenAPI spec)
+- Frontend: React + Vite, Tailwind v4, shadcn/ui, wouter, TanStack Query
 - Build: esbuild (CJS bundle)
 
 ## Where things live
 
-_Populate as you build — short repo map plus pointers to the source-of-truth file for DB schema, API contracts, theme files, etc._
+- `lib/api-spec/openapi.yaml` — API contract source of truth; run codegen after editing
+- `lib/api-zod/src/generated`, `lib/api-client-react/src/generated` — generated Zod schemas + React Query hooks, never hand-edited
+- `lib/db/src/schema/` — Drizzle table definitions (`organizations.ts`, `users.ts`)
+- `artifacts/api-server/src/routes/` — Express routes, mounted under `/api` (versioned routes like `/v1/auth/me` live under that)
+- `artifacts/api-server/src/services/` — business logic (JIT user/org provisioning, admin queries)
+- `artifacts/api-server/src/middlewares/requireAuth.ts` — `requireAuth` (Clerk session -> local `appUser`) and `requireRole` (RBAC) middleware
+- `artifacts/reviewmystore/` — main web app (public marketing site + authenticated dashboard)
 
 ## Architecture decisions
 
-_Populate as you build — non-obvious choices a reader couldn't infer from the code (3-5 bullets)._
+- **Auth is Clerk, authorization is ours.** Clerk owns login/session; on first authenticated request we JIT-provision a local `users` row bridged by `clerkUserId`. App roles (`SUPER_ADMIN`, `OWNER`) and org-scoping live only in Postgres, enforced by `requireAuth`/`requireRole` — never trust Clerk claims for authorization.
+- **SUPER_ADMIN bootstrapping** is via an allowlist env var (`SUPER_ADMIN_EMAILS`), checked only at JIT-provisioning time. Anyone else who signs up becomes an `OWNER` with a freshly created Organization (registration is open, no gating in the MVP).
+- **Organizations carry future-billing fields** (`plan`, `subscriptionStatus`, `aiQuota`, `businessesLimit`, `startDate`/`renewalDate`/`expiryDate`) even though there's no payment integration yet — a Super Admin manages these manually until Stripe (or similar) is wired up later.
+- **`organizationId` is nullable on `users`** — SUPER_ADMIN accounts are platform-wide and not scoped to a tenant; every OWNER must have exactly one Organization.
 
 ## Product
 
-_Describe the high-level user-facing capabilities of this app once they exist._
+Sprint 1 (current): project scaffolding, Clerk authentication, Organization/User data model, RBAC (SUPER_ADMIN vs OWNER), public marketing page, branded sign-in/sign-up, and an authenticated dashboard shell. Businesses, Campaigns, AI review generation, QR codes, NFC devices, Analytics, and Orders are future sprints — not yet built.
 
 ## User preferences
 
-_Populate as you build — explicit user instructions worth remembering across sessions._
+- **Strict sprint-by-sprint approval process.** Build only the current sprint's scope (per the project's milestone breakdown). After finishing a sprint: run the app, fix all TS/build errors, verify it works, then STOP and wait for explicit user approval before starting the next sprint. Never auto-continue past a sprint boundary.
+- No Stripe/payment integration in the MVP. Registration is open — any signed-up user gets full access immediately, no plan gating.
+- NFC is software-only (no hardware encoding): register/track NFC UIDs, one device per campaign, generate a unique URL per device, "tap" is simulated by opening that URL.
+- AI review generation must go through an `AIService` abstraction with a dedicated prompt/template module — never call the AI provider directly from routes/controllers/frontend.
 
 ## Gotchas
 
-_Populate as you build — sharp edges, "always run X before Y" rules._
+- The Orval-generated Zod schemas use zod v4 top-level validators (`z.uuid()`, `z.email()`, `z.int()`) — the workspace `zod` catalog version must stay on v4, not v3, or `typecheck:libs` fails.
+- After changing `lib/db/src/schema/*` or anything else under `lib/`, run `pnpm -w run typecheck:libs` before typechecking an artifact that depends on it — composite project references need rebuilding first.
 
 ## Pointers
 
