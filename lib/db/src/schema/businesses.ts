@@ -60,6 +60,11 @@ export const businessesTable = pgTable(
     address: text("address"),
     phone: text("phone"),
     website: text("website"),
+    // Owner-entered social links, shown as icon buttons on the public review
+    // page and included in the downloadable .vcf contact card. All optional.
+    instagramUrl: text("instagram_url"),
+    facebookUrl: text("facebook_url"),
+    whatsappNumber: text("whatsapp_number"),
     latitude: doublePrecision("latitude"),
     longitude: doublePrecision("longitude"),
     googleRating: doublePrecision("google_rating"),

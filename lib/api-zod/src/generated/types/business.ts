@@ -30,6 +30,12 @@ export interface Business {
   /** @nullable */
   website: string | null;
   /** @nullable */
+  instagramUrl?: string | null;
+  /** @nullable */
+  facebookUrl?: string | null;
+  /** @nullable */
+  whatsappNumber?: string | null;
+  /** @nullable */
   latitude: number | null;
   /** @nullable */
   longitude: number | null;

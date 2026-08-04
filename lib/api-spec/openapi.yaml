@@ -1709,6 +1709,12 @@ components:
           type: ["string", "null"]
         website:
           type: ["string", "null"]
+        instagramUrl:
+          type: ["string", "null"]
+        facebookUrl:
+          type: ["string", "null"]
+        whatsappNumber:
+          type: ["string", "null"]
         latitude:
           type: ["number", "null"]
         longitude:
@@ -1797,6 +1803,12 @@ components:
           type: ["string", "null"]
         website:
           type: ["string", "null"]
+        instagramUrl:
+          type: ["string", "null"]
+        facebookUrl:
+          type: ["string", "null"]
+        whatsappNumber:
+          type: ["string", "null"]
         latitude:
           type: ["number", "null"]
         longitude:
@@ -1840,6 +1852,12 @@ components:
         phone:
           type: ["string", "null"]
         website:
+          type: ["string", "null"]
+        instagramUrl:
+          type: ["string", "null"]
+        facebookUrl:
+          type: ["string", "null"]
+        whatsappNumber:
           type: ["string", "null"]
         latitude:
           type: ["number", "null"]
@@ -2148,6 +2166,18 @@ components:
           type: ["string", "null"]
         welcomeMessage:
           type: ["string", "null"]
+        address:
+          type: ["string", "null"]
+        phone:
+          type: ["string", "null"]
+        website:
+          type: ["string", "null"]
+        instagramUrl:
+          type: ["string", "null"]
+        facebookUrl:
+          type: ["string", "null"]
+        whatsappNumber:
+          type: ["string", "null"]
       required:
         - name
         - category
@@ -2155,6 +2185,12 @@ components:
         - coverImageUrl
         - brandColor
         - welcomeMessage
+        - address
+        - phone
+        - website
+        - instagramUrl
+        - facebookUrl
+        - whatsappNumber
 
     PublicCampaignSummary:
       type: object

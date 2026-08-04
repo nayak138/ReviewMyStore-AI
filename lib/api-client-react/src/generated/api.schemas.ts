@@ -135,6 +135,12 @@ export interface Business {
   /** @nullable */
   website: string | null;
   /** @nullable */
+  instagramUrl?: string | null;
+  /** @nullable */
+  facebookUrl?: string | null;
+  /** @nullable */
+  whatsappNumber?: string | null;
+  /** @nullable */
   latitude: number | null;
   /** @nullable */
   longitude: number | null;
@@ -184,6 +190,12 @@ export interface BusinessCreateInput {
   /** @nullable */
   website?: string | null;
   /** @nullable */
+  instagramUrl?: string | null;
+  /** @nullable */
+  facebookUrl?: string | null;
+  /** @nullable */
+  whatsappNumber?: string | null;
+  /** @nullable */
   latitude?: number | null;
   /** @nullable */
   longitude?: number | null;
@@ -221,6 +233,12 @@ export interface BusinessUpdateInput {
   phone?: string | null;
   /** @nullable */
   website?: string | null;
+  /** @nullable */
+  instagramUrl?: string | null;
+  /** @nullable */
+  facebookUrl?: string | null;
+  /** @nullable */
+  whatsappNumber?: string | null;
   /** @nullable */
   latitude?: number | null;
   /** @nullable */
@@ -389,6 +407,18 @@ export interface PublicBusinessSummary {
   brandColor: string | null;
   /** @nullable */
   welcomeMessage: string | null;
+  /** @nullable */
+  address: string | null;
+  /** @nullable */
+  phone: string | null;
+  /** @nullable */
+  website: string | null;
+  /** @nullable */
+  instagramUrl: string | null;
+  /** @nullable */
+  facebookUrl: string | null;
+  /** @nullable */
+  whatsappNumber: string | null;
 }
 
 export interface PublicCampaignSummary {

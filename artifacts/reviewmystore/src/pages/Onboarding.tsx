@@ -26,6 +26,9 @@ const onboardingSchema = z.object({
   address: z.string().nullable().optional(),
   phone: z.string().nullable().optional(),
   website: z.string().nullable().optional(),
+  instagramUrl: z.string().nullable().optional(),
+  facebookUrl: z.string().nullable().optional(),
+  whatsappNumber: z.string().nullable().optional(),
   latitude: z.number().nullable().optional(),
   longitude: z.number().nullable().optional(),
   googleRating: z.number().nullable().optional(),
@@ -47,6 +50,9 @@ const EMPTY_VALUES: OnboardingValues = {
   address: null,
   phone: null,
   website: null,
+  instagramUrl: null,
+  facebookUrl: null,
+  whatsappNumber: null,
   latitude: null,
   longitude: null,
   googleRating: null,
@@ -473,6 +479,81 @@ export default function Onboarding() {
                         </FormItem>
                       )}
                     />
+                  </div>
+
+                  <div className="space-y-4 pt-4 border-t border-border">
+                    <h3 className="text-lg font-semibold">Socials (Optional)</h3>
+                    <p className="text-sm text-muted-foreground -mt-2">
+                      Shown as icon buttons on your public review page and included in the downloadable contact card.
+                    </p>
+                    <div className="grid md:grid-cols-2 gap-6">
+                      <FormField
+                        control={form.control}
+                        name="phone"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Phone</FormLabel>
+                            <FormControl>
+                              <Input placeholder="+1 555 123 4567" {...field} value={field.value || ""} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="website"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Website</FormLabel>
+                            <FormControl>
+                              <Input placeholder="https://yourbusiness.com" {...field} value={field.value || ""} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="instagramUrl"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Instagram</FormLabel>
+                            <FormControl>
+                              <Input placeholder="https://instagram.com/yourbusiness" {...field} value={field.value || ""} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="facebookUrl"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Facebook</FormLabel>
+                            <FormControl>
+                              <Input placeholder="https://facebook.com/yourbusiness" {...field} value={field.value || ""} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="whatsappNumber"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>WhatsApp Number</FormLabel>
+                            <FormControl>
+                              <Input placeholder="+1 555 123 4567" {...field} value={field.value || ""} />
+                            </FormControl>
+                            <FormDescription>Customers tap the WhatsApp icon to message you directly.</FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
                   </div>
 
                   <div className="pt-6">

@@ -84,6 +84,12 @@ export async function getPublicReviewPage(
       coverImageUrl: business.coverImageUrl,
       brandColor: business.brandColor,
       welcomeMessage: business.welcomeMessage,
+      address: business.address,
+      phone: business.phone,
+      website: business.website,
+      instagramUrl: business.instagramUrl,
+      facebookUrl: business.facebookUrl,
+      whatsappNumber: business.whatsappNumber,
     },
     campaign: { id: campaign.id, name: campaign.name },
     keywords: keywords.map((k) => ({

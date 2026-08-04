@@ -9,9 +9,10 @@ import {
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import { Star, Sparkles, Copy, Check, ExternalLink, RefreshCw, AlertTriangle, Loader2 } from "lucide-react";
+import { Star, Sparkles, Copy, Check, ExternalLink, RefreshCw, AlertTriangle, Loader2, Globe, Instagram, Facebook, MessageCircle, Phone, IdCard, MapPin } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { objectUrl } from "@/lib/imageUtils";
+import { downloadVCard } from "@/lib/vcard";
 
 function getOrCreateSessionId(businessSlug: string, campaignSlug: string): string {
   const key = `rms_review_session_${businessSlug}_${campaignSlug}`;
@@ -119,6 +120,17 @@ export default function CustomerReview() {
   const canGenerateMore = remaining === null || remaining > 0;
   const hasGenerated = reviewText !== null;
 
+  const whatsappHref = business.whatsappNumber
+    ? `https://wa.me/${business.whatsappNumber.replace(/[^0-9]/g, "")}`
+    : null;
+  const socialLinks = [
+    business.website && { key: "website", href: business.website, label: "Website", icon: Globe, className: "bg-blue-500" },
+    business.instagramUrl && { key: "instagram", href: business.instagramUrl, label: "Instagram", icon: Instagram, className: "bg-gradient-to-br from-purple-500 via-pink-500 to-orange-400" },
+    business.facebookUrl && { key: "facebook", href: business.facebookUrl, label: "Facebook", icon: Facebook, className: "bg-blue-600" },
+    whatsappHref && { key: "whatsapp", href: whatsappHref, label: "WhatsApp", icon: MessageCircle, className: "bg-emerald-500" },
+    business.phone && { key: "call", href: `tel:${business.phone}`, label: "Call", icon: Phone, className: "bg-red-500" },
+  ].filter((v): v is { key: string; href: string; label: string; icon: typeof Globe; className: string } => Boolean(v));
+
   return (
     <div className="min-h-screen bg-background flex flex-col">
       {/* Cover / brand header */}
@@ -135,7 +147,7 @@ export default function CustomerReview() {
           stacking context this content (pulled up via negative margin) would paint behind it. */}
       <div className="relative z-10 flex-1 flex justify-center px-4 -mt-12 sm:-mt-14 pb-16">
         <div className="w-full max-w-lg">
-          {/* Business identity card */}
+          {/* Business identity + contact card */}
           <div className="flex flex-col items-center text-center mb-6">
             <div className="w-24 h-24 rounded-2xl border-4 border-background bg-card shadow-md overflow-hidden flex items-center justify-center">
               {business.logoUrl ? (
@@ -150,6 +162,54 @@ export default function CustomerReview() {
             <p className="text-sm text-muted-foreground">{business.category}</p>
             {business.welcomeMessage && (
               <p className="text-sm text-muted-foreground mt-3 max-w-sm">{business.welcomeMessage}</p>
+            )}
+
+            {(business.address || business.phone) && (
+              <div className="mt-3 text-sm text-muted-foreground space-y-1 max-w-sm">
+                {business.address && (
+                  <p className="flex items-start justify-center gap-1.5">
+                    <MapPin className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+                    <span>{business.address}</span>
+                  </p>
+                )}
+                {business.phone && <p className="font-medium text-foreground">{business.phone}</p>}
+              </div>
+            )}
+
+            {(business.phone || business.address || business.website) && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="mt-3"
+                onClick={() =>
+                  downloadVCard({
+                    name: business.name,
+                    phone: business.phone,
+                    address: business.address,
+                    website: business.website,
+                  })
+                }
+              >
+                <IdCard className="w-4 h-4 mr-2" /> Save Contact
+              </Button>
+            )}
+
+            {socialLinks.length > 0 && (
+              <div className="mt-4 flex items-center justify-center gap-3 rounded-full border border-border bg-card px-4 py-2.5 shadow-sm">
+                {socialLinks.map(({ key, href, label, icon: Icon, className }) => (
+                  <a
+                    key={key}
+                    href={href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={label}
+                    title={label}
+                    className={cn("w-9 h-9 rounded-full flex items-center justify-center text-white shadow-sm hover:opacity-90 transition-opacity", className)}
+                  >
+                    <Icon className="w-4 h-4" />
+                  </a>
+                ))}
+              </div>
             )}
           </div>
 

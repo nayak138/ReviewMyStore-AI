@@ -96,6 +96,9 @@ export interface CreateBusinessInput {
   address?: string | null;
   phone?: string | null;
   website?: string | null;
+  instagramUrl?: string | null;
+  facebookUrl?: string | null;
+  whatsappNumber?: string | null;
   latitude?: number | null;
   longitude?: number | null;
   googleRating?: number | null;
