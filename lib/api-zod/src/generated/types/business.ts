@@ -23,6 +23,22 @@ export interface Business {
   brandColor: string | null;
   /** @nullable */
   welcomeMessage: string | null;
+  /** @nullable */
+  address: string | null;
+  /** @nullable */
+  phone: string | null;
+  /** @nullable */
+  website: string | null;
+  /** @nullable */
+  latitude: number | null;
+  /** @nullable */
+  longitude: number | null;
+  /** @nullable */
+  googleRating: number | null;
+  /** @nullable */
+  googleReviewCount: number | null;
+  /** @nullable */
+  placeImageUrl: string | null;
   status: BusinessStatus;
   /** @nullable */
   archivedAt: Date | null;

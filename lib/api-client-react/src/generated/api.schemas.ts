@@ -128,6 +128,22 @@ export interface Business {
   brandColor: string | null;
   /** @nullable */
   welcomeMessage: string | null;
+  /** @nullable */
+  address: string | null;
+  /** @nullable */
+  phone: string | null;
+  /** @nullable */
+  website: string | null;
+  /** @nullable */
+  latitude: number | null;
+  /** @nullable */
+  longitude: number | null;
+  /** @nullable */
+  googleRating: number | null;
+  /** @nullable */
+  googleReviewCount: number | null;
+  /** @nullable */
+  placeImageUrl: string | null;
   status: BusinessStatus;
   /** @nullable */
   archivedAt: string | null;
@@ -161,6 +177,22 @@ export interface BusinessCreateInput {
   brandColor?: string | null;
   /** @nullable */
   welcomeMessage?: string | null;
+  /** @nullable */
+  address?: string | null;
+  /** @nullable */
+  phone?: string | null;
+  /** @nullable */
+  website?: string | null;
+  /** @nullable */
+  latitude?: number | null;
+  /** @nullable */
+  longitude?: number | null;
+  /** @nullable */
+  googleRating?: number | null;
+  /** @nullable */
+  googleReviewCount?: number | null;
+  /** @nullable */
+  placeImageUrl?: string | null;
 }
 
 export interface BusinessUpdateInput {
@@ -183,10 +215,212 @@ export interface BusinessUpdateInput {
   brandColor?: string | null;
   /** @nullable */
   welcomeMessage?: string | null;
+  /** @nullable */
+  address?: string | null;
+  /** @nullable */
+  phone?: string | null;
+  /** @nullable */
+  website?: string | null;
+  /** @nullable */
+  latitude?: number | null;
+  /** @nullable */
+  longitude?: number | null;
+  /** @nullable */
+  googleRating?: number | null;
+  /** @nullable */
+  googleReviewCount?: number | null;
+  /** @nullable */
+  placeImageUrl?: string | null;
 }
 
 export interface BusinessStatusInput {
   status: BusinessStatus;
+}
+
+export type CampaignStatus = typeof CampaignStatus[keyof typeof CampaignStatus];
+
+
+export const CampaignStatus = {
+  DRAFT: 'DRAFT',
+  ACTIVE: 'ACTIVE',
+  ARCHIVED: 'ARCHIVED',
+  DISABLED: 'DISABLED',
+} as const;
+
+export interface Campaign {
+  id: string;
+  businessId: string;
+  name: string;
+  slug: string;
+  /** @nullable */
+  description: string | null;
+  type: string;
+  status: CampaignStatus;
+  /** @nullable */
+  archivedAt: string | null;
+  /** @nullable */
+  deletedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CampaignListResult {
+  campaigns: Campaign[];
+}
+
+export interface CampaignCreateInput {
+  businessId: string;
+  /** @minLength 1 */
+  name: string;
+  /** @nullable */
+  description?: string | null;
+  /** @minLength 1 */
+  type?: string;
+  status?: CampaignStatus;
+}
+
+export interface CampaignUpdateInput {
+  /** @minLength 1 */
+  name?: string;
+  /** @nullable */
+  description?: string | null;
+  /** @minLength 1 */
+  type?: string;
+}
+
+export interface CampaignStatusInput {
+  status: CampaignStatus;
+}
+
+export interface CampaignTemplate {
+  id: string;
+  name: string;
+  description: string;
+  productServiceKeywords: string[];
+  experienceKeywords: string[];
+}
+
+export interface CampaignTemplateListResult {
+  templates: CampaignTemplate[];
+}
+
+export type KeywordCategory = typeof KeywordCategory[keyof typeof KeywordCategory];
+
+
+export const KeywordCategory = {
+  PRODUCT_SERVICE: 'PRODUCT_SERVICE',
+  EXPERIENCE: 'EXPERIENCE',
+} as const;
+
+export interface Keyword {
+  id: string;
+  campaignId: string;
+  label: string;
+  category: KeywordCategory;
+  enabled: boolean;
+  sortOrder: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface KeywordListResult {
+  keywords: Keyword[];
+}
+
+export interface KeywordCreateInput {
+  /** @minLength 1 */
+  label: string;
+  category: KeywordCategory;
+  enabled?: boolean;
+  sortOrder?: number;
+}
+
+export interface KeywordUpdateInput {
+  /** @minLength 1 */
+  label?: string;
+  category?: KeywordCategory;
+  enabled?: boolean;
+  sortOrder?: number;
+}
+
+export interface PlaceAutocompleteSuggestion {
+  placeId: string;
+  mainText: string;
+  /** @nullable */
+  secondaryText: string | null;
+  description: string;
+}
+
+export interface PlaceAutocompleteResult {
+  suggestions: PlaceAutocompleteSuggestion[];
+}
+
+export interface PlaceDetails {
+  placeId: string;
+  name: string;
+  /** @nullable */
+  category: string | null;
+  /** @nullable */
+  formattedAddress: string | null;
+  /** @nullable */
+  phone: string | null;
+  /** @nullable */
+  website: string | null;
+  /** @nullable */
+  latitude: number | null;
+  /** @nullable */
+  longitude: number | null;
+  /** @nullable */
+  rating: number | null;
+  /** @nullable */
+  userRatingCount: number | null;
+  /** @nullable */
+  photoName: string | null;
+}
+
+export interface PublicBusinessSummary {
+  name: string;
+  category: string;
+  /** @nullable */
+  logoUrl: string | null;
+  /** @nullable */
+  coverImageUrl: string | null;
+  /** @nullable */
+  brandColor: string | null;
+  /** @nullable */
+  welcomeMessage: string | null;
+}
+
+export interface PublicCampaignSummary {
+  id: string;
+  name: string;
+}
+
+export interface PublicKeywordSummary {
+  id: string;
+  label: string;
+  category: KeywordCategory;
+}
+
+export interface PublicReviewPageResult {
+  business: PublicBusinessSummary;
+  campaign: PublicCampaignSummary;
+  keywords: PublicKeywordSummary[];
+  /** @nullable */
+  googleReviewUrl: string | null;
+}
+
+export interface PublicGenerateReviewInput {
+  /** @minLength 1 */
+  sessionId: string;
+  /** @minItems 1 */
+  keywords: string[];
+}
+
+export interface PublicGenerateReviewResult {
+  reviewText: string;
+  remainingGenerations: number;
+  maxGenerations: number;
 }
 
 export interface RecentActivityItem {
@@ -223,5 +457,21 @@ export interface UploadUrlResponse {
 
 export type ListBusinessesParams = {
 includeArchived?: boolean;
+};
+
+export type ListCampaignsParams = {
+businessId: string;
+includeArchived?: boolean;
+};
+
+export type AutocompletePlacesParams = {
+/**
+ * @minLength 1
+ */
+input: string;
+};
+
+export type GetPlacePhotoParams = {
+name: string;
 };
 

@@ -84,6 +84,14 @@ export const ListBusinessesResponse = zod.object({
   "coverImageUrl": zod.string().nullable(),
   "brandColor": zod.string().nullable(),
   "welcomeMessage": zod.string().nullable(),
+  "address": zod.string().nullable(),
+  "phone": zod.string().nullable(),
+  "website": zod.string().nullable(),
+  "latitude": zod.number().nullable(),
+  "longitude": zod.number().nullable(),
+  "googleRating": zod.number().nullable(),
+  "googleReviewCount": zod.int().nullable(),
+  "placeImageUrl": zod.string().nullable(),
   "status": zod.enum(['ACTIVE', 'SUSPENDED', 'DISABLED']),
   "archivedAt": zod.coerce.date().nullable(),
   "deletedAt": zod.coerce.date().nullable(),
@@ -111,7 +119,15 @@ export const CreateBusinessBody = zod.object({
   "logoUrl": zod.string().nullish(),
   "coverImageUrl": zod.string().nullish(),
   "brandColor": zod.string().nullish(),
-  "welcomeMessage": zod.string().nullish()
+  "welcomeMessage": zod.string().nullish(),
+  "address": zod.string().nullish(),
+  "phone": zod.string().nullish(),
+  "website": zod.string().nullish(),
+  "latitude": zod.number().nullish(),
+  "longitude": zod.number().nullish(),
+  "googleRating": zod.number().nullish(),
+  "googleReviewCount": zod.int().nullish(),
+  "placeImageUrl": zod.string().nullish()
 })
 
 export const CreateBusinessResponse = zod.object({
@@ -125,6 +141,14 @@ export const CreateBusinessResponse = zod.object({
   "coverImageUrl": zod.string().nullable(),
   "brandColor": zod.string().nullable(),
   "welcomeMessage": zod.string().nullable(),
+  "address": zod.string().nullable(),
+  "phone": zod.string().nullable(),
+  "website": zod.string().nullable(),
+  "latitude": zod.number().nullable(),
+  "longitude": zod.number().nullable(),
+  "googleRating": zod.number().nullable(),
+  "googleReviewCount": zod.int().nullable(),
+  "placeImageUrl": zod.string().nullable(),
   "status": zod.enum(['ACTIVE', 'SUSPENDED', 'DISABLED']),
   "archivedAt": zod.coerce.date().nullable(),
   "deletedAt": zod.coerce.date().nullable(),
@@ -151,6 +175,14 @@ export const GetBusinessResponse = zod.object({
   "coverImageUrl": zod.string().nullable(),
   "brandColor": zod.string().nullable(),
   "welcomeMessage": zod.string().nullable(),
+  "address": zod.string().nullable(),
+  "phone": zod.string().nullable(),
+  "website": zod.string().nullable(),
+  "latitude": zod.number().nullable(),
+  "longitude": zod.number().nullable(),
+  "googleRating": zod.number().nullable(),
+  "googleReviewCount": zod.int().nullable(),
+  "placeImageUrl": zod.string().nullable(),
   "status": zod.enum(['ACTIVE', 'SUSPENDED', 'DISABLED']),
   "archivedAt": zod.coerce.date().nullable(),
   "deletedAt": zod.coerce.date().nullable(),
@@ -181,7 +213,15 @@ export const UpdateBusinessBody = zod.object({
   "logoUrl": zod.string().nullish(),
   "coverImageUrl": zod.string().nullish(),
   "brandColor": zod.string().nullish(),
-  "welcomeMessage": zod.string().nullish()
+  "welcomeMessage": zod.string().nullish(),
+  "address": zod.string().nullish(),
+  "phone": zod.string().nullish(),
+  "website": zod.string().nullish(),
+  "latitude": zod.number().nullish(),
+  "longitude": zod.number().nullish(),
+  "googleRating": zod.number().nullish(),
+  "googleReviewCount": zod.int().nullish(),
+  "placeImageUrl": zod.string().nullish()
 })
 
 export const UpdateBusinessResponse = zod.object({
@@ -195,6 +235,14 @@ export const UpdateBusinessResponse = zod.object({
   "coverImageUrl": zod.string().nullable(),
   "brandColor": zod.string().nullable(),
   "welcomeMessage": zod.string().nullable(),
+  "address": zod.string().nullable(),
+  "phone": zod.string().nullable(),
+  "website": zod.string().nullable(),
+  "latitude": zod.number().nullable(),
+  "longitude": zod.number().nullable(),
+  "googleRating": zod.number().nullable(),
+  "googleReviewCount": zod.int().nullable(),
+  "placeImageUrl": zod.string().nullable(),
   "status": zod.enum(['ACTIVE', 'SUSPENDED', 'DISABLED']),
   "archivedAt": zod.coerce.date().nullable(),
   "deletedAt": zod.coerce.date().nullable(),
@@ -231,6 +279,14 @@ export const ArchiveBusinessResponse = zod.object({
   "coverImageUrl": zod.string().nullable(),
   "brandColor": zod.string().nullable(),
   "welcomeMessage": zod.string().nullable(),
+  "address": zod.string().nullable(),
+  "phone": zod.string().nullable(),
+  "website": zod.string().nullable(),
+  "latitude": zod.number().nullable(),
+  "longitude": zod.number().nullable(),
+  "googleRating": zod.number().nullable(),
+  "googleReviewCount": zod.int().nullable(),
+  "placeImageUrl": zod.string().nullable(),
   "status": zod.enum(['ACTIVE', 'SUSPENDED', 'DISABLED']),
   "archivedAt": zod.coerce.date().nullable(),
   "deletedAt": zod.coerce.date().nullable(),
@@ -257,6 +313,14 @@ export const RestoreBusinessResponse = zod.object({
   "coverImageUrl": zod.string().nullable(),
   "brandColor": zod.string().nullable(),
   "welcomeMessage": zod.string().nullable(),
+  "address": zod.string().nullable(),
+  "phone": zod.string().nullable(),
+  "website": zod.string().nullable(),
+  "latitude": zod.number().nullable(),
+  "longitude": zod.number().nullable(),
+  "googleRating": zod.number().nullable(),
+  "googleReviewCount": zod.int().nullable(),
+  "placeImageUrl": zod.string().nullable(),
   "status": zod.enum(['ACTIVE', 'SUSPENDED', 'DISABLED']),
   "archivedAt": zod.coerce.date().nullable(),
   "deletedAt": zod.coerce.date().nullable(),
@@ -287,6 +351,14 @@ export const SetBusinessStatusResponse = zod.object({
   "coverImageUrl": zod.string().nullable(),
   "brandColor": zod.string().nullable(),
   "welcomeMessage": zod.string().nullable(),
+  "address": zod.string().nullable(),
+  "phone": zod.string().nullable(),
+  "website": zod.string().nullable(),
+  "latitude": zod.number().nullable(),
+  "longitude": zod.number().nullable(),
+  "googleRating": zod.number().nullable(),
+  "googleReviewCount": zod.int().nullable(),
+  "placeImageUrl": zod.string().nullable(),
   "status": zod.enum(['ACTIVE', 'SUSPENDED', 'DISABLED']),
   "archivedAt": zod.coerce.date().nullable(),
   "deletedAt": zod.coerce.date().nullable(),
@@ -312,6 +384,412 @@ export const GetDashboardSummaryResponse = zod.object({
   "message": zod.string(),
   "createdAt": zod.coerce.date()
 }))
+})
+
+
+/**
+ * @summary List campaigns for a business
+ */
+export const listCampaignsQueryIncludeArchivedDefault = true;
+
+export const ListCampaignsQueryParams = zod.object({
+  "businessId": zod.uuid(),
+  "includeArchived": zod.coerce.boolean().default(listCampaignsQueryIncludeArchivedDefault)
+})
+
+export const ListCampaignsResponse = zod.object({
+  "campaigns": zod.array(zod.object({
+  "id": zod.uuid(),
+  "businessId": zod.uuid(),
+  "name": zod.string(),
+  "slug": zod.string(),
+  "description": zod.string().nullable(),
+  "type": zod.string(),
+  "status": zod.enum(['DRAFT', 'ACTIVE', 'ARCHIVED', 'DISABLED']),
+  "archivedAt": zod.coerce.date().nullable(),
+  "deletedAt": zod.coerce.date().nullable(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+}))
+})
+
+
+/**
+ * @summary Create a campaign under a business
+ */
+
+
+
+
+export const CreateCampaignBody = zod.object({
+  "businessId": zod.uuid(),
+  "name": zod.string().min(1),
+  "description": zod.string().nullish(),
+  "type": zod.string().min(1).optional(),
+  "status": zod.enum(['DRAFT', 'ACTIVE', 'ARCHIVED', 'DISABLED']).optional()
+})
+
+export const CreateCampaignResponse = zod.object({
+  "id": zod.uuid(),
+  "businessId": zod.uuid(),
+  "name": zod.string(),
+  "slug": zod.string(),
+  "description": zod.string().nullable(),
+  "type": zod.string(),
+  "status": zod.enum(['DRAFT', 'ACTIVE', 'ARCHIVED', 'DISABLED']),
+  "archivedAt": zod.coerce.date().nullable(),
+  "deletedAt": zod.coerce.date().nullable(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Get a single campaign by id
+ */
+export const GetCampaignParams = zod.object({
+  "id": zod.uuid()
+})
+
+export const GetCampaignResponse = zod.object({
+  "id": zod.uuid(),
+  "businessId": zod.uuid(),
+  "name": zod.string(),
+  "slug": zod.string(),
+  "description": zod.string().nullable(),
+  "type": zod.string(),
+  "status": zod.enum(['DRAFT', 'ACTIVE', 'ARCHIVED', 'DISABLED']),
+  "archivedAt": zod.coerce.date().nullable(),
+  "deletedAt": zod.coerce.date().nullable(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Edit a campaign
+ */
+export const UpdateCampaignParams = zod.object({
+  "id": zod.uuid()
+})
+
+
+
+
+
+export const UpdateCampaignBody = zod.object({
+  "name": zod.string().min(1).optional(),
+  "description": zod.string().nullish(),
+  "type": zod.string().min(1).optional()
+})
+
+export const UpdateCampaignResponse = zod.object({
+  "id": zod.uuid(),
+  "businessId": zod.uuid(),
+  "name": zod.string(),
+  "slug": zod.string(),
+  "description": zod.string().nullable(),
+  "type": zod.string(),
+  "status": zod.enum(['DRAFT', 'ACTIVE', 'ARCHIVED', 'DISABLED']),
+  "archivedAt": zod.coerce.date().nullable(),
+  "deletedAt": zod.coerce.date().nullable(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Soft-delete a campaign
+ */
+export const DeleteCampaignParams = zod.object({
+  "id": zod.uuid()
+})
+
+export const DeleteCampaignResponse = zod.void()
+
+
+/**
+ * @summary Archive a campaign
+ */
+export const ArchiveCampaignParams = zod.object({
+  "id": zod.uuid()
+})
+
+export const ArchiveCampaignResponse = zod.object({
+  "id": zod.uuid(),
+  "businessId": zod.uuid(),
+  "name": zod.string(),
+  "slug": zod.string(),
+  "description": zod.string().nullable(),
+  "type": zod.string(),
+  "status": zod.enum(['DRAFT', 'ACTIVE', 'ARCHIVED', 'DISABLED']),
+  "archivedAt": zod.coerce.date().nullable(),
+  "deletedAt": zod.coerce.date().nullable(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Restore an archived campaign
+ */
+export const RestoreCampaignParams = zod.object({
+  "id": zod.uuid()
+})
+
+export const RestoreCampaignResponse = zod.object({
+  "id": zod.uuid(),
+  "businessId": zod.uuid(),
+  "name": zod.string(),
+  "slug": zod.string(),
+  "description": zod.string().nullable(),
+  "type": zod.string(),
+  "status": zod.enum(['DRAFT', 'ACTIVE', 'ARCHIVED', 'DISABLED']),
+  "archivedAt": zod.coerce.date().nullable(),
+  "deletedAt": zod.coerce.date().nullable(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Change a campaign's status (DRAFT/ACTIVE/DISABLED)
+ */
+export const SetCampaignStatusParams = zod.object({
+  "id": zod.uuid()
+})
+
+export const SetCampaignStatusBody = zod.object({
+  "status": zod.enum(['DRAFT', 'ACTIVE', 'ARCHIVED', 'DISABLED'])
+})
+
+export const SetCampaignStatusResponse = zod.object({
+  "id": zod.uuid(),
+  "businessId": zod.uuid(),
+  "name": zod.string(),
+  "slug": zod.string(),
+  "description": zod.string().nullable(),
+  "type": zod.string(),
+  "status": zod.enum(['DRAFT', 'ACTIVE', 'ARCHIVED', 'DISABLED']),
+  "archivedAt": zod.coerce.date().nullable(),
+  "deletedAt": zod.coerce.date().nullable(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+/**
+ * Static, in-code list used to pre-fill a new campaign's name and keyword suggestions during onboarding. Not stored in the database.
+ * @summary Built-in campaign templates with suggested keywords
+ */
+export const ListCampaignTemplatesResponse = zod.object({
+  "templates": zod.array(zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "description": zod.string(),
+  "productServiceKeywords": zod.array(zod.string()),
+  "experienceKeywords": zod.array(zod.string())
+}))
+})
+
+
+/**
+ * @summary List keywords for a campaign
+ */
+export const ListKeywordsParams = zod.object({
+  "campaignId": zod.uuid()
+})
+
+export const ListKeywordsResponse = zod.object({
+  "keywords": zod.array(zod.object({
+  "id": zod.uuid(),
+  "campaignId": zod.uuid(),
+  "label": zod.string(),
+  "category": zod.enum(['PRODUCT_SERVICE', 'EXPERIENCE']),
+  "enabled": zod.boolean(),
+  "sortOrder": zod.int(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+}))
+})
+
+
+/**
+ * @summary Add a keyword to a campaign
+ */
+export const CreateKeywordParams = zod.object({
+  "campaignId": zod.uuid()
+})
+
+
+
+
+export const CreateKeywordBody = zod.object({
+  "label": zod.string().min(1),
+  "category": zod.enum(['PRODUCT_SERVICE', 'EXPERIENCE']),
+  "enabled": zod.boolean().optional(),
+  "sortOrder": zod.int().optional()
+})
+
+export const CreateKeywordResponse = zod.object({
+  "id": zod.uuid(),
+  "campaignId": zod.uuid(),
+  "label": zod.string(),
+  "category": zod.enum(['PRODUCT_SERVICE', 'EXPERIENCE']),
+  "enabled": zod.boolean(),
+  "sortOrder": zod.int(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Edit a keyword (label, category, enabled, sortOrder)
+ */
+export const UpdateKeywordParams = zod.object({
+  "id": zod.uuid()
+})
+
+
+
+
+export const UpdateKeywordBody = zod.object({
+  "label": zod.string().min(1).optional(),
+  "category": zod.enum(['PRODUCT_SERVICE', 'EXPERIENCE']).optional(),
+  "enabled": zod.boolean().optional(),
+  "sortOrder": zod.int().optional()
+})
+
+export const UpdateKeywordResponse = zod.object({
+  "id": zod.uuid(),
+  "campaignId": zod.uuid(),
+  "label": zod.string(),
+  "category": zod.enum(['PRODUCT_SERVICE', 'EXPERIENCE']),
+  "enabled": zod.boolean(),
+  "sortOrder": zod.int(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Delete a keyword
+ */
+export const DeleteKeywordParams = zod.object({
+  "id": zod.uuid()
+})
+
+export const DeleteKeywordResponse = zod.void()
+
+
+/**
+ * Public (unauthenticated) — used on the pre-registration business search step. Proxies Google Places Autocomplete so the API key never reaches the browser.
+ * @summary Search Google Places by free-text business name/address
+ */
+
+
+
+export const AutocompletePlacesQueryParams = zod.object({
+  "input": zod.coerce.string().min(1)
+})
+
+export const AutocompletePlacesResponse = zod.object({
+  "suggestions": zod.array(zod.object({
+  "placeId": zod.string(),
+  "mainText": zod.string(),
+  "secondaryText": zod.string().nullable(),
+  "description": zod.string()
+}))
+})
+
+
+/**
+ * Public (unauthenticated) — used to pre-fill the registration form once the owner picks a suggestion.
+ * @summary Fetch full details for a selected Google Place
+ */
+export const GetPlaceDetailsParams = zod.object({
+  "placeId": zod.coerce.string()
+})
+
+export const GetPlaceDetailsResponse = zod.object({
+  "placeId": zod.string(),
+  "name": zod.string(),
+  "category": zod.string().nullable(),
+  "formattedAddress": zod.string().nullable(),
+  "phone": zod.string().nullable(),
+  "website": zod.string().nullable(),
+  "latitude": zod.number().nullable(),
+  "longitude": zod.number().nullable(),
+  "rating": zod.number().nullable(),
+  "userRatingCount": zod.int().nullable(),
+  "photoName": zod.string().nullable()
+})
+
+
+/**
+ * Public (unauthenticated). `name` must be the raw photo resource name returned as `photoName` on PlaceDetails (e.g. "places/X/photos/Y").
+ * @summary Proxy a Google Place photo so the API key stays server-side
+ */
+export const GetPlacePhotoQueryParams = zod.object({
+  "name": zod.coerce.string()
+})
+
+export const GetPlacePhotoResponse = zod.unknown()
+
+
+/**
+ * Public (unauthenticated). Returns 404 if the business or campaign doesn't exist, isn't ACTIVE, or is archived/deleted, so unpublished campaigns are never reachable by guessing a URL.
+ * @summary Fetch the data needed to render a public review page
+ */
+export const GetPublicReviewPageParams = zod.object({
+  "businessSlug": zod.coerce.string(),
+  "campaignSlug": zod.coerce.string()
+})
+
+export const GetPublicReviewPageResponse = zod.object({
+  "business": zod.object({
+  "name": zod.string(),
+  "category": zod.string(),
+  "logoUrl": zod.string().nullable(),
+  "coverImageUrl": zod.string().nullable(),
+  "brandColor": zod.string().nullable(),
+  "welcomeMessage": zod.string().nullable()
+}),
+  "campaign": zod.object({
+  "id": zod.uuid(),
+  "name": zod.string()
+}),
+  "keywords": zod.array(zod.object({
+  "id": zod.uuid(),
+  "label": zod.string(),
+  "category": zod.enum(['PRODUCT_SERVICE', 'EXPERIENCE'])
+})),
+  "googleReviewUrl": zod.string().nullable()
+})
+
+
+/**
+ * Public (unauthenticated). Capped at 3 generations per sessionId to bound AI spend per customer visit; the 4th call returns 429.
+ * @summary Generate (or regenerate) an AI review draft for a customer session
+ */
+export const GeneratePublicReviewParams = zod.object({
+  "businessSlug": zod.coerce.string(),
+  "campaignSlug": zod.coerce.string()
+})
+
+
+
+
+
+export const GeneratePublicReviewBody = zod.object({
+  "sessionId": zod.string().min(1),
+  "keywords": zod.array(zod.string()).min(1)
+})
+
+export const GeneratePublicReviewResponse = zod.object({
+  "reviewText": zod.string(),
+  "remainingGenerations": zod.int(),
+  "maxGenerations": zod.int()
 })
 
 

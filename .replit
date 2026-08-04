@@ -1,4 +1,4 @@
-modules = ["nodejs-24"]
+modules = ["nodejs-24", "postgresql-16"]
 
 [deployment]
 router = "application"
@@ -23,3 +23,9 @@ timeoutMs = 20000
 
 [userenv.shared]
 SUPER_ADMIN_EMAILS = ""
+
+[objectStorage]
+defaultBucketID = "replit-objstore-080439cc-c0ba-4318-831d-1f07982e68b1"
+
+[nix]
+channel = "stable-25_05"

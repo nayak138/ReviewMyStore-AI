@@ -93,6 +93,14 @@ export interface CreateBusinessInput {
   coverImageUrl?: string | null;
   brandColor?: string | null;
   welcomeMessage?: string | null;
+  address?: string | null;
+  phone?: string | null;
+  website?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
+  googleRating?: number | null;
+  googleReviewCount?: number | null;
+  placeImageUrl?: string | null;
 }
 
 export async function createBusiness(

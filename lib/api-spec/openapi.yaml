@@ -18,6 +18,12 @@ tags:
     description: Business CRUD, lifecycle, and status management
   - name: dashboard
     description: Business dashboard summary data
+  - name: campaigns
+    description: Campaign CRUD, lifecycle, and keyword management
+  - name: places
+    description: Server-side proxy for Google Places search (pre-registration business lookup)
+  - name: public-review
+    description: Unauthenticated endpoints backing the public customer review page
   - name: Storage
     description: Object storage upload and serving endpoints.
 paths:
@@ -376,6 +382,643 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  /v1/campaigns:
+    get:
+      operationId: listCampaigns
+      tags: [campaigns]
+      summary: List campaigns for a business
+      parameters:
+        - name: businessId
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: includeArchived
+          in: query
+          required: false
+          schema:
+            type: boolean
+            default: true
+      responses:
+        "200":
+          description: List of campaigns
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CampaignListResult"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Business not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    post:
+      operationId: createCampaign
+      tags: [campaigns]
+      summary: Create a campaign under a business
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CampaignCreateInput"
+      responses:
+        "201":
+          description: Campaign created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Campaign"
+        "400":
+          description: Invalid request body
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Business not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /v1/campaigns/{id}:
+    get:
+      operationId: getCampaign
+      tags: [campaigns]
+      summary: Get a single campaign by id
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Campaign
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Campaign"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    patch:
+      operationId: updateCampaign
+      tags: [campaigns]
+      summary: Edit a campaign
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CampaignUpdateInput"
+      responses:
+        "200":
+          description: Campaign updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Campaign"
+        "400":
+          description: Invalid request body
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      operationId: deleteCampaign
+      tags: [campaigns]
+      summary: Soft-delete a campaign
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: Campaign soft-deleted
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /v1/campaigns/{id}/archive:
+    post:
+      operationId: archiveCampaign
+      tags: [campaigns]
+      summary: Archive a campaign
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Campaign archived
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Campaign"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /v1/campaigns/{id}/restore:
+    post:
+      operationId: restoreCampaign
+      tags: [campaigns]
+      summary: Restore an archived campaign
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Campaign restored
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Campaign"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /v1/campaigns/{id}/status:
+    patch:
+      operationId: setCampaignStatus
+      tags: [campaigns]
+      summary: Change a campaign's status (DRAFT/ACTIVE/DISABLED)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CampaignStatusInput"
+      responses:
+        "200":
+          description: Campaign status updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Campaign"
+        "400":
+          description: Invalid request body
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /v1/campaign-templates:
+    get:
+      operationId: listCampaignTemplates
+      tags: [campaigns]
+      summary: Built-in campaign templates with suggested keywords
+      description: >
+        Static, in-code list used to pre-fill a new campaign's name and
+        keyword suggestions during onboarding. Not stored in the database.
+      responses:
+        "200":
+          description: List of campaign templates
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CampaignTemplateListResult"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /v1/campaigns/{campaignId}/keywords:
+    get:
+      operationId: listKeywords
+      tags: [campaigns]
+      summary: List keywords for a campaign
+      parameters:
+        - name: campaignId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: List of keywords
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/KeywordListResult"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Campaign not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    post:
+      operationId: createKeyword
+      tags: [campaigns]
+      summary: Add a keyword to a campaign
+      parameters:
+        - name: campaignId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/KeywordCreateInput"
+      responses:
+        "201":
+          description: Keyword created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Keyword"
+        "400":
+          description: Invalid request body
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Campaign not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /v1/keywords/{id}:
+    patch:
+      operationId: updateKeyword
+      tags: [campaigns]
+      summary: Edit a keyword (label, category, enabled, sortOrder)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/KeywordUpdateInput"
+      responses:
+        "200":
+          description: Keyword updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Keyword"
+        "400":
+          description: Invalid request body
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      operationId: deleteKeyword
+      tags: [campaigns]
+      summary: Delete a keyword
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: Keyword deleted
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /v1/places/autocomplete:
+    get:
+      operationId: autocompletePlaces
+      tags: [places]
+      summary: Search Google Places by free-text business name/address
+      description: >
+        Public (unauthenticated) — used on the pre-registration business
+        search step. Proxies Google Places Autocomplete so the API key never
+        reaches the browser.
+      parameters:
+        - name: input
+          in: query
+          required: true
+          schema:
+            type: string
+            minLength: 1
+      responses:
+        "200":
+          description: Autocomplete suggestions
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PlaceAutocompleteResult"
+        "400":
+          description: Missing input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "502":
+          description: Upstream Google Places error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /v1/places/details/{placeId}:
+    get:
+      operationId: getPlaceDetails
+      tags: [places]
+      summary: Fetch full details for a selected Google Place
+      description: >
+        Public (unauthenticated) — used to pre-fill the registration form
+        once the owner picks a suggestion.
+      parameters:
+        - name: placeId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Place details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PlaceDetails"
+        "502":
+          description: Upstream Google Places error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /v1/places/photo:
+    get:
+      operationId: getPlacePhoto
+      tags: [places]
+      summary: Proxy a Google Place photo so the API key stays server-side
+      description: >
+        Public (unauthenticated). `name` must be the raw photo resource name
+        returned as `photoName` on PlaceDetails (e.g. "places/X/photos/Y").
+      parameters:
+        - name: name
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Image bytes streamed with correct Content-Type
+          content:
+            image/*:
+              schema:
+                type: string
+                format: binary
+        "400":
+          description: Invalid photo reference
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "502":
+          description: Upstream Google Places error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /v1/public/review/{businessSlug}/{campaignSlug}:
+    get:
+      operationId: getPublicReviewPage
+      tags: [public-review]
+      summary: Fetch the data needed to render a public review page
+      description: >
+        Public (unauthenticated). Returns 404 if the business or campaign
+        doesn't exist, isn't ACTIVE, or is archived/deleted, so unpublished
+        campaigns are never reachable by guessing a URL.
+      parameters:
+        - name: businessSlug
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: campaignSlug
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Public review page data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PublicReviewPageResult"
+        "404":
+          description: Not found or not active
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /v1/public/review/{businessSlug}/{campaignSlug}/generate:
+    post:
+      operationId: generatePublicReview
+      tags: [public-review]
+      summary: Generate (or regenerate) an AI review draft for a customer session
+      description: >
+        Public (unauthenticated). Capped at 3 generations per sessionId to
+        bound AI spend per customer visit; the 4th call returns 429.
+      parameters:
+        - name: businessSlug
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: campaignSlug
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PublicGenerateReviewInput"
+      responses:
+        "200":
+          description: Generated review text
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PublicGenerateReviewResult"
+        "400":
+          description: Invalid request body
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found or not active
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "429":
+          description: Regeneration limit reached
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "502":
+          description: AI provider error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /storage/uploads/request-url:
     post:
       tags: [Storage]
@@ -649,6 +1292,22 @@ components:
           type: ["string", "null"]
         welcomeMessage:
           type: ["string", "null"]
+        address:
+          type: ["string", "null"]
+        phone:
+          type: ["string", "null"]
+        website:
+          type: ["string", "null"]
+        latitude:
+          type: ["number", "null"]
+        longitude:
+          type: ["number", "null"]
+        googleRating:
+          type: ["number", "null"]
+        googleReviewCount:
+          type: ["integer", "null"]
+        placeImageUrl:
+          type: ["string", "null"]
         status:
           $ref: "#/components/schemas/BusinessStatus"
         archivedAt:
@@ -674,6 +1333,14 @@ components:
         - coverImageUrl
         - brandColor
         - welcomeMessage
+        - address
+        - phone
+        - website
+        - latitude
+        - longitude
+        - googleRating
+        - googleReviewCount
+        - placeImageUrl
         - status
         - archivedAt
         - deletedAt
@@ -713,6 +1380,22 @@ components:
           type: ["string", "null"]
         welcomeMessage:
           type: ["string", "null"]
+        address:
+          type: ["string", "null"]
+        phone:
+          type: ["string", "null"]
+        website:
+          type: ["string", "null"]
+        latitude:
+          type: ["number", "null"]
+        longitude:
+          type: ["number", "null"]
+        googleRating:
+          type: ["number", "null"]
+        googleReviewCount:
+          type: ["integer", "null"]
+        placeImageUrl:
+          type: ["string", "null"]
       required:
         - name
         - category
@@ -741,6 +1424,22 @@ components:
           type: ["string", "null"]
         welcomeMessage:
           type: ["string", "null"]
+        address:
+          type: ["string", "null"]
+        phone:
+          type: ["string", "null"]
+        website:
+          type: ["string", "null"]
+        latitude:
+          type: ["number", "null"]
+        longitude:
+          type: ["number", "null"]
+        googleRating:
+          type: ["number", "null"]
+        googleReviewCount:
+          type: ["integer", "null"]
+        placeImageUrl:
+          type: ["string", "null"]
 
     BusinessStatusInput:
       type: object
@@ -749,6 +1448,377 @@ components:
           $ref: "#/components/schemas/BusinessStatus"
       required:
         - status
+
+    CampaignStatus:
+      type: string
+      enum: [DRAFT, ACTIVE, ARCHIVED, DISABLED]
+
+    Campaign:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        businessId:
+          type: string
+          format: uuid
+        name:
+          type: string
+        slug:
+          type: string
+        description:
+          type: ["string", "null"]
+        type:
+          type: string
+        status:
+          $ref: "#/components/schemas/CampaignStatus"
+        archivedAt:
+          type: ["string", "null"]
+          format: date-time
+        deletedAt:
+          type: ["string", "null"]
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - businessId
+        - name
+        - slug
+        - description
+        - type
+        - status
+        - archivedAt
+        - deletedAt
+        - createdAt
+        - updatedAt
+
+    CampaignListResult:
+      type: object
+      properties:
+        campaigns:
+          type: array
+          items:
+            $ref: "#/components/schemas/Campaign"
+      required:
+        - campaigns
+
+    CampaignCreateInput:
+      type: object
+      properties:
+        businessId:
+          type: string
+          format: uuid
+        name:
+          type: string
+          minLength: 1
+        description:
+          type: ["string", "null"]
+        type:
+          type: string
+          minLength: 1
+        status:
+          $ref: "#/components/schemas/CampaignStatus"
+      required:
+        - businessId
+        - name
+
+    CampaignUpdateInput:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+        description:
+          type: ["string", "null"]
+        type:
+          type: string
+          minLength: 1
+
+    CampaignStatusInput:
+      type: object
+      properties:
+        status:
+          $ref: "#/components/schemas/CampaignStatus"
+      required:
+        - status
+
+    CampaignTemplate:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        productServiceKeywords:
+          type: array
+          items:
+            type: string
+        experienceKeywords:
+          type: array
+          items:
+            type: string
+      required:
+        - id
+        - name
+        - description
+        - productServiceKeywords
+        - experienceKeywords
+
+    CampaignTemplateListResult:
+      type: object
+      properties:
+        templates:
+          type: array
+          items:
+            $ref: "#/components/schemas/CampaignTemplate"
+      required:
+        - templates
+
+    KeywordCategory:
+      type: string
+      enum: [PRODUCT_SERVICE, EXPERIENCE]
+
+    Keyword:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        campaignId:
+          type: string
+          format: uuid
+        label:
+          type: string
+        category:
+          $ref: "#/components/schemas/KeywordCategory"
+        enabled:
+          type: boolean
+        sortOrder:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - campaignId
+        - label
+        - category
+        - enabled
+        - sortOrder
+        - createdAt
+        - updatedAt
+
+    KeywordListResult:
+      type: object
+      properties:
+        keywords:
+          type: array
+          items:
+            $ref: "#/components/schemas/Keyword"
+      required:
+        - keywords
+
+    KeywordCreateInput:
+      type: object
+      properties:
+        label:
+          type: string
+          minLength: 1
+        category:
+          $ref: "#/components/schemas/KeywordCategory"
+        enabled:
+          type: boolean
+        sortOrder:
+          type: integer
+      required:
+        - label
+        - category
+
+    KeywordUpdateInput:
+      type: object
+      properties:
+        label:
+          type: string
+          minLength: 1
+        category:
+          $ref: "#/components/schemas/KeywordCategory"
+        enabled:
+          type: boolean
+        sortOrder:
+          type: integer
+
+    PlaceAutocompleteSuggestion:
+      type: object
+      properties:
+        placeId:
+          type: string
+        mainText:
+          type: string
+        secondaryText:
+          type: ["string", "null"]
+        description:
+          type: string
+      required:
+        - placeId
+        - mainText
+        - secondaryText
+        - description
+
+    PlaceAutocompleteResult:
+      type: object
+      properties:
+        suggestions:
+          type: array
+          items:
+            $ref: "#/components/schemas/PlaceAutocompleteSuggestion"
+      required:
+        - suggestions
+
+    PlaceDetails:
+      type: object
+      properties:
+        placeId:
+          type: string
+        name:
+          type: string
+        category:
+          type: ["string", "null"]
+        formattedAddress:
+          type: ["string", "null"]
+        phone:
+          type: ["string", "null"]
+        website:
+          type: ["string", "null"]
+        latitude:
+          type: ["number", "null"]
+        longitude:
+          type: ["number", "null"]
+        rating:
+          type: ["number", "null"]
+        userRatingCount:
+          type: ["integer", "null"]
+        photoName:
+          type: ["string", "null"]
+      required:
+        - placeId
+        - name
+        - category
+        - formattedAddress
+        - phone
+        - website
+        - latitude
+        - longitude
+        - rating
+        - userRatingCount
+        - photoName
+
+    PublicBusinessSummary:
+      type: object
+      properties:
+        name:
+          type: string
+        category:
+          type: string
+        logoUrl:
+          type: ["string", "null"]
+        coverImageUrl:
+          type: ["string", "null"]
+        brandColor:
+          type: ["string", "null"]
+        welcomeMessage:
+          type: ["string", "null"]
+      required:
+        - name
+        - category
+        - logoUrl
+        - coverImageUrl
+        - brandColor
+        - welcomeMessage
+
+    PublicCampaignSummary:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+      required:
+        - id
+        - name
+
+    PublicKeywordSummary:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        label:
+          type: string
+        category:
+          $ref: "#/components/schemas/KeywordCategory"
+      required:
+        - id
+        - label
+        - category
+
+    PublicReviewPageResult:
+      type: object
+      properties:
+        business:
+          $ref: "#/components/schemas/PublicBusinessSummary"
+        campaign:
+          $ref: "#/components/schemas/PublicCampaignSummary"
+        keywords:
+          type: array
+          items:
+            $ref: "#/components/schemas/PublicKeywordSummary"
+        googleReviewUrl:
+          type: ["string", "null"]
+      required:
+        - business
+        - campaign
+        - keywords
+        - googleReviewUrl
+
+    PublicGenerateReviewInput:
+      type: object
+      properties:
+        sessionId:
+          type: string
+          minLength: 1
+        keywords:
+          type: array
+          items:
+            type: string
+          minItems: 1
+      required:
+        - sessionId
+        - keywords
+
+    PublicGenerateReviewResult:
+      type: object
+      properties:
+        reviewText:
+          type: string
+        remainingGenerations:
+          type: integer
+        maxGenerations:
+          type: integer
+      required:
+        - reviewText
+        - remainingGenerations
+        - maxGenerations
 
     RecentActivityItem:
       type: object

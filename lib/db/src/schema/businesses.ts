@@ -1,4 +1,12 @@
-import { pgTable, text, timestamp, pgEnum, index } from "drizzle-orm/pg-core";
+import {
+  pgTable,
+  text,
+  timestamp,
+  pgEnum,
+  index,
+  doublePrecision,
+  integer,
+} from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 import { sql } from "drizzle-orm";
@@ -45,6 +53,18 @@ export const businessesTable = pgTable(
     coverImageUrl: text("cover_image_url"),
     brandColor: text("brand_color"),
     welcomeMessage: text("welcome_message"),
+    // The following are populated when the owner found their business via
+    // the Google Places search on the landing page (GoogleBusinessService)
+    // and pre-filled onboarding; they stay null for fully manual entry and
+    // remain editable afterwards either way.
+    address: text("address"),
+    phone: text("phone"),
+    website: text("website"),
+    latitude: doublePrecision("latitude"),
+    longitude: doublePrecision("longitude"),
+    googleRating: doublePrecision("google_rating"),
+    googleReviewCount: integer("google_review_count"),
+    placeImageUrl: text("place_image_url"),
     status: businessStatusEnum("status").notNull().default("ACTIVE"),
     archivedAt: timestamp("archived_at", { withTimezone: true }),
     deletedAt: timestamp("deleted_at", { withTimezone: true }),
