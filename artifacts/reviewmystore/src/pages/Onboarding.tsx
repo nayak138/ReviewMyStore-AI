@@ -361,7 +361,7 @@ export default function Onboarding() {
                               <div className="bg-secondary border border-border border-r-0 px-3 py-2 rounded-l-md text-sm text-muted-foreground flex items-center">
                                 /store/
                               </div>
-                              <Input className="rounded-l-none" placeholder="daily-grind" {...field} />
+                              <Input className="rounded-l-none" placeholder="e.g. daily-grind" {...field} />
                             </div>
                           </FormControl>
                           <FormDescription>Used for your review links.</FormDescription>
@@ -376,7 +376,7 @@ export default function Onboarding() {
                         <FormItem>
                           <FormLabel>Google Place ID</FormLabel>
                           <FormControl>
-                            <Input placeholder="ChIJN1t_tDeuEmsRUsoyG83frY4" {...field} value={field.value || ""} />
+                            <Input placeholder="Optional — filled in automatically when you search" {...field} value={field.value || ""} />
                           </FormControl>
                           <FormDescription>Find this on Google Maps, or search above.</FormDescription>
                           <FormMessage />
