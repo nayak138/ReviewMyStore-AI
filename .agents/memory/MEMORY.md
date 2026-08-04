@@ -8,4 +8,5 @@
 - [pnpm overrides for peer deps](pnpm-peer-dep-overrides.md) — use root `pnpm.overrides` with literal versions (not catalog refs) to satisfy third-party peer dependency ranges when no root-level dependency exists to pin.
 - [zod v4 + @hookform/resolvers mismatch](zod-v4-hookform-resolvers.md) — `@hookform/resolvers@^3.x` mishandles zod v4 errors, crashing forms mid-typing; needs `^5.x`.
 - [Orval query hooks require explicit queryKey when using `enabled`](orval-query-enabled-requires-querykey.md) — passing `{query:{enabled}}` alone to a generated hook fails typecheck; also pass `getXxxQueryKey(...)`.
-- [Clerk cssLayerName + manual @layer statement can break layout](clerk-tailwind-v4-layer-conflict.md) — a pre-declared `@layer ..., clerk, ...;` fixed Clerk contrast but shifted an unrelated sidebar off-screen; use `!important` classes instead.
+- [Clerk cssLayerName + manual @layer statement can break layout](clerk-tailwind-v4-layer-conflict.md) — a pre-declared `@layer ..., clerk, ...;` fixed Clerk contrast but caused side effects; use `!important` classes instead.
+- [Tailwind v4: transform-none doesn't reset translate](tailwind-v4-translate-vs-transform-none.md) — `translate-x-*` uses the standalone `translate` property; cancel with `md:translate-x-0`, never `md:transform-none`.

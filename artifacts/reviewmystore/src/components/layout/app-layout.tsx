@@ -50,8 +50,8 @@ export function AppLayout({ children, title }: AppLayoutProps) {
 
       {/* Sidebar */}
       <aside className={cn(
-        "fixed inset-y-0 left-0 z-50 w-64 border-r border-border bg-card flex flex-col transform transition-transform duration-200 ease-in-out md:relative md:transform-none",
-        mobileMenuOpen ? "translate-x-0" : "-translate-x-full"
+        "fixed inset-y-0 left-0 z-50 w-64 border-r border-border bg-card flex flex-col transition-transform duration-200 ease-in-out md:relative",
+        mobileMenuOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
       )}>
         <div className="h-16 flex items-center justify-between px-6 border-b border-border">
           <div className="flex items-center gap-2">
