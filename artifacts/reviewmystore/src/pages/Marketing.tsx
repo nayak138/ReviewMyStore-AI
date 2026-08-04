@@ -1,6 +1,120 @@
-import { Link } from "wouter";
+import { useState } from "react";
+import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
-import { Star, Smartphone, TrendingUp, Zap } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
+import { BusinessSearch } from "@/components/business-search";
+import { Star, Smartphone, TrendingUp, Zap, MapPin, Phone, Globe, X, ArrowRight } from "lucide-react";
+import { useGetPlaceDetails, getGetPlaceDetailsQueryKey, type PlaceAutocompleteSuggestion } from "@workspace/api-client-react";
+import { saveSelectedPlace, placePhotoUrl } from "@/lib/selected-place";
+import { cn } from "@/lib/utils";
+
+function BusinessLookupSection() {
+  const [, setLocation] = useLocation();
+  const [selected, setSelected] = useState<PlaceAutocompleteSuggestion | null>(null);
+
+  const { data: details, isLoading } = useGetPlaceDetails(selected?.placeId ?? "", {
+    query: { enabled: !!selected, queryKey: getGetPlaceDetailsQueryKey(selected?.placeId ?? "") },
+  });
+
+  const handleContinue = () => {
+    if (!details) return;
+    saveSelectedPlace({
+      placeId: details.placeId,
+      name: details.name,
+      category: details.category,
+      formattedAddress: details.formattedAddress,
+      phone: details.phone,
+      website: details.website,
+      latitude: details.latitude,
+      longitude: details.longitude,
+      rating: details.rating,
+      userRatingCount: details.userRatingCount,
+      photoName: details.photoName,
+    });
+    setLocation("/sign-up");
+  };
+
+  return (
+    <section className="relative -mt-4 pb-4">
+      <div className="container mx-auto px-4 max-w-2xl">
+        <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-xl p-6 lg:p-8">
+          <h2 className="text-lg font-semibold text-zinc-900 dark:text-white mb-1 text-center">
+            Find your business on Google
+          </h2>
+          <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-5 text-center">
+            We'll pull your name, category, and photo automatically.
+          </p>
+
+          <BusinessSearch
+            placeholder="e.g. Daily Grind Coffee, Austin TX"
+            onSelect={(s) => setSelected(s)}
+          />
+
+          {selected && (
+            <div className="mt-5 rounded-xl border border-border bg-secondary/40 p-4 relative animate-in fade-in slide-in-from-top-2 duration-300">
+              <button
+                type="button"
+                onClick={() => setSelected(null)}
+                className="absolute top-3 right-3 text-muted-foreground hover:text-foreground transition-colors"
+                aria-label="Clear selection"
+              >
+                <X className="w-4 h-4" />
+              </button>
+
+              {isLoading || !details ? (
+                <div className="flex gap-4 items-center">
+                  <Skeleton className="w-16 h-16 rounded-lg shrink-0" />
+                  <div className="space-y-2 flex-1">
+                    <Skeleton className="h-4 w-2/3" />
+                    <Skeleton className="h-3 w-1/2" />
+                  </div>
+                </div>
+              ) : (
+                <div className="flex gap-4 items-center">
+                  <div className="w-16 h-16 rounded-lg overflow-hidden bg-secondary shrink-0 flex items-center justify-center border border-border">
+                    {details.photoName ? (
+                      <img src={placePhotoUrl(details.photoName, 160)} alt={details.name} className="w-full h-full object-cover" />
+                    ) : (
+                      <MapPin className="w-6 h-6 text-muted-foreground" />
+                    )}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <h3 className="font-semibold text-foreground truncate">{details.name}</h3>
+                    {details.category && <p className="text-sm text-muted-foreground truncate">{details.category}</p>}
+                    {details.formattedAddress && (
+                      <p className="text-xs text-muted-foreground truncate flex items-center gap-1 mt-0.5">
+                        <MapPin className="w-3 h-3 shrink-0" /> {details.formattedAddress}
+                      </p>
+                    )}
+                    {typeof details.rating === "number" && (
+                      <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
+                        <Star className="w-3 h-3 fill-amber-400 text-amber-400 shrink-0" />
+                        {details.rating.toFixed(1)}
+                        {details.userRatingCount ? ` (${details.userRatingCount})` : ""}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              <Button className="w-full mt-4" size="lg" disabled={!details} onClick={handleContinue}>
+                This is my business — Get Started
+                <ArrowRight className="w-4 h-4 ml-2" />
+              </Button>
+            </div>
+          )}
+
+          <p className="text-xs text-center text-zinc-500 dark:text-zinc-400 mt-4">
+            Can't find your business?{" "}
+            <Link href="/sign-up" className="text-primary hover:underline font-medium">
+              Sign up and enter details manually
+            </Link>
+          </p>
+        </div>
+      </div>
+    </section>
+  );
+}
 
 export default function Marketing() {
   return (
@@ -24,7 +138,7 @@ export default function Marketing() {
 
       <main className="flex-1">
         {/* Hero Section */}
-        <section className="py-24 lg:py-32 relative overflow-hidden">
+        <section className="pt-24 lg:pt-32 pb-8 relative overflow-hidden">
           {/* Background decorative elements */}
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-blue-100 via-white to-white dark:from-blue-900/20 dark:via-zinc-950 dark:to-zinc-950 -z-10" />
           
@@ -36,26 +150,16 @@ export default function Marketing() {
             <h1 className="text-5xl lg:text-7xl font-bold tracking-tight text-zinc-900 dark:text-white mb-6 leading-tight">
               Turn happy customers into <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-400">5-star reviews</span> instantly.
             </h1>
-            <p className="text-lg lg:text-xl text-zinc-600 dark:text-zinc-400 mb-10 max-w-2xl mx-auto leading-relaxed">
+            <p className="text-lg lg:text-xl text-zinc-600 dark:text-zinc-400 mb-12 max-w-2xl mx-auto leading-relaxed">
               Stop begging for reviews. Our AI-assisted platform and NFC standees make it effortless for your customers to leave glowing Google reviews before they even leave your store.
             </p>
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              <Link href="/sign-up">
-                <Button size="lg" className="w-full sm:w-auto text-base h-12 px-8">
-                  Start Your Free Trial
-                </Button>
-              </Link>
-              <Link href="/sign-in">
-                <Button variant="outline" size="lg" className="w-full sm:w-auto text-base h-12 px-8">
-                  See How It Works
-                </Button>
-              </Link>
-            </div>
           </div>
         </section>
 
+        <BusinessLookupSection />
+
         {/* Features Section */}
-        <section className="py-24 bg-zinc-50 dark:bg-zinc-900/50">
+        <section className="py-24 mt-8 bg-zinc-50 dark:bg-zinc-900/50">
           <div className="container mx-auto px-4">
             <div className="text-center mb-16 max-w-2xl mx-auto">
               <h2 className="text-3xl font-bold text-zinc-900 dark:text-white mb-4">Built for local business growth</h2>

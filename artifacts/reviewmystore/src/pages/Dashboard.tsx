@@ -70,8 +70,7 @@ export default function Dashboard() {
       icon: Megaphone,
       color: "text-amber-500",
       bgColor: "bg-amber-500/10",
-      ready: false,
-      label: "Coming soon"
+      ready: true
     },
     { 
       title: "QR Scans", 
@@ -233,6 +232,16 @@ export default function Dashboard() {
                 <div className="flex-1">
                   <h4 className="text-sm font-semibold group-hover:text-primary transition-colors">Manage Businesses</h4>
                   <p className="text-xs text-muted-foreground">Add or edit your locations</p>
+                </div>
+                <ArrowRight className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
+              </Link>
+              <Link href="/campaigns" className="flex items-center gap-3 p-3 rounded-lg border border-border hover:bg-secondary/50 transition-colors group">
+                <div className="w-8 h-8 rounded bg-amber-500/10 text-amber-500 flex items-center justify-center shrink-0">
+                  <Megaphone className="w-4 h-4" />
+                </div>
+                <div className="flex-1">
+                  <h4 className="text-sm font-semibold group-hover:text-primary transition-colors">Manage Campaigns</h4>
+                  <p className="text-xs text-muted-foreground">Keywords & review links</p>
                 </div>
                 <ArrowRight className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
               </Link>

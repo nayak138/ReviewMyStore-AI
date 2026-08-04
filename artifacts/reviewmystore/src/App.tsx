@@ -13,6 +13,8 @@ import Marketing from "./pages/Marketing";
 import Dashboard from "./pages/Dashboard";
 import Onboarding from "./pages/Onboarding";
 import Businesses from "./pages/Businesses";
+import Campaigns from "./pages/Campaigns";
+import CustomerReview from "./pages/CustomerReview";
 import NotFound from "./pages/not-found";
 
 const queryClient = new QueryClient({
@@ -151,11 +153,15 @@ function AppRouter() {
       <Route path="/" component={HomeRedirect} />
       <Route path="/sign-in/*?" component={SignInPage} />
       <Route path="/sign-up/*?" component={SignUpPage} />
-      
+
+      {/* Public customer-facing review page */}
+      <Route path="/review/:businessSlug/:campaignSlug" component={CustomerReview} />
+
       {/* Protected Routes */}
       <Route path="/dashboard" component={Dashboard} />
       <Route path="/onboarding" component={Onboarding} />
       <Route path="/businesses" component={Businesses} />
+      <Route path="/campaigns" component={Campaigns} />
       
       <Route component={NotFound} />
     </Switch>

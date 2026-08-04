@@ -20,7 +20,7 @@ import { cn } from "@/lib/utils";
 const NAV_ITEMS = [
   { name: "Dashboard", icon: LayoutDashboard, href: "/dashboard", ready: true },
   { name: "Businesses", icon: Store, href: "/businesses", ready: true },
-  { name: "Campaigns", icon: Megaphone, href: "/campaigns", ready: false },
+  { name: "Campaigns", icon: Megaphone, href: "/campaigns", ready: true },
   { name: "QR Codes", icon: QrCode, href: "/qr-codes", ready: false },
   { name: "NFC Devices", icon: SmartphoneNfc, href: "/nfc-devices", ready: false },
   { name: "Analytics", icon: BarChart3, href: "/analytics", ready: false },

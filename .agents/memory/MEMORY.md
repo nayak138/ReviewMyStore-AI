@@ -7,3 +7,4 @@
 - [Workspace TS project references for lib packages](workspace-ts-project-refs.md) — any `lib/*` package referenced via TS project references needs `composite: true` in its own tsconfig.
 - [pnpm overrides for peer deps](pnpm-peer-dep-overrides.md) — use root `pnpm.overrides` with literal versions (not catalog refs) to satisfy third-party peer dependency ranges when no root-level dependency exists to pin.
 - [zod v4 + @hookform/resolvers mismatch](zod-v4-hookform-resolvers.md) — `@hookform/resolvers@^3.x` mishandles zod v4 errors, crashing forms mid-typing; needs `^5.x`.
+- [Orval query hooks require explicit queryKey when using `enabled`](orval-query-enabled-requires-querykey.md) — passing `{query:{enabled}}` alone to a generated hook fails typecheck; also pass `getXxxQueryKey(...)`.
