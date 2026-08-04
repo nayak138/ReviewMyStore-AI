@@ -11,6 +11,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Star, Sparkles, Copy, Check, ExternalLink, RefreshCw, AlertTriangle, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { objectUrl } from "@/lib/imageUtils";
 
 function getOrCreateSessionId(businessSlug: string, campaignSlug: string): string {
   const key = `rms_review_session_${businessSlug}_${campaignSlug}`;
@@ -126,7 +127,7 @@ export default function CustomerReview() {
         style={{ backgroundColor: brandColor ? `${brandColor}22` : undefined }}
       >
         {business.coverImageUrl && (
-          <img src={business.coverImageUrl} alt="" className="w-full h-full object-cover" />
+          <img src={objectUrl(business.coverImageUrl)} alt="" className="w-full h-full object-cover" />
         )}
       </div>
 
@@ -136,7 +137,7 @@ export default function CustomerReview() {
           <div className="flex flex-col items-center text-center mb-6">
             <div className="w-24 h-24 rounded-2xl border-4 border-background bg-card shadow-md overflow-hidden flex items-center justify-center">
               {business.logoUrl ? (
-                <img src={business.logoUrl} alt={business.name} className="w-full h-full object-cover" />
+                <img src={objectUrl(business.logoUrl)} alt={business.name} className="w-full h-full object-cover" />
               ) : (
                 <span className="text-2xl font-bold" style={{ color: brandColor }}>
                   {business.name.charAt(0)}

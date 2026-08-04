@@ -1,8 +1,10 @@
 import { useState, useCallback } from "react";
 import { useUpload } from "@workspace/object-storage-web";
 import { Button } from "@/components/ui/button";
-import { UploadCloud, X, Loader2, Image as ImageIcon } from "lucide-react";
+import { UploadCloud, X, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { compressImage, objectUrl } from "@/lib/imageUtils";
+import { useToast } from "@/hooks/use-toast";
 
 interface FileUploadProps {
   value?: string | null;
@@ -15,14 +17,33 @@ interface FileUploadProps {
 export function FileUpload({ value, onChange, className, placeholder = "Upload an image", accept = "image/*" }: FileUploadProps) {
   const { uploadFile, isUploading, progress } = useUpload();
   const [dragActive, setDragActive] = useState(false);
+  const [processing, setProcessing] = useState(false);
+  const { toast } = useToast();
 
   const handleFile = async (file: File) => {
     if (!file) return;
-    const response = await uploadFile(file);
-    if (response) {
-      onChange(response.objectPath);
+    setProcessing(true);
+    try {
+      // All uploads are capped at 24 KB — compress client-side before upload.
+      const compressed = await compressImage(file);
+      const response = await uploadFile(compressed);
+      if (response) {
+        onChange(response.objectPath);
+      } else {
+        toast({ title: "Upload failed. Please try again.", variant: "destructive" });
+      }
+    } catch (err) {
+      toast({
+        title: "Couldn't upload this image",
+        description: err instanceof Error ? err.message : undefined,
+        variant: "destructive",
+      });
+    } finally {
+      setProcessing(false);
     }
   };
+
+  const busy = isUploading || processing;
 
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -43,12 +64,8 @@ export function FileUpload({ value, onChange, className, placeholder = "Upload a
   if (value) {
     return (
       <div className={cn("relative rounded-lg overflow-hidden border border-border group bg-card", className)}>
-        {/* We assume value is a valid url path on the same origin or full URL if configured. 
-            Since objectPath is returned from the API, usually it's /api/storage/uploads/...
-            Wait, the prompt says "use result.objectPath as the value to store... do not try to construct a full URL".
-            We'll just render it as src. If it's a relative path, the browser will resolve it. */}
         <img 
-          src={value} 
+          src={objectUrl(value)} 
           alt="Uploaded content" 
           className="w-full h-full object-cover"
         />
@@ -72,7 +89,7 @@ export function FileUpload({ value, onChange, className, placeholder = "Upload a
       className={cn(
         "relative rounded-lg border-2 border-dashed transition-colors flex flex-col items-center justify-center p-6 bg-card text-center overflow-hidden cursor-pointer hover:border-primary/50",
         dragActive ? "border-primary bg-primary/5" : "border-border",
-        isUploading ? "pointer-events-none" : "",
+        busy ? "pointer-events-none" : "",
         className
       )}
       onDragEnter={(e) => { e.preventDefault(); e.stopPropagation(); setDragActive(true); }}
@@ -87,17 +104,19 @@ export function FileUpload({ value, onChange, className, placeholder = "Upload a
         accept={accept}
         className="hidden"
         onChange={handleChange}
-        disabled={isUploading}
+        disabled={busy}
       />
       
-      {isUploading ? (
+      {busy ? (
         <div className="flex flex-col items-center justify-center w-full">
           <Loader2 className="w-8 h-8 text-primary animate-spin mb-4" />
-          <div className="text-sm font-medium text-foreground">Uploading...</div>
+          <div className="text-sm font-medium text-foreground">
+            {isUploading ? "Uploading..." : "Optimizing image..."}
+          </div>
           <div className="w-full max-w-[200px] h-2 bg-secondary rounded-full mt-3 overflow-hidden">
             <div 
               className="h-full bg-primary transition-all duration-300"
-              style={{ width: `${progress}%` }}
+              style={{ width: `${isUploading ? progress : 15}%` }}
             />
           </div>
         </div>
@@ -107,7 +126,7 @@ export function FileUpload({ value, onChange, className, placeholder = "Upload a
             <UploadCloud className="w-6 h-6" />
           </div>
           <p className="text-sm font-medium text-foreground mb-1">{placeholder}</p>
-          <p className="text-xs text-muted-foreground">Click or drag and drop</p>
+          <p className="text-xs text-muted-foreground">Click or drag and drop — auto-compressed to 24 KB</p>
         </>
       )}
     </div>

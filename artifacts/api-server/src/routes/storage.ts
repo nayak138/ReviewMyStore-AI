@@ -36,6 +36,16 @@ router.post(
     try {
       const { name, size, contentType } = parsed.data;
 
+      // Hard cap: all uploaded images must be under 24 KB (the client
+      // compresses before upload; this is the server-side backstop).
+      const MAX_UPLOAD_BYTES = 24 * 1024;
+      if (size > MAX_UPLOAD_BYTES) {
+        res.status(400).json({
+          error: `File too large: uploads are limited to ${MAX_UPLOAD_BYTES / 1024} KB`,
+        });
+        return;
+      }
+
       const uploadURL = await objectStorageService.getObjectEntityUploadURL();
       const objectPath =
         objectStorageService.normalizeObjectEntityPath(uploadURL);

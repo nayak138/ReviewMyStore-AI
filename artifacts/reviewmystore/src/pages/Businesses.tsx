@@ -44,6 +44,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
 import { FileUpload } from "@/components/ui/file-upload";
+import { objectUrl } from "@/lib/imageUtils";
 import { BusinessSearch } from "@/components/business-search";
 import { placePhotoUrl } from "@/lib/selected-place";
 import { useToast } from "@/hooks/use-toast";
@@ -415,7 +416,7 @@ export default function Businesses() {
                 {/* Cover Image Area */}
                 <div className="h-24 w-full bg-secondary relative overflow-hidden shrink-0">
                   {business.coverImageUrl ? (
-                    <img src={business.coverImageUrl} alt="Cover" className="w-full h-full object-cover" />
+                    <img src={objectUrl(business.coverImageUrl)} alt="Cover" className="w-full h-full object-cover" />
                   ) : business.brandColor ? (
                     <div className="w-full h-full" style={{ backgroundColor: business.brandColor, opacity: 0.2 }} />
                   ) : null}
@@ -438,7 +439,7 @@ export default function Businesses() {
                   <div className="flex justify-between items-start -mt-8 mb-3">
                     <div className="w-16 h-16 rounded-xl border-4 border-card bg-background flex items-center justify-center overflow-hidden shadow-sm">
                       {business.logoUrl ? (
-                        <img src={business.logoUrl} alt={business.name} className="w-full h-full object-cover" />
+                        <img src={objectUrl(business.logoUrl)} alt={business.name} className="w-full h-full object-cover" />
                       ) : (
                         <Store className="w-6 h-6 text-muted-foreground" />
                       )}
