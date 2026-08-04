@@ -34,6 +34,16 @@ interface AppLayoutProps {
 
 export function AppLayout({ children, title }: AppLayoutProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
+  const toggleSidebar = () => {
+    // One hamburger for both worlds: overlay drawer on mobile, collapse on desktop.
+    if (window.matchMedia("(min-width: 768px)").matches) {
+      setSidebarCollapsed((v) => !v);
+    } else {
+      setMobileMenuOpen(true);
+    }
+  };
   const [location, setLocation] = useLocation();
   const { signOut } = useClerk();
 
@@ -50,8 +60,10 @@ export function AppLayout({ children, title }: AppLayoutProps) {
 
       {/* Sidebar */}
       <aside className={cn(
-        "fixed inset-y-0 left-0 z-50 w-64 border-r border-border bg-card flex flex-col transition-transform duration-200 ease-in-out md:relative",
-        mobileMenuOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
+        "fixed inset-y-0 left-0 z-50 w-64 border-r border-border bg-card flex flex-col transition-[transform,margin] duration-200 ease-in-out md:relative",
+        mobileMenuOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0",
+        // Desktop collapse: slide out via negative margin so the content area reclaims the space.
+        sidebarCollapsed && "md:-ml-64 md:-translate-x-full"
       )}>
         <div className="h-16 flex items-center justify-between px-6 border-b border-border">
           <div className="flex items-center gap-2">
@@ -111,7 +123,11 @@ export function AppLayout({ children, title }: AppLayoutProps) {
       <main className="flex-1 flex flex-col min-w-0 h-[100dvh] overflow-hidden bg-background">
         <header className="h-16 shrink-0 flex items-center justify-between px-4 md:px-8 border-b border-border bg-card/50 backdrop-blur-md sticky top-0 z-10">
           <div className="flex items-center gap-3">
-            <button className="md:hidden text-muted-foreground hover:text-foreground" onClick={() => setMobileMenuOpen(true)}>
+            <button
+              className="text-muted-foreground hover:text-foreground"
+              onClick={toggleSidebar}
+              aria-label="Toggle sidebar"
+            >
               <Menu className="w-5 h-5" />
             </button>
             <h1 className="text-lg font-semibold text-foreground">{title}</h1>
