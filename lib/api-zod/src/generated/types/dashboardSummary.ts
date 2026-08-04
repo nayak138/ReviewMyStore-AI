@@ -6,13 +6,18 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { RecentActivityItem } from './recentActivityItem';
+import type { TopCampaignItem } from './topCampaignItem';
 
 export interface DashboardSummary {
   totalBusinesses: number;
   activeBusinesses: number;
   activeCampaigns: number;
   qrScans: number;
+  nfcTaps: number;
+  scansToday: number;
+  googleRedirects: number;
   aiReviewsGenerated: number;
   needsOnboarding: boolean;
+  topCampaigns: TopCampaignItem[];
   recentActivity: RecentActivityItem[];
 }

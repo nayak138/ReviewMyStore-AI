@@ -30,6 +30,9 @@ async function buildAll() {
     external: [
       "*.node",
       "sharp",
+      // pdfkit's dep chain (fontkit -> brotli) requires @swc/helpers at runtime,
+      // which breaks when bundled; keep it external and resolved from node_modules.
+      "pdfkit",
       "better-sqlite3",
       "sqlite3",
       "canvas",

@@ -44,7 +44,7 @@ Multi-tenant SaaS that helps local businesses collect more Google Reviews using 
 
 ## Product
 
-Sprint 1 (current): project scaffolding, Clerk authentication, Organization/User data model, RBAC (SUPER_ADMIN vs OWNER), public marketing page, branded sign-in/sign-up, and an authenticated dashboard shell. Businesses, Campaigns, AI review generation, QR codes, NFC devices, Analytics, and Orders are future sprints — not yet built.
+Sprints 1–4 (built): project scaffolding, Clerk authentication, Organization/User data model, RBAC (SUPER_ADMIN vs OWNER), public marketing page, branded sign-in/sign-up, authenticated dashboard; Businesses & Campaigns CRUD with Google Places lookup; public customer review page with AI review generation (keyword-driven, generation limits); QR code system (PNG/SVG/print-ready 4×6" PDF per campaign, dynamic short links `/r/{code}`); NFC device management (software-only: register, assign/reassign/unassign, ACTIVE/DISABLED lifecycle — taps only count when a device is ACTIVE); analytics foundation (append-only `scan_events` logging QR scans, NFC taps, and Google click-throughs with UA/geo/referrer); dashboard with real metrics (scans, taps, redirects, top campaigns, recent activity). Future sprints: Advanced Analytics/charts, Orders, Billing/Stripe, Teams, Notifications, Super Admin.
 
 ## User preferences
 

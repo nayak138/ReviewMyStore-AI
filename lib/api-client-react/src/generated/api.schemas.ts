@@ -430,13 +430,25 @@ export interface RecentActivityItem {
   createdAt: string;
 }
 
+export interface TopCampaignItem {
+  /** @nullable */
+  campaignId: string | null;
+  campaignName: string;
+  businessName: string;
+  scans: number;
+}
+
 export interface DashboardSummary {
   totalBusinesses: number;
   activeBusinesses: number;
   activeCampaigns: number;
   qrScans: number;
+  nfcTaps: number;
+  scansToday: number;
+  googleRedirects: number;
   aiReviewsGenerated: number;
   needsOnboarding: boolean;
+  topCampaigns: TopCampaignItem[];
   recentActivity: RecentActivityItem[];
 }
 
@@ -453,6 +465,120 @@ export interface UploadUrlResponse {
   uploadURL: string;
   objectPath: string;
   metadata?: UploadUrlRequest;
+}
+
+export interface CampaignQrInfo {
+  code: string;
+  /** Relative short-link path (e.g. /r/abc123) the QR encodes, resolved against the web app origin. */
+  redirectPath: string;
+  campaignId: string;
+  campaignName: string;
+  businessName: string;
+}
+
+export type NfcDeviceStatus = typeof NfcDeviceStatus[keyof typeof NfcDeviceStatus];
+
+
+export const NfcDeviceStatus = {
+  AVAILABLE: 'AVAILABLE',
+  ASSIGNED: 'ASSIGNED',
+  ACTIVE: 'ACTIVE',
+  DISABLED: 'DISABLED',
+} as const;
+
+export interface NfcDevice {
+  id: string;
+  uid: string;
+  name: string;
+  /** @nullable */
+  businessId: string | null;
+  /** @nullable */
+  businessName: string | null;
+  /** @nullable */
+  campaignId: string | null;
+  /** @nullable */
+  campaignName: string | null;
+  status: NfcDeviceStatus;
+  /**
+     * Relative short-link path (e.g. /r/abc123) this device points at; null until first assigned.
+     * @nullable
+     */
+  redirectPath: string | null;
+  /** @nullable */
+  assignedAt: string | null;
+  /** @nullable */
+  notes: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface NfcDeviceListResult {
+  devices: NfcDevice[];
+}
+
+export interface NfcDeviceCreateInput {
+  /**
+     * @minLength 1
+     * @maxLength 120
+     */
+  uid: string;
+  /**
+     * @minLength 1
+     * @maxLength 120
+     */
+  name: string;
+  /**
+     * @maxLength 2000
+     * @nullable
+     */
+  notes?: string | null;
+}
+
+export interface NfcDeviceUpdateInput {
+  /**
+     * @minLength 1
+     * @maxLength 120
+     */
+  uid?: string;
+  /**
+     * @minLength 1
+     * @maxLength 120
+     */
+  name?: string;
+  /**
+     * @maxLength 2000
+     * @nullable
+     */
+  notes?: string | null;
+}
+
+export interface NfcDeviceAssignInput {
+  campaignId: string;
+}
+
+export type NfcDeviceStatusInputStatus = typeof NfcDeviceStatusInputStatus[keyof typeof NfcDeviceStatusInputStatus];
+
+
+export const NfcDeviceStatusInputStatus = {
+  ACTIVE: 'ACTIVE',
+  DISABLED: 'DISABLED',
+} as const;
+
+export interface NfcDeviceStatusInput {
+  status: NfcDeviceStatusInputStatus;
+}
+
+export interface RedirectResolveRequest {
+  /**
+     * @maxLength 2000
+     * @nullable
+     */
+  referrer?: string | null;
+}
+
+export interface RedirectResolveResult {
+  /** Relative path of the public review page to redirect to. */
+  targetPath: string;
 }
 
 export type ListBusinessesParams = {
@@ -473,5 +599,10 @@ input: string;
 
 export type GetPlacePhotoParams = {
 name: string;
+};
+
+export type ListNfcDevicesParams = {
+businessId?: string;
+campaignId?: string;
 };
 

@@ -4,3 +4,6 @@ export * from "./businesses";
 export * from "./campaigns";
 export * from "./keywords";
 export * from "./reviewSessions";
+export * from "./nfcDevices";
+export * from "./redirectLinks";
+export * from "./scanEvents";

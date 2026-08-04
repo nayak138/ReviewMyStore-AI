@@ -24,6 +24,12 @@ tags:
     description: Server-side proxy for Google Places search (pre-registration business lookup)
   - name: public-review
     description: Unauthenticated endpoints backing the public customer review page
+  - name: qr
+    description: Campaign QR code metadata and printable asset downloads
+  - name: nfc
+    description: NFC device registration, assignment, and lifecycle management
+  - name: redirect
+    description: Public dynamic redirect resolution for QR codes and NFC devices
   - name: Storage
     description: Object storage upload and serving endpoints.
 paths:
@@ -1019,6 +1025,411 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  /v1/campaigns/{id}/qr:
+    get:
+      operationId: getCampaignQr
+      tags: [qr]
+      summary: Get (lazily creating) the campaign's QR redirect code and URLs
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: QR code info for the campaign
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CampaignQrInfo"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Campaign not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /v1/campaigns/{id}/qr/download/{format}:
+    get:
+      operationId: downloadCampaignQr
+      tags: [qr]
+      summary: Download the campaign QR code as a printable asset
+      description: >
+        Returns the QR code as a binary download. PNG is high resolution
+        (1200px), SVG is vector, and PDF is a print-ready 4in x 6in page
+        suitable for standees.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: format
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [png, svg, pdf]
+      responses:
+        "200":
+          description: Binary QR asset
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Campaign not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /v1/nfc-devices:
+    get:
+      operationId: listNfcDevices
+      tags: [nfc]
+      summary: List NFC devices for the caller's organization
+      parameters:
+        - name: businessId
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+        - name: campaignId
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: List of NFC devices
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NfcDeviceListResult"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    post:
+      operationId: registerNfcDevice
+      tags: [nfc]
+      summary: Register a new NFC device
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NfcDeviceCreateInput"
+      responses:
+        "201":
+          description: NFC device registered
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NfcDevice"
+        "400":
+          description: Invalid request body
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: A device with this UID is already registered
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /v1/nfc-devices/{id}:
+    patch:
+      operationId: updateNfcDevice
+      tags: [nfc]
+      summary: Update an NFC device's name, UID, or notes
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NfcDeviceUpdateInput"
+      responses:
+        "200":
+          description: NFC device updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NfcDevice"
+        "400":
+          description: Invalid request body
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: NFC device not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: A device with this UID is already registered
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      operationId: deleteNfcDevice
+      tags: [nfc]
+      summary: Delete an NFC device
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: NFC device deleted
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: NFC device not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /v1/nfc-devices/{id}/assign:
+    post:
+      operationId: assignNfcDevice
+      tags: [nfc]
+      summary: Assign (or reassign) an NFC device to a campaign
+      description: >
+        Assigning derives the business from the campaign, sets status to
+        ASSIGNED, stamps assignedAt, and ensures the device has an active
+        redirect link. Reassigning points the existing redirect link at the
+        new campaign — no re-writing of the physical tag is needed.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NfcDeviceAssignInput"
+      responses:
+        "200":
+          description: NFC device assigned
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NfcDevice"
+        "400":
+          description: Invalid request body
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: NFC device or campaign not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /v1/nfc-devices/{id}/unassign:
+    post:
+      operationId: unassignNfcDevice
+      tags: [nfc]
+      summary: Remove an NFC device's campaign assignment
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: NFC device unassigned
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NfcDevice"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: NFC device not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /v1/nfc-devices/{id}/status:
+    post:
+      operationId: setNfcDeviceStatus
+      tags: [nfc]
+      summary: Activate or disable an NFC device
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NfcDeviceStatusInput"
+      responses:
+        "200":
+          description: NFC device status updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NfcDevice"
+        "400":
+          description: Invalid status transition
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: NFC device not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /v1/public/redirect/{code}/resolve:
+    post:
+      operationId: resolveRedirect
+      tags: [redirect]
+      summary: Resolve a QR/NFC short code to its review page URL, logging a scan event
+      description: >
+        Unauthenticated. Called by the /r/{code} frontend route. Logs a
+        QR_SCAN or NFC_TAP event (device/browser/OS parsed from the
+        User-Agent, geo from proxy headers when available) and returns the
+        relative review page path to redirect to.
+      parameters:
+        - name: code
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RedirectResolveRequest"
+      responses:
+        "200":
+          description: Redirect target resolved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RedirectResolveResult"
+        "404":
+          description: Unknown, inactive, or disabled code
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /v1/public/review/{businessSlug}/{campaignSlug}/track-redirect:
+    post:
+      operationId: trackGoogleRedirect
+      tags: [public-review]
+      summary: Log that a customer clicked through to post their review on Google
+      parameters:
+        - name: businessSlug
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: campaignSlug
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Event logged
+        "404":
+          description: Campaign not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /storage/uploads/request-url:
     post:
       tags: [Storage]
@@ -1849,10 +2260,20 @@ components:
           type: integer
         qrScans:
           type: integer
+        nfcTaps:
+          type: integer
+        scansToday:
+          type: integer
+        googleRedirects:
+          type: integer
         aiReviewsGenerated:
           type: integer
         needsOnboarding:
           type: boolean
+        topCampaigns:
+          type: array
+          items:
+            $ref: "#/components/schemas/TopCampaignItem"
         recentActivity:
           type: array
           items:
@@ -1862,8 +2283,12 @@ components:
         - activeBusinesses
         - activeCampaigns
         - qrScans
+        - nfcTaps
+        - scansToday
+        - googleRedirects
         - aiReviewsGenerated
         - needsOnboarding
+        - topCampaigns
         - recentActivity
 
     UploadUrlRequest:
@@ -1890,3 +2315,172 @@ components:
           type: string
         metadata:
           $ref: "#/components/schemas/UploadUrlRequest"
+
+    TopCampaignItem:
+      type: object
+      properties:
+        campaignId:
+          type: ["string", "null"]
+        campaignName:
+          type: string
+        businessName:
+          type: string
+        scans:
+          type: integer
+      required:
+        - campaignId
+        - campaignName
+        - businessName
+        - scans
+
+    CampaignQrInfo:
+      type: object
+      properties:
+        code:
+          type: string
+        redirectPath:
+          type: string
+          description: Relative short-link path (e.g. /r/abc123) the QR encodes, resolved against the web app origin.
+        campaignId:
+          type: string
+          format: uuid
+        campaignName:
+          type: string
+        businessName:
+          type: string
+      required:
+        - code
+        - redirectPath
+        - campaignId
+        - campaignName
+        - businessName
+
+    NfcDeviceStatus:
+      type: string
+      enum: [AVAILABLE, ASSIGNED, ACTIVE, DISABLED]
+
+    NfcDevice:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        uid:
+          type: string
+        name:
+          type: string
+        businessId:
+          type: ["string", "null"]
+        businessName:
+          type: ["string", "null"]
+        campaignId:
+          type: ["string", "null"]
+        campaignName:
+          type: ["string", "null"]
+        status:
+          $ref: "#/components/schemas/NfcDeviceStatus"
+        redirectPath:
+          type: ["string", "null"]
+          description: Relative short-link path (e.g. /r/abc123) this device points at; null until first assigned.
+        assignedAt:
+          type: ["string", "null"]
+          format: date-time
+        notes:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - uid
+        - name
+        - businessId
+        - businessName
+        - campaignId
+        - campaignName
+        - status
+        - redirectPath
+        - assignedAt
+        - notes
+        - createdAt
+        - updatedAt
+
+    NfcDeviceListResult:
+      type: object
+      properties:
+        devices:
+          type: array
+          items:
+            $ref: "#/components/schemas/NfcDevice"
+      required:
+        - devices
+
+    NfcDeviceCreateInput:
+      type: object
+      properties:
+        uid:
+          type: string
+          minLength: 1
+          maxLength: 120
+        name:
+          type: string
+          minLength: 1
+          maxLength: 120
+        notes:
+          type: ["string", "null"]
+          maxLength: 2000
+      required:
+        - uid
+        - name
+
+    NfcDeviceUpdateInput:
+      type: object
+      properties:
+        uid:
+          type: string
+          minLength: 1
+          maxLength: 120
+        name:
+          type: string
+          minLength: 1
+          maxLength: 120
+        notes:
+          type: ["string", "null"]
+          maxLength: 2000
+
+    NfcDeviceAssignInput:
+      type: object
+      properties:
+        campaignId:
+          type: string
+          format: uuid
+      required:
+        - campaignId
+
+    NfcDeviceStatusInput:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [ACTIVE, DISABLED]
+      required:
+        - status
+
+    RedirectResolveRequest:
+      type: object
+      properties:
+        referrer:
+          type: ["string", "null"]
+          maxLength: 2000
+
+    RedirectResolveResult:
+      type: object
+      properties:
+        targetPath:
+          type: string
+          description: Relative path of the public review page to redirect to.
+      required:
+        - targetPath

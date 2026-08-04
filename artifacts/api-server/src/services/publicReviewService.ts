@@ -7,6 +7,7 @@ import {
   reviewSessionsTable,
 } from "@workspace/db";
 import { generateReviewText } from "./aiService";
+import { logScanEvent, type RequestMeta } from "./scanEventService";
 
 export class PublicCampaignNotFoundError extends Error {
   constructor(businessSlug: string, campaignSlug: string) {
@@ -149,4 +150,28 @@ export async function generatePublicReview(
     remainingGenerations: MAX_GENERATIONS - nextCount,
     maxGenerations: MAX_GENERATIONS,
   };
+}
+
+/** Logs the end of the funnel: a customer clicked "Copy & Post to Google".
+ * Counted as GOOGLE_REDIRECT so the dashboard can show real click-throughs. */
+export async function trackGoogleRedirect(
+  businessSlug: string,
+  campaignSlug: string,
+  meta: RequestMeta,
+): Promise<void> {
+  const { business, campaign } = await findActivePublicCampaign(
+    businessSlug,
+    campaignSlug,
+  );
+
+  await logScanEvent({
+    eventType: "GOOGLE_REDIRECT",
+    organizationId: business.organizationId,
+    businessId: business.id,
+    businessName: business.name,
+    campaignId: campaign.id,
+    campaignName: campaign.name,
+    redirectSuccess: true,
+    meta,
+  });
 }

@@ -15,6 +15,9 @@ import Onboarding from "./pages/Onboarding";
 import Businesses from "./pages/Businesses";
 import Campaigns from "./pages/Campaigns";
 import CustomerReview from "./pages/CustomerReview";
+import ShortRedirect from "./pages/ShortRedirect";
+import QrCodes from "./pages/QrCodes";
+import NfcDevices from "./pages/NfcDevices";
 import NotFound from "./pages/not-found";
 
 const queryClient = new QueryClient({
@@ -155,12 +158,16 @@ function AppRouter() {
 
       {/* Public customer-facing review page */}
       <Route path="/review/:businessSlug/:campaignSlug" component={CustomerReview} />
+      {/* Public QR/NFC short-link redirect */}
+      <Route path="/r/:code" component={ShortRedirect} />
 
       {/* Protected Routes */}
       <Route path="/dashboard" component={Dashboard} />
       <Route path="/onboarding" component={Onboarding} />
       <Route path="/businesses" component={Businesses} />
       <Route path="/campaigns" component={Campaigns} />
+      <Route path="/qr-codes" component={QrCodes} />
+      <Route path="/nfc-devices" component={NfcDevices} />
       
       <Route component={NotFound} />
     </Switch>

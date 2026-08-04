@@ -61,8 +61,21 @@ export default function CustomerReview() {
     generateReview.mutate({ businessSlug, campaignSlug, data: { sessionId, keywords: selectedKeywords } });
   };
 
-  const handleCopy = async () => {
+  const handleCopy = async (clickedThroughToGoogle = false) => {
     if (!reviewText) return;
+    if (clickedThroughToGoogle) {
+      // Track the Google click-through BEFORE anything async — the browser is
+      // about to navigate away, so use a beacon (survives page unload) rather
+      // than a normal request that unload would cancel.
+      const trackUrl = `${import.meta.env.BASE_URL}api/v1/public/review/${businessSlug}/${campaignSlug}/track-redirect`;
+      try {
+        if (!navigator.sendBeacon?.(trackUrl)) {
+          void fetch(trackUrl, { method: "POST", keepalive: true }).catch(() => {});
+        }
+      } catch {
+        // never block the redirect on tracking
+      }
+    }
     try {
       await navigator.clipboard.writeText(reviewText);
       setCopied(true);
@@ -226,13 +239,13 @@ export default function CustomerReview() {
               <p className="text-foreground leading-relaxed whitespace-pre-wrap">{reviewText}</p>
 
               <div className="flex flex-col sm:flex-row gap-3">
-                <Button variant="outline" className="flex-1" onClick={handleCopy}>
+                <Button variant="outline" className="flex-1" onClick={() => handleCopy()}>
                   {copied ? <Check className="w-4 h-4 mr-2 text-emerald-500" /> : <Copy className="w-4 h-4 mr-2" />}
                   {copied ? "Copied!" : "Copy Review"}
                 </Button>
                 {googleReviewUrl ? (
                   <Button asChild className="flex-1">
-                    <a href={googleReviewUrl} target="_blank" rel="noopener noreferrer" onClick={handleCopy}>
+                    <a href={googleReviewUrl} target="_blank" rel="noopener noreferrer" onClick={() => handleCopy(true)}>
                       Post to Google <ExternalLink className="w-4 h-4 ml-2" />
                     </a>
                   </Button>

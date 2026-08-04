@@ -8,7 +8,9 @@ import {
   TrendingUp,
   Clock,
   ArrowRight,
-  SmartphoneNfc
+  SmartphoneNfc,
+  ExternalLink,
+  Trophy
 } from "lucide-react";
 import { 
   useGetDashboardSummary,
@@ -78,8 +80,16 @@ export default function Dashboard() {
       icon: QrCode,
       color: "text-blue-500",
       bgColor: "bg-blue-500/10",
-      ready: false,
-      label: "Coming soon"
+      ready: true,
+      sub: `${summary?.scansToday ?? 0} today (incl. NFC)`
+    },
+    { 
+      title: "NFC Taps", 
+      value: summary?.nfcTaps ?? 0, 
+      icon: SmartphoneNfc,
+      color: "text-cyan-500",
+      bgColor: "bg-cyan-500/10",
+      ready: true
     },
     { 
       title: "AI Reviews Generated", 
@@ -87,8 +97,15 @@ export default function Dashboard() {
       icon: MessageSquareHeart,
       color: "text-purple-500",
       bgColor: "bg-purple-500/10",
-      ready: false,
-      label: "Coming soon"
+      ready: true
+    },
+    { 
+      title: "Google Redirects", 
+      value: summary?.googleRedirects ?? 0, 
+      icon: ExternalLink,
+      color: "text-rose-500",
+      bgColor: "bg-rose-500/10",
+      ready: true
     },
   ];
 
@@ -113,9 +130,9 @@ export default function Dashboard() {
         </div>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {isLoading ? (
-            Array.from({ length: 5 }).map((_, i) => (
+            Array.from({ length: 8 }).map((_, i) => (
               <Card key={i} className="shadow-sm border-border">
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between mb-4">
@@ -137,11 +154,6 @@ export default function Dashboard() {
                 style={{ animationDelay: `${i * 50}ms` }}
               >
                 <CardContent className="p-6 relative overflow-hidden group">
-                  {!stat.ready && (
-                    <div className="absolute top-2 right-2 px-2 py-0.5 rounded text-[10px] font-semibold bg-secondary text-secondary-foreground z-10">
-                      {stat.label}
-                    </div>
-                  )}
                   
                   <div className="flex items-center justify-between mb-2 relative z-10">
                     <div className="text-sm font-medium text-muted-foreground">{stat.title}</div>
@@ -153,6 +165,9 @@ export default function Dashboard() {
                   <div className={cn("text-3xl font-bold relative z-10", !stat.ready && "text-muted-foreground")}>
                     {stat.value}
                   </div>
+                  {"sub" in stat && stat.sub && (
+                    <div className="text-xs text-muted-foreground mt-1 relative z-10">{stat.sub}</div>
+                  )}
                 </CardContent>
               </Card>
             ))
@@ -218,7 +233,49 @@ export default function Dashboard() {
             </CardContent>
           </Card>
 
-          {/* Setup Guide / Quick Links */}
+          {/* Right column: Top Campaigns + Quick Links */}
+          <div className="space-y-6">
+          <Card className="shadow-sm border-border h-fit">
+            <CardHeader>
+              <CardTitle>Top Performing Campaigns</CardTitle>
+              <CardDescription>Ranked by QR scans and NFC taps.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {isLoading ? (
+                <div className="space-y-3">
+                  {Array.from({ length: 3 }).map((_, i) => (
+                    <Skeleton key={i} className="h-10 w-full" />
+                  ))}
+                </div>
+              ) : summary?.topCampaigns && summary.topCampaigns.length > 0 ? (
+                <div className="space-y-3">
+                  {summary.topCampaigns.map((item, i) => (
+                    <div key={item.campaignId ?? i} className="flex items-center gap-3">
+                      <div className={cn(
+                        "w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0",
+                        i === 0 ? "bg-amber-500/15 text-amber-600 dark:text-amber-400" : "bg-secondary text-muted-foreground"
+                      )}>
+                        {i + 1}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm font-medium truncate">{item.campaignName}</div>
+                        <div className="text-xs text-muted-foreground truncate">{item.businessName}</div>
+                      </div>
+                      <div className="text-sm font-semibold shrink-0">{item.scans}</div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-6 text-center">
+                  <Trophy className="w-6 h-6 text-muted-foreground mb-2" />
+                  <p className="text-sm text-muted-foreground max-w-xs">
+                    No scans yet — print a QR code or activate an NFC device to start collecting data.
+                  </p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
           <Card className="shadow-sm border-border h-fit">
             <CardHeader>
               <CardTitle>Quick Links</CardTitle>
@@ -245,26 +302,29 @@ export default function Dashboard() {
                 </div>
                 <ArrowRight className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
               </Link>
-              <div className="flex items-center gap-3 p-3 rounded-lg border border-border border-dashed opacity-60">
-                <div className="w-8 h-8 rounded bg-secondary text-secondary-foreground flex items-center justify-center shrink-0">
+              <Link href="/qr-codes" className="flex items-center gap-3 p-3 rounded-lg border border-border hover:bg-secondary/50 transition-colors group">
+                <div className="w-8 h-8 rounded bg-blue-500/10 text-blue-500 flex items-center justify-center shrink-0">
                   <QrCode className="w-4 h-4" />
                 </div>
                 <div className="flex-1">
-                  <h4 className="text-sm font-semibold">Print QR Codes</h4>
-                  <p className="text-xs text-muted-foreground">Coming in next sprint</p>
+                  <h4 className="text-sm font-semibold group-hover:text-primary transition-colors">Print QR Codes</h4>
+                  <p className="text-xs text-muted-foreground">Download PNG, SVG & PDF</p>
                 </div>
-              </div>
-              <div className="flex items-center gap-3 p-3 rounded-lg border border-border border-dashed opacity-60">
-                <div className="w-8 h-8 rounded bg-secondary text-secondary-foreground flex items-center justify-center shrink-0">
+                <ArrowRight className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
+              </Link>
+              <Link href="/nfc-devices" className="flex items-center gap-3 p-3 rounded-lg border border-border hover:bg-secondary/50 transition-colors group">
+                <div className="w-8 h-8 rounded bg-cyan-500/10 text-cyan-500 flex items-center justify-center shrink-0">
                   <SmartphoneNfc className="w-4 h-4" />
                 </div>
                 <div className="flex-1">
-                  <h4 className="text-sm font-semibold">Order NFC Cards</h4>
-                  <p className="text-xs text-muted-foreground">Coming in next sprint</p>
+                  <h4 className="text-sm font-semibold group-hover:text-primary transition-colors">Manage NFC Devices</h4>
+                  <p className="text-xs text-muted-foreground">Register & assign tap devices</p>
                 </div>
-              </div>
+                <ArrowRight className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
+              </Link>
             </CardContent>
           </Card>
+          </div>
           
         </div>
       </div>

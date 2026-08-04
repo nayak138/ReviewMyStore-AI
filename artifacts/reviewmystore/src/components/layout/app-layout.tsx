@@ -21,8 +21,8 @@ const NAV_ITEMS = [
   { name: "Dashboard", icon: LayoutDashboard, href: "/dashboard", ready: true },
   { name: "Businesses", icon: Store, href: "/businesses", ready: true },
   { name: "Campaigns", icon: Megaphone, href: "/campaigns", ready: true },
-  { name: "QR Codes", icon: QrCode, href: "/qr-codes", ready: false },
-  { name: "NFC Devices", icon: SmartphoneNfc, href: "/nfc-devices", ready: false },
+  { name: "QR Codes", icon: QrCode, href: "/qr-codes", ready: true },
+  { name: "NFC Devices", icon: SmartphoneNfc, href: "/nfc-devices", ready: true },
   { name: "Analytics", icon: BarChart3, href: "/analytics", ready: false },
   { name: "Orders", icon: ShoppingCart, href: "/orders", ready: false },
 ];

@@ -9,7 +9,9 @@ import {
   RegenerationLimitReachedError,
   generatePublicReview,
   getPublicReviewPage,
+  trackGoogleRedirect,
 } from "../services/publicReviewService";
+import { requestMeta } from "../services/scanEventService";
 import { AIGenerationError } from "../services/aiService";
 
 const router: IRouter = Router();
@@ -84,6 +86,30 @@ router.post(
         res.status(502).json({
           success: false,
           code: "AI_GENERATION_FAILED",
+          message: err.message,
+        });
+        return;
+      }
+      throw err;
+    }
+  },
+);
+
+router.post(
+  "/public/review/:businessSlug/:campaignSlug/track-redirect",
+  async (req, res) => {
+    try {
+      await trackGoogleRedirect(
+        slugParam(req, "businessSlug"),
+        slugParam(req, "campaignSlug"),
+        requestMeta(req),
+      );
+      res.status(204).end();
+    } catch (err) {
+      if (err instanceof PublicCampaignNotFoundError) {
+        res.status(404).json({
+          success: false,
+          code: "NOT_FOUND",
           message: err.message,
         });
         return;
