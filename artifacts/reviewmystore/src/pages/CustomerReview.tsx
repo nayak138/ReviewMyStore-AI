@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, type KeyboardEvent } from "react";
 import { useParams } from "wouter";
 import {
   useGetPublicReviewPage,
@@ -9,10 +9,136 @@ import {
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import { Star, Sparkles, Copy, Check, ExternalLink, RefreshCw, AlertTriangle, Loader2, Globe, Instagram, Facebook, MessageCircle, Phone, IdCard, MapPin } from "lucide-react";
+import { Star, Sparkles, Copy, Check, ExternalLink, RefreshCw, AlertTriangle, Loader2, Globe, Instagram, Facebook, MessageCircle, Phone, IdCard, MapPin, Plus, X, Pencil } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { objectUrl } from "@/lib/imageUtils";
 import { downloadVCard } from "@/lib/vcard";
+
+interface KeywordOption {
+  id: string;
+  label: string;
+}
+
+interface KeywordPickerProps {
+  productKeywords: KeywordOption[];
+  experienceKeywords: KeywordOption[];
+  totalKeywordCount: number;
+  selectedKeywords: string[];
+  toggleKeyword: (label: string) => void;
+  removeKeyword: (label: string) => void;
+  customKeywordInput: string;
+  setCustomKeywordInput: (value: string) => void;
+  addCustomKeyword: () => void;
+  onCustomKeywordKeyDown: (e: KeyboardEvent<HTMLInputElement>) => void;
+}
+
+function KeywordPicker({
+  productKeywords,
+  experienceKeywords,
+  totalKeywordCount,
+  selectedKeywords,
+  toggleKeyword,
+  removeKeyword,
+  customKeywordInput,
+  setCustomKeywordInput,
+  addCustomKeyword,
+  onCustomKeywordKeyDown,
+}: KeywordPickerProps) {
+  const presetLabels = new Set([...productKeywords, ...experienceKeywords].map((k) => k.label));
+  const customSelected = selectedKeywords.filter((k) => !presetLabels.has(k));
+
+  return (
+    <div className="space-y-5">
+      {productKeywords.length > 0 && (
+        <div>
+          <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">Product / Service</h3>
+          <div className="flex flex-wrap gap-2">
+            {productKeywords.map((kw) => (
+              <button
+                key={kw.id}
+                type="button"
+                onClick={() => toggleKeyword(kw.label)}
+                className={cn(
+                  "px-3 py-1.5 rounded-full text-sm border transition-colors",
+                  selectedKeywords.includes(kw.label)
+                    ? "bg-primary text-primary-foreground border-primary"
+                    : "bg-secondary/50 text-foreground border-border hover:bg-secondary",
+                )}
+              >
+                {kw.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {experienceKeywords.length > 0 && (
+        <div>
+          <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">Experience</h3>
+          <div className="flex flex-wrap gap-2">
+            {experienceKeywords.map((kw) => (
+              <button
+                key={kw.id}
+                type="button"
+                onClick={() => toggleKeyword(kw.label)}
+                className={cn(
+                  "px-3 py-1.5 rounded-full text-sm border transition-colors",
+                  selectedKeywords.includes(kw.label)
+                    ? "bg-primary text-primary-foreground border-primary"
+                    : "bg-secondary/50 text-foreground border-border hover:bg-secondary",
+                )}
+              >
+                {kw.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {totalKeywordCount === 0 && (
+        <p className="text-sm text-muted-foreground">No talking points have been set up for this campaign yet.</p>
+      )}
+
+      <div>
+        <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">Add your own</h3>
+        {customSelected.length > 0 && (
+          <div className="flex flex-wrap gap-2 mb-2">
+            {customSelected.map((label) => (
+              <span
+                key={label}
+                className="pl-3 pr-1.5 py-1.5 rounded-full text-sm border bg-primary text-primary-foreground border-primary flex items-center gap-1.5"
+              >
+                {label}
+                <button
+                  type="button"
+                  onClick={() => removeKeyword(label)}
+                  aria-label={`Remove ${label}`}
+                  className="rounded-full hover:bg-primary-foreground/20 p-0.5"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </span>
+            ))}
+          </div>
+        )}
+        <div className="flex gap-2">
+          <input
+            type="text"
+            value={customKeywordInput}
+            onChange={(e) => setCustomKeywordInput(e.target.value)}
+            onKeyDown={onCustomKeywordKeyDown}
+            placeholder="e.g. friendly staff, great value"
+            maxLength={40}
+            className="flex-1 px-3 py-1.5 rounded-full text-sm border border-border bg-secondary/50 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+          />
+          <Button type="button" variant="outline" size="icon" onClick={addCustomKeyword} disabled={!customKeywordInput.trim()} aria-label="Add keyword">
+            <Plus className="w-4 h-4" />
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function getOrCreateSessionId(businessSlug: string, campaignSlug: string): string {
   const key = `rms_review_session_${businessSlug}_${campaignSlug}`;
@@ -37,10 +163,12 @@ export default function CustomerReview() {
   });
 
   const [selectedKeywords, setSelectedKeywords] = useState<string[]>([]);
+  const [customKeywordInput, setCustomKeywordInput] = useState("");
   const [reviewText, setReviewText] = useState<string | null>(null);
   const [remaining, setRemaining] = useState<number | null>(null);
   const [maxGenerations, setMaxGenerations] = useState<number | null>(null);
   const [copied, setCopied] = useState(false);
+  const [isEditingKeywords, setIsEditingKeywords] = useState(false);
 
   const sessionId = useMemo(() => getOrCreateSessionId(businessSlug, campaignSlug), [businessSlug, campaignSlug]);
 
@@ -58,9 +186,30 @@ export default function CustomerReview() {
     setSelectedKeywords((prev) => (prev.includes(label) ? prev.filter((k) => k !== label) : [...prev, label]));
   };
 
+  const removeKeyword = (label: string) => {
+    setSelectedKeywords((prev) => prev.filter((k) => k !== label));
+  };
+
+  const addCustomKeyword = () => {
+    const value = customKeywordInput.trim().slice(0, 40);
+    if (!value) return;
+    setSelectedKeywords((prev) => (prev.some((k) => k.toLowerCase() === value.toLowerCase()) ? prev : [...prev, value]));
+    setCustomKeywordInput("");
+  };
+
+  const handleCustomKeywordKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      addCustomKeyword();
+    }
+  };
+
   const handleGenerate = () => {
     if (selectedKeywords.length === 0) return;
-    generateReview.mutate({ businessSlug, campaignSlug, data: { sessionId, keywords: selectedKeywords } });
+    generateReview.mutate(
+      { businessSlug, campaignSlug, data: { sessionId, keywords: selectedKeywords } },
+      { onSuccess: () => setIsEditingKeywords(false) },
+    );
   };
 
   const handleCopy = async (clickedThroughToGoogle = false) => {
@@ -221,55 +370,18 @@ export default function CustomerReview() {
                 <p className="text-sm text-muted-foreground">Pick a few things — we'll help you write a review in seconds.</p>
               </div>
 
-              {productKeywords.length > 0 && (
-                <div>
-                  <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">Product / Service</h3>
-                  <div className="flex flex-wrap gap-2">
-                    {productKeywords.map((kw) => (
-                      <button
-                        key={kw.id}
-                        type="button"
-                        onClick={() => toggleKeyword(kw.label)}
-                        className={cn(
-                          "px-3 py-1.5 rounded-full text-sm border transition-colors",
-                          selectedKeywords.includes(kw.label)
-                            ? "bg-primary text-primary-foreground border-primary"
-                            : "bg-secondary/50 text-foreground border-border hover:bg-secondary",
-                        )}
-                      >
-                        {kw.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {experienceKeywords.length > 0 && (
-                <div>
-                  <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">Experience</h3>
-                  <div className="flex flex-wrap gap-2">
-                    {experienceKeywords.map((kw) => (
-                      <button
-                        key={kw.id}
-                        type="button"
-                        onClick={() => toggleKeyword(kw.label)}
-                        className={cn(
-                          "px-3 py-1.5 rounded-full text-sm border transition-colors",
-                          selectedKeywords.includes(kw.label)
-                            ? "bg-primary text-primary-foreground border-primary"
-                            : "bg-secondary/50 text-foreground border-border hover:bg-secondary",
-                        )}
-                      >
-                        {kw.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {keywords.length === 0 && (
-                <p className="text-sm text-muted-foreground">No talking points have been set up for this campaign yet.</p>
-              )}
+              <KeywordPicker
+                productKeywords={productKeywords}
+                experienceKeywords={experienceKeywords}
+                totalKeywordCount={keywords.length}
+                selectedKeywords={selectedKeywords}
+                toggleKeyword={toggleKeyword}
+                removeKeyword={removeKeyword}
+                customKeywordInput={customKeywordInput}
+                setCustomKeywordInput={setCustomKeywordInput}
+                addCustomKeyword={addCustomKeyword}
+                onCustomKeywordKeyDown={handleCustomKeywordKeyDown}
+              />
 
               <Button
                 className="w-full"
@@ -330,20 +442,51 @@ export default function CustomerReview() {
                     ? `${remaining} of ${maxGenerations} regenerations left`
                     : ""}
                 </p>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  disabled={!canGenerateMore || generateReview.isPending}
-                  onClick={handleGenerate}
-                >
-                  {generateReview.isPending ? (
-                    <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
-                  ) : (
-                    <RefreshCw className="w-3.5 h-3.5 mr-1.5" />
-                  )}
-                  Regenerate
-                </Button>
+                {canGenerateMore && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    disabled={generateReview.isPending}
+                    onClick={() => setIsEditingKeywords((prev) => !prev)}
+                  >
+                    <Pencil className="w-3.5 h-3.5 mr-1.5" />
+                    {isEditingKeywords ? "Hide keywords" : "Change keywords"}
+                  </Button>
+                )}
               </div>
+
+              {canGenerateMore && isEditingKeywords && (
+                <div className="pt-1 space-y-5">
+                  <KeywordPicker
+                    productKeywords={productKeywords}
+                    experienceKeywords={experienceKeywords}
+                    totalKeywordCount={keywords.length}
+                    selectedKeywords={selectedKeywords}
+                    toggleKeyword={toggleKeyword}
+                    removeKeyword={removeKeyword}
+                    customKeywordInput={customKeywordInput}
+                    setCustomKeywordInput={setCustomKeywordInput}
+                    addCustomKeyword={addCustomKeyword}
+                    onCustomKeywordKeyDown={handleCustomKeywordKeyDown}
+                  />
+                  <Button
+                    className="w-full"
+                    disabled={selectedKeywords.length === 0 || generateReview.isPending}
+                    onClick={handleGenerate}
+                  >
+                    {generateReview.isPending ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" /> Writing your review...
+                      </>
+                    ) : (
+                      <>
+                        <RefreshCw className="w-4 h-4 mr-2" /> Regenerate with these keywords
+                      </>
+                    )}
+                  </Button>
+                </div>
+              )}
+
               {!canGenerateMore && (
                 <p className="text-xs text-center text-muted-foreground">
                   You've used all your regenerations for this review. Feel free to edit the text above before posting.
