@@ -7,7 +7,7 @@ import { buildReviewGenerationPrompt, type ReviewPromptInput } from "./promptSer
  * ever require changing this constant (or promoting it to a DB-backed
  * setting) — never touching call sites in routes or other services.
  */
-const REVIEW_MODEL = "openai/gpt-4o-mini";
+const REVIEW_MODEL = "openai/gpt-5.4-mini";
 
 export class AIGenerationError extends Error {
   constructor(message: string, readonly cause?: unknown) {
