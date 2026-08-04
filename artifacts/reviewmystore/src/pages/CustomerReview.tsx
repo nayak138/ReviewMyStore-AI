@@ -131,7 +131,9 @@ export default function CustomerReview() {
         )}
       </div>
 
-      <div className="flex-1 flex justify-center px-4 -mt-12 sm:-mt-14 pb-16">
+      {/* relative z-10: the cover header above is `position: relative`, so without its own
+          stacking context this content (pulled up via negative margin) would paint behind it. */}
+      <div className="relative z-10 flex-1 flex justify-center px-4 -mt-12 sm:-mt-14 pb-16">
         <div className="w-full max-w-lg">
           {/* Business identity card */}
           <div className="flex flex-col items-center text-center mb-6">

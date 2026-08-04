@@ -435,8 +435,10 @@ export default function Businesses() {
                 </div>
 
                 <div className="p-5 pt-0 flex-1 flex flex-col">
-                  {/* Logo intersecting cover */}
-                  <div className="flex justify-between items-start -mt-8 mb-3">
+                  {/* Logo intersecting cover — needs its own stacking context (relative + z-10),
+                      otherwise the cover's `position: relative` box paints on top of it regardless
+                      of DOM order, since positioned elements always paint after static ones. */}
+                  <div className="relative z-10 flex justify-between items-start -mt-8 mb-3">
                     <div className="w-16 h-16 rounded-xl border-4 border-card bg-background flex items-center justify-center overflow-hidden shadow-sm">
                       {business.logoUrl ? (
                         <img src={objectUrl(business.logoUrl)} alt={business.name} className="w-full h-full object-cover" />
