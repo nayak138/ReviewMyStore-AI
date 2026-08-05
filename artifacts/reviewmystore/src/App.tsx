@@ -2,7 +2,7 @@ import { Switch, Route, Redirect, useLocation, Router as WouterRouter } from 'wo
 import { ClerkProvider, SignIn, SignUp, Show, useClerk } from '@clerk/react';
 import { publishableKeyFromHost } from '@clerk/react/internal';
 import { shadcn } from '@clerk/themes';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, type ReactNode } from 'react';
 import { QueryClient, QueryClientProvider, useQueryClient } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -53,7 +53,7 @@ const clerkAppearance = {
   options: {
     logoPlacement: "inside" as const,
     logoLinkUrl: basePath || "/",
-    logoImageUrl: `${window.location.origin}${basePath}/logo.svg`,
+    logoImageUrl: `${window.location.origin}${basePath}/brand/logo-icon.png`,
   },
   variables: {
     colorPrimary: "hsl(217, 89%, 61%)",
@@ -98,19 +98,56 @@ const clerkAppearance = {
   },
 };
 
+/** Branded two-panel shell for the auth pages: a storefront-blue brand panel
+ * with the full logo lockup + tagline (desktop only), and the Clerk form on
+ * the other side. Collapses to a single stacked column on mobile. */
+function AuthLayout({ children }: { children: ReactNode }) {
+  return (
+    <div className="flex min-h-[100dvh] bg-background">
+      <div className="hidden lg:flex lg:w-1/2 items-center justify-center relative overflow-hidden bg-gradient-to-br from-slate-50 to-slate-100 dark:from-zinc-900 dark:to-zinc-950">
+        <div
+          className="absolute inset-0 opacity-[0.15] blur-3xl"
+          style={{
+            backgroundImage:
+              "radial-gradient(circle at 15% 20%, #4285F4 0, transparent 30%), radial-gradient(circle at 85% 15%, #EA4335 0, transparent 25%), radial-gradient(circle at 20% 85%, #FBBC05 0, transparent 28%), radial-gradient(circle at 85% 80%, #34A853 0, transparent 30%)",
+          }}
+        />
+        <div className="relative z-10 flex flex-col items-center text-center px-12 max-w-md">
+          <img
+            src={`${basePath}/brand/logo-stacked.png`}
+            alt="ReviewMyStore.AI"
+            className="w-full max-w-xs drop-shadow-sm"
+          />
+          <p className="mt-6 text-muted-foreground text-base leading-relaxed">
+            Turn happy customers into 5-star Google reviews — in seconds, not minutes.
+          </p>
+        </div>
+      </div>
+      <div className="flex-1 flex flex-col items-center justify-center px-4 py-12">
+        <img
+          src={`${basePath}/brand/logo-horizontal.png`}
+          alt="ReviewMyStore.AI"
+          className="lg:hidden w-full max-w-[280px] mb-8"
+        />
+        {children}
+      </div>
+    </div>
+  );
+}
+
 function SignInPage() {
   return (
-    <div className="flex min-h-[100dvh] items-center justify-center bg-background px-4 py-12">
+    <AuthLayout>
       <SignIn routing="path" path={`${basePath}/sign-in`} signUpUrl={`${basePath}/sign-up`} />
-    </div>
+    </AuthLayout>
   );
 }
 
 function SignUpPage() {
   return (
-    <div className="flex min-h-[100dvh] items-center justify-center bg-background px-4 py-12">
+    <AuthLayout>
       <SignUp routing="path" path={`${basePath}/sign-up`} signInUrl={`${basePath}/sign-in`} />
-    </div>
+    </AuthLayout>
   );
 }
 

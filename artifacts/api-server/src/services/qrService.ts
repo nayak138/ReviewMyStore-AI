@@ -1,5 +1,12 @@
 import QRCode from "qrcode";
 import PDFDocument from "pdfkit";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
+// The bundled output lives at dist/index.mjs with assets copied alongside it
+// at dist/assets (see build.mjs) — both dev and prod run from dist/.
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const LOGO_ICON_PATH = path.join(__dirname, "assets", "logo-icon.png");
 
 export type QrFormat = "png" | "svg" | "pdf";
 
@@ -31,6 +38,11 @@ export async function generateQrSvg(input: QrAssetInput): Promise<Buffer> {
 
 const INCH = 72; // PDF points per inch
 
+// Google's four brand colors, used as a stripe accent echoing the
+// ReviewMyStore.AI storefront-awning mark. Kept independent of the
+// business's own brandColor, which drives the header band instead.
+const GOOGLE_STRIPE = ["#4285F4", "#EA4335", "#FBBC05", "#34A853"];
+
 /** Print-ready 4in x 6in portrait card for standees: brand-colored header,
  * large centered QR, call-to-action, and the short URL as fallback text. */
 export async function generateQrPdf(input: QrAssetInput): Promise<Buffer> {
@@ -53,13 +65,21 @@ export async function generateQrPdf(input: QrAssetInput): Promise<Buffer> {
     doc.on("error", reject);
   });
 
+  // Four-color stripe accent along the very top, echoing the storefront mark.
+  const stripeHeight = 0.09 * INCH;
+  const stripeWidth = width / GOOGLE_STRIPE.length;
+  GOOGLE_STRIPE.forEach((color, i) => {
+    doc.rect(i * stripeWidth, 0, stripeWidth + 1, stripeHeight).fill(color);
+  });
+
   // Header band
-  doc.rect(0, 0, width, 1.1 * INCH).fill(brand);
+  const headerHeight = 1.15 * INCH;
+  doc.rect(0, stripeHeight, width, headerHeight - stripeHeight).fill(brand);
   doc
     .fillColor("#FFFFFF")
     .font("Helvetica-Bold")
     .fontSize(18)
-    .text(input.businessName, 0.25 * INCH, 0.3 * INCH, {
+    .text(input.businessName, 0.25 * INCH, 0.35 * INCH, {
       width: width - 0.5 * INCH,
       align: "center",
       ellipsis: true,
@@ -68,14 +88,26 @@ export async function generateQrPdf(input: QrAssetInput): Promise<Buffer> {
   doc
     .font("Helvetica")
     .fontSize(11)
-    .text("We'd love your feedback!", 0.25 * INCH, 0.72 * INCH, {
+    .text("We'd love your feedback!", 0.25 * INCH, 0.77 * INCH, {
       width: width - 0.5 * INCH,
       align: "center",
     });
 
-  // QR code, centered
+  // QR code, centered, framed with a thin brand-colored border.
   const qrSize = 2.6 * INCH;
-  doc.image(qrPng, (width - qrSize) / 2, 1.45 * INCH, {
+  const qrY = 1.5 * INCH;
+  const framePad = 0.12 * INCH;
+  doc
+    .roundedRect(
+      (width - qrSize) / 2 - framePad,
+      qrY - framePad,
+      qrSize + framePad * 2,
+      qrSize + framePad * 2,
+      12,
+    )
+    .lineWidth(2)
+    .stroke(brand);
+  doc.image(qrPng, (width - qrSize) / 2, qrY, {
     width: qrSize,
     height: qrSize,
   });
@@ -85,7 +117,7 @@ export async function generateQrPdf(input: QrAssetInput): Promise<Buffer> {
     .fillColor("#111827")
     .font("Helvetica-Bold")
     .fontSize(16)
-    .text("Scan to leave us a review", 0.25 * INCH, 4.3 * INCH, {
+    .text("Scan to leave us a review", 0.25 * INCH, 4.4 * INCH, {
       width: width - 0.5 * INCH,
       align: "center",
     });
@@ -96,7 +128,7 @@ export async function generateQrPdf(input: QrAssetInput): Promise<Buffer> {
     .text(
       `Point your phone camera at the code — it takes less than a minute.`,
       0.4 * INCH,
-      4.62 * INCH,
+      4.72 * INCH,
       { width: width - 0.8 * INCH, align: "center" },
     );
 
@@ -104,17 +136,44 @@ export async function generateQrPdf(input: QrAssetInput): Promise<Buffer> {
   doc
     .fillColor("#9CA3AF")
     .fontSize(8)
-    .text(input.campaignName, 0.25 * INCH, 5.45 * INCH, {
+    .text(input.campaignName, 0.25 * INCH, 5.28 * INCH, {
       width: width - 0.5 * INCH,
       align: "center",
     });
   doc
     .fillColor(brand)
     .fontSize(9)
-    .text(input.url, 0.25 * INCH, 5.62 * INCH, {
+    .text(input.url, 0.25 * INCH, 5.45 * INCH, {
       width: width - 0.5 * INCH,
       align: "center",
     });
+
+  // Footer branding: small storefront mark + "Powered by ReviewMyStore.AI".
+  // Deliberately understated and never implies Google endorsement — the
+  // review flow only ever links out to the business's own Google listing.
+  const brandingY = 5.75 * INCH;
+  const logoSize = 0.22 * INCH;
+  const brandingLabel = "Powered by ReviewMyStore.AI";
+  doc.font("Helvetica").fontSize(8);
+  const labelWidth = doc.widthOfString(brandingLabel);
+  const groupWidth = logoSize + 0.08 * INCH + labelWidth;
+  const groupX = (width - groupWidth) / 2;
+  try {
+    doc.image(LOGO_ICON_PATH, groupX, brandingY, {
+      width: logoSize,
+      height: logoSize,
+    });
+  } catch {
+    // Logo asset missing — footer still reads fine as text-only.
+  }
+  doc
+    .fillColor("#9CA3AF")
+    .text(
+      brandingLabel,
+      groupX + logoSize + 0.08 * INCH,
+      brandingY + logoSize / 2 - 4,
+      { lineBreak: false },
+    );
 
   doc.end();
   return done;

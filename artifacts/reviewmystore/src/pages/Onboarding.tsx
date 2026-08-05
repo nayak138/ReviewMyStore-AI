@@ -207,7 +207,7 @@ export default function Onboarding() {
         
         <div className="relative z-10">
           <div className="flex items-center gap-2 mb-16">
-            <img src={`${import.meta.env.BASE_URL}logo.svg`} alt="Logo" className="w-8 h-8" />
+            <img src={`${import.meta.env.BASE_URL}brand/logo-icon.png`} alt="Logo" className="w-8 h-8 rounded-lg" />
             <span className="font-bold text-xl tracking-tight text-foreground">ReviewMyStore</span>
           </div>
 
@@ -254,7 +254,7 @@ export default function Onboarding() {
       <div className="flex-1 flex flex-col justify-center py-12 px-6 lg:px-16 overflow-y-auto">
         <div className="max-w-xl w-full mx-auto">
           <div className="lg:hidden flex items-center gap-2 mb-8">
-            <img src={`${import.meta.env.BASE_URL}logo.svg`} alt="Logo" className="w-6 h-6" />
+            <img src={`${import.meta.env.BASE_URL}brand/logo-icon.png`} alt="Logo" className="w-6 h-6 rounded-md" />
             <span className="font-bold text-lg tracking-tight">ReviewMyStore</span>
           </div>
 

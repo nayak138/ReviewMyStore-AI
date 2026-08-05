@@ -9,10 +9,16 @@ import {
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import { Star, Sparkles, Copy, Check, ExternalLink, RefreshCw, AlertTriangle, Loader2, Globe, Instagram, Facebook, MessageCircle, Phone, IdCard, MapPin, Plus, X, Pencil } from "lucide-react";
+import { Star, Sparkles, Copy, Check, ExternalLink, RefreshCw, AlertTriangle, Loader2, Globe, Facebook, Phone, IdCard, MapPin, Plus, X, Pencil } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { objectUrl } from "@/lib/imageUtils";
 import { downloadVCard } from "@/lib/vcard";
+
+const socialAssetBase = `${import.meta.env.BASE_URL}social`;
+const WHATSAPP_ICON = `${socialAssetBase}/whatsapp.png`;
+const INSTAGRAM_ICON = `${socialAssetBase}/instagram.png`;
+const GOOGLE_MAPS_ICON = `${socialAssetBase}/google-maps.png`;
+const GOOGLE_REVIEWS_LOGO = `${socialAssetBase}/google-reviews.png`;
 
 interface KeywordOption {
   id: string;
@@ -272,13 +278,22 @@ export default function CustomerReview() {
   const whatsappHref = business.whatsappNumber
     ? `https://wa.me/${business.whatsappNumber.replace(/[^0-9]/g, "")}`
     : null;
-  const socialLinks = [
-    business.website && { key: "website", href: business.website, label: "Website", icon: Globe, className: "bg-blue-500" },
-    business.instagramUrl && { key: "instagram", href: business.instagramUrl, label: "Instagram", icon: Instagram, className: "bg-gradient-to-br from-purple-500 via-pink-500 to-orange-400" },
-    business.facebookUrl && { key: "facebook", href: business.facebookUrl, label: "Facebook", icon: Facebook, className: "bg-blue-600" },
-    whatsappHref && { key: "whatsapp", href: whatsappHref, label: "WhatsApp", icon: MessageCircle, className: "bg-emerald-500" },
-    business.phone && { key: "call", href: `tel:${business.phone}`, label: "Call", icon: Phone, className: "bg-red-500" },
-  ].filter((v): v is { key: string; href: string; label: string; icon: typeof Globe; className: string } => Boolean(v));
+  const directionsHref = business.address
+    ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(business.address)}`
+    : null;
+
+  type SocialLink =
+    | { kind: "icon"; key: string; href: string; label: string; icon: typeof Globe; className: string }
+    | { kind: "image"; key: string; href: string; label: string; image: string };
+
+  const socialLinks: SocialLink[] = [
+    business.website && { kind: "icon", key: "website", href: business.website, label: "Website", icon: Globe, className: "bg-blue-500" },
+    business.instagramUrl && { kind: "image", key: "instagram", href: business.instagramUrl, label: "Instagram", image: INSTAGRAM_ICON },
+    business.facebookUrl && { kind: "icon", key: "facebook", href: business.facebookUrl, label: "Facebook", icon: Facebook, className: "bg-blue-600" },
+    whatsappHref && { kind: "image", key: "whatsapp", href: whatsappHref, label: "WhatsApp", image: WHATSAPP_ICON },
+    directionsHref && { kind: "image", key: "directions", href: directionsHref, label: "Get Directions", image: GOOGLE_MAPS_ICON },
+    business.phone && { kind: "icon", key: "call", href: `tel:${business.phone}`, label: "Call", icon: Phone, className: "bg-red-500" },
+  ].filter((v): v is SocialLink => Boolean(v));
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -345,17 +360,24 @@ export default function CustomerReview() {
 
             {socialLinks.length > 0 && (
               <div className="mt-4 flex items-center justify-center gap-3 rounded-full border border-border bg-card px-4 py-2.5 shadow-sm">
-                {socialLinks.map(({ key, href, label, icon: Icon, className }) => (
+                {socialLinks.map((link) => (
                   <a
-                    key={key}
-                    href={href}
+                    key={link.key}
+                    href={link.href}
                     target="_blank"
                     rel="noopener noreferrer"
-                    aria-label={label}
-                    title={label}
-                    className={cn("w-9 h-9 rounded-full flex items-center justify-center text-white shadow-sm hover:opacity-90 transition-opacity", className)}
+                    aria-label={link.label}
+                    title={link.label}
+                    className={cn(
+                      "w-9 h-9 rounded-full flex items-center justify-center shadow-sm hover:opacity-90 transition-opacity overflow-hidden",
+                      link.kind === "image" ? "bg-transparent" : cn("text-white", link.className),
+                    )}
                   >
-                    <Icon className="w-4 h-4" />
+                    {link.kind === "image" ? (
+                      <img src={link.image} alt="" className="w-full h-full object-cover" />
+                    ) : (
+                      <link.icon className="w-4 h-4" />
+                    )}
                   </a>
                 ))}
               </div>
@@ -421,11 +443,13 @@ export default function CustomerReview() {
                 {googleReviewUrl ? (
                   <Button asChild className="flex-1">
                     <a href={googleReviewUrl} target="_blank" rel="noopener noreferrer" onClick={() => handleCopy(true)}>
+                      <img src={GOOGLE_REVIEWS_LOGO} alt="" className="h-4 mr-2" />
                       Post to Google <ExternalLink className="w-4 h-4 ml-2" />
                     </a>
                   </Button>
                 ) : (
                   <Button className="flex-1" disabled title="Copy your review and paste it into Google manually">
+                    <img src={GOOGLE_REVIEWS_LOGO} alt="" className="h-4 mr-2" />
                     Post to Google <ExternalLink className="w-4 h-4 ml-2" />
                   </Button>
                 )}

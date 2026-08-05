@@ -122,7 +122,7 @@ export default function Marketing() {
       <header className="border-b border-zinc-200 dark:border-zinc-800 sticky top-0 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-md z-50">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <img src={`${import.meta.env.BASE_URL}logo.svg`} alt="ReviewMyStore Logo" className="w-8 h-8" />
+            <img src={`${import.meta.env.BASE_URL}brand/logo-icon.png`} alt="ReviewMyStore Logo" className="w-8 h-8 rounded-lg" />
             <span className="font-semibold text-lg tracking-tight text-zinc-900 dark:text-zinc-50">ReviewMyStore.ai</span>
           </div>
           <div className="flex items-center gap-4">
