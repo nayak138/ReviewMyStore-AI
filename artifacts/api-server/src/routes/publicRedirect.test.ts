@@ -111,3 +111,39 @@ test("different IPs have independent scan rate-limit buckets", async () => {
     "A fresh IP should not be blocked by another IP's exhausted bucket",
   );
 });
+
+test("rate-limited scan IP is unblocked after the window expires", async () => {
+  // Use a dedicated IP so this test's hits don't bleed into other tests.
+  const ip = "10.2.0.9";
+  const realDateNow = Date.now;
+
+  try {
+    // Exhaust the 20-request budget.
+    for (let i = 0; i < 20; i++) {
+      await postResolve("abc123", ip);
+    }
+    const blocked = await postResolve("abc123", ip);
+    assert.equal(
+      blocked.status,
+      429,
+      "21st request should be rate-limited (pre-condition)",
+    );
+
+    // Fast-forward Date.now by 61 s so the rate-limiter sees the window as
+    // expired on the next request.  The rate limiter calls Date.now() on
+    // every invocation, so patching the global is sufficient.
+    const frozenNow = realDateNow();
+    Date.now = () => frozenNow + 61_000;
+
+    // The previously-blocked IP should now be allowed through again.
+    const recovered = await postResolve("abc123", ip);
+    assert.notEqual(
+      recovered.status,
+      429,
+      "Previously-blocked scan IP should be unblocked after the rate-limit window expires",
+    );
+  } finally {
+    // Always restore the real Date.now even if an assertion throws.
+    Date.now = realDateNow;
+  }
+});

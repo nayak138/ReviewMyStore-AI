@@ -192,3 +192,43 @@ test("generate and track-redirect use separate rate-limit buckets per IP", async
     "track-redirect should not be blocked just because generate is exhausted",
   );
 });
+
+// ---------------------------------------------------------------------------
+// Window-expiry recovery tests
+// ---------------------------------------------------------------------------
+
+test("rate-limited tap IP is unblocked after the window expires", async () => {
+  // Use a dedicated IP so this test's hits don't bleed into other tests.
+  const ip = "10.3.0.9";
+  const realDateNow = Date.now;
+
+  try {
+    // Exhaust the 20-request tap budget.
+    for (let i = 0; i < 20; i++) {
+      await postTrackRedirect(ip);
+    }
+    const blocked = await postTrackRedirect(ip);
+    assert.equal(
+      blocked.status,
+      429,
+      "21st request should be rate-limited (pre-condition)",
+    );
+
+    // Fast-forward Date.now by 61 s so the rate-limiter sees the window as
+    // expired on the next request.  The rate limiter calls Date.now() on
+    // every invocation, so patching the global is sufficient.
+    const frozenNow = realDateNow();
+    Date.now = () => frozenNow + 61_000;
+
+    // The previously-blocked IP should now be allowed through again.
+    const recovered = await postTrackRedirect(ip);
+    assert.notEqual(
+      recovered.status,
+      429,
+      "Previously-blocked tap IP should be unblocked after the rate-limit window expires",
+    );
+  } finally {
+    // Always restore the real Date.now even if an assertion throws.
+    Date.now = realDateNow;
+  }
+});
