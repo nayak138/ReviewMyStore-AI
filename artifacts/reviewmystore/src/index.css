@@ -79,7 +79,7 @@
   --popover-foreground: 222 47% 11%;
   --popover-border: 214 32% 91%;
 
-  --primary: 217 89% 61%; /* #4285F4 */
+  --primary: 221 83% 53%; /* Match the deep Google/SaaS blue from mockup */
   --primary-foreground: 0 0% 100%;
 
   --secondary: 210 20% 95%;

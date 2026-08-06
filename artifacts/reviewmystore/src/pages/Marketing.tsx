@@ -1,12 +1,17 @@
 import { useEffect } from "react";
 import { MarketingLayout } from "./marketing/layout";
 import { HeroSection, TrustedBySection } from "./marketing/hero";
-import { FeaturesGrid, ProductShowcase, AiWorkflow } from "./marketing/features";
-import { ReviewInboxSection, AiReplyDemoSection, QrNfcSection, AnalyticsSection } from "./marketing/mockups";
-import { PricingSection, TestimonialsSection, FaqSection, FinalCtaSection } from "./marketing/pricing-faq";
+import { 
+  WhyBusinessesLoveUs, 
+  FeaturesGrid, 
+  HowItWorks, 
+  DashboardShowcase, 
+  CtaBand 
+} from "./marketing/features";
+import { PricingSection, FaqSection } from "./marketing/pricing-faq";
 
 export default function Marketing() {
-  // Support deep links like /#faq from other marketing pages.
+  // Support deep links like /#features from other pages.
   useEffect(() => {
     const id = window.location.hash.slice(1);
     if (id) {
@@ -19,17 +24,13 @@ export default function Marketing() {
     <MarketingLayout>
       <HeroSection />
       <TrustedBySection />
+      <WhyBusinessesLoveUs />
       <FeaturesGrid />
-      <ReviewInboxSection />
-      <AiReplyDemoSection />
-      <QrNfcSection />
-      <AnalyticsSection />
-      <ProductShowcase />
-      <AiWorkflow />
+      <HowItWorks />
+      <DashboardShowcase />
       <PricingSection />
-      <TestimonialsSection />
       <FaqSection />
-      <FinalCtaSection />
+      <CtaBand />
     </MarketingLayout>
   );
 }
