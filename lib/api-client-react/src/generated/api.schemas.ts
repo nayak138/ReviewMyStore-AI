@@ -702,3 +702,4 @@ export type ListNfcDevicesParams = {
 businessId?: string;
 campaignId?: string;
 };
+

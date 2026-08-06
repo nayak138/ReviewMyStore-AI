@@ -13,12 +13,21 @@ export function HeroSection() {
   const [, setLocation] = useLocation();
 
   return (
-    <section className="relative pt-32 pb-16 lg:pt-40 lg:pb-24 overflow-hidden">
+    <section className="relative isolate pt-32 pb-16 lg:pt-40 lg:pb-24 overflow-hidden">
+      {/* Background grid */}
+      <div
+        className="absolute inset-0 pointer-events-none -z-20 [mask-image:radial-gradient(ellipse_65%_55%_at_50%_0%,black_35%,transparent_85%)]"
+        style={{
+          backgroundImage:
+            "linear-gradient(to right, hsl(var(--foreground) / 0.09) 1px, transparent 1px), linear-gradient(to bottom, hsl(var(--foreground) / 0.09) 1px, transparent 1px)",
+          backgroundSize: "48px 48px",
+        }}
+      />
       {/* Background gradients */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[500px] opacity-30 dark:opacity-20 pointer-events-none -z-10"
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[500px] opacity-[0.14] dark:opacity-[0.16] pointer-events-none -z-10"
            style={{ background: "radial-gradient(ellipse at top, hsl(var(--primary)) 0%, transparent 70%)" }} />
-      <div className="absolute top-40 left-0 w-[500px] h-[500px] opacity-20 pointer-events-none -z-10 blur-3xl rounded-full bg-blue-400 dark:bg-blue-600" />
-      <div className="absolute top-20 right-0 w-[500px] h-[500px] opacity-10 pointer-events-none -z-10 blur-3xl rounded-full bg-emerald-400 dark:bg-emerald-600" />
+      <div className="absolute top-40 left-0 w-[500px] h-[500px] opacity-[0.08] dark:opacity-[0.1] pointer-events-none -z-10 blur-3xl rounded-full bg-blue-400 dark:bg-blue-600" />
+      <div className="absolute top-20 right-0 w-[500px] h-[500px] opacity-[0.05] dark:opacity-[0.08] pointer-events-none -z-10 blur-3xl rounded-full bg-emerald-400 dark:bg-emerald-600" />
 
       <div className="container mx-auto px-4 lg:px-8 text-center max-w-5xl">
         <motion.div 
@@ -186,9 +195,16 @@ export function HeroSection() {
   );
 }
 
+const EXAMPLE_SEARCHES = [
+  "The Taj Mahal Palace, Mumbai",
+  "The Peninsula Hong Kong",
+  "The Plaza Hotel, New York",
+];
+
 export function InteractiveSearchSection() {
   const [, setLocation] = useLocation();
   const [selected, setSelected] = useState<PlaceAutocompleteSuggestion | null>(null);
+  const [query, setQuery] = useState("");
 
   const { data: details, isLoading } = useGetPlaceDetails(selected?.placeId ?? "", {
     query: { enabled: !!selected, queryKey: getGetPlaceDetailsQueryKey(selected?.placeId ?? "") },
@@ -225,8 +241,25 @@ export function InteractiveSearchSection() {
             </p>
           </div>
 
+          <p className="text-sm font-medium text-muted-foreground text-center mb-3">Try searching for your business:</p>
+          <div className="flex flex-wrap items-center justify-center gap-2 mb-6">
+            {EXAMPLE_SEARCHES.map((example) => (
+              <button
+                key={example}
+                type="button"
+                onClick={() => setQuery(example)}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-border bg-secondary/60 hover:bg-secondary text-sm font-medium text-foreground transition-colors"
+              >
+                <MapPin className="w-3.5 h-3.5 text-muted-foreground" />
+                {example}
+              </button>
+            ))}
+          </div>
+
           <BusinessSearch
-            placeholder="e.g. Daily Grind Coffee, Austin TX"
+            placeholder="Search for your business on Google..."
+            value={query}
+            onQueryChange={setQuery}
             onSelect={(s) => setSelected(s)}
             inputClassName="h-16 text-lg shadow-inner bg-background border-border"
           />

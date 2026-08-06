@@ -3,19 +3,17 @@ import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { BrandLogo } from "@/components/brand-logo";
 import { useTheme } from "next-themes";
-import { Sun, Moon, Monitor, Menu, X } from "lucide-react";
+import { Sun, Moon, Menu, X } from "lucide-react";
 
 function ThemeToggle() {
-  const { theme, setTheme } = useTheme();
+  const { resolvedTheme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
   
   useEffect(() => setMounted(true), []);
   if (!mounted) return <div className="w-9 h-9" />;
   
   const cycleTheme = () => {
-    if (theme === 'light') setTheme('dark');
-    else if (theme === 'dark') setTheme('system');
-    else setTheme('light');
+    setTheme(resolvedTheme === 'dark' ? 'light' : 'dark');
   };
 
   return (
@@ -26,9 +24,7 @@ function ThemeToggle() {
       className="w-9 h-9 rounded-full relative text-muted-foreground hover:text-foreground"
       aria-label="Toggle theme"
     >
-      {theme === 'light' && <Sun className="w-4 h-4" />}
-      {theme === 'dark' && <Moon className="w-4 h-4" />}
-      {theme === 'system' && <Monitor className="w-4 h-4" />}
+      {resolvedTheme === 'dark' ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
     </Button>
   );
 }

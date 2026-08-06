@@ -109,6 +109,8 @@ export const ListBusinessesResponse = zod.object({
  */
 
 
+
+
 export const createBusinessBodySlugRegExp = new RegExp('^[a-z0-9]+(?:-[a-z0-9]+)*$');
 
 
@@ -207,6 +209,9 @@ export const GetBusinessResponse = zod.object({
 export const UpdateBusinessParams = zod.object({
   "id": zod.uuid()
 })
+
+
+
 
 
 export const updateBusinessBodySlugRegExp = new RegExp('^[a-z0-9]+(?:-[a-z0-9]+)*$');
@@ -450,6 +455,8 @@ export const ListCampaignsResponse = zod.object({
  */
 
 
+
+
 export const CreateCampaignBody = zod.object({
   "businessId": zod.uuid(),
   "name": zod.string().min(1),
@@ -501,6 +508,9 @@ export const GetCampaignResponse = zod.object({
 export const UpdateCampaignParams = zod.object({
   "id": zod.uuid()
 })
+
+
+
 
 
 export const UpdateCampaignBody = zod.object({
@@ -648,6 +658,8 @@ export const CreateKeywordParams = zod.object({
 })
 
 
+
+
 export const CreateKeywordBody = zod.object({
   "label": zod.string().min(1),
   "category": zod.enum(['PRODUCT_SERVICE', 'EXPERIENCE']),
@@ -673,6 +685,8 @@ export const CreateKeywordResponse = zod.object({
 export const UpdateKeywordParams = zod.object({
   "id": zod.uuid()
 })
+
+
 
 
 export const UpdateKeywordBody = zod.object({
@@ -708,6 +722,7 @@ export const DeleteKeywordResponse = zod.void()
  * Public (unauthenticated) — used on the pre-registration business search step. Proxies Google Places Autocomplete so the API key never reaches the browser.
  * @summary Search Google Places by free-text business name/address
  */
+
 
 
 export const AutocompletePlacesQueryParams = zod.object({
@@ -805,6 +820,9 @@ export const GeneratePublicReviewParams = zod.object({
 })
 
 
+
+
+
 export const GeneratePublicReviewBody = zod.object({
   "sessionId": zod.string().min(1),
   "keywords": zod.array(zod.string()).min(1)
@@ -834,6 +852,9 @@ export const createDemoRequestBodyLocationsMax = 50;
 export const createDemoRequestBodyMessageMax = 2000;
 
 export const createDemoRequestBodyWebsiteMax = 200;
+
+
+
 export const CreateDemoRequestBody = zod.object({
   "name": zod.string().min(1).max(createDemoRequestBodyNameMax),
   "email": zod.email().max(createDemoRequestBodyEmailMax),
@@ -963,6 +984,7 @@ export const registerNfcDeviceBodyNameMax = 120;
 export const registerNfcDeviceBodyNotesMax = 2000;
 
 
+
 export const RegisterNfcDeviceBody = zod.object({
   "uid": zod.string().min(1).max(registerNfcDeviceBodyUidMax),
   "name": zod.string().min(1).max(registerNfcDeviceBodyNameMax),
@@ -998,6 +1020,7 @@ export const updateNfcDeviceBodyUidMax = 120;
 export const updateNfcDeviceBodyNameMax = 120;
 
 export const updateNfcDeviceBodyNotesMax = 2000;
+
 
 
 export const UpdateNfcDeviceBody = zod.object({
@@ -1125,6 +1148,7 @@ export const ResolveRedirectParams = zod.object({
 export const resolveRedirectBodyReferrerMax = 2000;
 
 
+
 export const ResolveRedirectBody = zod.object({
   "referrer": zod.string().max(resolveRedirectBodyReferrerMax).nullish()
 })
@@ -1152,11 +1176,18 @@ export const TrackGoogleRedirectResponse = zod.void()
  */
 
 
+
+
+
 export const RequestUploadUrlBody = zod.object({
   "name": zod.string().min(1),
   "size": zod.int().min(1),
   "contentType": zod.string().min(1)
 })
+
+
+
+
 
 
 export const RequestUploadUrlResponse = zod.object({
@@ -1188,4 +1219,5 @@ export const GetStorageObjectParams = zod.object({
 })
 
 export const GetStorageObjectResponse = zod.unknown()
+
 

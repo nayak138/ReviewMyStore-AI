@@ -10,6 +10,9 @@ interface BusinessSearchProps {
   inputClassName?: string;
   autoFocus?: boolean;
   onSelect: (suggestion: PlaceAutocompleteSuggestion) => void;
+  /** Optional controlled query text — lets a parent (e.g. example chips) fill the box. */
+  value?: string;
+  onQueryChange?: (value: string) => void;
 }
 
 /**
@@ -24,8 +27,15 @@ export function BusinessSearch({
   inputClassName,
   autoFocus,
   onSelect,
+  value,
+  onQueryChange,
 }: BusinessSearchProps) {
-  const [query, setQuery] = useState("");
+  const [internalQuery, setInternalQuery] = useState("");
+  const query = value !== undefined ? value : internalQuery;
+  const setQuery = (next: string) => {
+    if (onQueryChange) onQueryChange(next);
+    else setInternalQuery(next);
+  };
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [isOpen, setIsOpen] = useState(false);
   const sessionTokenRef = useRef<string>(crypto.randomUUID());
