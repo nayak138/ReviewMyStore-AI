@@ -184,3 +184,39 @@ test("different IPs have independent rate-limit buckets", async () => {
     "A fresh IP should not be blocked by another IP's exhausted bucket",
   );
 });
+
+test("rate-limited IP is unblocked after the window expires", async () => {
+  // Use a dedicated IP so this test's hits don't bleed into other tests.
+  const ip = "10.1.0.7";
+  const realDateNow = Date.now;
+
+  try {
+    // Exhaust the 40-request budget.
+    for (let i = 0; i < 40; i++) {
+      await getAutocomplete("test query", ip);
+    }
+    const blocked = await getAutocomplete("test query", ip);
+    assert.equal(
+      blocked.status,
+      429,
+      "41st request should be rate-limited (pre-condition)",
+    );
+
+    // Fast-forward Date.now by 61 s so the rate-limiter sees the window as
+    // expired on the next request. The rate limiter calls Date.now() on
+    // every invocation, so patching the global is sufficient.
+    const frozenNow = realDateNow();
+    Date.now = () => frozenNow + 61_000;
+
+    // The previously-blocked IP should now be allowed through again.
+    const recovered = await getAutocomplete("test query", ip);
+    assert.notEqual(
+      recovered.status,
+      429,
+      "Previously-blocked IP should be unblocked after the rate-limit window expires",
+    );
+  } finally {
+    // Always restore the real Date.now even if an assertion throws.
+    Date.now = realDateNow;
+  }
+});
