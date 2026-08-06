@@ -229,7 +229,7 @@ export function InteractiveSearchSection() {
   };
 
   return (
-    <section className="py-12 relative z-10 -mt-10 mb-20">
+    <section className="relative z-10 pt-24 pb-12">
       <div className="container mx-auto px-4 max-w-3xl">
         <div className="bg-card rounded-2xl border border-border shadow-2xl p-6 lg:p-10 backdrop-blur-xl">
           <div className="text-center mb-8">
