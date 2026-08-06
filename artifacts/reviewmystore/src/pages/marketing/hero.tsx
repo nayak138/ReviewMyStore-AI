@@ -186,9 +186,16 @@ export function HeroSection() {
                       disabled={!details} 
                       onClick={handleContinue}
                     >
-                      {isLoading ? "Loading business..." : "Claim this business"}
+                      {isLoading ? "Loading business..." : "Get Started"}
                       <ArrowRight className="w-4 h-4 ml-2" />
                     </Button>
+                    <button
+                      type="button"
+                      onClick={() => { setSelected(null); setQuery(""); }}
+                      className="mt-3 w-full text-center text-xs font-semibold text-blue-600 underline-offset-4 transition-colors hover:text-blue-700 hover:underline dark:text-blue-400 dark:hover:text-blue-300"
+                    >
+                      Can't find your business?
+                    </button>
                       </motion.div>
                     )}
                   </div>
