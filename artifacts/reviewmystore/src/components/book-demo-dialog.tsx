@@ -33,6 +33,8 @@ const demoFormSchema = z.object({
   phone: z.string().trim().max(50).optional(),
   locations: z.string().trim().max(50).optional(),
   message: z.string().trim().max(2000).optional(),
+  // Honeypot: hidden from real users, only bots fill it in.
+  website: z.string().max(200).optional(),
 });
 
 type DemoFormValues = z.infer<typeof demoFormSchema>;
@@ -51,6 +53,7 @@ export function BookDemoDialog({ children }: { children: ReactNode }) {
       phone: "",
       locations: "",
       message: "",
+      website: "",
     },
   });
 
@@ -76,6 +79,7 @@ export function BookDemoDialog({ children }: { children: ReactNode }) {
         phone: values.phone || undefined,
         locations: values.locations || undefined,
         message: values.message || undefined,
+        website: values.website || undefined,
       },
     });
   };
@@ -131,6 +135,20 @@ export function BookDemoDialog({ children }: { children: ReactNode }) {
                 onSubmit={form.handleSubmit(onSubmit)}
                 className="space-y-4"
               >
+                {/* Honeypot field — invisible to humans, catches bots. */}
+                <div
+                  aria-hidden="true"
+                  className="absolute -left-[9999px] top-auto h-px w-px overflow-hidden"
+                >
+                  <label htmlFor="demo-website-field">Website</label>
+                  <input
+                    id="demo-website-field"
+                    type="text"
+                    tabIndex={-1}
+                    autoComplete="off"
+                    {...form.register("website")}
+                  />
+                </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <FormField
                     control={form.control}

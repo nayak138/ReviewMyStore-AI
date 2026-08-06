@@ -1665,6 +1665,12 @@ components:
         message:
           type: string
           maxLength: 2000
+        website:
+          type: string
+          maxLength: 200
+          description: >
+            Honeypot anti-spam field. Hidden from real users; must be left
+            empty. Submissions with a value are silently discarded.
       required:
         - name
         - email

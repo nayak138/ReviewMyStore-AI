@@ -13,6 +13,13 @@ import {
 
 const app: Express = express();
 
+// The app is only reachable through Replit's ingress proxy, which fully
+// OVERWRITES X-Forwarded-For with its own verified chain (client-supplied
+// XFF values are discarded — verified empirically: a spoofed header never
+// reaches the app). Trusting the proxy chain therefore makes req.ip the
+// real client address and it cannot be forged by callers.
+app.set("trust proxy", true);
+
 app.use(
   pinoHttp({
     logger,

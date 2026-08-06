@@ -5,7 +5,11 @@
     "tsBuildInfoFile": ".tsbuildinfo",
     "outDir": "dist",
     "rootDir": "src",
-    "types": ["node"]
+    "types": ["node"],
+    // Tests import "./x.ts" so they run directly under node's type
+    // stripping (`pnpm test`); requires noEmit, build uses esbuild anyway.
+    "allowImportingTsExtensions": true,
+    "noEmit": true
   },
   "include": ["src"],
   "references": [

@@ -22,4 +22,9 @@ export interface DemoRequestInput {
   locations?: string;
   /** @maxLength 2000 */
   message?: string;
+  /**
+     * Honeypot anti-spam field. Hidden from real users; must be left empty. Submissions with a value are silently discarded.
+     * @maxLength 200
+     */
+  website?: string;
 }

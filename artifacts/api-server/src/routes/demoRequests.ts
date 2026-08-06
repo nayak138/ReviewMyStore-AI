@@ -8,6 +8,7 @@ import {
   SetDemoRequestStatusResponse,
 } from "@workspace/api-zod";
 import { requireAuth, requireRole } from "../middlewares/requireAuth";
+import { rateLimit } from "../middlewares/rateLimit";
 import {
   createDemoRequest,
   listDemoRequests,
@@ -17,19 +18,32 @@ import {
 const router: IRouter = Router();
 
 // Public (unauthenticated): marketing-site "Book a Demo" lead capture.
-router.post("/public/demo-requests", async (req, res) => {
-  const parsed = CreateDemoRequestBody.safeParse(req.body);
-  if (!parsed.success) {
-    res.status(400).json({
-      success: false,
-      code: "INVALID_BODY",
-      message: parsed.error.message,
-    });
-    return;
-  }
-  const result = await createDemoRequest(parsed.data);
-  res.status(201).json(CreateDemoRequestResponse.parse(result));
-});
+// Abuse protection: per-IP rate limit + honeypot field.
+router.post(
+  "/public/demo-requests",
+  rateLimit({ windowMs: 10 * 60 * 1000, max: 5 }),
+  async (req, res) => {
+    const parsed = CreateDemoRequestBody.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({
+        success: false,
+        code: "INVALID_BODY",
+        message: parsed.error.message,
+      });
+      return;
+    }
+    const { website, ...data } = parsed.data;
+    if (website) {
+      // Honeypot tripped: a hidden field only bots fill in. Pretend success
+      // so the bot learns nothing, but don't persist the lead.
+      req.log.warn({ email: data.email }, "demo request honeypot tripped");
+      res.status(201).json(CreateDemoRequestResponse.parse({ id: "ok" }));
+      return;
+    }
+    const result = await createDemoRequest(data);
+    res.status(201).json(CreateDemoRequestResponse.parse(result));
+  },
+);
 
 router.get(
   "/admin/demo-requests",
