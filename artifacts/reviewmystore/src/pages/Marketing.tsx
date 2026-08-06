@@ -17,8 +17,8 @@ export default function Marketing() {
 
   return (
     <MarketingLayout>
-      <InteractiveSearchSection />
       <HeroSection />
+      <InteractiveSearchSection />
       <TrustedBySection />
       <FeaturesGrid />
       <ReviewInboxSection />
