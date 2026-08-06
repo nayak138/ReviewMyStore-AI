@@ -232,3 +232,39 @@ test("rate-limited tap IP is unblocked after the window expires", async () => {
     Date.now = realDateNow;
   }
 });
+
+test("rate-limited generate IP is unblocked after the window expires", async () => {
+  // Use a dedicated IP so this test's hits don't bleed into other tests.
+  const ip = "10.3.0.10";
+  const realDateNow = Date.now;
+
+  try {
+    // Exhaust the 10-request generate budget.
+    for (let i = 0; i < 10; i++) {
+      await postGenerate(ip);
+    }
+    const blocked = await postGenerate(ip);
+    assert.equal(
+      blocked.status,
+      429,
+      "11th request should be rate-limited (pre-condition)",
+    );
+
+    // Fast-forward Date.now by 61 s so the rate-limiter sees the window as
+    // expired on the next request.  The rate limiter calls Date.now() on
+    // every invocation, so patching the global is sufficient.
+    const frozenNow = realDateNow();
+    Date.now = () => frozenNow + 61_000;
+
+    // The previously-blocked IP should now be allowed through again.
+    const recovered = await postGenerate(ip);
+    assert.notEqual(
+      recovered.status,
+      429,
+      "Previously-blocked generate IP should be unblocked after the rate-limit window expires",
+    );
+  } finally {
+    // Always restore the real Date.now even if an assertion throws.
+    Date.now = realDateNow;
+  }
+});
