@@ -268,3 +268,39 @@ test("rate-limited generate IP is unblocked after the window expires", async () 
     Date.now = realDateNow;
   }
 });
+
+test("rate-limited review-page IP is unblocked after the window expires", async () => {
+  // Use a dedicated IP so this test's hits don't bleed into other tests.
+  const ip = "10.3.0.11";
+  const realDateNow = Date.now;
+
+  try {
+    // Exhaust the 30-request review-page budget.
+    for (let i = 0; i < 30; i++) {
+      await getReviewPage(ip);
+    }
+    const blocked = await getReviewPage(ip);
+    assert.equal(
+      blocked.status,
+      429,
+      "31st request should be rate-limited (pre-condition)",
+    );
+
+    // Fast-forward Date.now by 61 s so the rate-limiter sees the window as
+    // expired on the next request.  The rate limiter calls Date.now() on
+    // every invocation, so patching the global is sufficient.
+    const frozenNow = realDateNow();
+    Date.now = () => frozenNow + 61_000;
+
+    // The previously-blocked IP should now be allowed through again.
+    const recovered = await getReviewPage(ip);
+    assert.notEqual(
+      recovered.status,
+      429,
+      "Previously-blocked review-page IP should be unblocked after the rate-limit window expires",
+    );
+  } finally {
+    // Always restore the real Date.now even if an assertion throws.
+    Date.now = realDateNow;
+  }
+});
