@@ -1,5 +1,6 @@
 import { desc, eq } from "drizzle-orm";
 import { db, demoRequestsTable } from "@workspace/db";
+import { sendDemoRequestAlert } from "./notificationService";
 
 export async function createDemoRequest(input: {
   name: string;
@@ -19,7 +20,21 @@ export async function createDemoRequest(input: {
       locations: input.locations?.trim() || null,
       message: input.message?.trim() || null,
     })
-    .returning({ id: demoRequestsTable.id });
+    .returning({ id: demoRequestsTable.id, createdAt: demoRequestsTable.createdAt });
+
+  // Fire-and-forget: alert the owner via email. Errors are caught inside
+  // sendDemoRequestAlert so they never propagate back to the HTTP response.
+  void sendDemoRequestAlert({
+    id: row.id,
+    name: input.name.trim(),
+    email: input.email.trim(),
+    company: input.company?.trim() || null,
+    phone: input.phone?.trim() || null,
+    locations: input.locations?.trim() || null,
+    message: input.message?.trim() || null,
+    createdAt: row.createdAt.toISOString(),
+  });
+
   return { id: row.id };
 }
 

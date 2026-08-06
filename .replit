@@ -22,7 +22,8 @@ timeoutMs = 20000
 [userenv]
 
 [userenv.shared]
-SUPER_ADMIN_EMAILS = ""
+SUPER_ADMIN_EMAILS = "nayak138@gmail.com, info@reviewmystore.ai"
+DEMO_ALERT_EMAILS = "nayak138@gmail.com, info@reviewmystore.ai"
 
 [objectStorage]
 defaultBucketID = "replit-objstore-080439cc-c0ba-4318-831d-1f07982e68b1"

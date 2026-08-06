@@ -14,6 +14,7 @@
     "@clerk/express": "^2.1.49",
     "@clerk/shared": "^4.25.10",
     "@google-cloud/storage": "^7.21.0",
+    "@replit/connectors-sdk": "^0.4.1",
     "@workspace/api-zod": "workspace:*",
     "@workspace/db": "workspace:*",
     "@workspace/integrations-openrouter-ai": "workspace:*",
