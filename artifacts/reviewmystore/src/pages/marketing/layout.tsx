@@ -183,7 +183,6 @@ export function MarketingLayout({ children }: { children: ReactNode }) {
                 <li><a href="#features" onClick={(e) => goToSection(e, 'features')} className="hover:text-primary transition-colors">Features</a></li>
                 <li><a href="#solutions" onClick={(e) => goToSection(e, 'solutions')} className="hover:text-primary transition-colors">Solutions</a></li>
                 <li><a href="#pricing" onClick={(e) => goToSection(e, 'pricing')} className="hover:text-primary transition-colors">Pricing</a></li>
-                <li><a href="#" className="hover:text-primary transition-colors">API</a></li>
               </ul>
             </div>
             <div>
@@ -198,8 +197,8 @@ export function MarketingLayout({ children }: { children: ReactNode }) {
             <div>
               <h4 className="font-semibold mb-4 text-foreground">Legal</h4>
               <ul className="space-y-3 text-sm text-muted-foreground">
-                <li><a href="#" className="hover:text-primary transition-colors">Privacy</a></li>
-                <li><a href="#" className="hover:text-primary transition-colors">Terms</a></li>
+                <li><Link href="/privacy" className="hover:text-primary transition-colors cursor-pointer">Privacy</Link></li>
+                <li><Link href="/terms" className="hover:text-primary transition-colors cursor-pointer">Terms</Link></li>
                 <li><a href="mailto:contact@reviewmystore.ai" className="hover:text-primary transition-colors">Contact</a></li>
               </ul>
             </div>

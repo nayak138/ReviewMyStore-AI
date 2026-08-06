@@ -15,6 +15,8 @@ import About from "./pages/marketing/About";
 import Blog from "./pages/marketing/Blog";
 import BlogPost from "./pages/marketing/BlogPost";
 import Resources from "./pages/marketing/Resources";
+import Privacy from "./pages/marketing/Privacy";
+import Terms from "./pages/marketing/Terms";
 const Marketing = lazy(() => import("./pages/Marketing"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const Onboarding = lazy(() => import("./pages/Onboarding"));
@@ -227,6 +229,8 @@ function AppRouter() {
       <Route path="/blog" component={Blog} />
       <Route path="/blog/:slug" component={BlogPost} />
       <Route path="/resources" component={Resources} />
+      <Route path="/privacy" component={Privacy} />
+      <Route path="/terms" component={Terms} />
 
       {/* Public customer-facing review page */}
       <Route path="/review/:businessSlug/:campaignSlug" component={CustomerReview} />
