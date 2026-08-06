@@ -2,24 +2,25 @@ import { Switch, Route, Redirect, useLocation, Router as WouterRouter } from 'wo
 import { ClerkProvider, SignIn, SignUp, Show, useClerk } from '@clerk/react';
 import { publishableKeyFromHost } from '@clerk/react/internal';
 import { shadcn } from '@clerk/themes';
-import { useEffect, useRef, type ReactNode } from 'react';
+import { useEffect, useRef, lazy, Suspense, type ReactNode } from 'react';
 import { QueryClient, QueryClientProvider, useQueryClient } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/components/theme-provider";
 import { BrandIcon, BrandLogo } from "@/components/brand-logo";
 
-// Import pages
-import Marketing from "./pages/Marketing";
-import Dashboard from "./pages/Dashboard";
-import Onboarding from "./pages/Onboarding";
-import Businesses from "./pages/Businesses";
-import Campaigns from "./pages/Campaigns";
-import CustomerReview from "./pages/CustomerReview";
-import ShortRedirect from "./pages/ShortRedirect";
-import QrCodes from "./pages/QrCodes";
-import NfcDevices from "./pages/NfcDevices";
-import NotFound from "./pages/not-found";
+// Route-level code splitting: each page loads its own chunk so first-time
+// visitors to the marketing page don't download the authenticated app.
+const Marketing = lazy(() => import("./pages/Marketing"));
+const Dashboard = lazy(() => import("./pages/Dashboard"));
+const Onboarding = lazy(() => import("./pages/Onboarding"));
+const Businesses = lazy(() => import("./pages/Businesses"));
+const Campaigns = lazy(() => import("./pages/Campaigns"));
+const CustomerReview = lazy(() => import("./pages/CustomerReview"));
+const ShortRedirect = lazy(() => import("./pages/ShortRedirect"));
+const QrCodes = lazy(() => import("./pages/QrCodes"));
+const NfcDevices = lazy(() => import("./pages/NfcDevices"));
+const NotFound = lazy(() => import("./pages/not-found"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -184,7 +185,8 @@ function HomeRedirect() {
 
 function AppRouter() {
   return (
-    <Switch>
+    <Suspense fallback={null}>
+      <Switch>
       <Route path="/" component={HomeRedirect} />
       <Route path="/sign-in/*?" component={SignInPage} />
       <Route path="/sign-up/*?" component={SignUpPage} />
@@ -203,7 +205,8 @@ function AppRouter() {
       <Route path="/nfc-devices" component={NfcDevices} />
       
       <Route component={NotFound} />
-    </Switch>
+      </Switch>
+    </Suspense>
   );
 }
 
