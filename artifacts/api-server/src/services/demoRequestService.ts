@@ -1,4 +1,4 @@
-import { desc } from "drizzle-orm";
+import { desc, eq } from "drizzle-orm";
 import { db, demoRequestsTable } from "@workspace/db";
 
 export async function createDemoRequest(input: {
@@ -21,6 +21,19 @@ export async function createDemoRequest(input: {
     })
     .returning({ id: demoRequestsTable.id });
   return { id: row.id };
+}
+
+export async function updateDemoRequestStatus(
+  id: string,
+  status: "NEW" | "CONTACTED" | "CLOSED",
+) {
+  const [row] = await db
+    .update(demoRequestsTable)
+    .set({ status })
+    .where(eq(demoRequestsTable.id, id))
+    .returning();
+  if (!row) return null;
+  return { ...row, createdAt: row.createdAt.toISOString() };
 }
 
 export async function listDemoRequests() {

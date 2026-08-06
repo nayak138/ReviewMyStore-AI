@@ -58,6 +58,10 @@ export interface DemoRequest {
   createdAt: string;
 }
 
+export interface DemoRequestStatusUpdate {
+  status: DemoRequestStatus;
+}
+
 export interface DemoRequestResult {
   id: string;
 }

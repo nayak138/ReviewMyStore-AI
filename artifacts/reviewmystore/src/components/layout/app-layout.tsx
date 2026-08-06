@@ -9,10 +9,15 @@ import {
   SmartphoneNfc, 
   BarChart3, 
   ShoppingCart,
+  Inbox,
   LogOut,
   Menu,
   X
 } from "lucide-react";
+import {
+  useGetCurrentUser,
+  getGetCurrentUserQueryKey,
+} from "@workspace/api-client-react";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -25,6 +30,11 @@ const NAV_ITEMS = [
   { name: "NFC Devices", icon: SmartphoneNfc, href: "/nfc-devices", ready: true },
   { name: "Analytics", icon: BarChart3, href: "/analytics", ready: false },
   { name: "Orders", icon: ShoppingCart, href: "/orders", ready: false },
+];
+
+// Shown only to SUPER_ADMIN users, below the regular nav items.
+const ADMIN_NAV_ITEMS = [
+  { name: "Demo Requests", icon: Inbox, href: "/admin/leads", ready: true },
 ];
 
 interface AppLayoutProps {
@@ -46,6 +56,16 @@ export function AppLayout({ children, title }: AppLayoutProps) {
   };
   const [location, setLocation] = useLocation();
   const { signOut } = useClerk();
+  const { isSignedIn } = useAuth();
+
+  const { data: session } = useGetCurrentUser({
+    query: {
+      enabled: !!isSignedIn,
+      queryKey: getGetCurrentUserQueryKey(),
+    },
+  });
+  const isSuperAdmin = session?.user.role === "SUPER_ADMIN";
+  const navItems = isSuperAdmin ? [...NAV_ITEMS, ...ADMIN_NAV_ITEMS] : NAV_ITEMS;
 
   const handleSignOut = () => {
     signOut({ redirectUrl: "/" });
@@ -76,7 +96,7 @@ export function AppLayout({ children, title }: AppLayoutProps) {
         </div>
 
         <nav className="flex-1 overflow-y-auto p-4 space-y-1">
-          {NAV_ITEMS.map((item) => {
+          {navItems.map((item) => {
             const isActive = location === item.href || (location.startsWith(item.href) && item.href !== "/dashboard");
             
             return (

@@ -28,6 +28,7 @@ export * from './demoRequest';
 export * from './demoRequestInput';
 export * from './demoRequestResult';
 export * from './demoRequestStatus';
+export * from './demoRequestStatusUpdate';
 export * from './errorResponse';
 export * from './getPlacePhotoParams';
 export * from './healthStatus';

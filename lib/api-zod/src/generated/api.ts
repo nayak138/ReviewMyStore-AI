@@ -886,6 +886,30 @@ export const ListDemoRequestsResponse = zod.object({
 
 
 /**
+ * @summary Update a demo request's lead status (Super Admin only)
+ */
+export const SetDemoRequestStatusParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const SetDemoRequestStatusBody = zod.object({
+  "status": zod.enum(['NEW', 'CONTACTED', 'CLOSED'])
+})
+
+export const SetDemoRequestStatusResponse = zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "email": zod.string(),
+  "company": zod.string().nullable(),
+  "phone": zod.string().nullable(),
+  "locations": zod.string().nullable(),
+  "message": zod.string().nullable(),
+  "status": zod.enum(['NEW', 'CONTACTED', 'CLOSED']),
+  "createdAt": zod.coerce.date()
+})
+
+
+/**
  * @summary Get (lazily creating) the campaign's QR redirect code and URLs
  */
 export const GetCampaignQrParams = zod.object({

@@ -1078,6 +1078,55 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  /v1/admin/demo-requests/{id}/status:
+    patch:
+      operationId: setDemoRequestStatus
+      tags: [admin]
+      summary: Update a demo request's lead status (Super Admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DemoRequestStatusUpdate"
+      responses:
+        "200":
+          description: Updated demo request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DemoRequest"
+        "400":
+          description: Invalid request body
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Not a super admin
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /v1/campaigns/{id}/qr:
     get:
       operationId: getCampaignQr
@@ -1656,6 +1705,14 @@ components:
         - message
         - status
         - createdAt
+
+    DemoRequestStatusUpdate:
+      type: object
+      properties:
+        status:
+          $ref: "#/components/schemas/DemoRequestStatus"
+      required:
+        - status
 
     DemoRequestResult:
       type: object

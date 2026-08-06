@@ -35,8 +35,10 @@ import type {
   CampaignTemplateListResult,
   CampaignUpdateInput,
   DashboardSummary,
+  DemoRequest,
   DemoRequestInput,
   DemoRequestResult,
+  DemoRequestStatusUpdate,
   ErrorResponse,
   GetPlacePhotoParams,
   HealthStatus,
@@ -2508,6 +2510,78 @@ export function useListDemoRequests<TData = Awaited<ReturnType<typeof listDemoRe
 
 
 
+
+export const getSetDemoRequestStatusUrl = (id: string,) => {
+
+
+
+
+  return `/api/v1/admin/demo-requests/${id}/status`
+}
+
+/**
+ * @summary Update a demo request's lead status (Super Admin only)
+ */
+export const setDemoRequestStatus = async (id: string,
+    demoRequestStatusUpdate: DemoRequestStatusUpdate, options?: Parameters<typeof customFetch>[1]): Promise<DemoRequest> => {
+
+  return customFetch<DemoRequest>(getSetDemoRequestStatusUrl(id),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(demoRequestStatusUpdate)
+  }
+);}
+
+
+
+
+
+export const getSetDemoRequestStatusMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setDemoRequestStatus>>, TError,{id: string;data: BodyType<DemoRequestStatusUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof setDemoRequestStatus>>, TError,{id: string;data: BodyType<DemoRequestStatusUpdate>}, TContext> => {
+
+const mutationKey = ['setDemoRequestStatus'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof setDemoRequestStatus>>, {id: string;data: BodyType<DemoRequestStatusUpdate>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  setDemoRequestStatus(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SetDemoRequestStatusMutationResult = NonNullable<Awaited<ReturnType<typeof setDemoRequestStatus>>>
+    export type SetDemoRequestStatusMutationBody = BodyType<DemoRequestStatusUpdate>
+    export type SetDemoRequestStatusMutationError = ErrorType<ErrorResponse>
+
+    /**
+ * @summary Update a demo request's lead status (Super Admin only)
+ */
+export const useSetDemoRequestStatus = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setDemoRequestStatus>>, TError,{id: string;data: BodyType<DemoRequestStatusUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof setDemoRequestStatus>>,
+        TError,
+        {id: string;data: BodyType<DemoRequestStatusUpdate>},
+        TContext
+      > => {
+      return useMutation(getSetDemoRequestStatusMutationOptions(options));
+    }
 
 export const getGetCampaignQrUrl = (id: string,) => {
 
