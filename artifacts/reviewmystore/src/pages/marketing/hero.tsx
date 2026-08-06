@@ -75,6 +75,8 @@ export function HeroSection() {
           </BookDemoDialog>
         </motion.div>
 
+        <InteractiveSearchSection />
+
         {/* Hero Visual Mockup */}
         <motion.div 
           initial={{ opacity: 0, y: 40 }}
@@ -229,7 +231,7 @@ export function InteractiveSearchSection() {
   };
 
   return (
-    <section className="relative z-10 pt-24 pb-12">
+    <section className="relative z-10 pt-12 pb-0">
       <div className="container mx-auto px-4 max-w-3xl">
         <div className="bg-card rounded-2xl border border-border shadow-2xl p-6 lg:p-10 backdrop-blur-xl">
           <div className="text-center mb-8">
