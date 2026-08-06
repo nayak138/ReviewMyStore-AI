@@ -1,0 +1,742 @@
+# ReviewMyStore.AI - Marketing Website V2
+
+## Objective
+
+Redesign the complete public-facing website for ReviewMyStore.AI.
+
+Use my previous website (ReviewGenX) as the primary design reference for layout, conversion flow, spacing, animations and premium SaaS presentation.
+
+This is my own website and may be used as the baseline.
+
+However, this should NOT be a simple copy.
+
+Instead, build the next-generation version that reflects the much more powerful capabilities of ReviewMyStore.AI.
+
+The result should feel like a modern enterprise SaaS platform comparable to:
+
+- Stripe
+- Linear
+- Vercel
+- Clerk
+- Framer
+- Notion
+- Google Workspace
+
+The website should immediately communicate that ReviewMyStore.AI is the complete AI-powered Google Review Management Platform.
+
+---
+
+# Brand
+
+Use the official ReviewMyStore.AI branding.
+
+Logo:
+(New logo already provided)
+
+Tagline:
+
+The AI-Powered Google Review Platform
+
+---
+
+# Theme
+
+Implement a complete design system supporting:
+
+• Light Mode (Default)
+• Dark Mode
+• System Theme
+
+Persist theme preference.
+
+Every page must support both themes.
+
+---
+
+# Color System
+
+Use semantic tokens.
+
+Primary
+
+Google Blue
+#4285F4
+
+Google Red
+#EA4335
+
+Google Yellow
+#FBBC05
+
+Google Green
+#34A853
+
+Light Background
+
+#FFFFFF
+
+Light Surface
+
+#F8FAFC
+
+Dark Background
+
+#0F172A
+
+Dark Cards
+
+#1E293B
+
+Borders
+
+#E5E7EB (light)
+
+#334155 (dark)
+
+Text
+
+#111827
+
+Muted
+
+#6B7280
+
+Dark Text
+
+#F8FAFC
+
+---
+
+# Typography
+
+Use Inter.
+
+Large headings.
+
+Excellent whitespace.
+
+Premium spacing.
+
+Enterprise feel.
+
+---
+
+# Overall Style
+
+Modern SaaS
+
+Minimal
+
+Elegant
+
+Premium
+
+Trustworthy
+
+Fast
+
+Google-inspired
+
+Use subtle gradients only.
+
+Avoid:
+
+glassmorphism
+
+heavy neon
+
+AI-generated generic illustrations
+
+Use actual product screenshots wherever possible.
+
+---
+
+# Navigation
+
+Sticky navigation.
+
+Logo
+
+Features
+
+Solutions
+
+Pricing
+
+Resources
+
+About
+
+Blog
+
+Login
+
+Start Free
+
+Responsive mobile navigation.
+
+---
+
+# Hero
+
+Headline
+
+Collect More Google Reviews with AI
+
+Subheadline
+
+ReviewMyStore.AI helps businesses collect, manage and grow Google Reviews using AI-powered review generation, QR Codes, NFC devices, Google Review Management and intelligent analytics.
+
+Primary CTA
+
+Start Free
+
+Secondary CTA
+
+Book Demo
+
+Hero image:
+
+Large floating laptop showing the actual dashboard.
+
+Animated cards floating around it showing:
+
+QR
+
+NFC
+
+AI
+
+Google Reviews
+
+Analytics
+
+Campaigns
+
+---
+
+# Interactive Business Search
+
+Immediately below Hero.
+
+Large search experience.
+
+Google Places Autocomplete.
+
+Live dropdown.
+
+Business cards.
+
+Business photo.
+
+Google Rating.
+
+Review count.
+
+Address.
+
+Selecting a business begins onboarding.
+
+---
+
+# Trusted By
+
+Animated logo strip.
+
+Statistics.
+
+Businesses onboarded.
+
+Campaigns.
+
+QR Scans.
+
+Reviews Generated.
+
+Google Redirects.
+
+Countries.
+
+---
+
+# Platform Features
+
+Professional cards explaining:
+
+AI Review Generation
+
+Google Review Management
+
+AI Smart Reply
+
+QR Review Campaigns
+
+NFC Review Collection
+
+Campaign Management
+
+Keyword Management
+
+Business Discovery
+
+Dynamic QR Redirects
+
+Analytics Dashboard
+
+Printable Assets
+
+Multi-location Management
+
+Each card links to a detailed feature page.
+
+---
+
+# Google Review Management
+
+This is now one of the primary features.
+
+Show a beautiful inbox similar to Gmail.
+
+Features:
+
+Review Inbox
+
+Unread Reviews
+
+Replied Reviews
+
+Needs Attention
+
+Positive Reviews
+
+Negative Reviews
+
+Rating Filters
+
+Search Reviews
+
+Sort Reviews
+
+Business Filters
+
+Location Filters
+
+Bulk Actions
+
+Review Details Panel
+
+Customer Information
+
+Google Rating
+
+Date
+
+Review Text
+
+Previous Replies
+
+Reply Status
+
+AI Suggested Replies
+
+Generate Again
+
+Approve
+
+Edit
+
+Publish Reply
+
+Show this section using realistic dashboard mockups.
+
+Mark:
+
+Powered by AI
+
+---
+
+# AI Reply Demonstration
+
+Interactive workflow.
+
+Customer leaves review.
+
+↓
+
+AI analyzes sentiment.
+
+↓
+
+AI generates professional reply.
+
+↓
+
+Business edits.
+
+↓
+
+One-click publish.
+
+Display different reply styles:
+
+Professional
+
+Friendly
+
+Luxury
+
+Restaurant
+
+Clinic
+
+Retail
+
+Hotel
+
+Salon
+
+---
+
+# QR & NFC
+
+Beautiful section.
+
+Show:
+
+QR cards
+
+Download PNG
+
+SVG
+
+PDF
+
+NFC Standee
+
+NFC Card
+
+Dynamic Redirects
+
+Explain:
+
+Tap
+
+Scan
+
+Review
+
+No App Required
+
+---
+
+# Analytics
+
+Beautiful dashboard preview.
+
+Charts.
+
+Cards.
+
+Campaign leaderboard.
+
+QR scans.
+
+NFC taps.
+
+AI Reviews Generated.
+
+Google Redirects.
+
+Business performance.
+
+Top campaigns.
+
+Recent activity.
+
+---
+
+# Product Showcase
+
+Alternate left/right sections.
+
+Dashboard
+
+Businesses
+
+Campaigns
+
+Keyword Manager
+
+QR Generator
+
+NFC Devices
+
+Google Review Management
+
+Analytics
+
+Settings
+
+Each screenshot should use the actual application UI.
+
+---
+
+# AI Workflow
+
+Visual process.
+
+Search Business
+
+↓
+
+Create Campaign
+
+↓
+
+Generate QR
+
+↓
+
+Customer Scans
+
+↓
+
+AI Review Generation
+
+↓
+
+Customer Posts Review
+
+↓
+
+Business Receives Review
+
+↓
+
+AI Suggests Reply
+
+↓
+
+Owner Approves
+
+↓
+
+Published to Google
+
+---
+
+# Pricing
+
+Starter
+
+Growth
+
+Agency
+
+Enterprise
+
+Monthly / Yearly toggle.
+
+Highlight Growth.
+
+---
+
+# Testimonials
+
+Business owners.
+
+Restaurants.
+
+Salons.
+
+Hotels.
+
+Clinics.
+
+Retail.
+
+Photos.
+
+Ratings.
+
+Company.
+
+---
+
+# FAQ
+
+Professional accordion.
+
+---
+
+# Final CTA
+
+Headline
+
+Ready to Grow Your Google Reputation?
+
+Primary CTA
+
+Start Free
+
+Secondary CTA
+
+Book Demo
+
+---
+
+# Footer
+
+Product
+
+Solutions
+
+Pricing
+
+Blog
+
+Developers
+
+API
+
+Documentation
+
+Support
+
+Privacy
+
+Terms
+
+Status
+
+Contact
+
+Social Links
+
+---
+
+# Design System
+
+Create reusable components.
+
+Buttons
+
+Inputs
+
+Cards
+
+Pricing Cards
+
+Feature Cards
+
+Stat Cards
+
+Badges
+
+Tables
+
+Dropdowns
+
+Tabs
+
+Timeline
+
+Charts
+
+Accordions
+
+Toasts
+
+Skeletons
+
+Dialogs
+
+Everything should be reusable.
+
+---
+
+# Motion
+
+Subtle premium animations.
+
+Fade.
+
+Slide.
+
+Floating cards.
+
+Smooth hover.
+
+Soft shadows.
+
+No excessive motion.
+
+---
+
+# SEO
+
+Optimize every page.
+
+Schema.org
+
+Meta tags
+
+Open Graph
+
+Twitter cards
+
+Structured data.
+
+Fast loading.
+
+Excellent Lighthouse score.
+
+---
+
+# Future Platform Architecture
+
+The navigation and information architecture should anticipate future modules.
+
+Prepare expandable navigation for:
+
+Dashboard
+
+Businesses
+
+Campaigns
+
+Keywords
+
+QR Codes
+
+NFC Devices
+
+Google Reviews
+
+AI Reply Center
+
+Analytics
+
+Orders
+
+Billing
+
+Team Members
+
+API
+
+Settings
+
+The UI should feel capable of scaling into a complete reputation management platform.
+
+---
+
+# Quality Expectations
+
+The website should feel like a polished Series-A SaaS company.
+
+Use my existing ReviewGenX website only as a structural reference.
+
+Elevate every section with better spacing, typography, stronger product messaging, improved screenshots and a more premium visual identity.
+
+This should become the flagship marketing website for ReviewMyStore.AI and accurately reflect the capabilities of the platform.
