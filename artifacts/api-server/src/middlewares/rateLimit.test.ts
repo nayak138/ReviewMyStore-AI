@@ -101,6 +101,18 @@ test("different client IPs have independent windows", () => {
   assert.equal(other.nextCalled, true);
 });
 
+test("periodic prune removes expired entries without new traffic; dispose stops it", async () => {
+  const limiter = rateLimit({ windowMs: 25, max: 5 });
+  run(limiter, makeReq("203.0.113.10"));
+  run(limiter, makeReq("203.0.113.11"));
+  // Wait past the window plus one prune interval; entries should be gone
+  // even though no further requests arrive to trigger a lazy prune.
+  await new Promise((r) => setTimeout(r, 70));
+  // A fresh request from a previously-seen IP starts a new window.
+  assert.equal(run(limiter, makeReq("203.0.113.10")).nextCalled, true);
+  limiter.dispose();
+});
+
 test("window expiry resets the counter", async () => {
   const limiter = rateLimit({ windowMs: 50, max: 1 });
   assert.equal(run(limiter, makeReq("203.0.113.3")).nextCalled, true);

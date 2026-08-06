@@ -1,10 +1,17 @@
 import type { RequestHandler } from "express";
 
+export type RateLimitMiddleware = RequestHandler & {
+  /** Stops the periodic prune interval (e.g. on server shutdown or in tests). */
+  dispose: () => void;
+};
+
 /**
  * Minimal in-memory fixed-window rate limiter, keyed by client IP.
  *
  * Suitable for single-process deployments (this app runs as one Node
- * process). Windows are pruned lazily so the map cannot grow unbounded.
+ * process). Expired entries are pruned periodically (every windowMs) so
+ * the map stays bounded regardless of traffic volume; a size-triggered
+ * prune remains as a backstop for bursts within a window.
  */
 export function rateLimit({
   windowMs,
@@ -12,7 +19,7 @@ export function rateLimit({
 }: {
   windowMs: number;
   max: number;
-}): RequestHandler {
+}): RateLimitMiddleware {
   const hits = new Map<string, { count: number; resetAt: number }>();
 
   const prune = (now: number) => {
@@ -21,7 +28,13 @@ export function rateLimit({
     }
   };
 
-  return (req, res, next) => {
+  // Periodic cleanup keeps memory bounded during long uptimes even when
+  // traffic never pushes the map past the size backstop. `unref()` lets
+  // the process (and tests) exit without waiting on this timer.
+  const interval = setInterval(() => prune(Date.now()), windowMs);
+  interval.unref?.();
+
+  const middleware: RequestHandler = (req, res, next) => {
     const now = Date.now();
     if (hits.size > 10_000) prune(now);
 
@@ -51,4 +64,8 @@ export function rateLimit({
     }
     next();
   };
+
+  return Object.assign(middleware, {
+    dispose: () => clearInterval(interval),
+  });
 }
