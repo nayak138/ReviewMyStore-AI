@@ -13,8 +13,17 @@ import {
 } from "../services/publicReviewService";
 import { requestMeta } from "../services/scanEventService";
 import { AIGenerationError } from "../services/aiService";
+import { rateLimit } from "../middlewares/rateLimit";
 
 const router: IRouter = Router();
+
+/** Per-IP rate limits for public review routes.
+ * All three endpoints are unauthenticated and track real user activity;
+ * a generous-but-bounded limit stops bots from inflating analytics or
+ * abusing the AI generation call without affecting genuine visitors. */
+const reviewPageRateLimit = rateLimit({ windowMs: 60 * 1000, max: 30 });
+const generateRateLimit = rateLimit({ windowMs: 60 * 1000, max: 10 });
+const tapRateLimit = rateLimit({ windowMs: 60 * 1000, max: 20 });
 
 function slugParam(req: Request, name: string): string {
   const raw = req.params[name];
@@ -23,6 +32,7 @@ function slugParam(req: Request, name: string): string {
 
 router.get(
   "/public/review/:businessSlug/:campaignSlug",
+  reviewPageRateLimit,
   async (req, res) => {
     try {
       const page = await getPublicReviewPage(
@@ -46,6 +56,7 @@ router.get(
 
 router.post(
   "/public/review/:businessSlug/:campaignSlug/generate",
+  generateRateLimit,
   async (req, res) => {
     const parsed = GeneratePublicReviewBody.safeParse(req.body);
     if (!parsed.success) {
@@ -97,6 +108,7 @@ router.post(
 
 router.post(
   "/public/review/:businessSlug/:campaignSlug/track-redirect",
+  tapRateLimit,
   async (req, res) => {
     try {
       await trackGoogleRedirect(
