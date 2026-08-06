@@ -11,6 +11,10 @@ import { BrandIcon, BrandLogo } from "@/components/brand-logo";
 
 // Route-level code splitting: each page loads its own chunk so first-time
 // visitors to the marketing page don't download the authenticated app.
+import About from "./pages/marketing/About";
+import Blog from "./pages/marketing/Blog";
+import BlogPost from "./pages/marketing/BlogPost";
+import Resources from "./pages/marketing/Resources";
 const Marketing = lazy(() => import("./pages/Marketing"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const Onboarding = lazy(() => import("./pages/Onboarding"));
@@ -215,6 +219,12 @@ function AppRouter() {
       <Route path="/" component={HomeRedirect} />
       <Route path="/sign-in/*?" component={SignInPage} />
       <Route path="/sign-up/*?" component={SignUpPage} />
+
+      {/* Public marketing pages */}
+      <Route path="/about" component={About} />
+      <Route path="/blog" component={Blog} />
+      <Route path="/blog/:slug" component={BlogPost} />
+      <Route path="/resources" component={Resources} />
 
       {/* Public customer-facing review page */}
       <Route path="/review/:businessSlug/:campaignSlug" component={CustomerReview} />

@@ -33,16 +33,27 @@ function ThemeToggle() {
   );
 }
 
-function scrollToSection(e: React.MouseEvent<HTMLAnchorElement>, id: string) {
-  e.preventDefault();
+function scrollToId(id: string, attempts = 20) {
   const el = document.getElementById(id);
   if (el) {
     el.scrollIntoView({ behavior: 'smooth' });
+  } else if (attempts > 0) {
+    // Element not rendered yet (e.g. we just navigated home) — retry briefly.
+    setTimeout(() => scrollToId(id, attempts - 1), 50);
   }
 }
 
 export function MarketingLayout({ children }: { children: ReactNode }) {
-  const [, setLocation] = useLocation();
+  const [location, setLocation] = useLocation();
+
+  /** Smooth-scrolls to a home-page section; navigates home first if needed. */
+  const goToSection = (e: React.MouseEvent<HTMLAnchorElement>, id: string) => {
+    e.preventDefault();
+    if (location !== '/') {
+      setLocation('/');
+    }
+    scrollToId(id);
+  };
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -54,12 +65,13 @@ export function MarketingLayout({ children }: { children: ReactNode }) {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  const navLinks = [
+  const navLinks: Array<{ label: string; id?: string; href?: string }> = [
     { label: "Features", id: "features" },
     { label: "Solutions", id: "solutions" },
     { label: "Pricing", id: "pricing" },
-    { label: "Resources", id: "faq" },
-    { label: "About", id: "about" },
+    { label: "Resources", href: "/resources" },
+    { label: "About", href: "/about" },
+    { label: "Blog", href: "/blog" },
   ];
 
   return (
@@ -72,16 +84,26 @@ export function MarketingLayout({ children }: { children: ReactNode }) {
           
           <nav className="hidden md:flex items-center gap-8">
             <div className="flex items-center gap-6">
-              {navLinks.map((link) => (
-                <a 
-                  key={link.id} 
-                  href={`#${link.id}`} 
-                  onClick={(e) => scrollToSection(e, link.id)}
-                  className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  {link.label}
-                </a>
-              ))}
+              {navLinks.map((link) =>
+                link.href ? (
+                  <Link
+                    key={link.label}
+                    href={link.href}
+                    className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                  >
+                    {link.label}
+                  </Link>
+                ) : (
+                  <a
+                    key={link.label}
+                    href={`#${link.id}`}
+                    onClick={(e) => goToSection(e, link.id!)}
+                    className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    {link.label}
+                  </a>
+                )
+              )}
             </div>
             <div className="flex items-center gap-4 border-l border-border pl-6">
               <ThemeToggle />
@@ -110,19 +132,30 @@ export function MarketingLayout({ children }: { children: ReactNode }) {
       {mobileMenuOpen && (
         <div className="fixed inset-0 z-40 bg-background pt-16">
           <div className="p-4 flex flex-col gap-4">
-            {navLinks.map((link) => (
-              <a 
-                key={link.id} 
-                href={`#${link.id}`} 
-                onClick={(e) => {
-                  scrollToSection(e, link.id);
-                  setMobileMenuOpen(false);
-                }}
-                className="text-lg font-medium py-2 border-b border-border text-foreground"
-              >
-                {link.label}
-              </a>
-            ))}
+            {navLinks.map((link) =>
+              link.href ? (
+                <Link
+                  key={link.label}
+                  href={link.href}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="text-lg font-medium py-2 border-b border-border text-foreground cursor-pointer"
+                >
+                  {link.label}
+                </Link>
+              ) : (
+                <a
+                  key={link.label}
+                  href={`#${link.id}`}
+                  onClick={(e) => {
+                    goToSection(e, link.id!);
+                    setMobileMenuOpen(false);
+                  }}
+                  className="text-lg font-medium py-2 border-b border-border text-foreground"
+                >
+                  {link.label}
+                </a>
+              )
+            )}
             <div className="pt-4 flex flex-col gap-3">
               <Button variant="outline" onClick={() => { setMobileMenuOpen(false); setLocation('/sign-in'); }} className="w-full justify-center">Login</Button>
               <Button onClick={() => { setMobileMenuOpen(false); setLocation('/sign-up'); }} className="w-full justify-center">Start Free</Button>
@@ -147,19 +180,19 @@ export function MarketingLayout({ children }: { children: ReactNode }) {
             <div>
               <h4 className="font-semibold mb-4 text-foreground">Product</h4>
               <ul className="space-y-3 text-sm text-muted-foreground">
-                <li><a href="#features" onClick={(e) => scrollToSection(e, 'features')} className="hover:text-primary transition-colors">Features</a></li>
-                <li><a href="#solutions" onClick={(e) => scrollToSection(e, 'solutions')} className="hover:text-primary transition-colors">Solutions</a></li>
-                <li><a href="#pricing" onClick={(e) => scrollToSection(e, 'pricing')} className="hover:text-primary transition-colors">Pricing</a></li>
+                <li><a href="#features" onClick={(e) => goToSection(e, 'features')} className="hover:text-primary transition-colors">Features</a></li>
+                <li><a href="#solutions" onClick={(e) => goToSection(e, 'solutions')} className="hover:text-primary transition-colors">Solutions</a></li>
+                <li><a href="#pricing" onClick={(e) => goToSection(e, 'pricing')} className="hover:text-primary transition-colors">Pricing</a></li>
                 <li><a href="#" className="hover:text-primary transition-colors">API</a></li>
               </ul>
             </div>
             <div>
               <h4 className="font-semibold mb-4 text-foreground">Resources</h4>
               <ul className="space-y-3 text-sm text-muted-foreground">
-                <li><a href="#" className="hover:text-primary transition-colors">Blog</a></li>
-                <li><a href="#" className="hover:text-primary transition-colors">Documentation</a></li>
-                <li><a href="#faq" onClick={(e) => scrollToSection(e, 'faq')} className="hover:text-primary transition-colors">Support</a></li>
-                <li><a href="#" className="hover:text-primary transition-colors">Status</a></li>
+                <li><Link href="/blog" className="hover:text-primary transition-colors cursor-pointer">Blog</Link></li>
+                <li><Link href="/resources" className="hover:text-primary transition-colors cursor-pointer">Guides & Help</Link></li>
+                <li><a href="#faq" onClick={(e) => goToSection(e, 'faq')} className="hover:text-primary transition-colors">Support</a></li>
+                <li><Link href="/about" className="hover:text-primary transition-colors cursor-pointer">About</Link></li>
               </ul>
             </div>
             <div>
