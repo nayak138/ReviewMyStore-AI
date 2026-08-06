@@ -9,14 +9,21 @@ import {
   fetchPlacePhoto,
   getPlaceDetails,
 } from "../services/googleBusinessService";
+import { rateLimit } from "../middlewares/rateLimit";
 
 const router: IRouter = Router();
 
 /** Every route here is intentionally public: business search happens on the
  * marketing/registration flow, before any account or auth token exists. The
- * Google Maps API key stays server-side in googleBusinessService.ts. */
+ * Google Maps API key stays server-side in googleBusinessService.ts.
+ *
+ * Because these routes are unauthenticated and proxy to the paid Google
+ * Places API, they're rate-limited per IP to block scripted/bot abuse while
+ * staying invisible to normal typing (the client already debounces input
+ * and requires 3+ characters before calling autocomplete). */
+const placesRateLimit = rateLimit({ windowMs: 60 * 1000, max: 40 });
 
-router.get("/places/autocomplete", async (req, res) => {
+router.get("/places/autocomplete", placesRateLimit, async (req, res) => {
   const input = typeof req.query.input === "string" ? req.query.input : "";
   if (!input.trim()) {
     res.status(400).json({
@@ -43,7 +50,7 @@ router.get("/places/autocomplete", async (req, res) => {
   }
 });
 
-router.get("/places/details/:placeId", async (req, res) => {
+router.get("/places/details/:placeId", placesRateLimit, async (req, res) => {
   const raw = req.params.placeId;
   const placeId = Array.isArray(raw) ? raw[0] : raw;
 
@@ -63,7 +70,7 @@ router.get("/places/details/:placeId", async (req, res) => {
   }
 });
 
-router.get("/places/photo", async (req, res) => {
+router.get("/places/photo", placesRateLimit, async (req, res) => {
   const name = typeof req.query.name === "string" ? req.query.name : "";
 
   try {
