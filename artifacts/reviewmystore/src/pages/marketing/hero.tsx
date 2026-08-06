@@ -46,8 +46,8 @@ export function HeroSection() {
           transition={{ duration: 0.5, delay: 0.1 }}
           className="text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight text-foreground mb-6 leading-[1.1]"
         >
-          Collect More Google Reviews <br className="hidden md:block" />
-          <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-emerald-500 dark:from-blue-400 dark:to-emerald-400">with AI</span>
+          Collect More Google <br className="hidden md:block" />
+          <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-emerald-500 dark:from-blue-400 dark:to-emerald-400">Reviews with AI</span>
         </motion.h1>
         
         <motion.p 
