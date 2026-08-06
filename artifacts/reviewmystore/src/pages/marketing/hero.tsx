@@ -81,7 +81,16 @@ export function HeroSection() {
               className="text-5xl lg:text-[4rem] font-extrabold tracking-tight text-foreground mb-6 leading-[1.1]"
             >
               5 ⭐ <GoogleLogoText /> <br className="hidden lg:block" />
-              Reviews with AI
+              Reviews with{" "}
+              <span className="relative inline-flex whitespace-nowrap align-baseline">
+                <span className="bg-gradient-to-r from-blue-600 via-violet-600 to-fuchsia-500 bg-clip-text text-transparent">
+                  AI
+                </span>
+                <Sparkles
+                  aria-hidden="true"
+                  className="absolute -right-5 -top-3 h-4 w-4 text-violet-500"
+                />
+              </span>
             </motion.h1>
             
             <motion.p 
@@ -99,24 +108,35 @@ export function HeroSection() {
               transition={{ delay: 0.3 }}
               className="max-w-md mx-auto lg:mx-0 w-full"
             >
-              <p className="text-sm font-semibold text-foreground/80 mb-3 text-left">Try searching for your business:</p>
-              
-              <div className="relative">
-                <BusinessSearch
-                  placeholder="Start typing your business name..."
-                  value={query}
-                  onQueryChange={setQuery}
-                  openOnValueChange
-                  onSelect={(s) => setSelected(s)}
-                  inputClassName="h-14 text-base shadow-sm border-border bg-background"
-                />
-                
-                {selected && (
-                  <motion.div 
-                    initial={{ opacity: 0, height: 0, marginTop: 0 }}
-                    animate={{ opacity: 1, height: 'auto', marginTop: 16 }}
-                    className="rounded-xl border border-border bg-background shadow-lg p-4 relative overflow-hidden text-left"
-                  >
+              <div className="relative overflow-visible rounded-[1.75rem] border border-blue-100/80 bg-gradient-to-br from-background via-background to-blue-50/70 p-4 shadow-[0_18px_50px_-28px_rgba(37,99,235,0.45)] dark:border-blue-500/20 dark:from-background dark:via-background dark:to-blue-500/[0.08] sm:p-5">
+                <div className="pointer-events-none absolute -right-8 -top-8 h-24 w-24 rounded-full bg-violet-400/10 blur-2xl" />
+                <div className="relative">
+                  <div className="mb-3 flex items-center gap-2 text-left">
+                    <span className="flex h-7 w-7 items-center justify-center rounded-full bg-blue-600/10 text-blue-600 dark:bg-blue-400/10 dark:text-blue-400">
+                      <MapPin className="h-3.5 w-3.5" />
+                    </span>
+                    <div>
+                      <p className="text-sm font-bold text-foreground">Try searching for your business</p>
+                      <p className="text-[11px] font-medium text-muted-foreground">Find your Google profile in seconds</p>
+                    </div>
+                  </div>
+
+                  <div className="relative">
+                    <BusinessSearch
+                      placeholder="Start typing your business name..."
+                      value={query}
+                      onQueryChange={setQuery}
+                      openOnValueChange
+                      onSelect={(s) => setSelected(s)}
+                      inputClassName="h-14 rounded-2xl border-blue-100 bg-background/90 text-base shadow-[0_8px_24px_-16px_rgba(37,99,235,0.55)] transition-shadow placeholder:text-muted-foreground/80 focus-visible:border-blue-400 focus-visible:ring-4 focus-visible:ring-blue-500/10 dark:border-blue-500/20 dark:bg-background/80"
+                    />
+
+                    {selected && (
+                      <motion.div 
+                        initial={{ opacity: 0, height: 0, marginTop: 0 }}
+                        animate={{ opacity: 1, height: 'auto', marginTop: 16 }}
+                        className="rounded-xl border border-border bg-background shadow-lg p-4 relative overflow-hidden text-left"
+                      >
                     <button
                       type="button"
                       onClick={() => { setSelected(null); setQuery(""); }}
@@ -169,31 +189,35 @@ export function HeroSection() {
                       {isLoading ? "Loading business..." : "Claim this business"}
                       <ArrowRight className="w-4 h-4 ml-2" />
                     </Button>
-                  </motion.div>
-                )}
+                      </motion.div>
+                    )}
+                  </div>
+
+                  {!selected && (
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      {EXAMPLE_SEARCHES.map((example) => (
+                        <button
+                          key={example}
+                          type="button"
+                          onClick={() => setQuery(example)}
+                          className="group inline-flex items-center gap-1.5 rounded-full border border-border/80 bg-background/75 px-3 py-1.5 text-[11px] font-semibold text-muted-foreground shadow-sm transition-all hover:-translate-y-0.5 hover:border-blue-300 hover:bg-blue-50/70 hover:text-blue-700 hover:shadow-md dark:bg-muted/10 dark:hover:border-blue-500/50 dark:hover:bg-blue-500/10 dark:hover:text-blue-300"
+                        >
+                          <MapPin className="h-3 w-3 text-blue-500/70 transition-colors group-hover:text-blue-600 dark:group-hover:text-blue-300" />
+                          {example}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
 
-              {!selected && (
-                <div className="flex flex-wrap gap-2 mt-4">
-                  {EXAMPLE_SEARCHES.map((example) => (
-                    <button
-                      key={example}
-                      type="button"
-                      onClick={() => setQuery(example)}
-                      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-border bg-muted/30 dark:bg-muted/10 hover:bg-muted text-[11px] font-semibold text-muted-foreground transition-colors"
-                    >
-                      <MapPin className="w-3 h-3 text-muted-foreground/70" />
-                      {example}
-                    </button>
-                  ))}
-                </div>
-              )}
-
-              <div className="flex flex-wrap items-center justify-center lg:justify-start gap-x-4 gap-y-2 text-[11px] font-bold text-muted-foreground mt-8">
-                <span className="flex items-center gap-1"><Check className="w-3.5 h-3.5 text-blue-600"/> 14-Day Free Trial</span>
-                <span className="flex items-center gap-1"><Check className="w-3.5 h-3.5 text-blue-600"/> No Credit Card</span>
-                <span className="flex items-center gap-1"><Check className="w-3.5 h-3.5 text-blue-600"/> Cancel Anytime</span>
-                <span className="flex items-center gap-1"><Check className="w-3.5 h-3.5 text-blue-600"/> GDPR Compliant</span>
+              <div className="mt-5 grid grid-cols-2 gap-2 text-left sm:flex sm:flex-wrap sm:items-center sm:justify-center sm:gap-x-4 sm:gap-y-2 lg:justify-start">
+                {["14-Day Free Trial", "No Credit Card", "Cancel Anytime", "GDPR Compliant"].map((item) => (
+                  <span key={item} className="inline-flex items-center gap-1.5 rounded-full bg-blue-50/70 px-2.5 py-1.5 text-[10px] font-bold text-muted-foreground dark:bg-blue-500/[0.08]">
+                    <Check className="h-3.5 w-3.5 shrink-0 text-blue-600 dark:text-blue-400" />
+                    {item}
+                  </span>
+                ))}
               </div>
             </motion.div>
           </div>
