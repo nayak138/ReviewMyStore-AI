@@ -2,6 +2,7 @@ import { Link, useParams, useLocation } from "wouter";
 import { useEffect } from "react";
 import { MarketingLayout } from "./layout";
 import { usePageMeta } from "./use-page-meta";
+import { blogPostMeta } from "./route-meta";
 import { blogPosts, getBlogPost } from "./blog-data";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, ArrowRight, Clock } from "lucide-react";
@@ -11,10 +12,10 @@ export default function BlogPost() {
   const [, setLocation] = useLocation();
   const post = getBlogPost(params.slug);
 
-  usePageMeta(
-    post ? `${post.title} — ReviewMyStore.AI Blog` : "Post not found — ReviewMyStore.AI Blog",
-    post?.excerpt ?? "This article could not be found.",
-  );
+  const meta = post
+    ? blogPostMeta(post)
+    : { title: "Post not found — ReviewMyStore.AI Blog", description: "This article could not be found." };
+  usePageMeta(meta.title, meta.description, post ? `/blog/${post.slug}` : undefined);
 
   useEffect(() => {
     window.scrollTo(0, 0);

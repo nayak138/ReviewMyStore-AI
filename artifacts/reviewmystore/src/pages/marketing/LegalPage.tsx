@@ -17,6 +17,7 @@ export function LegalPage({
   sections,
   metaTitle,
   metaDescription,
+  path,
 }: {
   badge: string;
   title: string;
@@ -25,8 +26,9 @@ export function LegalPage({
   sections: LegalSection[];
   metaTitle: string;
   metaDescription: string;
+  path: string;
 }) {
-  usePageMeta(metaTitle, metaDescription);
+  usePageMeta(metaTitle, metaDescription, path);
 
   return (
     <MarketingLayout>

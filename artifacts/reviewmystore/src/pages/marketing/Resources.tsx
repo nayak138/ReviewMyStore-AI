@@ -1,6 +1,7 @@
 import { Link, useLocation } from "wouter";
 import { MarketingLayout } from "./layout";
 import { usePageMeta } from "./use-page-meta";
+import { RESOURCES_META } from "./route-meta";
 import { Button } from "@/components/ui/button";
 import {
   Rocket,
@@ -92,10 +93,7 @@ const guides = [
 
 export default function Resources() {
   const [, setLocation] = useLocation();
-  usePageMeta(
-    "Resources & Guides — ReviewMyStore.AI",
-    "Step-by-step guides for collecting Google reviews with ReviewMyStore.AI: setup, QR codes, NFC tap-to-review, AI drafts, and analytics.",
-  );
+  usePageMeta(RESOURCES_META.title, RESOURCES_META.description, "/resources");
 
   return (
     <MarketingLayout>

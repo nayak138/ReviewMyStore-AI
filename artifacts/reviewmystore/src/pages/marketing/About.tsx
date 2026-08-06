@@ -1,5 +1,6 @@
 import { MarketingLayout } from "./layout";
 import { usePageMeta } from "./use-page-meta";
+import { ABOUT_META } from "./route-meta";
 import { Button } from "@/components/ui/button";
 import { useLocation } from "wouter";
 import { Star, Zap, ShieldCheck, HeartHandshake, QrCode, MessageSquareText, BarChart3 } from "lucide-react";
@@ -42,10 +43,7 @@ const timeline = [
 
 export default function About() {
   const [, setLocation] = useLocation();
-  usePageMeta(
-    "About Us — ReviewMyStore.AI",
-    "ReviewMyStore.AI helps local businesses turn happy customers into 5-star Google reviews — without the awkward asking. Learn about our mission and values.",
-  );
+  usePageMeta(ABOUT_META.title, ABOUT_META.description, "/about");
 
   return (
     <MarketingLayout>

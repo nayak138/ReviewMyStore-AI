@@ -1,4 +1,5 @@
 import { LegalPage } from "./LegalPage";
+import { PRIVACY_META } from "./route-meta";
 
 const sections = [
   {
@@ -178,8 +179,9 @@ export default function Privacy() {
       intro="How ReviewMyStore.AI collects, uses, and protects your information."
       lastUpdated="August 6, 2026"
       sections={sections}
-      metaTitle="Privacy Policy — ReviewMyStore.AI"
-      metaDescription="Learn how ReviewMyStore.AI collects, uses, and protects information for businesses and their customers."
+      metaTitle={PRIVACY_META.title}
+      metaDescription={PRIVACY_META.description}
+      path="/privacy"
     />
   );
 }

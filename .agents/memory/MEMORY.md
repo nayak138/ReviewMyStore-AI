@@ -11,4 +11,5 @@
 - [Clerk cssLayerName + manual @layer statement can break layout](clerk-tailwind-v4-layer-conflict.md) — a pre-declared `@layer ..., clerk, ...;` fixed Clerk contrast but caused side effects; use `!important` classes instead.
 - [esbuild bundling breaks pdfkit/fontkit](esbuild-cjs-helper-externals.md) — deps that runtime-require @swc/helpers (pdfkit) must be in build.mjs externals or the server crashes on start.
 - [Replit proxy overwrites X-Forwarded-For](replit-proxy-xff.md) — use `trust proxy` + `req.ip` for per-IP controls; XFF is proxy-authenticated and unspoofable here.
+- [Marketing SEO prerender](marketing-seo-prerender.md) — per-route meta must be baked into HTML (vite prerender plugin); client-only meta hooks fail completion review.
 - [Tailwind v4: transform-none doesn't reset translate](tailwind-v4-translate-vs-transform-none.md) — `translate-x-*` uses the standalone `translate` property; cancel with `md:translate-x-0`, never `md:transform-none`.

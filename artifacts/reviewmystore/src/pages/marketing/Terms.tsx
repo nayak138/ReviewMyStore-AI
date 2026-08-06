@@ -1,4 +1,5 @@
 import { LegalPage } from "./LegalPage";
+import { TERMS_META } from "./route-meta";
 
 const sections = [
   {
@@ -182,8 +183,9 @@ export default function Terms() {
       intro="The rules for using ReviewMyStore.AI — plainly stated."
       lastUpdated="August 6, 2026"
       sections={sections}
-      metaTitle="Terms of Service — ReviewMyStore.AI"
-      metaDescription="Read the Terms of Service for ReviewMyStore.AI, the AI-powered Google review platform for local businesses."
+      metaTitle={TERMS_META.title}
+      metaDescription={TERMS_META.description}
+      path="/terms"
     />
   );
 }

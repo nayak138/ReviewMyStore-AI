@@ -1,14 +1,12 @@
 import { Link } from "wouter";
 import { MarketingLayout } from "./layout";
 import { usePageMeta } from "./use-page-meta";
+import { BLOG_META } from "./route-meta";
 import { blogPosts } from "./blog-data";
 import { ArrowRight, Clock } from "lucide-react";
 
 export default function Blog() {
-  usePageMeta(
-    "Blog — ReviewMyStore.AI",
-    "Practical guides on Google reviews, local SEO, and reputation management for local businesses, from the ReviewMyStore.AI team.",
-  );
+  usePageMeta(BLOG_META.title, BLOG_META.description, "/blog");
 
   const [featured, ...rest] = blogPosts;
 
