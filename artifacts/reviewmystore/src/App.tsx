@@ -7,6 +7,7 @@ import { QueryClient, QueryClientProvider, useQueryClient } from "@tanstack/reac
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/components/theme-provider";
+import { BrandIcon, BrandLogo } from "@/components/brand-logo";
 
 // Import pages
 import Marketing from "./pages/Marketing";
@@ -113,22 +114,17 @@ function AuthLayout({ children }: { children: ReactNode }) {
           }}
         />
         <div className="relative z-10 flex flex-col items-center text-center px-12 max-w-md">
-          <img
-            src={`${basePath}/brand/logo-stacked.png`}
-            alt="ReviewMyStore.AI"
-            className="w-full max-w-xs drop-shadow-sm"
-          />
+          <BrandIcon className="w-24 h-24 drop-shadow-sm" />
+          <BrandLogo className="w-full max-w-xs mt-8" />
           <p className="mt-6 text-muted-foreground text-base leading-relaxed">
             Turn happy customers into 5-star Google reviews — in seconds, not minutes.
           </p>
         </div>
       </div>
       <div className="flex-1 flex flex-col items-center justify-center px-4 py-12">
-        <img
-          src={`${basePath}/brand/logo-horizontal.png`}
-          alt="ReviewMyStore.AI"
-          className="lg:hidden w-full max-w-[280px] mb-8"
-        />
+        <div className="lg:hidden w-full max-w-[280px] mb-8 flex justify-center">
+          <BrandLogo className="w-full" />
+        </div>
         {children}
       </div>
     </div>
@@ -248,7 +244,7 @@ function ClerkProviderWithRoutes() {
 
 function App() {
   return (
-    <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+    <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
       <WouterRouter base={basePath}>
         <TooltipProvider>
           <ClerkProviderWithRoutes />
