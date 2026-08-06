@@ -13,6 +13,15 @@ export type RateLimitMiddleware = RequestHandler & {
  * the map stays bounded regardless of traffic volume; a size-triggered
  * prune remains as a backstop for bursts within a window.
  */
+/** Every limiter created via `rateLimit()`, so shutdown can dispose them all. */
+const registry = new Set<RateLimitMiddleware>();
+
+/** Disposes all rate limiters (clears their prune intervals). Idempotent. */
+export function disposeAllRateLimiters(): void {
+  for (const limiter of registry) limiter.dispose();
+  registry.clear();
+}
+
 export function rateLimit({
   windowMs,
   max,
@@ -65,7 +74,12 @@ export function rateLimit({
     next();
   };
 
-  return Object.assign(middleware, {
-    dispose: () => clearInterval(interval),
+  const limiter = Object.assign(middleware, {
+    dispose: () => {
+      clearInterval(interval);
+      registry.delete(limiter);
+    },
   });
+  registry.add(limiter);
+  return limiter;
 }
