@@ -55,11 +55,18 @@ export interface DemoRequest {
   /** @nullable */
   message: string | null;
   status: DemoRequestStatus;
+  /** @nullable */
+  notes: string | null;
   createdAt: string;
 }
 
+/**
+ * Partial update for a demo request. Provide status and/or notes; at least one field should be sent. notes replaces the stored value (send an empty string to clear).
+ */
 export interface DemoRequestStatusUpdate {
-  status: DemoRequestStatus;
+  status?: DemoRequestStatus;
+  /** @maxLength 5000 */
+  notes?: string;
 }
 
 export interface DemoRequestResult {

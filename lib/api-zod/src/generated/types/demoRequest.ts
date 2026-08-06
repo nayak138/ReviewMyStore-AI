@@ -20,5 +20,7 @@ export interface DemoRequest {
   /** @nullable */
   message: string | null;
   status: DemoRequestStatus;
+  /** @nullable */
+  notes: string | null;
   createdAt: Date;
 }

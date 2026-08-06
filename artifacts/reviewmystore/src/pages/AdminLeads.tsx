@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useAuth } from "@clerk/react";
 import { Redirect } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
@@ -8,6 +9,7 @@ import {
   Building2,
   MapPin,
   Clock,
+  StickyNote,
 } from "lucide-react";
 import {
   useGetCurrentUser,
@@ -29,6 +31,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 
@@ -56,23 +60,30 @@ const STATUS_META: Record<
 function LeadCard({ lead }: { lead: DemoRequest }) {
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const [notesDraft, setNotesDraft] = useState<string | null>(null);
 
-  const { mutate: setStatus, isPending } = useSetDemoRequestStatus({
+  const { mutate: updateLead, isPending } = useSetDemoRequestStatus({
     mutation: {
-      onSuccess: () => {
+      onSuccess: (_data, variables) => {
         queryClient.invalidateQueries({
           queryKey: getListDemoRequestsQueryKey(),
         });
+        if (variables.data.notes !== undefined) {
+          setNotesDraft(null);
+        }
       },
       onError: () => {
         toast({
           title: "Couldn't update lead",
-          description: "The status change didn't save. Please try again.",
+          description: "The change didn't save. Please try again.",
           variant: "destructive",
         });
       },
     },
   });
+
+  const notesValue = notesDraft ?? lead.notes ?? "";
+  const notesDirty = notesDraft !== null && notesDraft !== (lead.notes ?? "");
 
   const meta = STATUS_META[lead.status];
 
@@ -124,6 +135,45 @@ function LeadCard({ lead }: { lead: DemoRequest }) {
               </p>
             )}
 
+            <div className="mt-3 space-y-2">
+              <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+                <StickyNote className="w-3.5 h-3.5" />
+                Notes
+              </div>
+              <Textarea
+                value={notesValue}
+                onChange={(e) => setNotesDraft(e.target.value)}
+                placeholder="Jot down call notes, follow-up dates, next steps…"
+                rows={2}
+                className="text-sm resize-y"
+                aria-label={`Notes for ${lead.name}`}
+              />
+              {notesDirty && (
+                <div className="flex items-center gap-2">
+                  <Button
+                    size="sm"
+                    disabled={isPending}
+                    onClick={() =>
+                      updateLead({
+                        id: lead.id,
+                        data: { notes: notesValue },
+                      })
+                    }
+                  >
+                    Save notes
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    disabled={isPending}
+                    onClick={() => setNotesDraft(null)}
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              )}
+            </div>
+
             <div className="mt-3 flex items-center gap-1.5 text-xs text-muted-foreground">
               <Clock className="w-3 h-3" />
               {new Date(lead.createdAt).toLocaleString(undefined, {
@@ -138,7 +188,7 @@ function LeadCard({ lead }: { lead: DemoRequest }) {
               value={lead.status}
               disabled={isPending}
               onValueChange={(value) =>
-                setStatus({
+                updateLead({
                   id: lead.id,
                   data: { status: value as DemoRequestStatus },
                 })

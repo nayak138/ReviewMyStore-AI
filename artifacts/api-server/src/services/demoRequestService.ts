@@ -23,13 +23,22 @@ export async function createDemoRequest(input: {
   return { id: row.id };
 }
 
-export async function updateDemoRequestStatus(
+export async function updateDemoRequest(
   id: string,
-  status: "NEW" | "CONTACTED" | "CLOSED",
+  updates: {
+    status?: "NEW" | "CONTACTED" | "CLOSED";
+    notes?: string;
+  },
 ) {
+  const set: {
+    status?: "NEW" | "CONTACTED" | "CLOSED";
+    notes?: string | null;
+  } = {};
+  if (updates.status !== undefined) set.status = updates.status;
+  if (updates.notes !== undefined) set.notes = updates.notes.trim() || null;
   const [row] = await db
     .update(demoRequestsTable)
-    .set({ status })
+    .set(set)
     .where(eq(demoRequestsTable.id, id))
     .returning();
   if (!row) return null;

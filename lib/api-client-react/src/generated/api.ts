@@ -2520,7 +2520,7 @@ export const getSetDemoRequestStatusUrl = (id: string,) => {
 }
 
 /**
- * @summary Update a demo request's lead status (Super Admin only)
+ * @summary Update a demo request's lead status and/or notes (Super Admin only)
  */
 export const setDemoRequestStatus = async (id: string,
     demoRequestStatusUpdate: DemoRequestStatusUpdate, options?: Parameters<typeof customFetch>[1]): Promise<DemoRequest> => {
@@ -2570,7 +2570,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type SetDemoRequestStatusMutationError = ErrorType<ErrorResponse>
 
     /**
- * @summary Update a demo request's lead status (Super Admin only)
+ * @summary Update a demo request's lead status and/or notes (Super Admin only)
  */
 export const useSetDemoRequestStatus = <TError = ErrorType<ErrorResponse>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setDemoRequestStatus>>, TError,{id: string;data: BodyType<DemoRequestStatusUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}

@@ -11,7 +11,7 @@ import { requireAuth, requireRole } from "../middlewares/requireAuth";
 import {
   createDemoRequest,
   listDemoRequests,
-  updateDemoRequestStatus,
+  updateDemoRequest,
 } from "../services/demoRequestService";
 
 const router: IRouter = Router();
@@ -64,10 +64,18 @@ router.patch(
       });
       return;
     }
-    const updated = await updateDemoRequestStatus(
-      params.data.id,
-      parsed.data.status,
-    );
+    if (
+      parsed.data.status === undefined &&
+      parsed.data.notes === undefined
+    ) {
+      res.status(400).json({
+        success: false,
+        code: "INVALID_BODY",
+        message: "Provide status and/or notes",
+      });
+      return;
+    }
+    const updated = await updateDemoRequest(params.data.id, parsed.data);
     if (!updated) {
       res.status(404).json({
         success: false,

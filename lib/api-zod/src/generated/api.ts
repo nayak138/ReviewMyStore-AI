@@ -880,21 +880,27 @@ export const ListDemoRequestsResponse = zod.object({
   "locations": zod.string().nullable(),
   "message": zod.string().nullable(),
   "status": zod.enum(['NEW', 'CONTACTED', 'CLOSED']),
+  "notes": zod.string().nullable(),
   "createdAt": zod.coerce.date()
 }))
 })
 
 
 /**
- * @summary Update a demo request's lead status (Super Admin only)
+ * @summary Update a demo request's lead status and/or notes (Super Admin only)
  */
 export const SetDemoRequestStatusParams = zod.object({
   "id": zod.coerce.string()
 })
 
+export const setDemoRequestStatusBodyNotesMax = 5000;
+
+
+
 export const SetDemoRequestStatusBody = zod.object({
-  "status": zod.enum(['NEW', 'CONTACTED', 'CLOSED'])
-})
+  "status": zod.enum(['NEW', 'CONTACTED', 'CLOSED']).optional(),
+  "notes": zod.string().max(setDemoRequestStatusBodyNotesMax).optional()
+}).describe('Partial update for a demo request. Provide status and\/or notes; at least one field should be sent. notes replaces the stored value (send an empty string to clear).\n')
 
 export const SetDemoRequestStatusResponse = zod.object({
   "id": zod.string(),
@@ -905,6 +911,7 @@ export const SetDemoRequestStatusResponse = zod.object({
   "locations": zod.string().nullable(),
   "message": zod.string().nullable(),
   "status": zod.enum(['NEW', 'CONTACTED', 'CLOSED']),
+  "notes": zod.string().nullable(),
   "createdAt": zod.coerce.date()
 })
 

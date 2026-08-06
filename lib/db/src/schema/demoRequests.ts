@@ -27,6 +27,9 @@ export const demoRequestsTable = pgTable("demo_requests", {
   locations: text("locations"),
   message: text("message"),
   status: demoRequestStatusEnum("status").notNull().default("NEW"),
+  // Free-text admin notes about the lead (call summaries, follow-up dates).
+  // Only ever written by SUPER_ADMIN via the admin API — never visitor input.
+  notes: text("notes"),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),
@@ -37,6 +40,7 @@ export const insertDemoRequestSchema = createInsertSchema(
 ).omit({
   id: true,
   status: true,
+  notes: true,
   createdAt: true,
 });
 export type InsertDemoRequest = z.infer<typeof insertDemoRequestSchema>;
