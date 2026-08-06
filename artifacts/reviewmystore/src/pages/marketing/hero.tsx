@@ -7,6 +7,7 @@ import { BusinessSearch } from "@/components/business-search";
 import { Star, Smartphone, QrCode, MessageSquareText, BarChart3, Target, MapPin, X, ArrowRight, Zap } from "lucide-react";
 import { useGetPlaceDetails, getGetPlaceDetailsQueryKey, type PlaceAutocompleteSuggestion } from "@workspace/api-client-react";
 import { saveSelectedPlace, placePhotoUrl } from "@/lib/selected-place";
+import { BookDemoDialog } from "@/components/book-demo-dialog";
 
 export function HeroSection() {
   const [, setLocation] = useLocation();
@@ -58,9 +59,11 @@ export function HeroSection() {
           <Button onClick={() => setLocation('/sign-up')} size="lg" className="h-14 px-8 text-base font-semibold shadow-lg hover:shadow-xl transition-all w-full sm:w-auto">
             Start Free
           </Button>
-          <Button asChild size="lg" variant="outline" className="h-14 px-8 text-base font-semibold w-full sm:w-auto bg-background hover:bg-accent border-border hover:border-border">
-            <a href="#solutions">See How It Works</a>
-          </Button>
+          <BookDemoDialog>
+            <Button size="lg" variant="outline" className="h-14 px-8 text-base font-semibold w-full sm:w-auto bg-background hover:bg-accent border-border hover:border-border">
+              Book a Demo
+            </Button>
+          </BookDemoDialog>
         </motion.div>
 
         {/* Hero Visual Mockup */}

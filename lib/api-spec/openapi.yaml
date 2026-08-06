@@ -1025,6 +1025,59 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  /v1/public/demo-requests:
+    post:
+      operationId: createDemoRequest
+      tags: [public-review]
+      summary: Submit a demo booking / sales lead from the marketing site
+      description: >
+        Public (unauthenticated). Persists the lead so the platform owner can
+        review it from the admin API.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DemoRequestInput"
+      responses:
+        "201":
+          description: Lead stored
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DemoRequestResult"
+        "400":
+          description: Invalid request body
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /v1/admin/demo-requests:
+    get:
+      operationId: listDemoRequests
+      tags: [admin]
+      summary: List demo booking requests (newest first)
+      responses:
+        "200":
+          description: Demo requests
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListDemoRequestsResult"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Not a super admin
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /v1/campaigns/{id}/qr:
     get:
       operationId: getCampaignQr
@@ -1539,6 +1592,88 @@ components:
         - success
         - code
         - message
+
+    DemoRequestInput:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+        email:
+          type: string
+          format: email
+          maxLength: 320
+        company:
+          type: string
+          maxLength: 200
+        phone:
+          type: string
+          maxLength: 50
+        locations:
+          type: string
+          maxLength: 50
+        message:
+          type: string
+          maxLength: 2000
+      required:
+        - name
+        - email
+
+    DemoRequestStatus:
+      type: string
+      enum: [NEW, CONTACTED, CLOSED]
+
+    DemoRequest:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        email:
+          type: string
+        company:
+          type: ["string", "null"]
+        phone:
+          type: ["string", "null"]
+        locations:
+          type: ["string", "null"]
+        message:
+          type: ["string", "null"]
+        status:
+          $ref: "#/components/schemas/DemoRequestStatus"
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - name
+        - email
+        - company
+        - phone
+        - locations
+        - message
+        - status
+        - createdAt
+
+    DemoRequestResult:
+      type: object
+      properties:
+        id:
+          type: string
+      required:
+        - id
+
+    ListDemoRequestsResult:
+      type: object
+      properties:
+        demoRequests:
+          type: array
+          items:
+            $ref: "#/components/schemas/DemoRequest"
+      required:
+        - demoRequests
 
     UserRole:
       type: string

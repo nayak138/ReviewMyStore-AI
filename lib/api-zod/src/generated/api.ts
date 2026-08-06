@@ -836,6 +836,56 @@ export const GeneratePublicReviewResponse = zod.object({
 
 
 /**
+ * Public (unauthenticated). Persists the lead so the platform owner can review it from the admin API.
+ * @summary Submit a demo booking / sales lead from the marketing site
+ */
+export const createDemoRequestBodyNameMax = 200;
+
+export const createDemoRequestBodyEmailMax = 320;
+
+export const createDemoRequestBodyCompanyMax = 200;
+
+export const createDemoRequestBodyPhoneMax = 50;
+
+export const createDemoRequestBodyLocationsMax = 50;
+
+export const createDemoRequestBodyMessageMax = 2000;
+
+
+
+export const CreateDemoRequestBody = zod.object({
+  "name": zod.string().min(1).max(createDemoRequestBodyNameMax),
+  "email": zod.email().max(createDemoRequestBodyEmailMax),
+  "company": zod.string().max(createDemoRequestBodyCompanyMax).optional(),
+  "phone": zod.string().max(createDemoRequestBodyPhoneMax).optional(),
+  "locations": zod.string().max(createDemoRequestBodyLocationsMax).optional(),
+  "message": zod.string().max(createDemoRequestBodyMessageMax).optional()
+})
+
+export const CreateDemoRequestResponse = zod.object({
+  "id": zod.string()
+})
+
+
+/**
+ * @summary List demo booking requests (newest first)
+ */
+export const ListDemoRequestsResponse = zod.object({
+  "demoRequests": zod.array(zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "email": zod.string(),
+  "company": zod.string().nullable(),
+  "phone": zod.string().nullable(),
+  "locations": zod.string().nullable(),
+  "message": zod.string().nullable(),
+  "status": zod.enum(['NEW', 'CONTACTED', 'CLOSED']),
+  "createdAt": zod.coerce.date()
+}))
+})
+
+
+/**
  * @summary Get (lazily creating) the campaign's QR redirect code and URLs
  */
 export const GetCampaignQrParams = zod.object({

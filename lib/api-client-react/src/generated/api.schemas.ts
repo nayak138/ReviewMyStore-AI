@@ -15,6 +15,57 @@ export interface ErrorResponse {
   message: string;
 }
 
+export interface DemoRequestInput {
+  /**
+     * @minLength 1
+     * @maxLength 200
+     */
+  name: string;
+  /** @maxLength 320 */
+  email: string;
+  /** @maxLength 200 */
+  company?: string;
+  /** @maxLength 50 */
+  phone?: string;
+  /** @maxLength 50 */
+  locations?: string;
+  /** @maxLength 2000 */
+  message?: string;
+}
+
+export type DemoRequestStatus = typeof DemoRequestStatus[keyof typeof DemoRequestStatus];
+
+
+export const DemoRequestStatus = {
+  NEW: 'NEW',
+  CONTACTED: 'CONTACTED',
+  CLOSED: 'CLOSED',
+} as const;
+
+export interface DemoRequest {
+  id: string;
+  name: string;
+  email: string;
+  /** @nullable */
+  company: string | null;
+  /** @nullable */
+  phone: string | null;
+  /** @nullable */
+  locations: string | null;
+  /** @nullable */
+  message: string | null;
+  status: DemoRequestStatus;
+  createdAt: string;
+}
+
+export interface DemoRequestResult {
+  id: string;
+}
+
+export interface ListDemoRequestsResult {
+  demoRequests: DemoRequest[];
+}
+
 export type UserRole = typeof UserRole[keyof typeof UserRole];
 
 

@@ -7,3 +7,4 @@ export * from "./reviewSessions";
 export * from "./nfcDevices";
 export * from "./redirectLinks";
 export * from "./scanEvents";
+export * from "./demoRequests";

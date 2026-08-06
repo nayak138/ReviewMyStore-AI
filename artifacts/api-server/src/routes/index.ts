@@ -10,6 +10,7 @@ import publicReviewRouter from "./publicReview";
 import publicRedirectRouter from "./publicRedirect";
 import qrRouter from "./qr";
 import nfcDevicesRouter from "./nfcDevices";
+import demoRequestsRouter from "./demoRequests";
 
 const router: IRouter = Router();
 
@@ -24,5 +25,6 @@ router.use("/v1", publicReviewRouter);
 router.use("/v1", publicRedirectRouter);
 router.use("/v1", qrRouter);
 router.use("/v1", nfcDevicesRouter);
+router.use("/v1", demoRequestsRouter);
 
 export default router;

@@ -3,6 +3,7 @@ import { Check, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useLocation } from "wouter";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { BookDemoDialog } from "@/components/book-demo-dialog";
 
 export function PricingSection() {
   const [annual, setAnnual] = useState(true);
@@ -100,13 +101,21 @@ export function PricingSection() {
                   </li>
                 ))}
               </ul>
-              <Button 
-                className="w-full" 
-                variant={plan.highlight ? "default" : "outline"}
-                onClick={() => plan.isCustom ? window.location.href = "mailto:sales@reviewmystore.ai" : setLocation('/sign-up')}
-              >
-                {plan.cta}
-              </Button>
+              {plan.isCustom ? (
+                <BookDemoDialog>
+                  <Button className="w-full" variant="outline">
+                    {plan.cta}
+                  </Button>
+                </BookDemoDialog>
+              ) : (
+                <Button 
+                  className="w-full" 
+                  variant={plan.highlight ? "default" : "outline"}
+                  onClick={() => setLocation('/sign-up')}
+                >
+                  {plan.cta}
+                </Button>
+              )}
             </div>
           ))}
         </div>
@@ -207,14 +216,15 @@ export function FinalCtaSection() {
           >
             Start Free
           </Button>
-          <Button 
-            asChild
-            size="lg" 
-            variant="outline" 
-            className="h-14 px-8 text-base font-semibold w-full sm:w-auto border-primary-foreground/20 text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground bg-transparent"
-          >
-            <a href="#solutions">See How It Works</a>
-          </Button>
+          <BookDemoDialog>
+            <Button 
+              size="lg" 
+              variant="outline" 
+              className="h-14 px-8 text-base font-semibold w-full sm:w-auto border-primary-foreground/20 text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground bg-transparent"
+            >
+              Book a Demo
+            </Button>
+          </BookDemoDialog>
         </div>
       </div>
     </section>

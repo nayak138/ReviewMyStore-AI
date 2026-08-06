@@ -35,6 +35,8 @@ import type {
   CampaignTemplateListResult,
   CampaignUpdateInput,
   DashboardSummary,
+  DemoRequestInput,
+  DemoRequestResult,
   ErrorResponse,
   GetPlacePhotoParams,
   HealthStatus,
@@ -44,6 +46,7 @@ import type {
   KeywordUpdateInput,
   ListBusinessesParams,
   ListCampaignsParams,
+  ListDemoRequestsResult,
   ListNfcDevicesParams,
   NfcDevice,
   NfcDeviceAssignInput,
@@ -2356,6 +2359,155 @@ export const useGeneratePublicReview = <TError = ErrorType<ErrorResponse>,
       > => {
       return useMutation(getGeneratePublicReviewMutationOptions(options));
     }
+
+export const getCreateDemoRequestUrl = () => {
+
+
+
+
+  return `/api/v1/public/demo-requests`
+}
+
+/**
+ * Public (unauthenticated). Persists the lead so the platform owner can review it from the admin API.
+ * @summary Submit a demo booking / sales lead from the marketing site
+ */
+export const createDemoRequest = async (demoRequestInput: DemoRequestInput, options?: Parameters<typeof customFetch>[1]): Promise<DemoRequestResult> => {
+
+  return customFetch<DemoRequestResult>(getCreateDemoRequestUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(demoRequestInput)
+  }
+);}
+
+
+
+
+
+export const getCreateDemoRequestMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createDemoRequest>>, TError,{data: BodyType<DemoRequestInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createDemoRequest>>, TError,{data: BodyType<DemoRequestInput>}, TContext> => {
+
+const mutationKey = ['createDemoRequest'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createDemoRequest>>, {data: BodyType<DemoRequestInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createDemoRequest(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateDemoRequestMutationResult = NonNullable<Awaited<ReturnType<typeof createDemoRequest>>>
+    export type CreateDemoRequestMutationBody = BodyType<DemoRequestInput>
+    export type CreateDemoRequestMutationError = ErrorType<ErrorResponse>
+
+    /**
+ * @summary Submit a demo booking / sales lead from the marketing site
+ */
+export const useCreateDemoRequest = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createDemoRequest>>, TError,{data: BodyType<DemoRequestInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createDemoRequest>>,
+        TError,
+        {data: BodyType<DemoRequestInput>},
+        TContext
+      > => {
+      return useMutation(getCreateDemoRequestMutationOptions(options));
+    }
+
+export const getListDemoRequestsUrl = () => {
+
+
+
+
+  return `/api/v1/admin/demo-requests`
+}
+
+/**
+ * @summary List demo booking requests (newest first)
+ */
+export const listDemoRequests = async ( options?: Parameters<typeof customFetch>[1]): Promise<ListDemoRequestsResult> => {
+
+  return customFetch<ListDemoRequestsResult>(getListDemoRequestsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListDemoRequestsQueryKey = () => {
+    return [
+    `/api/v1/admin/demo-requests`
+    ] as const;
+    }
+
+
+export const getListDemoRequestsQueryOptions = <TData = Awaited<ReturnType<typeof listDemoRequests>>, TError = ErrorType<ErrorResponse>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listDemoRequests>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListDemoRequestsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listDemoRequests>>> = ({ signal }) => listDemoRequests({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listDemoRequests>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListDemoRequestsQueryResult = NonNullable<Awaited<ReturnType<typeof listDemoRequests>>>
+export type ListDemoRequestsQueryError = ErrorType<ErrorResponse>
+
+
+/**
+ * @summary List demo booking requests (newest first)
+ */
+
+export function useListDemoRequests<TData = Awaited<ReturnType<typeof listDemoRequests>>, TError = ErrorType<ErrorResponse>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listDemoRequests>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListDemoRequestsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
 
 export const getGetCampaignQrUrl = (id: string,) => {
 
