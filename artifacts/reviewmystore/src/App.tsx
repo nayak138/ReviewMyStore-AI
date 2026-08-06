@@ -2,7 +2,7 @@ import { Switch, Route, Redirect, useLocation, Router as WouterRouter } from 'wo
 import { ClerkProvider, SignIn, SignUp, Show, useClerk } from '@clerk/react';
 import { publishableKeyFromHost } from '@clerk/react/internal';
 import { shadcn } from '@clerk/themes';
-import { useEffect, useRef, lazy, Suspense, type ReactNode } from 'react';
+import { useEffect, useRef, useState, lazy, Suspense, type ReactNode } from 'react';
 import { QueryClient, QueryClientProvider, useQueryClient } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -183,9 +183,34 @@ function HomeRedirect() {
   );
 }
 
+/** Suspense fallback for lazy-loaded routes. Renders nothing for the first
+ * ~150ms so fast connections never see a flash; after that, shows a subtle
+ * centered branded spinner while the page chunk downloads. */
+function PageLoader() {
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setVisible(true), 150);
+    return () => clearTimeout(timer);
+  }, []);
+
+  if (!visible) return null;
+
+  return (
+    <div className="flex min-h-[100dvh] items-center justify-center bg-background" role="status" aria-label="Loading page">
+      <div className="flex flex-col items-center gap-4">
+        <BrandIcon className="w-10 h-10 animate-pulse" />
+        <div className="h-1 w-24 overflow-hidden rounded-full bg-muted">
+          <div className="h-full w-1/3 animate-[page-loader-slide_1s_ease-in-out_infinite] rounded-full bg-primary" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function AppRouter() {
   return (
-    <Suspense fallback={null}>
+    <Suspense fallback={<PageLoader />}>
       <Switch>
       <Route path="/" component={HomeRedirect} />
       <Route path="/sign-in/*?" component={SignInPage} />
