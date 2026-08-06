@@ -80,8 +80,8 @@ export function HeroSection() {
               transition={{ delay: 0.1 }}
               className="text-5xl lg:text-[4rem] font-extrabold tracking-tight text-foreground mb-6 leading-[1.1]"
             >
-              5 ⭐ <GoogleLogoText /> Reviews <br className="hidden lg:block" />
-              with AI
+              5 ⭐ <GoogleLogoText /> <br className="hidden lg:block" />
+              Reviews with AI
             </motion.h1>
             
             <motion.p 
