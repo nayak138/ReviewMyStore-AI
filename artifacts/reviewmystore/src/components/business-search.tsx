@@ -9,6 +9,8 @@ interface BusinessSearchProps {
   className?: string;
   inputClassName?: string;
   autoFocus?: boolean;
+  /** Open live suggestions when a parent fills the controlled query (for example, an example chip). */
+  openOnValueChange?: boolean;
   onSelect: (suggestion: PlaceAutocompleteSuggestion) => void;
   /** Optional controlled query text — lets a parent (e.g. example chips) fill the box. */
   value?: string;
@@ -26,6 +28,7 @@ export function BusinessSearch({
   className,
   inputClassName,
   autoFocus,
+  openOnValueChange = false,
   onSelect,
   value,
   onQueryChange,
@@ -38,8 +41,24 @@ export function BusinessSearch({
   };
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [isOpen, setIsOpen] = useState(false);
+  const previousValueRef = useRef(value);
+  const suppressOpenOnValueChangeRef = useRef(false);
   const sessionTokenRef = useRef<string>(crypto.randomUUID());
   const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (
+      openOnValueChange &&
+      value !== undefined &&
+      value !== previousValueRef.current
+    ) {
+      if (!suppressOpenOnValueChangeRef.current) {
+        setIsOpen(true);
+      }
+      suppressOpenOnValueChangeRef.current = false;
+    }
+    previousValueRef.current = value;
+  }, [openOnValueChange, value]);
 
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedQuery(query.trim()), 300);
@@ -105,6 +124,7 @@ export function BusinessSearch({
                     type="button"
                     onClick={() => {
                       onSelect(s);
+                      suppressOpenOnValueChangeRef.current = true;
                       setQuery(s.mainText);
                       setIsOpen(false);
                       sessionTokenRef.current = crypto.randomUUID();

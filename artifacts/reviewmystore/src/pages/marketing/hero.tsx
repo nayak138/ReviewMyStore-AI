@@ -107,6 +107,7 @@ export function HeroSection() {
                   placeholder="Start typing your business name..."
                   value={query}
                   onQueryChange={setQuery}
+                  openOnValueChange
                   onSelect={(s) => setSelected(s)}
                   inputClassName="h-14 text-base shadow-sm border-border bg-background"
                 />
