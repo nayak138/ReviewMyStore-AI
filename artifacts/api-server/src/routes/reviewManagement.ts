@@ -74,8 +74,34 @@ router.post(
   async (req, res): Promise<void> => {
     const organizationId = requireOrganization(req, res);
     if (!organizationId) return;
+    // The hosted provider flow returns users to the page they started from.
+    // Only app-owned origins are forwarded so the provider portal can never
+    // be pointed at an attacker-controlled return URL.
+    let returnUrl: string | undefined;
+    const referer = req.get("referer");
+    if (referer) {
+      try {
+        const parsed = new URL(referer);
+        const allowedHosts = new Set(
+          [
+            ...(process.env.REPLIT_DOMAINS?.split(",") ?? []),
+            process.env.REPLIT_DEV_DOMAIN,
+          ]
+            .map((domain) => domain?.trim().toLowerCase())
+            .filter((domain): domain is string => Boolean(domain)),
+        );
+        if (
+          (parsed.protocol === "https:" || parsed.protocol === "http:") &&
+          allowedHosts.has(parsed.hostname.toLowerCase())
+        ) {
+          returnUrl = `${parsed.origin}${parsed.pathname}`;
+        }
+      } catch {
+        // Ignore malformed referers; the provider page has a back button.
+      }
+    }
     try {
-      const result = await startReviewProviderConnection(organizationId);
+      const result = await startReviewProviderConnection(organizationId, returnUrl);
       res.json(StartReviewProviderConnectionResponse.parse(result));
     } catch (error) {
       req.log.warn({ err: error }, "Unable to start review provider connection");

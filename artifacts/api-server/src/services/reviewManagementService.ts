@@ -5,6 +5,7 @@ import {
   eq,
   ilike,
   or,
+  sql,
 } from "drizzle-orm";
 import {
   db,
@@ -17,9 +18,17 @@ import {
 import { generateReviewReplyDraft } from "./aiService";
 import { logger } from "../lib/logger";
 
+// bundle.social REST API. All endpoints live under /api/v1 and authenticate
+// with the org-level x-api-key header. Docs: https://info.bundle.social
 const BNDLE_API_BASE =
   process.env.BNDLE_SOCIAL_BASE_URL?.replace(/\/$/, "") ??
-  "https://zernio.com/api";
+  "https://api.bundle.social";
+
+const IMPORT_POLL_INTERVAL_MS = 2_000;
+const IMPORT_POLL_TIMEOUT_MS = 30_000;
+const IMPORT_BATCH_COUNT = 50;
+const REVIEW_PAGE_SIZE = 100;
+const MAX_SYNCED_REVIEWS = 1_000;
 
 type JsonRecord = Record<string, unknown>;
 
@@ -28,6 +37,8 @@ export class ReviewProviderError extends Error {
     message: string,
     readonly status = 502,
     readonly code = "REVIEW_PROVIDER_ERROR",
+    /** Raw HTTP status from bundle.social, for internal flow decisions only. */
+    readonly upstreamStatus: number | null = null,
   ) {
     super(message);
     this.name = "ReviewProviderError";
@@ -45,7 +56,7 @@ function providerApiKey(): string {
   const key = process.env.BNDLE_SOCIAL_API;
   if (!key) {
     throw new ReviewProviderError(
-      "Review provider is not configured. Ask an administrator to connect BNDLE.",
+      "Review provider is not configured. Ask an administrator to add the bundle.social API key.",
       503,
       "REVIEW_PROVIDER_NOT_CONFIGURED",
     );
@@ -71,10 +82,6 @@ function valueNumber(value: unknown): number | null {
   return typeof value === "number" && Number.isFinite(value) ? value : null;
 }
 
-function valueBoolean(value: unknown): boolean {
-  return value === true;
-}
-
 function asDate(value: unknown): Date | null {
   const raw = valueString(value);
   if (!raw) return null;
@@ -82,8 +89,21 @@ function asDate(value: unknown): Date | null {
   return Number.isNaN(date.getTime()) ? null : date;
 }
 
+const STAR_RATINGS: Record<string, number> = {
+  ONE: 1,
+  TWO: 2,
+  THREE: 3,
+  FOUR: 4,
+  FIVE: 5,
+};
+
+function starRatingToNumber(value: unknown): number {
+  const raw = valueString(value);
+  return (raw && STAR_RATINGS[raw.toUpperCase()]) || 0;
+}
+
 function url(path: string, query?: Record<string, string | number | undefined>) {
-  const target = new URL(`${BNDLE_API_BASE}/${path.replace(/^\//, "")}`);
+  const target = new URL(`${BNDLE_API_BASE}/api/v1/${path.replace(/^\//, "")}`);
   for (const [key, value] of Object.entries(query ?? {})) {
     if (value !== undefined) target.searchParams.set(key, String(value));
   }
@@ -93,11 +113,12 @@ function url(path: string, query?: Record<string, string | number | undefined>) 
 async function bndleRequest<T extends JsonRecord = JsonRecord>(
   path: string,
   init: RequestInit = {},
+  query?: Record<string, string | number | undefined>,
 ): Promise<T> {
-  const response = await fetch(url(path), {
+  const response = await fetch(url(path, query), {
     ...init,
     headers: {
-      Authorization: `Bearer ${providerApiKey()}`,
+      "x-api-key": providerApiKey(),
       ...(init.body ? { "Content-Type": "application/json" } : {}),
       ...init.headers,
     },
@@ -115,55 +136,59 @@ async function bndleRequest<T extends JsonRecord = JsonRecord>(
   if (!response.ok) {
     logger.warn(
       { providerStatus: response.status, path: path.split("?")[0] },
-      "BNDLE review provider request failed",
+      "bundle.social review provider request failed",
     );
-    if (response.status === 401) {
-      // A 401 here means Zernio rejected our platform API key, not the
-      // user's Google connection. Surface it as a configuration problem.
+    // 401 = key missing, 403 = key invalid. Either way this is OUR platform
+    // credential, never the end user's Google connection.
+    if (response.status === 401 || response.status === 403) {
       throw new ReviewProviderError(
-        "The review provider API key is invalid or expired. Ask an administrator to update the BNDLE credential.",
+        "The review provider API key is invalid or expired. Ask an administrator to update the bundle.social credential.",
         503,
         "REVIEW_PROVIDER_NOT_CONFIGURED",
+        response.status,
       );
     }
-    const code = valueString(payload.code);
-    const disconnected = code === "token_invalid" || code === "token_expired";
+    if (response.status === 429) {
+      throw new ReviewProviderError(
+        "The review provider is rate limiting requests. Please try again in a minute.",
+        429,
+        "REVIEW_PROVIDER_RATE_LIMITED",
+        response.status,
+      );
+    }
     throw new ReviewProviderError(
-      disconnected
-        ? "Your Google Business connection needs to be reconnected."
-        : "The review provider could not complete that request. Please try again.",
-      disconnected ? 409 : response.status >= 500 ? 502 : 400,
-      disconnected ? "REVIEW_PROVIDER_RECONNECT_REQUIRED" : "REVIEW_PROVIDER_ERROR",
+      "The review provider could not complete that request. Please try again.",
+      response.status >= 500 ? 502 : 400,
+      "REVIEW_PROVIDER_ERROR",
+      response.status,
     );
   }
   return payload as T;
 }
 
-async function getOrCreateProviderProfile(organizationId: string) {
-  const profileName = `ReviewMyStore ${organizationId}`;
-  const listed = await bndleRequest("v1/profiles");
-  const profiles = asArray(listed.profiles ?? listed.data);
-  const existing = profiles.find(
-    (profile) => valueString(profile.name) === profileName,
-  );
-  const existingId = existing ? valueString(existing._id ?? existing.id) : null;
+/**
+ * bundle.social scopes social accounts to teams; we keep one team per
+ * organization so tenants never see each other's accounts or reviews.
+ */
+async function getOrCreateProviderTeam(organizationId: string): Promise<string> {
+  const teamName = `ReviewMyStore ${organizationId}`;
+  const organization = await bndleRequest("organization/");
+  const teams = asArray(organization.teams);
+  const existing = teams.find((team) => valueString(team.name) === teamName);
+  const existingId = existing ? valueString(existing.id) : null;
   if (existingId) return existingId;
 
-  const created = await bndleRequest("v1/profiles", {
+  const created = await bndleRequest("team/", {
     method: "POST",
-    body: JSON.stringify({
-      name: profileName,
-      description: "Managed by ReviewMyStore review dashboard",
-    }),
+    body: JSON.stringify({ name: teamName }),
   });
-  const profile = asRecord(created.profile ?? created.data);
-  const profileId = valueString(profile._id ?? profile.id);
-  if (!profileId) {
+  const teamId = valueString(created.id);
+  if (!teamId) {
     throw new ReviewProviderError(
-      "The review provider did not return a profile identifier.",
+      "The review provider did not return a team identifier.",
     );
   }
-  return profileId;
+  return teamId;
 }
 
 async function getConnection(
@@ -263,14 +288,17 @@ function toReviewPayload(
   };
 }
 
-export async function startReviewProviderConnection(organizationId: string) {
-  const externalProfileId = await getOrCreateProviderProfile(organizationId);
+export async function startReviewProviderConnection(
+  organizationId: string,
+  returnUrl?: string,
+) {
+  const teamId = await getOrCreateProviderTeam(organizationId);
   const [connection] = await db
     .insert(providerConnectionsTable)
     .values({
       organizationId,
       provider: "BNDLE",
-      externalProfileId,
+      externalProfileId: teamId,
       status: "PENDING",
       lastError: null,
       updatedAt: new Date(),
@@ -281,7 +309,7 @@ export async function startReviewProviderConnection(organizationId: string) {
         providerConnectionsTable.provider,
       ],
       set: {
-        externalProfileId,
+        externalProfileId: teamId,
         status: "PENDING",
         lastError: null,
         updatedAt: new Date(),
@@ -289,43 +317,61 @@ export async function startReviewProviderConnection(organizationId: string) {
     })
     .returning();
 
-  // BNDLE requires the profile id in the query string; the server creates the
-  // scoped authorization URL so it is never guessed client-side.
-  const scopedResult = await bndleRequest(
-    `v1/connect/googlebusiness?profileId=${encodeURIComponent(externalProfileId)}`,
-  );
-  const authUrl = valueString(scopedResult.authUrl);
+  // The hosted portal handles Google OAuth AND business-location selection;
+  // the API key stays server-side and the link expires after an hour.
+  const portal = await bndleRequest("social-account/create-portal-link", {
+    method: "POST",
+    body: JSON.stringify({
+      teamId,
+      socialAccountTypes: ["GOOGLE_BUSINESS"],
+      ...(returnUrl ? { redirectUrl: returnUrl } : {}),
+      expiresIn: 60,
+    }),
+  });
+  const authUrl = valueString(portal.url);
   if (!authUrl) {
     throw new ReviewProviderError(
-      "The review provider did not return an authorization URL.",
+      "The review provider did not return a connection link.",
     );
   }
   return { connection: connectionResult(connection), authUrl };
 }
 
-async function upsertLocation(
+/**
+ * Each connected GOOGLE_BUSINESS social account represents one selected
+ * business location (bundle.social requires picking a location during the
+ * hosted flow). We mirror that account as a review location row.
+ */
+async function upsertLocationFromAccount(
   organizationId: string,
   connectionId: string,
-  accountId: string,
-  location: JsonRecord,
-  selectedLocationId: string | null,
+  account: JsonRecord,
 ) {
-  const externalLocationId = valueString(location.id);
-  const name = valueString(location.name);
-  if (!externalLocationId || !name) return null;
+  const socialAccountId = valueString(account.id);
+  if (!socialAccountId) return null;
+  const channels = asArray(account.channels);
+  const selectedExternalId = valueString(account.externalId);
+  const selectedChannel = channels.find(
+    (channel) => valueString(channel.id) === selectedExternalId,
+  );
+  const name =
+    valueString(account.displayName) ??
+    valueString(account.username) ??
+    valueString(selectedChannel?.name) ??
+    "Google Business location";
 
   const [saved] = await db
     .insert(reviewLocationsTable)
     .values({
       organizationId,
       providerConnectionId: connectionId,
-      externalAccountId: accountId,
-      externalLocationId,
+      externalAccountId: socialAccountId,
+      externalLocationId: selectedExternalId ?? socialAccountId,
       name,
-      address: valueString(location.address),
-      category: valueString(location.category),
-      websiteUrl: valueString(location.websiteUrl),
-      isSelected: externalLocationId === selectedLocationId,
+      address: valueString(selectedChannel?.address),
+      category: null,
+      websiteUrl: null,
+      isSelected: true,
       updatedAt: new Date(),
     })
     .onConflictDoUpdate({
@@ -334,12 +380,10 @@ async function upsertLocation(
         reviewLocationsTable.externalLocationId,
       ],
       set: {
-        externalAccountId: accountId,
+        externalAccountId: socialAccountId,
         name,
-        address: valueString(location.address),
-        category: valueString(location.category),
-        websiteUrl: valueString(location.websiteUrl),
-        isSelected: externalLocationId === selectedLocationId,
+        address: valueString(selectedChannel?.address),
+        isSelected: true,
         updatedAt: new Date(),
       },
     })
@@ -347,131 +391,172 @@ async function upsertLocation(
   return saved;
 }
 
-async function syncReviewsForLocation(
-  organizationId: string,
-  location: typeof reviewLocationsTable.$inferSelect,
-) {
-  const payload = await bndleRequest(
-    `v1/accounts/${encodeURIComponent(location.externalAccountId)}/gmb-reviews`,
-  );
-  const reviews = asArray(payload.reviews);
-  for (const rawReview of reviews) {
-    const externalReviewId = valueString(rawReview.id);
-    if (!externalReviewId) continue;
-    const reviewer = asRecord(rawReview.reviewer);
-    const rating = valueNumber(rawReview.rating) ?? 0;
-    const comment = valueString(rawReview.comment) ?? "";
-    const reply = asRecord(rawReview.reviewReply);
-    const replyText = valueString(reply.comment);
-    const sensitiveReason = reviewSensitivity(rating, comment);
-    await db
-      .insert(managedReviewsTable)
-      .values({
-        organizationId,
-        reviewLocationId: location.id,
-        externalReviewId,
-        providerResourceName: valueString(rawReview.name),
-        reviewerName: valueString(reviewer.displayName) ?? "Google reviewer",
-        reviewerPhotoUrl: valueString(reviewer.profilePhotoUrl),
-        isAnonymous: valueBoolean(reviewer.isAnonymous),
-        rating,
-        comment,
-        reviewCreatedAt: asDate(rawReview.createTime),
-        reviewUpdatedAt: asDate(rawReview.updateTime),
-        replyText,
-        replyUpdatedAt: asDate(reply.updateTime),
-        responseStatus: replyText ? "PUBLISHED" : "PENDING",
-        requiresApproval: true,
-        sensitiveReason,
-        updatedAt: new Date(),
-      })
-      .onConflictDoUpdate({
-        target: [
-          managedReviewsTable.reviewLocationId,
-          managedReviewsTable.externalReviewId,
-        ],
-        set: {
-          providerResourceName: valueString(rawReview.name),
-          reviewerName: valueString(reviewer.displayName) ?? "Google reviewer",
-          reviewerPhotoUrl: valueString(reviewer.profilePhotoUrl),
-          isAnonymous: valueBoolean(reviewer.isAnonymous),
-          rating,
-          comment,
-          reviewCreatedAt: asDate(rawReview.createTime),
-          reviewUpdatedAt: asDate(rawReview.updateTime),
-          replyText,
-          replyUpdatedAt: asDate(reply.updateTime),
-          responseStatus: replyText ? "PUBLISHED" : "PENDING",
-          requiresApproval: true,
-          sensitiveReason,
-          updatedAt: new Date(),
-        },
-      });
+/**
+ * Review imports are async jobs on bundle.social. Starting one when another
+ * is already running returns 409, which simply means "in progress".
+ * Returns an error note when the import could not start for other reasons
+ * (e.g. the monthly import quota is exhausted) so the sync can still surface
+ * already-imported reviews instead of failing outright.
+ */
+async function startReviewImport(teamId: string): Promise<string | null> {
+  try {
+    await bndleRequest("misc/google-business/reviews/import", {
+      method: "POST",
+      body: JSON.stringify({ teamId, count: IMPORT_BATCH_COUNT }),
+    });
+    return null;
+  } catch (error) {
+    if (error instanceof ReviewProviderError) {
+      if (error.upstreamStatus === 409) return null; // already running
+      if (error.code === "REVIEW_PROVIDER_NOT_CONFIGURED") throw error;
+      logger.warn(
+        { upstreamStatus: error.upstreamStatus },
+        "Review import could not start; serving previously imported reviews",
+      );
+      return "New reviews could not be imported right now (import limit or provider issue). Showing previously imported reviews.";
+    }
+    throw error;
   }
+}
+
+/** Polls the async import and returns a user-facing note when the import did
+ * not finish cleanly, so the sync can surface partial results honestly. */
+async function waitForReviewImport(teamId: string): Promise<string | null> {
+  const deadline = Date.now() + IMPORT_POLL_TIMEOUT_MS;
+  while (Date.now() < deadline) {
+    const payload = await bndleRequest(
+      "misc/google-business/reviews/import",
+      {},
+      { teamId },
+    );
+    const [latest] = asArray(payload.imports);
+    const status = latest ? valueString(latest.status) : null;
+    if (!status || status === "COMPLETED") return null;
+    if (status === "FAILED") {
+      return "The latest review import failed at the provider. Showing previously imported reviews — try syncing again later.";
+    }
+    // RATE_LIMITED imports auto-resume on the provider side.
+    if (status === "RATE_LIMITED") {
+      return "Google is rate limiting review imports; the import will resume automatically. Showing reviews imported so far.";
+    }
+    await new Promise((resolve) => setTimeout(resolve, IMPORT_POLL_INTERVAL_MS));
+  }
+  return "The review import is still running. Sync again in a minute to pick up the newest reviews.";
+}
+
+async function fetchAllReviews(teamId: string): Promise<JsonRecord[]> {
+  const reviews: JsonRecord[] = [];
+  let offset = 0;
+  for (;;) {
+    const payload = await bndleRequest(
+      "misc/google-business/reviews",
+      {},
+      { teamId, limit: REVIEW_PAGE_SIZE, offset },
+    );
+    const page = asArray(payload.reviews);
+    reviews.push(...page);
+    const total = valueNumber(payload.total) ?? reviews.length;
+    offset += page.length;
+    if (page.length === 0 || offset >= total || offset >= MAX_SYNCED_REVIEWS) {
+      return reviews;
+    }
+  }
+}
+
+async function upsertManagedReview(
+  organizationId: string,
+  locationId: string,
+  raw: JsonRecord,
+) {
+  const externalReviewId = valueString(raw.id);
+  if (!externalReviewId) return;
+  const reviewerName = valueString(raw.reviewerDisplayName);
+  const rating = starRatingToNumber(raw.starRating);
+  const comment = valueString(raw.comment) ?? "";
+  const replyText = valueString(raw.reviewReplyComment);
+  const sensitiveReason = reviewSensitivity(rating, comment);
+  const values = {
+    providerResourceName: valueString(raw.externalReviewId),
+    reviewerName: reviewerName ?? "Google reviewer",
+    reviewerPhotoUrl: valueString(raw.reviewerProfilePhotoUrl),
+    isAnonymous: !reviewerName,
+    rating,
+    comment,
+    reviewCreatedAt: asDate(raw.createTime),
+    reviewUpdatedAt: asDate(raw.updateTime),
+    replyText,
+    replyUpdatedAt: asDate(raw.reviewReplyUpdatedAt),
+    requiresApproval: true,
+    sensitiveReason,
+    updatedAt: new Date(),
+  };
+  await db
+    .insert(managedReviewsTable)
+    .values({
+      organizationId,
+      reviewLocationId: locationId,
+      externalReviewId,
+      responseStatus: replyText ? "PUBLISHED" : "PENDING",
+      ...values,
+    })
+    .onConflictDoUpdate({
+      target: [
+        managedReviewsTable.reviewLocationId,
+        managedReviewsTable.externalReviewId,
+      ],
+      set: {
+        ...values,
+        // Keep locally drafted replies intact when the provider has no
+        // published reply yet; otherwise reflect the provider state.
+        responseStatus: replyText
+          ? sql`'PUBLISHED'::review_response_status`
+          : sql`CASE WHEN ${managedReviewsTable.responseStatus} = 'DRAFT' THEN 'DRAFT'::review_response_status ELSE 'PENDING'::review_response_status END`,
+      },
+    });
 }
 
 export async function syncReviewProvider(organizationId: string) {
   const connection = await getRequiredConnection(organizationId);
-  const accountsPayload = await bndleRequest(
-    `v1/accounts?profileId=${encodeURIComponent(connection.externalProfileId)}`,
-  );
-  const googleAccounts = asArray(accountsPayload.accounts ?? accountsPayload.data)
-    .filter((account) => {
-      const platform = valueString(account.platform)?.toLowerCase() ?? "";
-      return platform === "googlebusiness" || platform === "google_business";
-    });
-
-  if (googleAccounts.length === 0) {
-    await db
-      .update(providerConnectionsTable)
-      .set({ status: "PENDING", lastError: null, updatedAt: new Date() })
-      .where(eq(providerConnectionsTable.id, connection.id));
-    return getReviewDashboard(organizationId);
-  }
+  const teamId = connection.externalProfileId;
 
   try {
-    for (const account of googleAccounts) {
-      const accountId = valueString(account._id ?? account.id);
-      if (!accountId) continue;
-      const locationPayload = await bndleRequest(
-        `v1/accounts/${encodeURIComponent(accountId)}/gmb-locations?limit=500`,
-      );
-      const selectedLocationId = valueString(locationPayload.selectedLocationId);
-      const locations = asArray(locationPayload.locations);
-      const savedLocations = [];
-      for (const rawLocation of locations) {
-        const saved = await upsertLocation(
-          organizationId,
-          connection.id,
-          accountId,
-          rawLocation,
-          selectedLocationId,
-        );
-        if (saved) savedLocations.push(saved);
-      }
+    const team = await bndleRequest(`team/${encodeURIComponent(teamId)}`);
+    const googleAccounts = asArray(team.socialAccounts).filter(
+      (account) => valueString(account.type) === "GOOGLE_BUSINESS",
+    );
 
-      // BNDLE's Google review endpoint uses the active GBP location. Walk each
-      // location to import all reviews, then restore the owner's original
-      // provider-side selection so syncing does not alter their working view.
-      for (const location of savedLocations) {
-        await bndleRequest(
-          `v1/accounts/${encodeURIComponent(accountId)}/gmb-locations`,
-          {
-            method: "PUT",
-            body: JSON.stringify({ locationId: location.externalLocationId }),
-          },
-        );
-        await syncReviewsForLocation(organizationId, location);
-      }
-      if (selectedLocationId) {
-        await bndleRequest(
-          `v1/accounts/${encodeURIComponent(accountId)}/gmb-locations`,
-          {
-            method: "PUT",
-            body: JSON.stringify({ locationId: selectedLocationId }),
-          },
-        );
-      }
+    if (googleAccounts.length === 0) {
+      await db
+        .update(providerConnectionsTable)
+        .set({ status: "PENDING", lastError: null, updatedAt: new Date() })
+        .where(eq(providerConnectionsTable.id, connection.id));
+      return getReviewDashboard(organizationId);
+    }
+
+    const locationsByAccountId = new Map<
+      string,
+      typeof reviewLocationsTable.$inferSelect
+    >();
+    for (const account of googleAccounts) {
+      const saved = await upsertLocationFromAccount(
+        organizationId,
+        connection.id,
+        account,
+      );
+      if (saved) locationsByAccountId.set(saved.externalAccountId, saved);
+    }
+
+    const importNote =
+      (await startReviewImport(teamId)) ?? (await waitForReviewImport(teamId));
+
+    const rawReviews = await fetchAllReviews(teamId);
+    for (const raw of rawReviews) {
+      const socialAccountId = valueString(raw.socialAccountId);
+      const location = socialAccountId
+        ? locationsByAccountId.get(socialAccountId)
+        : undefined;
+      if (!location) continue;
+      await upsertManagedReview(organizationId, location.id, raw);
     }
 
     await db
@@ -479,7 +564,7 @@ export async function syncReviewProvider(organizationId: string) {
       .set({
         status: "CONNECTED",
         lastSyncedAt: new Date(),
-        lastError: null,
+        lastError: importNote,
         updatedAt: new Date(),
       })
       .where(eq(providerConnectionsTable.id, connection.id));
@@ -646,18 +731,31 @@ export async function publishManagedReviewReply(
   comment: string,
 ) {
   const { review, location } = await findReview(organizationId, managedReviewId);
+  const connection = await getRequiredConnection(organizationId);
   const trimmed = comment.trim();
   if (!trimmed) {
     throw new ReviewProviderError("A reply cannot be empty.", 400, "INVALID_REPLY");
   }
+  if (trimmed.length > 4096) {
+    throw new ReviewProviderError(
+      "Replies must be 4096 characters or fewer.",
+      400,
+      "INVALID_REPLY",
+    );
+  }
 
-  // Provider updates are PUT-like. This local check handles common client
-  // retries without a network call; a retry after an interrupted server
-  // response is still safe because BNDLE overwrites the same review reply.
+  // Provider updates are PUT semantics: replaying the same reply after an
+  // interrupted response is safe because bundle.social overwrites it.
   if (review.responseStatus !== "PUBLISHED" || review.replyText !== trimmed) {
     await bndleRequest(
-      `v1/accounts/${encodeURIComponent(location.externalAccountId)}/gmb-reviews/${encodeURIComponent(review.externalReviewId)}/reply`,
-      { method: "POST", body: JSON.stringify({ comment: trimmed }) },
+      `misc/google-business/reviews/${encodeURIComponent(review.externalReviewId)}/reply`,
+      {
+        method: "PUT",
+        body: JSON.stringify({
+          teamId: connection.externalProfileId,
+          comment: trimmed,
+        }),
+      },
     );
   }
 
@@ -689,9 +787,13 @@ export async function deleteManagedReviewReply(
 ) {
   const { review, location } = await findReview(organizationId, managedReviewId);
   if (review.replyText) {
+    const connection = await getRequiredConnection(organizationId);
     await bndleRequest(
-      `v1/accounts/${encodeURIComponent(location.externalAccountId)}/gmb-reviews/${encodeURIComponent(review.externalReviewId)}/reply`,
-      { method: "DELETE" },
+      `misc/google-business/reviews/${encodeURIComponent(review.externalReviewId)}/reply`,
+      {
+        method: "DELETE",
+        body: JSON.stringify({ teamId: connection.externalProfileId }),
+      },
     );
   }
   const [updated] = await db
