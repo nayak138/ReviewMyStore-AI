@@ -117,8 +117,17 @@ async function bndleRequest<T extends JsonRecord = JsonRecord>(
       { providerStatus: response.status, path: path.split("?")[0] },
       "BNDLE review provider request failed",
     );
+    if (response.status === 401) {
+      // A 401 here means Zernio rejected our platform API key, not the
+      // user's Google connection. Surface it as a configuration problem.
+      throw new ReviewProviderError(
+        "The review provider API key is invalid or expired. Ask an administrator to update the BNDLE credential.",
+        503,
+        "REVIEW_PROVIDER_NOT_CONFIGURED",
+      );
+    }
     const code = valueString(payload.code);
-    const disconnected = code === "token_invalid" || response.status === 401;
+    const disconnected = code === "token_invalid" || code === "token_expired";
     throw new ReviewProviderError(
       disconnected
         ? "Your Google Business connection needs to be reconnected."
