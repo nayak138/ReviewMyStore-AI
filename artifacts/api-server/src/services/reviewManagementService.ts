@@ -39,6 +39,11 @@ export class ReviewProviderError extends Error {
     readonly code = "REVIEW_PROVIDER_ERROR",
     /** Raw HTTP status from bundle.social, for internal flow decisions only. */
     readonly upstreamStatus: number | null = null,
+    /**
+     * bundle.social's own error message (e.g. quota text), kept internal —
+     * used to drive retry logic, never shown to end users verbatim.
+     */
+    readonly providerMessage: string | null = null,
   ) {
     super(message);
     this.name = "ReviewProviderError";
@@ -161,6 +166,7 @@ async function bndleRequest<T extends JsonRecord = JsonRecord>(
       response.status >= 500 ? 502 : 400,
       "REVIEW_PROVIDER_ERROR",
       response.status,
+      valueString(payload.message),
     );
   }
   return payload as T;
@@ -399,17 +405,62 @@ async function upsertLocationFromAccount(
  * (e.g. the monthly import quota is exhausted) so the sync can still surface
  * already-imported reviews instead of failing outright.
  */
+async function requestImport(teamId: string, count: number): Promise<void> {
+  await bndleRequest("misc/google-business/reviews/import", {
+    method: "POST",
+    body: JSON.stringify({ teamId, count }),
+  });
+}
+
+/**
+ * bundle.social rejects the whole import (400) if the requested count
+ * exceeds the account's remaining monthly quota — it never clamps for you.
+ * Its error text is either "Requested N reviews but only M remaining ...
+ * Used: X/Y." (partial quota left) or "... has reached its monthly review
+ * import limit of N reviews. Used: N/N ..." (quota fully exhausted). A fixed
+ * batch size would silently import zero reviews once quota is below that
+ * batch size, so parse the actual remaining count and retry with it.
+ */
+function parseRemainingQuota(message: string | null): number | null {
+  if (!message) return null;
+  const partial = message.match(/only (\d+) remaining/i);
+  if (partial) return Number(partial[1]);
+  if (/reached its monthly review import limit/i.test(message)) return 0;
+  return null;
+}
+
 async function startReviewImport(teamId: string): Promise<string | null> {
   try {
-    await bndleRequest("misc/google-business/reviews/import", {
-      method: "POST",
-      body: JSON.stringify({ teamId, count: IMPORT_BATCH_COUNT }),
-    });
+    await requestImport(teamId, IMPORT_BATCH_COUNT);
     return null;
   } catch (error) {
     if (error instanceof ReviewProviderError) {
       if (error.upstreamStatus === 409) return null; // already running
       if (error.code === "REVIEW_PROVIDER_NOT_CONFIGURED") throw error;
+
+      if (error.upstreamStatus === 400) {
+        const remaining = parseRemainingQuota(error.providerMessage);
+        if (remaining && remaining > 0) {
+          try {
+            await requestImport(teamId, remaining);
+            return null;
+          } catch (retryError) {
+            if (
+              retryError instanceof ReviewProviderError &&
+              retryError.upstreamStatus === 409
+            ) {
+              return null; // already running
+            }
+            logger.warn(
+              { remaining },
+              "Review import retry at clamped quota also failed",
+            );
+          }
+        } else if (remaining === 0) {
+          return "You've used all of this month's review imports. Previously imported reviews are still shown — upgrade on bundle.social or wait for next month to import more.";
+        }
+      }
+
       logger.warn(
         { upstreamStatus: error.upstreamStatus },
         "Review import could not start; serving previously imported reviews",
