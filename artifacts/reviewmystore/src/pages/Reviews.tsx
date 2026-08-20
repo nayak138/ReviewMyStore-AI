@@ -317,7 +317,18 @@ export default function Reviews() {
   const startConnection = useStartReviewProviderConnection({
     mutation: {
       onSuccess: (data) => {
-        window.location.href = data.authUrl;
+        // Google blocks OAuth inside iframes (e.g. the workspace preview),
+        // so the hosted connect flow must run in a top-level tab.
+        const opened = window.open(data.authUrl, "_blank", "noopener");
+        if (opened) {
+          toast({
+            title: "Complete the connection in the new tab",
+            description: "Sign in with Google there, then come back and press Sync reviews."
+          });
+        } else {
+          // Pop-up blocked: fall back to navigating this window.
+          window.location.href = data.authUrl;
+        }
       },
       onError: (err: any) => {
         const msg = err.response?.data?.message || "Failed to start connection";
