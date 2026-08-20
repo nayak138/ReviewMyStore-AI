@@ -8,3 +8,7 @@ export * from "./nfcDevices";
 export * from "./redirectLinks";
 export * from "./scanEvents";
 export * from "./demoRequests";
+export * from "./providerConnections";
+export * from "./reviewLocations";
+export * from "./managedReviews";
+export * from "./reviewAuditEvents";

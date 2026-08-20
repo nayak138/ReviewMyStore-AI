@@ -9,6 +9,225 @@ import * as zod from 'zod';
 
 
 /**
+ * @summary Get the caller's provider connection, locations, and review inbox summary
+ */
+export const GetReviewDashboardResponse = zod.object({
+  "connection": zod.object({
+  "status": zod.enum(['DISCONNECTED', 'PENDING', 'CONNECTED', 'ERROR']),
+  "provider": zod.enum(['BNDLE']),
+  "lastSyncedAt": zod.coerce.date().nullable(),
+  "lastError": zod.string().nullable()
+}),
+  "locations": zod.array(zod.object({
+  "id": zod.uuid(),
+  "name": zod.string(),
+  "address": zod.string().nullable(),
+  "category": zod.string().nullable(),
+  "websiteUrl": zod.string().nullable(),
+  "isSelected": zod.boolean()
+})),
+  "summary": zod.object({
+  "totalReviews": zod.int(),
+  "needsReply": zod.int(),
+  "replied": zod.int()
+})
+})
+
+
+/**
+ * @summary Start the BNDLE-hosted Google Business authorization flow
+ */
+export const StartReviewProviderConnectionResponse = zod.object({
+  "connection": zod.object({
+  "status": zod.enum(['DISCONNECTED', 'PENDING', 'CONNECTED', 'ERROR']),
+  "provider": zod.enum(['BNDLE']),
+  "lastSyncedAt": zod.coerce.date().nullable(),
+  "lastError": zod.string().nullable()
+}),
+  "authUrl": zod.url()
+})
+
+
+/**
+ * @summary Synchronize Google Business locations and reviews from BNDLE
+ */
+export const SyncReviewProviderResponse = zod.object({
+  "connection": zod.object({
+  "status": zod.enum(['DISCONNECTED', 'PENDING', 'CONNECTED', 'ERROR']),
+  "provider": zod.enum(['BNDLE']),
+  "lastSyncedAt": zod.coerce.date().nullable(),
+  "lastError": zod.string().nullable()
+}),
+  "locations": zod.array(zod.object({
+  "id": zod.uuid(),
+  "name": zod.string(),
+  "address": zod.string().nullable(),
+  "category": zod.string().nullable(),
+  "websiteUrl": zod.string().nullable(),
+  "isSelected": zod.boolean()
+})),
+  "summary": zod.object({
+  "totalReviews": zod.int(),
+  "needsReply": zod.int(),
+  "replied": zod.int()
+})
+})
+
+
+/**
+ * @summary List synchronized Google reviews with inbox filters
+ */
+export const listManagedReviewsQueryRatingMax = 5;
+
+export const listManagedReviewsQuerySearchMax = 200;
+
+
+
+export const ListManagedReviewsQueryParams = zod.object({
+  "locationId": zod.uuid().optional(),
+  "rating": zod.coerce.number().int().min(1).max(listManagedReviewsQueryRatingMax).optional(),
+  "responseStatus": zod.enum(['PENDING', 'DRAFT', 'PUBLISHED']).optional(),
+  "search": zod.coerce.string().max(listManagedReviewsQuerySearchMax).optional()
+})
+
+export const listManagedReviewsResponseReviewsItemRatingMax = 5;
+
+
+
+export const ListManagedReviewsResponse = zod.object({
+  "reviews": zod.array(zod.object({
+  "id": zod.uuid(),
+  "locationId": zod.uuid(),
+  "locationName": zod.string(),
+  "reviewerName": zod.string(),
+  "reviewerPhotoUrl": zod.string().nullable(),
+  "isAnonymous": zod.boolean(),
+  "rating": zod.int().min(1).max(listManagedReviewsResponseReviewsItemRatingMax),
+  "comment": zod.string(),
+  "reviewCreatedAt": zod.coerce.date().nullable(),
+  "reviewUpdatedAt": zod.coerce.date().nullable(),
+  "replyText": zod.string().nullable(),
+  "replyUpdatedAt": zod.coerce.date().nullable(),
+  "draftReplyText": zod.string().nullable(),
+  "draftGeneratedAt": zod.coerce.date().nullable(),
+  "requiresApproval": zod.boolean(),
+  "sensitiveReason": zod.string().nullable(),
+  "responseStatus": zod.enum(['PENDING', 'DRAFT', 'PUBLISHED'])
+}))
+})
+
+
+/**
+ * @summary Generate an AI reply draft that requires human approval
+ */
+export const GenerateManagedReviewDraftParams = zod.object({
+  "id": zod.uuid()
+})
+
+export const generateManagedReviewDraftResponseReviewRatingMax = 5;
+
+
+
+export const GenerateManagedReviewDraftResponse = zod.object({
+  "review": zod.object({
+  "id": zod.uuid(),
+  "locationId": zod.uuid(),
+  "locationName": zod.string(),
+  "reviewerName": zod.string(),
+  "reviewerPhotoUrl": zod.string().nullable(),
+  "isAnonymous": zod.boolean(),
+  "rating": zod.int().min(1).max(generateManagedReviewDraftResponseReviewRatingMax),
+  "comment": zod.string(),
+  "reviewCreatedAt": zod.coerce.date().nullable(),
+  "reviewUpdatedAt": zod.coerce.date().nullable(),
+  "replyText": zod.string().nullable(),
+  "replyUpdatedAt": zod.coerce.date().nullable(),
+  "draftReplyText": zod.string().nullable(),
+  "draftGeneratedAt": zod.coerce.date().nullable(),
+  "requiresApproval": zod.boolean(),
+  "sensitiveReason": zod.string().nullable(),
+  "responseStatus": zod.enum(['PENDING', 'DRAFT', 'PUBLISHED'])
+})
+})
+
+
+/**
+ * @summary Publish an explicitly approved reply to Google Business
+ */
+export const PublishManagedReviewReplyParams = zod.object({
+  "id": zod.uuid()
+})
+
+export const publishManagedReviewReplyBodyCommentMax = 4000;
+
+
+
+export const PublishManagedReviewReplyBody = zod.object({
+  "comment": zod.string().min(1).max(publishManagedReviewReplyBodyCommentMax)
+})
+
+export const publishManagedReviewReplyResponseReviewRatingMax = 5;
+
+
+
+export const PublishManagedReviewReplyResponse = zod.object({
+  "review": zod.object({
+  "id": zod.uuid(),
+  "locationId": zod.uuid(),
+  "locationName": zod.string(),
+  "reviewerName": zod.string(),
+  "reviewerPhotoUrl": zod.string().nullable(),
+  "isAnonymous": zod.boolean(),
+  "rating": zod.int().min(1).max(publishManagedReviewReplyResponseReviewRatingMax),
+  "comment": zod.string(),
+  "reviewCreatedAt": zod.coerce.date().nullable(),
+  "reviewUpdatedAt": zod.coerce.date().nullable(),
+  "replyText": zod.string().nullable(),
+  "replyUpdatedAt": zod.coerce.date().nullable(),
+  "draftReplyText": zod.string().nullable(),
+  "draftGeneratedAt": zod.coerce.date().nullable(),
+  "requiresApproval": zod.boolean(),
+  "sensitiveReason": zod.string().nullable(),
+  "responseStatus": zod.enum(['PENDING', 'DRAFT', 'PUBLISHED'])
+})
+})
+
+
+/**
+ * @summary Remove a published owner reply from Google Business
+ */
+export const DeleteManagedReviewReplyParams = zod.object({
+  "id": zod.uuid()
+})
+
+export const deleteManagedReviewReplyResponseReviewRatingMax = 5;
+
+
+
+export const DeleteManagedReviewReplyResponse = zod.object({
+  "review": zod.object({
+  "id": zod.uuid(),
+  "locationId": zod.uuid(),
+  "locationName": zod.string(),
+  "reviewerName": zod.string(),
+  "reviewerPhotoUrl": zod.string().nullable(),
+  "isAnonymous": zod.boolean(),
+  "rating": zod.int().min(1).max(deleteManagedReviewReplyResponseReviewRatingMax),
+  "comment": zod.string(),
+  "reviewCreatedAt": zod.coerce.date().nullable(),
+  "reviewUpdatedAt": zod.coerce.date().nullable(),
+  "replyText": zod.string().nullable(),
+  "replyUpdatedAt": zod.coerce.date().nullable(),
+  "draftReplyText": zod.string().nullable(),
+  "draftGeneratedAt": zod.coerce.date().nullable(),
+  "requiresApproval": zod.boolean(),
+  "sensitiveReason": zod.string().nullable(),
+  "responseStatus": zod.enum(['PENDING', 'DRAFT', 'PUBLISHED'])
+})
+})
+
+
+/**
  * Returns server health status
  * @summary Health check
  */

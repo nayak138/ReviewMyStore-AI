@@ -7,6 +7,7 @@ import {
   Megaphone, 
   QrCode, 
   SmartphoneNfc, 
+  MessageSquare,
   BarChart3, 
   ShoppingCart,
   Inbox,
@@ -28,6 +29,7 @@ const NAV_ITEMS = [
   { name: "Campaigns", icon: Megaphone, href: "/campaigns", ready: true },
   { name: "QR Codes", icon: QrCode, href: "/qr-codes", ready: true },
   { name: "NFC Devices", icon: SmartphoneNfc, href: "/nfc-devices", ready: true },
+  { name: "Reviews", icon: MessageSquare, href: "/reviews", ready: true },
   { name: "Analytics", icon: BarChart3, href: "/analytics", ready: false },
   { name: "Orders", icon: ShoppingCart, href: "/orders", ready: false },
 ];

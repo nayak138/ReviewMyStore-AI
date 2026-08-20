@@ -49,7 +49,11 @@ import type {
   ListBusinessesParams,
   ListCampaignsParams,
   ListDemoRequestsResult,
+  ListManagedReviewsParams,
   ListNfcDevicesParams,
+  ManagedReviewListResult,
+  ManagedReviewMutationResult,
+  ManagedReviewReplyInput,
   NfcDevice,
   NfcDeviceAssignInput,
   NfcDeviceCreateInput,
@@ -63,6 +67,8 @@ import type {
   PublicReviewPageResult,
   RedirectResolveRequest,
   RedirectResolveResult,
+  ReviewDashboardResult,
+  ReviewProviderConnectionStartResult,
   SessionInfo,
   UploadUrlRequest,
   UploadUrlResponse
@@ -94,6 +100,523 @@ const withQueryKey = <T extends object, K>(query: T, queryKey: K): T & { queryKe
   }
   return result;
 };
+
+export const getGetReviewDashboardUrl = () => {
+
+
+
+
+  return `/api/v1/review-management`
+}
+
+/**
+ * @summary Get the caller's provider connection, locations, and review inbox summary
+ */
+export const getReviewDashboard = async ( options?: Parameters<typeof customFetch>[1]): Promise<ReviewDashboardResult> => {
+
+  return customFetch<ReviewDashboardResult>(getGetReviewDashboardUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetReviewDashboardQueryKey = () => {
+    return [
+    `/api/v1/review-management`
+    ] as const;
+    }
+
+
+export const getGetReviewDashboardQueryOptions = <TData = Awaited<ReturnType<typeof getReviewDashboard>>, TError = ErrorType<ErrorResponse>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getReviewDashboard>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetReviewDashboardQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getReviewDashboard>>> = ({ signal }) => getReviewDashboard({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getReviewDashboard>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetReviewDashboardQueryResult = NonNullable<Awaited<ReturnType<typeof getReviewDashboard>>>
+export type GetReviewDashboardQueryError = ErrorType<ErrorResponse>
+
+
+/**
+ * @summary Get the caller's provider connection, locations, and review inbox summary
+ */
+
+export function useGetReviewDashboard<TData = Awaited<ReturnType<typeof getReviewDashboard>>, TError = ErrorType<ErrorResponse>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getReviewDashboard>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetReviewDashboardQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getStartReviewProviderConnectionUrl = () => {
+
+
+
+
+  return `/api/v1/review-management/connection`
+}
+
+/**
+ * @summary Start the BNDLE-hosted Google Business authorization flow
+ */
+export const startReviewProviderConnection = async ( options?: Parameters<typeof customFetch>[1]): Promise<ReviewProviderConnectionStartResult> => {
+
+  return customFetch<ReviewProviderConnectionStartResult>(getStartReviewProviderConnectionUrl(),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getStartReviewProviderConnectionMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof startReviewProviderConnection>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof startReviewProviderConnection>>, TError,void, TContext> => {
+
+const mutationKey = ['startReviewProviderConnection'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof startReviewProviderConnection>>, void> = () => {
+
+
+          return  startReviewProviderConnection(requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type StartReviewProviderConnectionMutationResult = NonNullable<Awaited<ReturnType<typeof startReviewProviderConnection>>>
+
+    export type StartReviewProviderConnectionMutationError = ErrorType<ErrorResponse>
+
+    /**
+ * @summary Start the BNDLE-hosted Google Business authorization flow
+ */
+export const useStartReviewProviderConnection = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof startReviewProviderConnection>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof startReviewProviderConnection>>,
+        TError,
+        void,
+        TContext
+      > => {
+      return useMutation(getStartReviewProviderConnectionMutationOptions(options));
+    }
+
+export const getSyncReviewProviderUrl = () => {
+
+
+
+
+  return `/api/v1/review-management/sync`
+}
+
+/**
+ * @summary Synchronize Google Business locations and reviews from BNDLE
+ */
+export const syncReviewProvider = async ( options?: Parameters<typeof customFetch>[1]): Promise<ReviewDashboardResult> => {
+
+  return customFetch<ReviewDashboardResult>(getSyncReviewProviderUrl(),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getSyncReviewProviderMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof syncReviewProvider>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof syncReviewProvider>>, TError,void, TContext> => {
+
+const mutationKey = ['syncReviewProvider'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof syncReviewProvider>>, void> = () => {
+
+
+          return  syncReviewProvider(requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SyncReviewProviderMutationResult = NonNullable<Awaited<ReturnType<typeof syncReviewProvider>>>
+
+    export type SyncReviewProviderMutationError = ErrorType<ErrorResponse>
+
+    /**
+ * @summary Synchronize Google Business locations and reviews from BNDLE
+ */
+export const useSyncReviewProvider = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof syncReviewProvider>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof syncReviewProvider>>,
+        TError,
+        void,
+        TContext
+      > => {
+      return useMutation(getSyncReviewProviderMutationOptions(options));
+    }
+
+export const getListManagedReviewsUrl = (params?: ListManagedReviewsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/review-management/reviews?${stringifiedParams}` : `/api/v1/review-management/reviews`
+}
+
+/**
+ * @summary List synchronized Google reviews with inbox filters
+ */
+export const listManagedReviews = async (params?: ListManagedReviewsParams, options?: Parameters<typeof customFetch>[1]): Promise<ManagedReviewListResult> => {
+
+  return customFetch<ManagedReviewListResult>(getListManagedReviewsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListManagedReviewsQueryKey = (params?: ListManagedReviewsParams,) => {
+    return [
+    `/api/v1/review-management/reviews`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getListManagedReviewsQueryOptions = <TData = Awaited<ReturnType<typeof listManagedReviews>>, TError = ErrorType<ErrorResponse>>(params?: ListManagedReviewsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listManagedReviews>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListManagedReviewsQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listManagedReviews>>> = ({ signal }) => listManagedReviews(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listManagedReviews>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListManagedReviewsQueryResult = NonNullable<Awaited<ReturnType<typeof listManagedReviews>>>
+export type ListManagedReviewsQueryError = ErrorType<ErrorResponse>
+
+
+/**
+ * @summary List synchronized Google reviews with inbox filters
+ */
+
+export function useListManagedReviews<TData = Awaited<ReturnType<typeof listManagedReviews>>, TError = ErrorType<ErrorResponse>>(
+ params?: ListManagedReviewsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listManagedReviews>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListManagedReviewsQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGenerateManagedReviewDraftUrl = (id: string,) => {
+
+
+
+
+  return `/api/v1/review-management/reviews/${id}/draft`
+}
+
+/**
+ * @summary Generate an AI reply draft that requires human approval
+ */
+export const generateManagedReviewDraft = async (id: string, options?: Parameters<typeof customFetch>[1]): Promise<ManagedReviewMutationResult> => {
+
+  return customFetch<ManagedReviewMutationResult>(getGenerateManagedReviewDraftUrl(id),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getGenerateManagedReviewDraftMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof generateManagedReviewDraft>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof generateManagedReviewDraft>>, TError,{id: string}, TContext> => {
+
+const mutationKey = ['generateManagedReviewDraft'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof generateManagedReviewDraft>>, {id: string}> = (props) => {
+          const {id} = props ?? {};
+
+          return  generateManagedReviewDraft(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type GenerateManagedReviewDraftMutationResult = NonNullable<Awaited<ReturnType<typeof generateManagedReviewDraft>>>
+
+    export type GenerateManagedReviewDraftMutationError = ErrorType<ErrorResponse>
+
+    /**
+ * @summary Generate an AI reply draft that requires human approval
+ */
+export const useGenerateManagedReviewDraft = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof generateManagedReviewDraft>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof generateManagedReviewDraft>>,
+        TError,
+        {id: string},
+        TContext
+      > => {
+      return useMutation(getGenerateManagedReviewDraftMutationOptions(options));
+    }
+
+export const getPublishManagedReviewReplyUrl = (id: string,) => {
+
+
+
+
+  return `/api/v1/review-management/reviews/${id}/reply`
+}
+
+/**
+ * @summary Publish an explicitly approved reply to Google Business
+ */
+export const publishManagedReviewReply = async (id: string,
+    managedReviewReplyInput: ManagedReviewReplyInput, options?: Parameters<typeof customFetch>[1]): Promise<ManagedReviewMutationResult> => {
+
+  return customFetch<ManagedReviewMutationResult>(getPublishManagedReviewReplyUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(managedReviewReplyInput)
+  }
+);}
+
+
+
+
+
+export const getPublishManagedReviewReplyMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof publishManagedReviewReply>>, TError,{id: string;data: BodyType<ManagedReviewReplyInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof publishManagedReviewReply>>, TError,{id: string;data: BodyType<ManagedReviewReplyInput>}, TContext> => {
+
+const mutationKey = ['publishManagedReviewReply'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof publishManagedReviewReply>>, {id: string;data: BodyType<ManagedReviewReplyInput>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  publishManagedReviewReply(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PublishManagedReviewReplyMutationResult = NonNullable<Awaited<ReturnType<typeof publishManagedReviewReply>>>
+    export type PublishManagedReviewReplyMutationBody = BodyType<ManagedReviewReplyInput>
+    export type PublishManagedReviewReplyMutationError = ErrorType<ErrorResponse>
+
+    /**
+ * @summary Publish an explicitly approved reply to Google Business
+ */
+export const usePublishManagedReviewReply = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof publishManagedReviewReply>>, TError,{id: string;data: BodyType<ManagedReviewReplyInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof publishManagedReviewReply>>,
+        TError,
+        {id: string;data: BodyType<ManagedReviewReplyInput>},
+        TContext
+      > => {
+      return useMutation(getPublishManagedReviewReplyMutationOptions(options));
+    }
+
+export const getDeleteManagedReviewReplyUrl = (id: string,) => {
+
+
+
+
+  return `/api/v1/review-management/reviews/${id}/reply`
+}
+
+/**
+ * @summary Remove a published owner reply from Google Business
+ */
+export const deleteManagedReviewReply = async (id: string, options?: Parameters<typeof customFetch>[1]): Promise<ManagedReviewMutationResult> => {
+
+  return customFetch<ManagedReviewMutationResult>(getDeleteManagedReviewReplyUrl(id),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+
+export const getDeleteManagedReviewReplyMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteManagedReviewReply>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteManagedReviewReply>>, TError,{id: string}, TContext> => {
+
+const mutationKey = ['deleteManagedReviewReply'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteManagedReviewReply>>, {id: string}> = (props) => {
+          const {id} = props ?? {};
+
+          return  deleteManagedReviewReply(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteManagedReviewReplyMutationResult = NonNullable<Awaited<ReturnType<typeof deleteManagedReviewReply>>>
+
+    export type DeleteManagedReviewReplyMutationError = ErrorType<ErrorResponse>
+
+    /**
+ * @summary Remove a published owner reply from Google Business
+ */
+export const useDeleteManagedReviewReply = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteManagedReviewReply>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof deleteManagedReviewReply>>,
+        TError,
+        {id: string},
+        TContext
+      > => {
+      return useMutation(getDeleteManagedReviewReplyMutationOptions(options));
+    }
 
 export const getHealthCheckUrl = () => {
 

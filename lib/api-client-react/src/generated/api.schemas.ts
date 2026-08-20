@@ -678,6 +678,132 @@ export interface RedirectResolveResult {
   targetPath: string;
 }
 
+export type ReviewConnectionStatus = typeof ReviewConnectionStatus[keyof typeof ReviewConnectionStatus];
+
+
+export const ReviewConnectionStatus = {
+  DISCONNECTED: 'DISCONNECTED',
+  PENDING: 'PENDING',
+  CONNECTED: 'CONNECTED',
+  ERROR: 'ERROR',
+} as const;
+
+export type ReviewResponseStatus = typeof ReviewResponseStatus[keyof typeof ReviewResponseStatus];
+
+
+export const ReviewResponseStatus = {
+  PENDING: 'PENDING',
+  DRAFT: 'DRAFT',
+  PUBLISHED: 'PUBLISHED',
+} as const;
+
+export type ReviewProviderConnectionProvider = typeof ReviewProviderConnectionProvider[keyof typeof ReviewProviderConnectionProvider];
+
+
+export const ReviewProviderConnectionProvider = {
+  BNDLE: 'BNDLE',
+} as const;
+
+export interface ReviewProviderConnection {
+  status: ReviewConnectionStatus;
+  provider: ReviewProviderConnectionProvider;
+  /** @nullable */
+  lastSyncedAt: string | null;
+  /** @nullable */
+  lastError: string | null;
+}
+
+export interface ReviewLocation {
+  id: string;
+  name: string;
+  /** @nullable */
+  address: string | null;
+  /** @nullable */
+  category: string | null;
+  /** @nullable */
+  websiteUrl: string | null;
+  isSelected: boolean;
+}
+
+export interface ReviewInboxSummary {
+  totalReviews: number;
+  needsReply: number;
+  replied: number;
+}
+
+export interface ReviewDashboardResult {
+  connection: ReviewProviderConnection;
+  locations: ReviewLocation[];
+  summary: ReviewInboxSummary;
+}
+
+export interface ReviewProviderConnectionStartResult {
+  connection: ReviewProviderConnection;
+  authUrl: string;
+}
+
+export interface ManagedReview {
+  id: string;
+  locationId: string;
+  locationName: string;
+  reviewerName: string;
+  /** @nullable */
+  reviewerPhotoUrl: string | null;
+  isAnonymous: boolean;
+  /**
+     * @minimum 1
+     * @maximum 5
+     */
+  rating: number;
+  comment: string;
+  /** @nullable */
+  reviewCreatedAt: string | null;
+  /** @nullable */
+  reviewUpdatedAt: string | null;
+  /** @nullable */
+  replyText: string | null;
+  /** @nullable */
+  replyUpdatedAt: string | null;
+  /** @nullable */
+  draftReplyText: string | null;
+  /** @nullable */
+  draftGeneratedAt: string | null;
+  requiresApproval: boolean;
+  /** @nullable */
+  sensitiveReason: string | null;
+  responseStatus: ReviewResponseStatus;
+}
+
+export interface ManagedReviewListResult {
+  reviews: ManagedReview[];
+}
+
+export interface ManagedReviewMutationResult {
+  review: ManagedReview;
+}
+
+export interface ManagedReviewReplyInput {
+  /**
+     * @minLength 1
+     * @maxLength 4000
+     */
+  comment: string;
+}
+
+export type ListManagedReviewsParams = {
+locationId?: string;
+/**
+ * @minimum 1
+ * @maximum 5
+ */
+rating?: number;
+responseStatus?: ReviewResponseStatus;
+/**
+ * @maxLength 200
+ */
+search?: string;
+};
+
 export type ListBusinessesParams = {
 includeArchived?: boolean;
 };

@@ -32,7 +32,235 @@ tags:
     description: Public dynamic redirect resolution for QR codes and NFC devices
   - name: Storage
     description: Object storage upload and serving endpoints.
+  - name: review-management
+    description: Authenticated Google Business review inbox and reply operations.
 paths:
+  /v1/review-management:
+    get:
+      operationId: getReviewDashboard
+      tags: [review-management]
+      summary: Get the caller's provider connection, locations, and review inbox summary
+      responses:
+        "200":
+          description: Review-management dashboard data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReviewDashboardResult"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: No organization
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /v1/review-management/connection:
+    post:
+      operationId: startReviewProviderConnection
+      tags: [review-management]
+      summary: Start the BNDLE-hosted Google Business authorization flow
+      responses:
+        "200":
+          description: Provider authorization URL
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReviewProviderConnectionStartResult"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: Provider connection needs attention
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /v1/review-management/sync:
+    post:
+      operationId: syncReviewProvider
+      tags: [review-management]
+      summary: Synchronize Google Business locations and reviews from BNDLE
+      responses:
+        "200":
+          description: Refreshed dashboard data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReviewDashboardResult"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: Google Business is not connected
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /v1/review-management/reviews:
+    get:
+      operationId: listManagedReviews
+      tags: [review-management]
+      summary: List synchronized Google reviews with inbox filters
+      parameters:
+        - name: locationId
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+        - name: rating
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 5
+        - name: responseStatus
+          in: query
+          required: false
+          schema:
+            $ref: "#/components/schemas/ReviewResponseStatus"
+        - name: search
+          in: query
+          required: false
+          schema:
+            type: string
+            maxLength: 200
+      responses:
+        "200":
+          description: Filtered review inbox
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ManagedReviewListResult"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /v1/review-management/reviews/{id}/draft:
+    post:
+      operationId: generateManagedReviewDraft
+      tags: [review-management]
+      summary: Generate an AI reply draft that requires human approval
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Updated review with AI draft
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ManagedReviewMutationResult"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Review not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /v1/review-management/reviews/{id}/reply:
+    post:
+      operationId: publishManagedReviewReply
+      tags: [review-management]
+      summary: Publish an explicitly approved reply to Google Business
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ManagedReviewReplyInput"
+      responses:
+        "200":
+          description: Updated review with published reply
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ManagedReviewMutationResult"
+        "400":
+          description: Invalid reply
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Review not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+    delete:
+      operationId: deleteManagedReviewReply
+      tags: [review-management]
+      summary: Remove a published owner reply from Google Business
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Updated review with reply removed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ManagedReviewMutationResult"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Review not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /healthz:
     get:
       operationId: healthCheck
@@ -2726,3 +2954,167 @@ components:
           description: Relative path of the public review page to redirect to.
       required:
         - targetPath
+
+    ReviewConnectionStatus:
+      type: string
+      enum: [DISCONNECTED, PENDING, CONNECTED, ERROR]
+
+    ReviewResponseStatus:
+      type: string
+      enum: [PENDING, DRAFT, PUBLISHED]
+
+    ReviewProviderConnection:
+      type: object
+      properties:
+        status:
+          $ref: "#/components/schemas/ReviewConnectionStatus"
+        provider:
+          type: string
+          enum: [BNDLE]
+        lastSyncedAt:
+          type: ["string", "null"]
+          format: date-time
+        lastError:
+          type: ["string", "null"]
+      required: [status, provider, lastSyncedAt, lastError]
+
+    ReviewLocation:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        address:
+          type: ["string", "null"]
+        category:
+          type: ["string", "null"]
+        websiteUrl:
+          type: ["string", "null"]
+        isSelected:
+          type: boolean
+      required: [id, name, address, category, websiteUrl, isSelected]
+
+    ReviewInboxSummary:
+      type: object
+      properties:
+        totalReviews:
+          type: integer
+        needsReply:
+          type: integer
+        replied:
+          type: integer
+      required: [totalReviews, needsReply, replied]
+
+    ReviewDashboardResult:
+      type: object
+      properties:
+        connection:
+          $ref: "#/components/schemas/ReviewProviderConnection"
+        locations:
+          type: array
+          items:
+            $ref: "#/components/schemas/ReviewLocation"
+        summary:
+          $ref: "#/components/schemas/ReviewInboxSummary"
+      required: [connection, locations, summary]
+
+    ReviewProviderConnectionStartResult:
+      type: object
+      properties:
+        connection:
+          $ref: "#/components/schemas/ReviewProviderConnection"
+        authUrl:
+          type: string
+          format: uri
+      required: [connection, authUrl]
+
+    ManagedReview:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        locationId:
+          type: string
+          format: uuid
+        locationName:
+          type: string
+        reviewerName:
+          type: string
+        reviewerPhotoUrl:
+          type: ["string", "null"]
+        isAnonymous:
+          type: boolean
+        rating:
+          type: integer
+          minimum: 1
+          maximum: 5
+        comment:
+          type: string
+        reviewCreatedAt:
+          type: ["string", "null"]
+          format: date-time
+        reviewUpdatedAt:
+          type: ["string", "null"]
+          format: date-time
+        replyText:
+          type: ["string", "null"]
+        replyUpdatedAt:
+          type: ["string", "null"]
+          format: date-time
+        draftReplyText:
+          type: ["string", "null"]
+        draftGeneratedAt:
+          type: ["string", "null"]
+          format: date-time
+        requiresApproval:
+          type: boolean
+        sensitiveReason:
+          type: ["string", "null"]
+        responseStatus:
+          $ref: "#/components/schemas/ReviewResponseStatus"
+      required:
+        - id
+        - locationId
+        - locationName
+        - reviewerName
+        - reviewerPhotoUrl
+        - isAnonymous
+        - rating
+        - comment
+        - reviewCreatedAt
+        - reviewUpdatedAt
+        - replyText
+        - replyUpdatedAt
+        - draftReplyText
+        - draftGeneratedAt
+        - requiresApproval
+        - sensitiveReason
+        - responseStatus
+
+    ManagedReviewListResult:
+      type: object
+      properties:
+        reviews:
+          type: array
+          items:
+            $ref: "#/components/schemas/ManagedReview"
+      required: [reviews]
+
+    ManagedReviewMutationResult:
+      type: object
+      properties:
+        review:
+          $ref: "#/components/schemas/ManagedReview"
+      required: [review]
+
+    ManagedReviewReplyInput:
+      type: object
+      properties:
+        comment:
+          type: string
+          minLength: 1
+          maxLength: 4000
+      required: [comment]

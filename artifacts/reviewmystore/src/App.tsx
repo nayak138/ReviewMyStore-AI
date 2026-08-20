@@ -26,6 +26,7 @@ const CustomerReview = lazy(() => import("./pages/CustomerReview"));
 const ShortRedirect = lazy(() => import("./pages/ShortRedirect"));
 const QrCodes = lazy(() => import("./pages/QrCodes"));
 const NfcDevices = lazy(() => import("./pages/NfcDevices"));
+const Reviews = lazy(() => import("./pages/Reviews"));
 
 const AdminLeads = lazy(() => import("./pages/AdminLeads"));
 const NotFound = lazy(() => import("./pages/not-found"));
@@ -244,6 +245,7 @@ function AppRouter() {
       <Route path="/campaigns" component={Campaigns} />
       <Route path="/qr-codes" component={QrCodes} />
       <Route path="/nfc-devices" component={NfcDevices} />
+       <Route path="/reviews" component={Reviews} />
       {/* Super Admin only */}
       <Route path="/admin/leads" component={AdminLeads} />
       
