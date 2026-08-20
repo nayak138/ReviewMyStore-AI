@@ -351,6 +351,26 @@ export default function Reviews() {
     }
   });
 
+  // Connecting happens in a separate tab (Google refuses OAuth in an iframe).
+  // Our local status only flips from PENDING to CONNECTED once a sync runs,
+  // so auto-trigger a sync when the user comes back to this tab instead of
+  // leaving them stuck on "Connection Pending" with no obvious next step.
+  useEffect(() => {
+    if (dashboard?.connection.status !== "PENDING") return;
+    const trySync = () => {
+      if (document.visibilityState === "visible" && !syncProvider.isPending) {
+        syncProvider.mutate();
+      }
+    };
+    window.addEventListener("focus", trySync);
+    document.addEventListener("visibilitychange", trySync);
+    return () => {
+      window.removeEventListener("focus", trySync);
+      document.removeEventListener("visibilitychange", trySync);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dashboard?.connection.status]);
+
   if (isLoaded && !isSignedIn) {
     return <Redirect to="/sign-in" />;
   }
@@ -424,17 +444,32 @@ export default function Reviews() {
            </div>
            <h2 className="text-3xl md:text-4xl font-semibold tracking-tight text-foreground">Connection Pending</h2>
            <p className="text-muted-foreground max-w-lg mx-auto text-lg leading-relaxed">
-             We are waiting for you to complete the authorization with Google. Please check for a popup or try connecting again.
+             If you already signed in and selected a location in the other tab, sync now to finish connecting. Otherwise, reopen the connection tab or start again.
            </p>
-           <Button 
-             variant="outline"
-             size="lg"
-             className="mt-6 shadow-sm"
-             disabled={startConnection.isPending}
-             onClick={() => startConnection.mutate()}
-           >
-             Retry Connection
-           </Button>
+           <div className="flex items-center justify-center gap-3 mt-6">
+             <Button
+               size="lg"
+               className="shadow-sm"
+               disabled={syncProvider.isPending}
+               onClick={() => syncProvider.mutate()}
+             >
+               {syncProvider.isPending ? (
+                 <RefreshCw className="w-5 h-5 mr-2 animate-spin" />
+               ) : (
+                 <RefreshCw className="w-5 h-5 mr-2" />
+               )}
+               I've connected — Sync now
+             </Button>
+             <Button
+               variant="outline"
+               size="lg"
+               className="shadow-sm"
+               disabled={startConnection.isPending}
+               onClick={() => startConnection.mutate()}
+             >
+               Retry Connection
+             </Button>
+           </div>
         </div>
       </AppLayout>
     );
