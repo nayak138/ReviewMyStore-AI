@@ -14,3 +14,5 @@
 - [Marketing SEO prerender](marketing-seo-prerender.md) — per-route meta must be baked into HTML (vite prerender plugin); client-only meta hooks fail completion review.
 - [Tailwind v4: transform-none doesn't reset translate](tailwind-v4-translate-vs-transform-none.md) — `translate-x-*` uses the standalone `translate` property; cancel with `md:translate-x-0`, never `md:transform-none`.
 - [bundle.social (BNDLE) review provider API](zernio-bndle-api-key.md) — provider is bundle.social (NOT Zernio); x-api-key auth, team-per-org, async review imports; 401/403 = our key, not the user's Google connection.
+- [Clerk express test auth bypass](clerk-express-test-auth-bypass.md) — fake `req.auth` with the `Symbol.for("@clerk/express.auth")` brand to test routes without the Clerk API.
+- [OpenAI SDK captures fetch at construction](openai-sdk-fetch-capture.md) — patch `globalThis.fetch` via a first-import side-effect module; a `before()` hook is too late and tests silently hit the real API.

@@ -569,6 +569,14 @@ export async function syncReviewProvider(organizationId: string) {
       })
       .where(eq(providerConnectionsTable.id, connection.id));
   } catch (error) {
+    if (
+      error instanceof ReviewProviderError &&
+      error.code === "REVIEW_PROVIDER_NOT_CONFIGURED"
+    ) {
+      // A missing server-side API key is a deployment problem, not a broken
+      // provider connection — leave the owner's connection status untouched.
+      throw error;
+    }
     const message =
       error instanceof ReviewProviderError
         ? error.message

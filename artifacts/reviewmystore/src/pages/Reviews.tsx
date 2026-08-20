@@ -45,7 +45,7 @@ function useDebounce<T>(value: T, delay?: number): T {
   return debouncedValue;
 }
 
-function ReviewItem({ review }: { review: ManagedReview }) {
+export function ReviewItem({ review }: { review: ManagedReview }) {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [isEditing, setIsEditing] = useState(false);
