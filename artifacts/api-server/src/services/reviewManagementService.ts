@@ -225,6 +225,7 @@ function connectionResult(connection: ProviderConnection | null) {
     provider: "BNDLE" as const,
     lastSyncedAt: connection?.lastSyncedAt ?? null,
     lastError: connection?.lastError ?? null,
+    remainingImportCapacity: connection?.remainingImportCapacity ?? null,
   };
 }
 
@@ -444,8 +445,11 @@ async function waitForReviewImport(teamId: string): Promise<string | null> {
   return "The review import is still running. Sync again in a minute to pick up the newest reviews.";
 }
 
-async function fetchAllReviews(teamId: string): Promise<JsonRecord[]> {
+async function fetchAllReviews(
+  teamId: string,
+): Promise<{ reviews: JsonRecord[]; remainingCapacity: number | null }> {
   const reviews: JsonRecord[] = [];
+  let remainingCapacity: number | null = null;
   let offset = 0;
   for (;;) {
     const payload = await bndleRequest(
@@ -455,10 +459,13 @@ async function fetchAllReviews(teamId: string): Promise<JsonRecord[]> {
     );
     const page = asArray(payload.reviews);
     reviews.push(...page);
+    // Reflects the account's remaining monthly import quota as of this
+    // request; every page carries the same (current) value.
+    remainingCapacity = valueNumber(payload.remainingCapacity);
     const total = valueNumber(payload.total) ?? reviews.length;
     offset += page.length;
     if (page.length === 0 || offset >= total || offset >= MAX_SYNCED_REVIEWS) {
-      return reviews;
+      return { reviews, remainingCapacity };
     }
   }
 }
@@ -549,7 +556,8 @@ export async function syncReviewProvider(organizationId: string) {
     const importNote =
       (await startReviewImport(teamId)) ?? (await waitForReviewImport(teamId));
 
-    const rawReviews = await fetchAllReviews(teamId);
+    const { reviews: rawReviews, remainingCapacity } =
+      await fetchAllReviews(teamId);
     for (const raw of rawReviews) {
       const socialAccountId = valueString(raw.socialAccountId);
       const location = socialAccountId
@@ -565,6 +573,7 @@ export async function syncReviewProvider(organizationId: string) {
         status: "CONNECTED",
         lastSyncedAt: new Date(),
         lastError: importNote,
+        remainingImportCapacity: remainingCapacity,
         updatedAt: new Date(),
       })
       .where(eq(providerConnectionsTable.id, connection.id));

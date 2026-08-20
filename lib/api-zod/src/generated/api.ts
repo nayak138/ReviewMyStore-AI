@@ -16,7 +16,8 @@ export const GetReviewDashboardResponse = zod.object({
   "status": zod.enum(['DISCONNECTED', 'PENDING', 'CONNECTED', 'ERROR']),
   "provider": zod.enum(['BNDLE']),
   "lastSyncedAt": zod.coerce.date().nullable(),
-  "lastError": zod.string().nullable()
+  "lastError": zod.string().nullable(),
+  "remainingImportCapacity": zod.int().nullable().describe('Provider\'s remaining monthly Google review import capacity for this account, as of the last successful sync. Null until a sync reports it.')
 }),
   "locations": zod.array(zod.object({
   "id": zod.uuid(),
@@ -42,7 +43,8 @@ export const StartReviewProviderConnectionResponse = zod.object({
   "status": zod.enum(['DISCONNECTED', 'PENDING', 'CONNECTED', 'ERROR']),
   "provider": zod.enum(['BNDLE']),
   "lastSyncedAt": zod.coerce.date().nullable(),
-  "lastError": zod.string().nullable()
+  "lastError": zod.string().nullable(),
+  "remainingImportCapacity": zod.int().nullable().describe('Provider\'s remaining monthly Google review import capacity for this account, as of the last successful sync. Null until a sync reports it.')
 }),
   "authUrl": zod.url()
 })
@@ -56,7 +58,8 @@ export const SyncReviewProviderResponse = zod.object({
   "status": zod.enum(['DISCONNECTED', 'PENDING', 'CONNECTED', 'ERROR']),
   "provider": zod.enum(['BNDLE']),
   "lastSyncedAt": zod.coerce.date().nullable(),
-  "lastError": zod.string().nullable()
+  "lastError": zod.string().nullable(),
+  "remainingImportCapacity": zod.int().nullable().describe('Provider\'s remaining monthly Google review import capacity for this account, as of the last successful sync. Null until a sync reports it.')
 }),
   "locations": zod.array(zod.object({
   "id": zod.uuid(),

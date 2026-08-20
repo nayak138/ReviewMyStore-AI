@@ -15,4 +15,9 @@ export interface ReviewProviderConnection {
   lastSyncedAt: Date | null;
   /** @nullable */
   lastError: string | null;
+  /**
+     * Provider's remaining monthly Google review import capacity for this account, as of the last successful sync. Null until a sync reports it.
+     * @nullable
+     */
+  remainingImportCapacity: number | null;
 }

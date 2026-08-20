@@ -2976,7 +2976,14 @@ components:
           format: date-time
         lastError:
           type: ["string", "null"]
-      required: [status, provider, lastSyncedAt, lastError]
+        remainingImportCapacity:
+          description: >-
+            Provider's remaining monthly Google review import capacity for
+            this account, as of the last successful sync. Null until a sync
+            reports it.
+          type: ["integer", "null"]
+      required:
+        [status, provider, lastSyncedAt, lastError, remainingImportCapacity]
 
     ReviewLocation:
       type: object

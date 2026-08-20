@@ -1,5 +1,6 @@
 import {
   index,
+  integer,
   pgEnum,
   pgTable,
   text,
@@ -35,6 +36,9 @@ export const providerConnectionsTable = pgTable(
     status: reviewConnectionStatusEnum("status").notNull().default("PENDING"),
     lastSyncedAt: timestamp("last_synced_at", { withTimezone: true }),
     lastError: text("last_error"),
+    /** Provider's remaining monthly review-import capacity for this account,
+     * as of the last successful sync. Null until a sync reports it. */
+    remainingImportCapacity: integer("remaining_import_capacity"),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
@@ -59,6 +63,7 @@ export const insertProviderConnectionSchema = createInsertSchema(
   updatedAt: true,
   lastSyncedAt: true,
   lastError: true,
+  remainingImportCapacity: true,
 });
 export type InsertProviderConnection = z.infer<
   typeof insertProviderConnectionSchema

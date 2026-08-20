@@ -36,6 +36,9 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { Star, MessageSquare, RefreshCw, AlertCircle, Bot, Send, Trash2, Edit3, Search, Store } from "lucide-react";
 
+// bundle.social's Free plan allows 5 review imports/month; Pro/Business
+// default to 200. We don't know which plan the account is on, only the
+// remaining count, so warn generously once it gets low.
 function useDebounce<T>(value: T, delay?: number): T {
   const [debouncedValue, setDebouncedValue] = useState<T>(value);
   useEffect(() => {
@@ -502,6 +505,38 @@ export default function Reviews() {
           </div>
         </div>
 
+        {dashboard?.connection.remainingImportCapacity !== null &&
+          dashboard?.connection.remainingImportCapacity !== undefined &&
+          dashboard.connection.remainingImportCapacity <= IMPORT_CAPACITY_WARNING_THRESHOLD && (
+            <div className="flex items-start gap-3 p-4 rounded-xl border border-amber-300/60 bg-amber-50 dark:bg-amber-900/10 dark:border-amber-900/50">
+              <AlertCircle className="w-5 h-5 text-amber-600 dark:text-amber-500 shrink-0 mt-0.5" />
+              <div className="text-sm text-amber-900 dark:text-amber-300 leading-relaxed">
+                {dashboard.connection.remainingImportCapacity <= 0 ? (
+                  <>
+                    <span className="font-semibold">You've reached your monthly Google review import limit.</span>{" "}
+                    New reviews won't be imported until your plan resets next month.
+                  </>
+                ) : (
+                  <>
+                    <span className="font-semibold">
+                      Only {dashboard.connection.remainingImportCapacity} review import{dashboard.connection.remainingImportCapacity === 1 ? "" : "s"} left this month.
+                    </span>{" "}
+                    You're close to your monthly Google review import limit.
+                  </>
+                )}{" "}
+                <a
+                  href="https://bundle.social/pricing"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-medium underline underline-offset-2 hover:text-amber-950 dark:hover:text-amber-200"
+                >
+                  Upgrade on bundle.social
+                </a>{" "}
+                to import more.
+              </div>
+            </div>
+          )}
+
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Card className="shadow-sm border-border">
             <CardContent className="p-6">
@@ -601,3 +636,5 @@ export default function Reviews() {
     </AppLayout>
   );
 }
+
+const IMPORT_CAPACITY_WARNING_THRESHOLD = 5;
