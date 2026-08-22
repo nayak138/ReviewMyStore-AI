@@ -10,6 +10,7 @@ import {
 import {
   db,
   managedReviewsTable,
+  organizationsTable,
   providerConnectionsTable,
   reviewAuditEventsTable,
   reviewLocationsTable,
@@ -295,11 +296,28 @@ function toReviewPayload(
   };
 }
 
+/**
+ * Base origin used for our own assets (e.g. the logo shown on bundle.social's
+ * hosted connect page). Mirrors the domain the app is actually served from
+ * in both the dev preview and a published deployment.
+ */
+function getAppOrigin(): string | null {
+  const domain =
+    process.env.REPLIT_DOMAINS?.split(",")[0]?.trim() ||
+    process.env.REPLIT_DEV_DOMAIN?.trim();
+  return domain ? `https://${domain}` : null;
+}
+
 export async function startReviewProviderConnection(
   organizationId: string,
   returnUrl?: string,
 ) {
   const teamId = await getOrCreateProviderTeam(organizationId);
+  const [organization] = await db
+    .select({ name: organizationsTable.name })
+    .from(organizationsTable)
+    .where(eq(organizationsTable.id, organizationId))
+    .limit(1);
   const [connection] = await db
     .insert(providerConnectionsTable)
     .values({
@@ -325,7 +343,10 @@ export async function startReviewProviderConnection(
     .returning();
 
   // The hosted portal handles Google OAuth AND business-location selection;
-  // the API key stays server-side and the link expires after an hour.
+  // the API key stays server-side and the link expires after an hour. The
+  // hidePoweredBy/logoUrl/userName fields white-label the hosted page so it
+  // reads as our own connect flow instead of bundle.social's.
+  const appOrigin = getAppOrigin();
   const portal = await bndleRequest("social-account/create-portal-link", {
     method: "POST",
     body: JSON.stringify({
@@ -333,6 +354,12 @@ export async function startReviewProviderConnection(
       socialAccountTypes: ["GOOGLE_BUSINESS"],
       ...(returnUrl ? { redirectUrl: returnUrl } : {}),
       expiresIn: 60,
+      hidePoweredBy: true,
+      hideLanguageSwitcher: true,
+      ...(appOrigin
+        ? { logoUrl: `${appOrigin}/brand/logo-icon.png` }
+        : {}),
+      ...(organization?.name ? { userName: organization.name } : {}),
     }),
   });
   const authUrl = valueString(portal.url);

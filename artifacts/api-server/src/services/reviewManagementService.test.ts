@@ -479,6 +479,10 @@ test("starting a connection provisions a provider team and returns the portal li
       const body = JSON.parse(String(init.body)) as Record<string, unknown>;
       assert.equal(body.teamId, "team-created-1");
       assert.deepEqual(body.socialAccountTypes, ["GOOGLE_BUSINESS"]);
+      // White-label the hosted portal so it doesn't look like a bare,
+      // unbranded bundle.social page.
+      assert.equal(body.hidePoweredBy, true);
+      assert.equal(body.hideLanguageSwitcher, true);
       return { body: { url: authUrl } };
     }
     throw new Error(`Unexpected provider request: ${method} ${path}`);
