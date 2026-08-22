@@ -8,12 +8,16 @@ import {
   useStartReviewProviderConnection,
   useDisconnectReviewProvider,
   useSyncReviewProvider,
+  useGetReviewProviderLocations,
+  getGetReviewProviderLocationsQueryKey,
+  useSelectReviewProviderLocation,
   useListManagedReviews,
   getListManagedReviewsQueryKey,
   useGenerateManagedReviewDraft,
   usePublishManagedReviewReply,
   useDeleteManagedReviewReply,
   type ManagedReview,
+  type ReviewProviderLocationOption,
   ReviewResponseStatus,
 } from "@workspace/api-client-react";
 import { AppLayout } from "@/components/layout/app-layout";
@@ -34,8 +38,10 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { BrandIcon } from "@/components/brand-logo";
 import { useToast } from "@/hooks/use-toast";
-import { Star, MessageSquare, RefreshCw, AlertCircle, Bot, Send, Trash2, Edit3, Search, Store, Link2Off } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Star, MessageSquare, RefreshCw, AlertCircle, Bot, Send, Trash2, Edit3, Search, Store, Link2Off, MapPin, CheckCircle2, XCircle } from "lucide-react";
 
 // bundle.social's Free plan allows 5 review imports/month; Pro/Business
 // default to 200. We don't know which plan the account is on, only the
@@ -286,6 +292,128 @@ export function ReviewItem({ review }: { review: ManagedReview }) {
   );
 }
 
+type CallbackStage = "idle" | "checking" | "picker" | "not_connected" | "no_locations";
+
+/**
+ * Rendered in the same tab Google redirects back to after OAuth. Everything
+ * here — the branding, the location picker, the error states — replaces
+ * what used to be bundle.social's hosted (and unstylable) connect page.
+ */
+function ConnectCallbackPanel({
+  stage,
+  locations,
+  selectedLocationId,
+  onSelectLocation,
+  onConfirm,
+  onRetry,
+  isConfirming,
+}: {
+  stage: CallbackStage;
+  locations: ReviewProviderLocationOption[];
+  selectedLocationId: string | null;
+  onSelectLocation: (id: string) => void;
+  onConfirm: () => void;
+  onRetry: () => void;
+  isConfirming: boolean;
+}) {
+  return (
+    <AppLayout title="Connect Google Business">
+      <div className="min-h-[70vh] flex items-center justify-center p-4">
+        <div className="w-full max-w-md bg-card border border-border rounded-2xl shadow-xl p-8 text-center space-y-6 animate-in fade-in zoom-in-95 duration-500">
+          <BrandIcon className="w-14 h-14 mx-auto" />
+
+          {stage === "checking" && (
+            <>
+              <RefreshCw className="w-8 h-8 text-primary animate-spin mx-auto" />
+              <div>
+                <h2 className="text-xl font-semibold text-foreground">Finishing up with Google…</h2>
+                <p className="text-sm text-muted-foreground mt-1 leading-relaxed">
+                  Hang tight while we confirm access to your business profile.
+                </p>
+              </div>
+            </>
+          )}
+
+          {stage === "picker" && (
+            <>
+              <div>
+                <h2 className="text-xl font-semibold text-foreground">Choose your business</h2>
+                <p className="text-sm text-muted-foreground mt-1 leading-relaxed">
+                  Select the Google Business location you want to manage here.
+                </p>
+              </div>
+              <div className="space-y-2 text-left max-h-64 overflow-y-auto pr-1 -mr-1">
+                {locations.map((loc) => (
+                  <button
+                    key={loc.id}
+                    type="button"
+                    onClick={() => onSelectLocation(loc.id)}
+                    className={cn(
+                      "w-full flex items-center gap-3 p-3 rounded-xl border transition-colors text-left",
+                      selectedLocationId === loc.id
+                        ? "border-primary bg-primary/5 ring-1 ring-primary"
+                        : "border-border hover:bg-secondary/40",
+                    )}
+                  >
+                    <div className="w-9 h-9 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                      <MapPin className="w-4 h-4" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="font-medium text-foreground truncate">{loc.name}</p>
+                      {loc.address && (
+                        <p className="text-xs text-muted-foreground truncate">{loc.address}</p>
+                      )}
+                    </div>
+                    {selectedLocationId === loc.id && (
+                      <CheckCircle2 className="w-5 h-5 text-primary shrink-0" />
+                    )}
+                  </button>
+                ))}
+              </div>
+              <Button
+                className="w-full shadow-sm"
+                size="lg"
+                disabled={!selectedLocationId || isConfirming}
+                onClick={onConfirm}
+              >
+                {isConfirming && <RefreshCw className="w-4 h-4 mr-2 animate-spin" />}
+                {isConfirming ? "Connecting…" : "Connect this location"}
+              </Button>
+            </>
+          )}
+
+          {(stage === "not_connected" || stage === "no_locations") && (
+            <>
+              <XCircle className="w-10 h-10 text-destructive mx-auto" />
+              <div>
+                <h2 className="text-xl font-semibold text-foreground">
+                  {stage === "no_locations" ? "No locations found" : "Connection wasn't completed"}
+                </h2>
+                <p className="text-sm text-muted-foreground mt-1 leading-relaxed">
+                  {stage === "no_locations"
+                    ? "We got access to that Google account, but couldn't find any business locations on it."
+                    : "It looks like Google sign-in didn't finish. You can try connecting again."}
+                </p>
+              </div>
+              <Button className="w-full shadow-sm" size="lg" onClick={onRetry}>
+                Try again
+              </Button>
+            </>
+          )}
+
+          <button
+            type="button"
+            onClick={() => window.close()}
+            className="text-xs text-muted-foreground hover:text-foreground underline underline-offset-2"
+          >
+            Close this tab
+          </button>
+        </div>
+      </div>
+    </AppLayout>
+  );
+}
+
 export default function Reviews() {
   const { isLoaded, isSignedIn } = useAuth();
   const { toast } = useToast();
@@ -297,6 +425,24 @@ export default function Reviews() {
   const [rating, setRating] = useState<string>("all");
   const [responseStatus, setResponseStatus] = useState<string>("all");
   const [disconnectDialogOpen, setDisconnectDialogOpen] = useState(false);
+
+  // Google redirects back to this exact page (see getConnectCallbackUrl on
+  // the server) once OAuth finishes. Detect that once on mount and strip the
+  // marker immediately so a later refresh doesn't re-trigger the flow.
+  const [callbackStage, setCallbackStage] = useState<CallbackStage>("idle");
+  const [pickerLocations, setPickerLocations] = useState<ReviewProviderLocationOption[]>([]);
+  const [selectedLocationId, setSelectedLocationId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("bndleConnect") === "1") {
+      window.history.replaceState({}, "", window.location.pathname);
+      setCallbackStage("checking");
+    }
+    // Runs once on mount only; the query string is only meaningful on the
+    // very first render after Google's redirect.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const dashboardKey = getGetReviewDashboardQueryKey();
   const { data: dashboard, isLoading: dashboardLoading } = useGetReviewDashboard({
@@ -342,7 +488,7 @@ export default function Reviews() {
           }
           toast({
             title: "Complete the connection in the new tab",
-            description: "Sign in with Google there, then come back and press Sync reviews."
+            description: "Sign in with Google there and pick your business location — it'll connect automatically.",
           });
         } else {
           // Pop-up genuinely blocked: fall back to navigating this window.
@@ -360,6 +506,32 @@ export default function Reviews() {
         toast({ title: msg, variant: "destructive" });
       }
     }
+  });
+
+  const locationsQuery = useGetReviewProviderLocations({
+    query: {
+      enabled: callbackStage === "checking",
+      queryKey: getGetReviewProviderLocationsQueryKey(),
+    },
+  });
+
+  const selectLocation = useSelectReviewProviderLocation({
+    mutation: {
+      onSuccess: () => {
+        setCallbackStage("idle");
+        setSelectedLocationId(null);
+        queryClient.invalidateQueries({ queryKey: dashboardKey });
+        queryClient.invalidateQueries({ queryKey: getListManagedReviewsQueryKey() });
+        toast({
+          title: "Google Business connected",
+          description: "Your reviews are syncing now.",
+        });
+      },
+      onError: (err: any) => {
+        const msg = err.response?.data?.message || "Failed to connect this location";
+        toast({ title: msg, variant: "destructive" });
+      },
+    },
   });
 
   const syncProvider = useSyncReviewProvider({
@@ -402,6 +574,8 @@ export default function Reviews() {
   // Our local status only flips from PENDING to CONNECTED once a sync runs,
   // so auto-trigger a sync when the user comes back to this tab instead of
   // leaving them stuck on "Connection Pending" with no obvious next step.
+  // This is a fallback for when the connect tab was closed before finishing
+  // the picker below (e.g. the popup was blocked and navigated this tab).
   useEffect(() => {
     if (dashboard?.connection.status !== "PENDING") return;
     const trySync = () => {
@@ -418,8 +592,55 @@ export default function Reviews() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dashboard?.connection.status]);
 
+  // Once Google redirects back here, ask the backend what actually happened
+  // (rather than trusting bundle.social's ambiguous callback query params)
+  // and move to the matching stage of the on-brand connect screen.
+  useEffect(() => {
+    if (!locationsQuery.data) return;
+    const { stage, locations } = locationsQuery.data;
+    if (stage === "NEEDS_LOCATION") {
+      setPickerLocations(locations);
+      setCallbackStage("picker");
+    } else if (stage === "READY") {
+      setCallbackStage("idle");
+      queryClient.invalidateQueries({ queryKey: dashboardKey });
+      syncProvider.mutate();
+    } else if (stage === "NO_LOCATIONS_FOUND") {
+      setCallbackStage("no_locations");
+    } else {
+      setCallbackStage("not_connected");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [locationsQuery.data]);
+
+  useEffect(() => {
+    if (!locationsQuery.isError) return;
+    setCallbackStage("not_connected");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [locationsQuery.isError]);
+
   if (isLoaded && !isSignedIn) {
     return <Redirect to="/sign-in" />;
+  }
+
+  if (callbackStage !== "idle") {
+    return (
+      <ConnectCallbackPanel
+        stage={callbackStage}
+        locations={pickerLocations}
+        selectedLocationId={selectedLocationId}
+        onSelectLocation={setSelectedLocationId}
+        onConfirm={() => {
+          if (!selectedLocationId) return;
+          selectLocation.mutate({ data: { locationId: selectedLocationId } });
+        }}
+        onRetry={() => {
+          setCallbackStage("idle");
+          startConnection.mutate();
+        }}
+        isConfirming={selectLocation.isPending}
+      />
+    );
   }
 
   if (dashboardLoading) {

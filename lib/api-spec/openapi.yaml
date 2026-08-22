@@ -108,6 +108,66 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  /v1/review-management/connection/locations:
+    get:
+      operationId: getReviewProviderLocations
+      tags: [review-management]
+      summary: >-
+        Check the in-progress Google OAuth attempt and list selectable
+        business locations once bundle.social confirms access
+      responses:
+        "200":
+          description: Current stage of the custom connect flow
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReviewProviderLocationsResult"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: No connection attempt in progress
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /v1/review-management/connection/location:
+    post:
+      operationId: selectReviewProviderLocation
+      tags: [review-management]
+      summary: >-
+        Pick the Google Business location for the in-progress connection and
+        finish connecting (imports locations and reviews)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SelectReviewProviderLocationRequest"
+      responses:
+        "200":
+          description: Refreshed dashboard data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReviewDashboardResult"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: No connection attempt in progress
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /v1/review-management/sync:
     post:
       operationId: syncReviewProvider
@@ -3059,6 +3119,47 @@ components:
           type: string
           format: uri
       required: [connection, authUrl]
+
+    ReviewProviderLocationStage:
+      type: string
+      description: >-
+        NOT_CONNECTED: the Google OAuth step hasn't completed yet (or was
+        cancelled/failed) — no business account is attached.
+        NEEDS_LOCATION: Google access is granted; pick one of `locations` to
+        finish connecting.
+        NO_LOCATIONS_FOUND: Google access is granted but no eligible business
+        locations were found on that account.
+        READY: a location is already selected and syncing is starting.
+      enum: [NOT_CONNECTED, NEEDS_LOCATION, NO_LOCATIONS_FOUND, READY]
+
+    ReviewProviderLocationOption:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        address:
+          type: ["string", "null"]
+      required: [id, name, address]
+
+    ReviewProviderLocationsResult:
+      type: object
+      properties:
+        stage:
+          $ref: "#/components/schemas/ReviewProviderLocationStage"
+        locations:
+          type: array
+          items:
+            $ref: "#/components/schemas/ReviewProviderLocationOption"
+      required: [stage, locations]
+
+    SelectReviewProviderLocationRequest:
+      type: object
+      properties:
+        locationId:
+          type: string
+      required: [locationId]
 
     ManagedReview:
       type: object

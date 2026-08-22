@@ -747,6 +747,35 @@ export interface ReviewProviderConnectionStartResult {
   authUrl: string;
 }
 
+/**
+ * NOT_CONNECTED: the Google OAuth step hasn't completed yet (or was cancelled/failed) — no business account is attached. NEEDS_LOCATION: Google access is granted; pick one of `locations` to finish connecting. NO_LOCATIONS_FOUND: Google access is granted but no eligible business locations were found on that account. READY: a location is already selected and syncing is starting.
+ */
+export type ReviewProviderLocationStage = typeof ReviewProviderLocationStage[keyof typeof ReviewProviderLocationStage];
+
+
+export const ReviewProviderLocationStage = {
+  NOT_CONNECTED: 'NOT_CONNECTED',
+  NEEDS_LOCATION: 'NEEDS_LOCATION',
+  NO_LOCATIONS_FOUND: 'NO_LOCATIONS_FOUND',
+  READY: 'READY',
+} as const;
+
+export interface ReviewProviderLocationOption {
+  id: string;
+  name: string;
+  /** @nullable */
+  address: string | null;
+}
+
+export interface ReviewProviderLocationsResult {
+  stage: ReviewProviderLocationStage;
+  locations: ReviewProviderLocationOption[];
+}
+
+export interface SelectReviewProviderLocationRequest {
+  locationId: string;
+}
+
 export interface ManagedReview {
   id: string;
   locationId: string;

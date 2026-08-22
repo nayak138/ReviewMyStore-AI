@@ -78,6 +78,50 @@ export const DisconnectReviewProviderResponse = zod.object({
 
 
 /**
+ * @summary Check the in-progress Google OAuth attempt and list selectable business locations once bundle.social confirms access
+ */
+export const GetReviewProviderLocationsResponse = zod.object({
+  "stage": zod.enum(['NOT_CONNECTED', 'NEEDS_LOCATION', 'NO_LOCATIONS_FOUND', 'READY']).describe('NOT_CONNECTED: the Google OAuth step hasn\'t completed yet (or was cancelled\/failed) — no business account is attached. NEEDS_LOCATION: Google access is granted; pick one of `locations` to finish connecting. NO_LOCATIONS_FOUND: Google access is granted but no eligible business locations were found on that account. READY: a location is already selected and syncing is starting.'),
+  "locations": zod.array(zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "address": zod.string().nullable()
+}))
+})
+
+
+/**
+ * @summary Pick the Google Business location for the in-progress connection and finish connecting (imports locations and reviews)
+ */
+export const SelectReviewProviderLocationBody = zod.object({
+  "locationId": zod.string()
+})
+
+export const SelectReviewProviderLocationResponse = zod.object({
+  "connection": zod.object({
+  "status": zod.enum(['DISCONNECTED', 'PENDING', 'CONNECTED', 'ERROR']),
+  "provider": zod.enum(['BNDLE']),
+  "lastSyncedAt": zod.coerce.date().nullable(),
+  "lastError": zod.string().nullable(),
+  "remainingImportCapacity": zod.int().nullable().describe('Provider\'s remaining monthly Google review import capacity for this account, as of the last successful sync. Null until a sync reports it.')
+}),
+  "locations": zod.array(zod.object({
+  "id": zod.uuid(),
+  "name": zod.string(),
+  "address": zod.string().nullable(),
+  "category": zod.string().nullable(),
+  "websiteUrl": zod.string().nullable(),
+  "isSelected": zod.boolean()
+})),
+  "summary": zod.object({
+  "totalReviews": zod.int(),
+  "needsReply": zod.int(),
+  "replied": zod.int()
+})
+})
+
+
+/**
  * @summary Synchronize Google Business locations and reviews from BNDLE
  */
 export const SyncReviewProviderResponse = zod.object({

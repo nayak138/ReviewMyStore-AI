@@ -10,7 +10,6 @@ import {
 import {
   db,
   managedReviewsTable,
-  organizationsTable,
   providerConnectionsTable,
   reviewAuditEventsTable,
   reviewLocationsTable,
@@ -144,14 +143,29 @@ async function bndleRequest<T extends JsonRecord = JsonRecord>(
       { providerStatus: response.status, path: path.split("?")[0] },
       "bundle.social review provider request failed",
     );
-    // 401 = key missing, 403 = key invalid. Either way this is OUR platform
-    // credential, never the end user's Google connection.
-    if (response.status === 401 || response.status === 403) {
+    // 401 = our platform credential is missing/rejected outright. This is
+    // never the end user's Google connection.
+    if (response.status === 401) {
       throw new ReviewProviderError(
         "The review provider API key is invalid or expired. Ask an administrator to update the bundle.social credential.",
         503,
         "REVIEW_PROVIDER_NOT_CONFIGURED",
         response.status,
+      );
+    }
+    // 403 is also always about OUR account with the provider (never the end
+    // user's Google connection), but bundle.social overloads it for several
+    // distinct reasons — an invalid key, but also plan/quota limits (e.g.
+    // "Social sets limit reached") — so surface its own message instead of
+    // guessing "invalid key" every time.
+    if (response.status === 403) {
+      throw new ReviewProviderError(
+        valueString(payload.message) ??
+          "The review provider rejected this request for our account. Ask an administrator to check the bundle.social plan and credentials.",
+        503,
+        "REVIEW_PROVIDER_NOT_CONFIGURED",
+        response.status,
+        valueString(payload.message),
       );
     }
     if (response.status === 429) {
@@ -308,16 +322,19 @@ function getAppOrigin(): string | null {
   return domain ? `https://${domain}` : null;
 }
 
-export async function startReviewProviderConnection(
-  organizationId: string,
-  returnUrl?: string,
-) {
+/**
+ * Route Google sends the browser back to once the user grants (or denies)
+ * access. It's our own app, not bundle.social's, so the connect flow never
+ * shows their branding or hosted UI — we render the location picker and
+ * finish the connection ourselves from here.
+ */
+function getConnectCallbackUrl(): string | null {
+  const appOrigin = getAppOrigin();
+  return appOrigin ? `${appOrigin}/reviews?bndleConnect=1` : null;
+}
+
+export async function startReviewProviderConnection(organizationId: string) {
   const teamId = await getOrCreateProviderTeam(organizationId);
-  const [organization] = await db
-    .select({ name: organizationsTable.name })
-    .from(organizationsTable)
-    .where(eq(organizationsTable.id, organizationId))
-    .limit(1);
   const [connection] = await db
     .insert(providerConnectionsTable)
     .values({
@@ -342,33 +359,112 @@ export async function startReviewProviderConnection(
     })
     .returning();
 
-  // The hosted portal handles Google OAuth AND business-location selection;
-  // the API key stays server-side and the link expires after an hour. The
-  // hidePoweredBy/logoUrl/userName fields white-label the hosted page so it
-  // reads as our own connect flow instead of bundle.social's.
-  const appOrigin = getAppOrigin();
-  const portal = await bndleRequest("social-account/create-portal-link", {
+  const redirectUrl = getConnectCallbackUrl();
+  if (!redirectUrl) {
+    throw new ReviewProviderError(
+      "Could not determine this app's URL to complete the Google connection.",
+    );
+  }
+
+  // Custom UI flow: bundle.social hands back Google's real OAuth URL
+  // directly, so the user only ever sees Google's consent screen and our
+  // own app — bundle.social's hosted/branded page is never shown.
+  // disableAutoLogin forces the Google account chooser instead of silently
+  // reusing whichever Google session is already active in the browser.
+  const connect = await bndleRequest("social-account/connect", {
     method: "POST",
     body: JSON.stringify({
+      type: "GOOGLE_BUSINESS",
       teamId,
-      socialAccountTypes: ["GOOGLE_BUSINESS"],
-      ...(returnUrl ? { redirectUrl: returnUrl } : {}),
-      expiresIn: 60,
-      hidePoweredBy: true,
-      hideLanguageSwitcher: true,
-      ...(appOrigin
-        ? { logoUrl: `${appOrigin}/brand/logo-icon.png` }
-        : {}),
-      ...(organization?.name ? { userName: organization.name } : {}),
+      redirectUrl,
+      disableAutoLogin: true,
     }),
   });
-  const authUrl = valueString(portal.url);
+  const authUrl = valueString(connect.url);
   if (!authUrl) {
     throw new ReviewProviderError(
       "The review provider did not return a connection link.",
     );
   }
   return { connection: connectionResult(connection), authUrl };
+}
+
+/**
+ * bundle.social's success/error callback query parameters are not
+ * documented clearly enough to parse reliably (the docs list the same
+ * parameter name for both outcomes for Google Business). Instead of
+ * trusting the query string, we ask bundle.social directly whether a
+ * Google Business social account now exists for the team.
+ */
+async function findGoogleBusinessSocialAccount(
+  teamId: string,
+): Promise<JsonRecord | null> {
+  try {
+    return await bndleRequest("social-account/by-type", undefined, {
+      type: "GOOGLE_BUSINESS",
+      teamId,
+    });
+  } catch (error) {
+    if (error instanceof ReviewProviderError && error.upstreamStatus === 404) {
+      return null;
+    }
+    throw error;
+  }
+}
+
+/**
+ * Reports where the in-progress custom connect flow stands. Called by the
+ * callback page the browser lands on after Google OAuth completes.
+ */
+export async function getReviewProviderConnectionLocations(
+  organizationId: string,
+) {
+  const connection = await getRequiredConnection(organizationId);
+  const account = await findGoogleBusinessSocialAccount(
+    connection.externalProfileId,
+  );
+
+  if (!account) {
+    return { stage: "NOT_CONNECTED" as const, locations: [] };
+  }
+
+  const channels = asArray(account.channels);
+  const selectedExternalId = valueString(account.externalId);
+  if (selectedExternalId) {
+    return { stage: "READY" as const, locations: [] };
+  }
+  if (channels.length === 0) {
+    return { stage: "NO_LOCATIONS_FOUND" as const, locations: [] };
+  }
+  return {
+    stage: "NEEDS_LOCATION" as const,
+    locations: channels.map((channel) => ({
+      id: valueString(channel.id) ?? "",
+      name: valueString(channel.name) ?? "Untitled location",
+      address: valueString(channel.address),
+    })).filter((location) => location.id),
+  };
+}
+
+/**
+ * Picks the Google Business location for the account bundle.social just
+ * connected, then runs the normal sync to import that location and its
+ * reviews and flip the connection to CONNECTED.
+ */
+export async function selectReviewProviderLocation(
+  organizationId: string,
+  locationId: string,
+) {
+  const connection = await getRequiredConnection(organizationId);
+  await bndleRequest("social-account/set-channel", {
+    method: "POST",
+    body: JSON.stringify({
+      type: "GOOGLE_BUSINESS",
+      teamId: connection.externalProfileId,
+      channelId: locationId,
+    }),
+  });
+  return syncReviewProvider(organizationId);
 }
 
 /**

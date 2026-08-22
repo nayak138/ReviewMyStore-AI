@@ -69,6 +69,8 @@ import type {
   RedirectResolveResult,
   ReviewDashboardResult,
   ReviewProviderConnectionStartResult,
+  ReviewProviderLocationsResult,
+  SelectReviewProviderLocationRequest,
   SessionInfo,
   UploadUrlRequest,
   UploadUrlResponse
@@ -318,6 +320,154 @@ export const useDisconnectReviewProvider = <TError = ErrorType<ErrorResponse>,
         TContext
       > => {
       return useMutation(getDisconnectReviewProviderMutationOptions(options));
+    }
+
+export const getGetReviewProviderLocationsUrl = () => {
+
+
+
+
+  return `/api/v1/review-management/connection/locations`
+}
+
+/**
+ * @summary Check the in-progress Google OAuth attempt and list selectable business locations once bundle.social confirms access
+ */
+export const getReviewProviderLocations = async ( options?: Parameters<typeof customFetch>[1]): Promise<ReviewProviderLocationsResult> => {
+
+  return customFetch<ReviewProviderLocationsResult>(getGetReviewProviderLocationsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetReviewProviderLocationsQueryKey = () => {
+    return [
+    `/api/v1/review-management/connection/locations`
+    ] as const;
+    }
+
+
+export const getGetReviewProviderLocationsQueryOptions = <TData = Awaited<ReturnType<typeof getReviewProviderLocations>>, TError = ErrorType<ErrorResponse>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getReviewProviderLocations>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetReviewProviderLocationsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getReviewProviderLocations>>> = ({ signal }) => getReviewProviderLocations({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getReviewProviderLocations>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetReviewProviderLocationsQueryResult = NonNullable<Awaited<ReturnType<typeof getReviewProviderLocations>>>
+export type GetReviewProviderLocationsQueryError = ErrorType<ErrorResponse>
+
+
+/**
+ * @summary Check the in-progress Google OAuth attempt and list selectable business locations once bundle.social confirms access
+ */
+
+export function useGetReviewProviderLocations<TData = Awaited<ReturnType<typeof getReviewProviderLocations>>, TError = ErrorType<ErrorResponse>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getReviewProviderLocations>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetReviewProviderLocationsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getSelectReviewProviderLocationUrl = () => {
+
+
+
+
+  return `/api/v1/review-management/connection/location`
+}
+
+/**
+ * @summary Pick the Google Business location for the in-progress connection and finish connecting (imports locations and reviews)
+ */
+export const selectReviewProviderLocation = async (selectReviewProviderLocationRequest: SelectReviewProviderLocationRequest, options?: Parameters<typeof customFetch>[1]): Promise<ReviewDashboardResult> => {
+
+  return customFetch<ReviewDashboardResult>(getSelectReviewProviderLocationUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(selectReviewProviderLocationRequest)
+  }
+);}
+
+
+
+
+
+export const getSelectReviewProviderLocationMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof selectReviewProviderLocation>>, TError,{data: BodyType<SelectReviewProviderLocationRequest>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof selectReviewProviderLocation>>, TError,{data: BodyType<SelectReviewProviderLocationRequest>}, TContext> => {
+
+const mutationKey = ['selectReviewProviderLocation'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof selectReviewProviderLocation>>, {data: BodyType<SelectReviewProviderLocationRequest>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  selectReviewProviderLocation(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SelectReviewProviderLocationMutationResult = NonNullable<Awaited<ReturnType<typeof selectReviewProviderLocation>>>
+    export type SelectReviewProviderLocationMutationBody = BodyType<SelectReviewProviderLocationRequest>
+    export type SelectReviewProviderLocationMutationError = ErrorType<ErrorResponse>
+
+    /**
+ * @summary Pick the Google Business location for the in-progress connection and finish connecting (imports locations and reviews)
+ */
+export const useSelectReviewProviderLocation = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof selectReviewProviderLocation>>, TError,{data: BodyType<SelectReviewProviderLocationRequest>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof selectReviewProviderLocation>>,
+        TError,
+        {data: BodyType<SelectReviewProviderLocationRequest>},
+        TContext
+      > => {
+      return useMutation(getSelectReviewProviderLocationMutationOptions(options));
     }
 
 export const getSyncReviewProviderUrl = () => {

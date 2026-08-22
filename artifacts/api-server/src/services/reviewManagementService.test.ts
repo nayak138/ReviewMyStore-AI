@@ -28,8 +28,10 @@ import {
   deleteManagedReviewReply,
   generateManagedReviewDraft,
   getReviewDashboard,
+  getReviewProviderConnectionLocations,
   listManagedReviews,
   publishManagedReviewReply,
+  selectReviewProviderLocation,
   startReviewProviderConnection,
   syncReviewProvider,
 } from "./reviewManagementService.ts";
@@ -461,9 +463,9 @@ test("an import failure surfaces as a note while previously imported reviews sti
 // startReviewProviderConnection
 // ---------------------------------------------------------------------------
 
-test("starting a connection provisions a provider team and returns the portal link", async () => {
+test("starting a connection provisions a provider team and returns Google's OAuth link", async () => {
   const org = await createOrg("connect");
-  const authUrl = "https://app.bundle.social/portal/abc123";
+  const authUrl = "https://accounts.google.com/o/oauth2/v2/auth?client_id=abc123";
   let teamCreates = 0;
   providerFetch.handler = (url, init) => {
     const method = (init.method ?? "GET").toUpperCase();
@@ -475,14 +477,14 @@ test("starting a connection provisions a provider team and returns the portal li
       teamCreates += 1;
       return { body: { id: "team-created-1" } };
     }
-    if (path.endsWith("/social-account/create-portal-link") && method === "POST") {
+    if (path.endsWith("/social-account/connect") && method === "POST") {
       const body = JSON.parse(String(init.body)) as Record<string, unknown>;
       assert.equal(body.teamId, "team-created-1");
-      assert.deepEqual(body.socialAccountTypes, ["GOOGLE_BUSINESS"]);
-      // White-label the hosted portal so it doesn't look like a bare,
-      // unbranded bundle.social page.
-      assert.equal(body.hidePoweredBy, true);
-      assert.equal(body.hideLanguageSwitcher, true);
+      assert.equal(body.type, "GOOGLE_BUSINESS");
+      // Our own app's callback route, not a bundle.social hosted page — the
+      // whole point of the custom flow is that their UI is never shown.
+      assert.match(String(body.redirectUrl), /^https:\/\/.+\/reviews\?bndleConnect=1$/);
+      assert.equal(body.disableAutoLogin, true);
       return { body: { url: authUrl } };
     }
     throw new Error(`Unexpected provider request: ${method} ${path}`);
@@ -513,7 +515,7 @@ test("starting a connection provisions a provider team and returns the portal li
     if (path.endsWith("/team/") && method === "POST") {
       throw new Error("must not create a second team for the same organization");
     }
-    if (path.endsWith("/social-account/create-portal-link") && method === "POST") {
+    if (path.endsWith("/social-account/connect") && method === "POST") {
       return { body: { url: authUrl } };
     }
     throw new Error(`Unexpected provider request: ${method} ${path}`);
@@ -522,7 +524,7 @@ test("starting a connection provisions a provider team and returns the portal li
   assert.equal(again.authUrl, authUrl);
 });
 
-test("starting a connection fails loudly when the provider returns no portal link", async () => {
+test("starting a connection fails loudly when the provider returns no OAuth link", async () => {
   const org = await createOrg("nolink");
   providerFetch.handler = (url, init) => {
     const method = (init.method ?? "GET").toUpperCase();
@@ -533,7 +535,7 @@ test("starting a connection fails loudly when the provider returns no portal lin
     if (path.endsWith("/team/") && method === "POST") {
       return { body: { id: "team-nolink-1" } };
     }
-    return { body: {} }; // portal-link endpoint returns no url
+    return { body: {} }; // connect endpoint returns no url
   };
   await assert.rejects(
     () => startReviewProviderConnection(org.id),
@@ -543,6 +545,148 @@ test("starting a connection fails loudly when the provider returns no portal lin
       return true;
     },
   );
+});
+
+// ---------------------------------------------------------------------------
+// getReviewProviderConnectionLocations / selectReviewProviderLocation
+// ---------------------------------------------------------------------------
+
+test("checking connection locations reports NOT_CONNECTED when Google OAuth hasn't finished", async () => {
+  const org = await createOrg("notconnected");
+  const teamId = `team-notconnected-${runId}`;
+  await createConnection(org.id, teamId);
+  providerFetch.handler = (url, init) => {
+    const method = (init.method ?? "GET").toUpperCase();
+    if (url.pathname.endsWith("/social-account/by-type") && method === "GET") {
+      // bundle.social 404s when no matching social account exists yet.
+      return { status: 404, body: { message: "not found" } };
+    }
+    throw new Error(`Unexpected provider request: ${method} ${url.pathname}`);
+  };
+
+  const result = await getReviewProviderConnectionLocations(org.id);
+  assert.deepEqual(result, { stage: "NOT_CONNECTED", locations: [] });
+});
+
+test("checking connection locations reports NEEDS_LOCATION with the available channels", async () => {
+  const org = await createOrg("needslocation");
+  const teamId = `team-needslocation-${runId}`;
+  await createConnection(org.id, teamId);
+  providerFetch.handler = (url, init) => {
+    const method = (init.method ?? "GET").toUpperCase();
+    if (url.pathname.endsWith("/social-account/by-type") && method === "GET") {
+      assert.equal(url.searchParams.get("type"), "GOOGLE_BUSINESS");
+      assert.equal(url.searchParams.get("teamId"), teamId);
+      return {
+        body: {
+          id: "sa-1",
+          type: "GOOGLE_BUSINESS",
+          externalId: null,
+          channels: [
+            { id: "ch-1", name: "Downtown", address: "1 Main St" },
+            { id: "ch-2", name: "Uptown", address: "9 High St" },
+          ],
+        },
+      };
+    }
+    throw new Error(`Unexpected provider request: ${method} ${url.pathname}`);
+  };
+
+  const result = await getReviewProviderConnectionLocations(org.id);
+  assert.equal(result.stage, "NEEDS_LOCATION");
+  assert.deepEqual(result.locations, [
+    { id: "ch-1", name: "Downtown", address: "1 Main St" },
+    { id: "ch-2", name: "Uptown", address: "9 High St" },
+  ]);
+});
+
+test("checking connection locations reports NO_LOCATIONS_FOUND when the account has no channels", async () => {
+  const org = await createOrg("nolocations");
+  const teamId = `team-nolocations-${runId}`;
+  await createConnection(org.id, teamId);
+  providerFetch.handler = (url, init) => {
+    const method = (init.method ?? "GET").toUpperCase();
+    if (url.pathname.endsWith("/social-account/by-type") && method === "GET") {
+      return { body: { id: "sa-1", type: "GOOGLE_BUSINESS", externalId: null, channels: [] } };
+    }
+    throw new Error(`Unexpected provider request: ${method} ${url.pathname}`);
+  };
+
+  const result = await getReviewProviderConnectionLocations(org.id);
+  assert.deepEqual(result, { stage: "NO_LOCATIONS_FOUND", locations: [] });
+});
+
+test("checking connection locations reports READY once a location is already selected", async () => {
+  const org = await createOrg("ready");
+  const teamId = `team-ready-${runId}`;
+  await createConnection(org.id, teamId);
+  providerFetch.handler = (url, init) => {
+    const method = (init.method ?? "GET").toUpperCase();
+    if (url.pathname.endsWith("/social-account/by-type") && method === "GET") {
+      return {
+        body: {
+          id: "sa-1",
+          type: "GOOGLE_BUSINESS",
+          externalId: "ch-1",
+          channels: [{ id: "ch-1", name: "Downtown", address: "1 Main St" }],
+        },
+      };
+    }
+    throw new Error(`Unexpected provider request: ${method} ${url.pathname}`);
+  };
+
+  const result = await getReviewProviderConnectionLocations(org.id);
+  assert.deepEqual(result, { stage: "READY", locations: [] });
+});
+
+test("selecting a location sets the channel then imports it via the normal sync", async () => {
+  const org = await createOrg("selectlocation");
+  const teamId = `team-selectlocation-${runId}`;
+  await createConnection(org.id, teamId);
+  let setChannelCalled = false;
+  providerFetch.handler = (url, init) => {
+    const method = (init.method ?? "GET").toUpperCase();
+    const path = url.pathname;
+    if (path.endsWith("/social-account/set-channel") && method === "POST") {
+      const body = JSON.parse(String(init.body)) as Record<string, unknown>;
+      assert.equal(body.type, "GOOGLE_BUSINESS");
+      assert.equal(body.teamId, teamId);
+      assert.equal(body.channelId, "ch-1");
+      setChannelCalled = true;
+      return { body: {} };
+    }
+    if (path.endsWith(`/team/${teamId}`) && method === "GET") {
+      return {
+        body: {
+          socialAccounts: [
+            {
+              id: "sa-1",
+              type: "GOOGLE_BUSINESS",
+              displayName: "Downtown Store",
+              externalId: "ch-1",
+              channels: [{ id: "ch-1", name: "Downtown", address: "1 Main St" }],
+            },
+          ],
+        },
+      };
+    }
+    if (path.endsWith("/misc/google-business/reviews/import") && method === "POST") {
+      return { body: {} };
+    }
+    if (path.endsWith("/misc/google-business/reviews/import") && method === "GET") {
+      return { body: { imports: [{ status: "COMPLETED" }] } };
+    }
+    if (path.endsWith("/misc/google-business/reviews") && method === "GET") {
+      return { body: { total: 0, reviews: [] } };
+    }
+    throw new Error(`Unexpected provider request: ${method} ${path}`);
+  };
+
+  const dashboard = await selectReviewProviderLocation(org.id, "ch-1");
+  assert.ok(setChannelCalled, "must select the channel before syncing");
+  assert.equal(dashboard.connection.status, "CONNECTED");
+  assert.equal(dashboard.locations.length, 1);
+  assert.equal(dashboard.locations[0].name, "Downtown Store");
 });
 
 // ---------------------------------------------------------------------------

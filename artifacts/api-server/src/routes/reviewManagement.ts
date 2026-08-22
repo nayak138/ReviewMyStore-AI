@@ -5,11 +5,14 @@ import {
   GenerateManagedReviewDraftParams,
   GenerateManagedReviewDraftResponse,
   GetReviewDashboardResponse,
+  GetReviewProviderLocationsResponse,
   ListManagedReviewsQueryParams,
   ListManagedReviewsResponse,
   PublishManagedReviewReplyBody,
   PublishManagedReviewReplyParams,
   PublishManagedReviewReplyResponse,
+  SelectReviewProviderLocationBody,
+  SelectReviewProviderLocationResponse,
   StartReviewProviderConnectionResponse,
   SyncReviewProviderResponse,
 } from "@workspace/api-zod";
@@ -19,10 +22,12 @@ import {
   disconnectReviewProvider,
   generateManagedReviewDraft,
   getReviewDashboard,
+  getReviewProviderConnectionLocations,
   listManagedReviews,
   ManagedReviewNotFoundError,
   publishManagedReviewReply,
   ReviewProviderError,
+  selectReviewProviderLocation,
   startReviewProviderConnection,
   syncReviewProvider,
 } from "../services/reviewManagementService";
@@ -75,37 +80,55 @@ router.post(
   async (req, res): Promise<void> => {
     const organizationId = requireOrganization(req, res);
     if (!organizationId) return;
-    // The hosted provider flow returns users to the page they started from.
-    // Only app-owned origins are forwarded so the provider portal can never
-    // be pointed at an attacker-controlled return URL.
-    let returnUrl: string | undefined;
-    const referer = req.get("referer");
-    if (referer) {
-      try {
-        const parsed = new URL(referer);
-        const allowedHosts = new Set(
-          [
-            ...(process.env.REPLIT_DOMAINS?.split(",") ?? []),
-            process.env.REPLIT_DEV_DOMAIN,
-          ]
-            .map((domain) => domain?.trim().toLowerCase())
-            .filter((domain): domain is string => Boolean(domain)),
-        );
-        if (
-          (parsed.protocol === "https:" || parsed.protocol === "http:") &&
-          allowedHosts.has(parsed.hostname.toLowerCase())
-        ) {
-          returnUrl = `${parsed.origin}${parsed.pathname}`;
-        }
-      } catch {
-        // Ignore malformed referers; the provider page has a back button.
-      }
-    }
     try {
-      const result = await startReviewProviderConnection(organizationId, returnUrl);
+      const result = await startReviewProviderConnection(organizationId);
       res.json(StartReviewProviderConnectionResponse.parse(result));
     } catch (error) {
       req.log.warn({ err: error }, "Unable to start review provider connection");
+      sendServiceError(res, error);
+    }
+  },
+);
+
+router.get(
+  "/review-management/connection/locations",
+  requireAuth,
+  async (req, res): Promise<void> => {
+    const organizationId = requireOrganization(req, res);
+    if (!organizationId) return;
+    try {
+      const result = await getReviewProviderConnectionLocations(organizationId);
+      res.json(GetReviewProviderLocationsResponse.parse(result));
+    } catch (error) {
+      req.log.warn({ err: error }, "Unable to check review provider connection");
+      sendServiceError(res, error);
+    }
+  },
+);
+
+router.post(
+  "/review-management/connection/location",
+  requireAuth,
+  async (req, res): Promise<void> => {
+    const organizationId = requireOrganization(req, res);
+    if (!organizationId) return;
+    const body = SelectReviewProviderLocationBody.safeParse(req.body);
+    if (!body.success) {
+      res.status(400).json({
+        success: false,
+        code: "INVALID_REQUEST",
+        message: body.error.message,
+      });
+      return;
+    }
+    try {
+      const result = await selectReviewProviderLocation(
+        organizationId,
+        body.data.locationId,
+      );
+      res.json(SelectReviewProviderLocationResponse.parse(result));
+    } catch (error) {
+      req.log.warn({ err: error }, "Unable to select review provider location");
       sendServiceError(res, error);
     }
   },
