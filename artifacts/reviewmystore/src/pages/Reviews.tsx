@@ -322,16 +322,36 @@ export default function Reviews() {
       onSuccess: (data) => {
         // Google blocks OAuth inside iframes (e.g. the workspace preview),
         // so the hosted connect flow must run in a top-level tab.
-        const opened = window.open(data.authUrl, "_blank", "noopener");
+        //
+        // NOTE: don't pass the "noopener" window feature here. Per the
+        // WHATWG spec, "noopener" makes window.open() itself return null
+        // even when the tab opens successfully, which would make the
+        // `if (opened)` check below always false and wrongly navigate this
+        // (the original) tab away on every click, defeating the whole
+        // point of opening a new tab. Instead, get a real handle so we can
+        // detect an actually-blocked popup, and neutralize `window.opener`
+        // manually for the same tabnabbing protection "noopener" provides.
+        const opened = window.open(data.authUrl, "_blank");
         if (opened) {
+          try {
+            opened.opener = null;
+          } catch {
+            // Cross-origin restrictions may prevent this; safe to ignore.
+          }
           toast({
             title: "Complete the connection in the new tab",
             description: "Sign in with Google there, then come back and press Sync reviews."
           });
         } else {
-          // Pop-up blocked: fall back to navigating this window.
+          // Pop-up genuinely blocked: fall back to navigating this window.
           window.location.href = data.authUrl;
         }
+        // The backend has already moved the connection to PENDING at this
+        // point. Without refreshing the cached dashboard now, this tab's
+        // `dashboard.connection.status` stays DISCONNECTED, the PENDING-only
+        // focus/visibility listener below never mounts, and the user comes
+        // back from Google to a page that silently never auto-syncs.
+        queryClient.invalidateQueries({ queryKey: dashboardKey });
       },
       onError: (err: any) => {
         const msg = err.response?.data?.message || "Failed to start connection";

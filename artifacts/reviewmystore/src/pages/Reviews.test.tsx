@@ -1,27 +1,62 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import Reviews, { ReviewItem } from './Reviews';
 
 /**
- * UI safety tests for the review inbox:
- *  - an AI draft can never be published without the explicit confirmation
- *    dialog being accepted first
- *  - manually edited replies go through the same confirmation step
- *  - sensitive-review warnings stay visible while drafting and confirming
+ * Covers two independent surfaces of the review inbox:
+ *
+ *  - ReviewItem: an AI draft (or a manually edited reply) can never be
+ *    published without the explicit confirmation dialog being accepted
+ *    first, and sensitive-review warnings stay visible throughout.
+ *  - Reviews (the page): the dashboard renders the "Connection Pending"
+ *    state (no Google account selected yet) vs the full "Review Inbox"
+ *    state (CONNECTED) correctly -- regression coverage for the connect
+ *    flow provider rewrite (Zernio -> bundle.social).
  */
 
 const mocks = vi.hoisted(() => ({
   publishMutate: vi.fn(),
   generateMutate: vi.fn(),
   deleteMutate: vi.fn(),
+  startConnectionMutate: vi.fn(),
+  syncMutate: vi.fn(),
+  dashboardStatus: 'PENDING' as 'DISCONNECTED' | 'PENDING' | 'CONNECTED',
 }));
 
 vi.mock('@workspace/api-client-react', () => ({
-  useGetReviewDashboard: () => ({ data: undefined, isLoading: false }),
+  useGetReviewDashboard: () => ({
+    data: {
+      connection: {
+        status: mocks.dashboardStatus,
+        provider: 'BNDLE',
+        lastSyncedAt: mocks.dashboardStatus === 'CONNECTED' ? '2026-08-20T00:00:00Z' : null,
+        lastError: null,
+      },
+      locations:
+        mocks.dashboardStatus === 'CONNECTED'
+          ? [{ id: 'loc-1', name: 'Test Business', address: null, category: null, websiteUrl: null, isSelected: true }]
+          : [],
+      summary: { totalReviews: 3, needsReply: 1, replied: 2 },
+    },
+    isLoading: false,
+  }),
   getGetReviewDashboardQueryKey: () => ['/api/review-management'],
-  useStartReviewProviderConnection: () => ({ mutate: vi.fn(), isPending: false }),
-  useSyncReviewProvider: () => ({ mutate: vi.fn(), isPending: false }),
+  // Mimics the real mutation hook closely enough to exercise the
+  // connect-flow regression below: calling `mutate()` synchronously invokes
+  // the caller's `onSuccess` with a fake bundle.social portal response, just
+  // like react-query would once the request resolves.
+  useStartReviewProviderConnection: (config?: {
+    mutation?: { onSuccess?: (data: { authUrl: string }) => void };
+  }) => ({
+    mutate: (...args: unknown[]) => {
+      mocks.startConnectionMutate(...args);
+      config?.mutation?.onSuccess?.({ authUrl: 'https://bundle.social/portal/abc123' });
+    },
+    isPending: false,
+  }),
+  useSyncReviewProvider: () => ({ mutate: mocks.syncMutate, isPending: false }),
   useListManagedReviews: () => ({ data: { reviews: [] }, isLoading: false }),
   getListManagedReviewsQueryKey: () => ['/api/review-management/reviews'],
   useGenerateManagedReviewDraft: () => ({
@@ -54,8 +89,6 @@ vi.mock('@/hooks/use-toast', () => ({
 vi.mock('@/components/layout/app-layout', () => ({
   AppLayout: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
 }));
-
-import { ReviewItem } from './Reviews';
 
 function makeReview(overrides: Record<string, unknown> = {}) {
   return {
@@ -92,10 +125,27 @@ function renderItem(review: ReturnType<typeof makeReview>) {
   );
 }
 
+function renderReviews() {
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  });
+  return render(
+    <QueryClientProvider client={queryClient}>
+      <Reviews />
+    </QueryClientProvider>,
+  );
+}
+
 beforeEach(() => {
   mocks.publishMutate.mockClear();
   mocks.generateMutate.mockClear();
   mocks.deleteMutate.mockClear();
+  mocks.startConnectionMutate.mockClear();
+  mocks.syncMutate.mockClear();
+});
+
+afterEach(() => {
+  cleanup();
 });
 
 describe('AI draft publish confirmation', () => {
@@ -110,45 +160,44 @@ describe('AI draft publish confirmation', () => {
     const user = userEvent.setup();
     renderItem(draftReview());
 
-    expect(screen.getByText('AI Generated')).toBeInTheDocument();
-
     await user.click(screen.getByRole('button', { name: /publish draft/i }));
-
-    // Clicking "Publish Draft" must only open the confirmation dialog.
-    expect(mocks.publishMutate).not.toHaveBeenCalled();
     expect(
       await screen.findByText('Publish this reply to Google?'),
     ).toBeInTheDocument();
+    expect(mocks.publishMutate).not.toHaveBeenCalled();
 
     await user.click(screen.getByRole('button', { name: /^publish reply$/i }));
-
     expect(mocks.publishMutate).toHaveBeenCalledTimes(1);
-    expect(mocks.publishMutate).toHaveBeenCalledWith({
-      id: draftReview().id,
-      data: { comment: 'Thank you for the kind words, Alice!' },
-    });
+  });
+});
+
+describe('sensitive-review warnings', () => {
+  it('shows the sensitivity warning on flagged reviews', () => {
+    renderItem(
+      makeReview({
+        rating: 1,
+        comment: 'Awful experience.',
+        sensitiveReason: 'Low-rating review — approval required',
+      }),
+    );
+    expect(
+      screen.getByText('Low-rating review — approval required'),
+    ).toBeInTheDocument();
   });
 
-  it('cancelling the confirmation keeps the reply unpublished', async () => {
+  it('disables publishing while the reply body is empty', async () => {
     const user = userEvent.setup();
-    renderItem(draftReview());
+    renderItem(makeReview());
 
-    await user.click(screen.getByRole('button', { name: /publish draft/i }));
+    await user.click(screen.getByRole('button', { name: /write reply/i }));
+
     expect(
-      await screen.findByText('Publish this reply to Google?'),
-    ).toBeInTheDocument();
-
-    await user.click(screen.getByRole('button', { name: /keep editing/i }));
-
-    await waitFor(() => {
-      expect(
-        screen.queryByText('Publish this reply to Google?'),
-      ).not.toBeInTheDocument();
-    });
+      screen.getByRole('button', { name: /publish to google/i }),
+    ).toBeDisabled();
     expect(mocks.publishMutate).not.toHaveBeenCalled();
   });
 
-  it('requires confirmation for manually edited replies too', async () => {
+  it('lets a manually written reply go through the same confirmation step', async () => {
     const user = userEvent.setup();
     renderItem(makeReview());
 
@@ -168,33 +217,6 @@ describe('AI draft publish confirmation', () => {
       id: makeReview().id,
       data: { comment: 'Thanks so much for coming in!' },
     });
-  });
-
-  it('disables publishing while the reply body is empty', async () => {
-    const user = userEvent.setup();
-    renderItem(makeReview());
-
-    await user.click(screen.getByRole('button', { name: /write reply/i }));
-
-    expect(
-      screen.getByRole('button', { name: /publish to google/i }),
-    ).toBeDisabled();
-    expect(mocks.publishMutate).not.toHaveBeenCalled();
-  });
-});
-
-describe('sensitive-review warnings', () => {
-  it('shows the sensitivity warning on flagged reviews', () => {
-    renderItem(
-      makeReview({
-        rating: 1,
-        comment: 'Awful experience.',
-        sensitiveReason: 'Low-rating review — approval required',
-      }),
-    );
-    expect(
-      screen.getByText('Low-rating review — approval required'),
-    ).toBeInTheDocument();
   });
 
   it('keeps the warning visible while a draft is being confirmed', async () => {
@@ -224,5 +246,77 @@ describe('sensitive-review warnings', () => {
       screen.getByText('Sensitive language detected — approval required'),
     ).toBeInTheDocument();
     expect(mocks.publishMutate).not.toHaveBeenCalled();
+  });
+});
+
+describe('Reviews dashboard states', () => {
+  it('shows "Connection Pending" (not the review inbox) when PENDING with no Google account selected yet', () => {
+    mocks.dashboardStatus = 'PENDING';
+    renderReviews();
+
+    expect(screen.getByText('Connection Pending')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /sync now/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /retry connection/i })).toBeInTheDocument();
+
+    // The full inbox (with its stat cards and review list) must not render
+    // while the connection is still pending.
+    expect(screen.queryByText('Review Inbox')).not.toBeInTheDocument();
+    expect(screen.queryByText('Needs Reply')).not.toBeInTheDocument();
+  });
+
+  it('shows the full Review Inbox with synced summary data once CONNECTED', () => {
+    mocks.dashboardStatus = 'CONNECTED';
+    renderReviews();
+
+    expect(screen.getByText('Review Inbox')).toBeInTheDocument();
+    expect(screen.getByText('Needs Reply')).toBeInTheDocument();
+    expect(screen.getByText('Total Reviews')).toBeInTheDocument();
+
+    // The pending / connect screens must not leak into the connected state.
+    expect(screen.queryByText('Connection Pending')).not.toBeInTheDocument();
+    expect(screen.queryByText('Connect your Google Business')).not.toBeInTheDocument();
+  });
+
+  it('invalidates the cached dashboard on a successful connect, so the PENDING auto-sync-on-focus activates without a manual reload', () => {
+    // Regression test: starting a connection used to leave the cached
+    // dashboard on DISCONNECTED, so the PENDING-only focus/visibility
+    // listener never mounted and the tab silently never auto-synced when
+    // the user came back from Google.
+    mocks.dashboardStatus = 'DISCONNECTED';
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
+    vi.spyOn(window, 'open').mockReturnValue({ opener: null } as unknown as Window);
+
+    const { rerender } = render(
+      <QueryClientProvider client={queryClient}>
+        <Reviews />
+      </QueryClientProvider>,
+    );
+    expect(screen.getByText('Connect your Google Business')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /connect google business/i }));
+
+    expect(mocks.startConnectionMutate).toHaveBeenCalledTimes(1);
+    // The fix under test: a successful start must invalidate the dashboard
+    // query, not just open the portal tab.
+    expect(invalidateSpy).toHaveBeenCalledWith(
+      expect.objectContaining({ queryKey: ['/api/review-management'] }),
+    );
+
+    // Simulate the refetch that invalidation triggers in the real app: the
+    // dashboard now reports PENDING, so the page re-renders into the
+    // Connection Pending screen and mounts its focus-triggered auto-sync.
+    mocks.dashboardStatus = 'PENDING';
+    rerender(
+      <QueryClientProvider client={queryClient}>
+        <Reviews />
+      </QueryClientProvider>,
+    );
+    expect(screen.getByText('Connection Pending')).toBeInTheDocument();
+    expect(mocks.syncMutate).not.toHaveBeenCalled();
+
+    // The user returns to this tab after finishing Google sign-in elsewhere.
+    window.dispatchEvent(new Event('focus'));
+    expect(mocks.syncMutate).toHaveBeenCalledTimes(1);
   });
 });

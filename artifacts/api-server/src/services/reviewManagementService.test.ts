@@ -762,3 +762,76 @@ test("generating an AI draft never publishes and keeps requiresApproval set", as
     );
   assert.equal(audits.length, 1);
 });
+
+// ---------------------------------------------------------------------------
+// PENDING dashboard state: connected before a Google account is selected
+// (regression coverage for the connect-flow provider rewrite, Zernio ->
+// bundle.social -- mirrors the "Connection Pending" vs "Review Inbox"
+// states Reviews.tsx renders in the frontend)
+// ---------------------------------------------------------------------------
+
+test('a connection with no Google account yet stays PENDING after a sync ("Connection Pending" dashboard state)', async () => {
+  const org = await createOrg("pendingnoacct");
+  const teamId = `team-pendingnoacct-${runId}`;
+  const [connection] = await db
+    .insert(providerConnectionsTable)
+    .values({
+      organizationId: org.id,
+      provider: "BNDLE",
+      externalProfileId: teamId,
+      status: "PENDING",
+    })
+    .returning();
+
+  providerFetch.handler = (url, init) => {
+    const method = (init.method ?? "GET").toUpperCase();
+    const path = url.pathname;
+    if (path.endsWith(`/team/${teamId}`) && method === "GET") {
+      return { body: { socialAccounts: [] } };
+    }
+    throw new Error(`Unexpected provider request: ${method} ${path}`);
+  };
+
+  const dashboard = await syncReviewProvider(org.id);
+  assert.equal(
+    dashboard.connection.status,
+    "PENDING",
+    "no Google account yet must keep the dashboard on the Connection Pending screen, not flip it to CONNECTED or ERROR",
+  );
+  assert.equal(dashboard.locations.length, 0);
+
+  const [row] = await db
+    .select()
+    .from(providerConnectionsTable)
+    .where(eq(providerConnectionsTable.id, connection.id));
+  assert.equal(row.status, "PENDING");
+  assert.equal(row.lastError, null);
+});
+
+test("an account that loses its Google connection on the provider side reverts to PENDING, not ERROR", async () => {
+  const org = await createOrg("droppedacct");
+  const teamId = `team-droppedacct-${runId}`;
+  const connection = await createConnection(org.id, teamId); // starts CONNECTED
+
+  providerFetch.handler = (url, init) => {
+    const method = (init.method ?? "GET").toUpperCase();
+    const path = url.pathname;
+    if (path.endsWith(`/team/${teamId}`) && method === "GET") {
+      return { body: { socialAccounts: [] } };
+    }
+    throw new Error(`Unexpected provider request: ${method} ${path}`);
+  };
+
+  const dashboard = await syncReviewProvider(org.id);
+  assert.equal(
+    dashboard.connection.status,
+    "PENDING",
+    "losing the Google account on the provider side must fall back to the reconnect prompt, not a scary ERROR screen",
+  );
+
+  const [row] = await db
+    .select()
+    .from(providerConnectionsTable)
+    .where(eq(providerConnectionsTable.id, connection.id));
+  assert.equal(row.status, "PENDING");
+});

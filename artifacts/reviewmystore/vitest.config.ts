@@ -10,11 +10,13 @@ export default defineConfig({
     alias: {
       '@': path.resolve(import.meta.dirname, 'src'),
     },
+    dedupe: ['react', 'react-dom'],
   },
   test: {
     environment: 'jsdom',
     globals: true,
     setupFiles: ['./src/test/setup.ts'],
     include: ['src/**/*.test.{ts,tsx}'],
+    css: false,
   },
 });
