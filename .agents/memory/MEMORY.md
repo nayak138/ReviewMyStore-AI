@@ -17,4 +17,5 @@
 - [Clerk express test auth bypass](clerk-express-test-auth-bypass.md) — fake `req.auth` with the `Symbol.for("@clerk/express.auth")` brand to test routes without the Clerk API.
 - [OpenAI SDK captures fetch at construction](openai-sdk-fetch-capture.md) — patch `globalThis.fetch` via a first-import side-effect module; a `before()` hook is too late and tests silently hit the real API.
 - [bundle.social import quota not auto-clamped](bundle-social-import-quota-clamping.md) — a fixed batch count 400s and imports zero reviews once quota is below it; parse the error's remaining count and retry.
-- [bundle.social hosted portal white-labeling](bundle-social-portal-white-label.md) — `create-portal-link` accepts `hidePoweredBy`/`logoUrl`/`userName` etc. to remove their branding from the hosted connect page.
+- [bundle.social hosted portal white-labeling](bundle-social-portal-white-label.md) — superseded by the custom OAuth flow (see bundle.social topic file), but the fields remain accurate if the hosted flow is ever revisited.
+- [Clerk dev-mode Google consent screen branding](clerk-google-consent-branding.md) — Development's shared Google OAuth app can't be renamed/rebranded in code; only Production's custom-credentials option (Auth pane) fixes the app name shown by Google.
