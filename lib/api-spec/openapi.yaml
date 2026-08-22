@@ -84,6 +84,29 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      operationId: disconnectReviewProvider
+      tags: [review-management]
+      summary: Disconnect the caller's Google Business review connection
+      responses:
+        "200":
+          description: Updated review-management dashboard
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReviewDashboardResult"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: No organization
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
   /v1/review-management/sync:
     post:

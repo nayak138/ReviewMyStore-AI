@@ -345,6 +345,27 @@ export async function startReviewProviderConnection(
 }
 
 /**
+ * Disconnect locally without deleting the provider team or imported reviews.
+ * This lets an owner reconnect later without losing their review history.
+ * The provider credentials remain isolated to this organization's team and
+ * are not used again while the local connection is DISCONNECTED.
+ */
+export async function disconnectReviewProvider(organizationId: string) {
+  const connection = await getConnection(organizationId);
+  if (connection) {
+    await db
+      .update(providerConnectionsTable)
+      .set({
+        status: "DISCONNECTED",
+        lastError: null,
+        updatedAt: new Date(),
+      })
+      .where(eq(providerConnectionsTable.id, connection.id));
+  }
+  return getReviewDashboard(organizationId);
+}
+
+/**
  * Each connected GOOGLE_BUSINESS social account represents one selected
  * business location (bundle.social requires picking a location during the
  * hosted flow). We mirror that account as a review location row.

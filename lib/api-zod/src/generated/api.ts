@@ -51,6 +51,33 @@ export const StartReviewProviderConnectionResponse = zod.object({
 
 
 /**
+ * @summary Disconnect the caller's Google Business review connection
+ */
+export const DisconnectReviewProviderResponse = zod.object({
+  "connection": zod.object({
+  "status": zod.enum(['DISCONNECTED', 'PENDING', 'CONNECTED', 'ERROR']),
+  "provider": zod.enum(['BNDLE']),
+  "lastSyncedAt": zod.coerce.date().nullable(),
+  "lastError": zod.string().nullable(),
+  "remainingImportCapacity": zod.int().nullable().describe('Provider\'s remaining monthly Google review import capacity for this account, as of the last successful sync. Null until a sync reports it.')
+}),
+  "locations": zod.array(zod.object({
+  "id": zod.uuid(),
+  "name": zod.string(),
+  "address": zod.string().nullable(),
+  "category": zod.string().nullable(),
+  "websiteUrl": zod.string().nullable(),
+  "isSelected": zod.boolean()
+})),
+  "summary": zod.object({
+  "totalReviews": zod.int(),
+  "needsReply": zod.int(),
+  "replied": zod.int()
+})
+})
+
+
+/**
  * @summary Synchronize Google Business locations and reviews from BNDLE
  */
 export const SyncReviewProviderResponse = zod.object({

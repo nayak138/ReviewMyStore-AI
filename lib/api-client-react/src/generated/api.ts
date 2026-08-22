@@ -249,6 +249,77 @@ export const useStartReviewProviderConnection = <TError = ErrorType<ErrorRespons
       return useMutation(getStartReviewProviderConnectionMutationOptions(options));
     }
 
+export const getDisconnectReviewProviderUrl = () => {
+
+
+
+
+  return `/api/v1/review-management/connection`
+}
+
+/**
+ * @summary Disconnect the caller's Google Business review connection
+ */
+export const disconnectReviewProvider = async ( options?: Parameters<typeof customFetch>[1]): Promise<ReviewDashboardResult> => {
+
+  return customFetch<ReviewDashboardResult>(getDisconnectReviewProviderUrl(),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+
+export const getDisconnectReviewProviderMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof disconnectReviewProvider>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof disconnectReviewProvider>>, TError,void, TContext> => {
+
+const mutationKey = ['disconnectReviewProvider'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof disconnectReviewProvider>>, void> = () => {
+
+
+          return  disconnectReviewProvider(requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DisconnectReviewProviderMutationResult = NonNullable<Awaited<ReturnType<typeof disconnectReviewProvider>>>
+
+    export type DisconnectReviewProviderMutationError = ErrorType<ErrorResponse>
+
+    /**
+ * @summary Disconnect the caller's Google Business review connection
+ */
+export const useDisconnectReviewProvider = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof disconnectReviewProvider>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof disconnectReviewProvider>>,
+        TError,
+        void,
+        TContext
+      > => {
+      return useMutation(getDisconnectReviewProviderMutationOptions(options));
+    }
+
 export const getSyncReviewProviderUrl = () => {
 
 

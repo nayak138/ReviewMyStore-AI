@@ -16,6 +16,7 @@ import {
 import { requireAuth } from "../middlewares/requireAuth";
 import {
   deleteManagedReviewReply,
+  disconnectReviewProvider,
   generateManagedReviewDraft,
   getReviewDashboard,
   listManagedReviews,
@@ -105,6 +106,22 @@ router.post(
       res.json(StartReviewProviderConnectionResponse.parse(result));
     } catch (error) {
       req.log.warn({ err: error }, "Unable to start review provider connection");
+      sendServiceError(res, error);
+    }
+  },
+);
+
+router.delete(
+  "/review-management/connection",
+  requireAuth,
+  async (req, res): Promise<void> => {
+    const organizationId = requireOrganization(req, res);
+    if (!organizationId) return;
+    try {
+      const result = await disconnectReviewProvider(organizationId);
+      res.json(GetReviewDashboardResponse.parse(result));
+    } catch (error) {
+      req.log.warn({ err: error }, "Unable to disconnect review provider");
       sendServiceError(res, error);
     }
   },
