@@ -21,6 +21,7 @@ const mocks = vi.hoisted(() => ({
   generateMutate: vi.fn(),
   deleteMutate: vi.fn(),
   startConnectionMutate: vi.fn(),
+  disconnectMutate: vi.fn(),
   syncMutate: vi.fn(),
   dashboardStatus: 'PENDING' as 'DISCONNECTED' | 'PENDING' | 'CONNECTED',
 }));
@@ -53,6 +54,15 @@ vi.mock('@workspace/api-client-react', () => ({
     mutate: (...args: unknown[]) => {
       mocks.startConnectionMutate(...args);
       config?.mutation?.onSuccess?.({ authUrl: 'https://bundle.social/portal/abc123' });
+    },
+    isPending: false,
+  }),
+  useDisconnectReviewProvider: (config?: {
+    mutation?: { onSuccess?: () => void };
+  }) => ({
+    mutate: (...args: unknown[]) => {
+      mocks.disconnectMutate(...args);
+      config?.mutation?.onSuccess?.();
     },
     isPending: false,
   }),
@@ -141,6 +151,7 @@ beforeEach(() => {
   mocks.generateMutate.mockClear();
   mocks.deleteMutate.mockClear();
   mocks.startConnectionMutate.mockClear();
+  mocks.disconnectMutate.mockClear();
   mocks.syncMutate.mockClear();
 });
 
@@ -275,6 +286,21 @@ describe('Reviews dashboard states', () => {
     // The pending / connect screens must not leak into the connected state.
     expect(screen.queryByText('Connection Pending')).not.toBeInTheDocument();
     expect(screen.queryByText('Connect your Google Business')).not.toBeInTheDocument();
+  });
+
+  it('requires confirmation before disconnecting a connected Google Business store', async () => {
+    const user = userEvent.setup();
+    mocks.dashboardStatus = 'CONNECTED';
+    renderReviews();
+
+    await user.click(screen.getByRole('button', { name: /^disconnect$/i }));
+    expect(
+      screen.getByText('Disconnect this Google Business store?'),
+    ).toBeInTheDocument();
+    expect(mocks.disconnectMutate).not.toHaveBeenCalled();
+
+    await user.click(screen.getByRole('button', { name: /^disconnect store$/i }));
+    expect(mocks.disconnectMutate).toHaveBeenCalledTimes(1);
   });
 
   it('invalidates the cached dashboard on a successful connect, so the PENDING auto-sync-on-focus activates without a manual reload', () => {

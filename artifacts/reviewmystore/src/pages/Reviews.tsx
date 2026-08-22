@@ -6,6 +6,7 @@ import {
   useGetReviewDashboard,
   getGetReviewDashboardQueryKey,
   useStartReviewProviderConnection,
+  useDisconnectReviewProvider,
   useSyncReviewProvider,
   useListManagedReviews,
   getListManagedReviewsQueryKey,
@@ -34,7 +35,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Star, MessageSquare, RefreshCw, AlertCircle, Bot, Send, Trash2, Edit3, Search, Store } from "lucide-react";
+import { Star, MessageSquare, RefreshCw, AlertCircle, Bot, Send, Trash2, Edit3, Search, Store, Link2Off } from "lucide-react";
 
 // bundle.social's Free plan allows 5 review imports/month; Pro/Business
 // default to 200. We don't know which plan the account is on, only the
@@ -295,6 +296,7 @@ export default function Reviews() {
   const [locationId, setLocationId] = useState<string>("all");
   const [rating, setRating] = useState<string>("all");
   const [responseStatus, setResponseStatus] = useState<string>("all");
+  const [disconnectDialogOpen, setDisconnectDialogOpen] = useState(false);
 
   const dashboardKey = getGetReviewDashboardQueryKey();
   const { data: dashboard, isLoading: dashboardLoading } = useGetReviewDashboard({
@@ -372,6 +374,28 @@ export default function Reviews() {
         toast({ title: msg, variant: "destructive" });
       }
     }
+  });
+
+  const disconnectProvider = useDisconnectReviewProvider({
+    mutation: {
+      onSuccess: () => {
+        setDisconnectDialogOpen(false);
+        setLocationId("all");
+        setRating("all");
+        setResponseStatus("all");
+        setSearch("");
+        queryClient.invalidateQueries({ queryKey: dashboardKey });
+        queryClient.invalidateQueries({ queryKey: getListManagedReviewsQueryKey() });
+        toast({
+          title: "Google Business disconnected",
+          description: "Review syncing has stopped. Your imported review history was kept.",
+        });
+      },
+      onError: (err: any) => {
+        const msg = err.response?.data?.message || "Failed to disconnect Google Business";
+        toast({ title: msg, variant: "destructive" });
+      },
+    },
   });
 
   // Connecting happens in a separate tab (Google refuses OAuth in an iframe).
@@ -508,7 +532,7 @@ export default function Reviews() {
               Manage, filter, and respond to your customer feedback.
             </p>
           </div>
-          <div className="flex items-center gap-3 bg-secondary/30 p-2 rounded-lg border border-border">
+          <div className="flex flex-wrap items-center gap-2 bg-secondary/30 p-2 rounded-lg border border-border">
             <p className="text-xs text-muted-foreground hidden sm:block px-2">
               Last synced: {dashboard?.connection.lastSyncedAt ? new Date(dashboard?.connection.lastSyncedAt).toLocaleString() : 'Never'}
             </p>
@@ -521,6 +545,26 @@ export default function Reviews() {
             >
               <RefreshCw className={`w-4 h-4 mr-2 ${syncProvider.isPending ? 'animate-spin' : ''}`} />
               Sync Now
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="bg-background shadow-sm"
+              onClick={() => startConnection.mutate()}
+              disabled={startConnection.isPending}
+            >
+              <Store className={`w-4 h-4 mr-2 ${startConnection.isPending ? "animate-pulse" : ""}`} />
+              {startConnection.isPending ? "Opening…" : "Change store"}
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+              onClick={() => setDisconnectDialogOpen(true)}
+              disabled={disconnectProvider.isPending}
+            >
+              <Link2Off className="w-4 h-4 mr-2" />
+              Disconnect
             </Button>
           </div>
         </div>
@@ -652,6 +696,36 @@ export default function Reviews() {
             ))
           )}
         </div>
+        <AlertDialog
+          open={disconnectDialogOpen}
+          onOpenChange={setDisconnectDialogOpen}
+        >
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Disconnect this Google Business store?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Review syncing and Google reply actions will stop immediately. Your
+                imported review history stays in ReviewMyStore, and you can connect
+                this or a different store again whenever you’re ready.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={disconnectProvider.isPending}>
+                Keep connected
+              </AlertDialogCancel>
+              <AlertDialogAction
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                disabled={disconnectProvider.isPending}
+                onClick={(event) => {
+                  event.preventDefault();
+                  disconnectProvider.mutate();
+                }}
+              >
+                {disconnectProvider.isPending ? "Disconnecting…" : "Disconnect store"}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </AppLayout>
   );
