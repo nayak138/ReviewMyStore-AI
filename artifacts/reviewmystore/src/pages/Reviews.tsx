@@ -18,6 +18,7 @@ import {
   useDeleteManagedReviewReply,
   type ManagedReview,
   type ReviewProviderLocationOption,
+  type ReviewProviderLocationStage,
   ReviewResponseStatus,
 } from "@workspace/api-client-react";
 import { AppLayout } from "@/components/layout/app-layout";
@@ -465,9 +466,41 @@ export default function Reviews() {
   });
   const reviews = reviewsData?.reviews ?? [];
 
+  // Shared by both return paths into the on-brand connect screen: a fresh
+  // OAuth round trip landing back on ?bndleConnect=1 (via the locations
+  // query below), and the "already connected on bundle.social's side"
+  // shortcut startConnection can return directly without ever opening a
+  // Google tab. Keeps the four-stage handling in exactly one place.
+  function applyConnectStage(
+    stage: ReviewProviderLocationStage,
+    locations: ReviewProviderLocationOption[],
+  ) {
+    if (stage === "NEEDS_LOCATION") {
+      setPickerLocations(locations);
+      setCallbackStage("picker");
+    } else if (stage === "READY") {
+      setCallbackStage("idle");
+      queryClient.invalidateQueries({ queryKey: dashboardKey });
+      syncProvider.mutate();
+    } else if (stage === "NO_LOCATIONS_FOUND") {
+      setCallbackStage("no_locations");
+    } else {
+      setCallbackStage("not_connected");
+    }
+  }
+
   const startConnection = useStartReviewProviderConnection({
     mutation: {
       onSuccess: (data) => {
+        if (!data.authUrl) {
+          // bundle.social already has a Google Business account connected
+          // for this organization (e.g. an earlier attempt was interrupted
+          // before a location got picked) — no new OAuth round trip is
+          // needed, so skip straight to the right stage of the same panel.
+          applyConnectStage(data.stage, data.locations);
+          queryClient.invalidateQueries({ queryKey: dashboardKey });
+          return;
+        }
         // Google blocks OAuth inside iframes (e.g. the workspace preview),
         // so the hosted connect flow must run in a top-level tab.
         //
@@ -597,19 +630,7 @@ export default function Reviews() {
   // and move to the matching stage of the on-brand connect screen.
   useEffect(() => {
     if (!locationsQuery.data) return;
-    const { stage, locations } = locationsQuery.data;
-    if (stage === "NEEDS_LOCATION") {
-      setPickerLocations(locations);
-      setCallbackStage("picker");
-    } else if (stage === "READY") {
-      setCallbackStage("idle");
-      queryClient.invalidateQueries({ queryKey: dashboardKey });
-      syncProvider.mutate();
-    } else if (stage === "NO_LOCATIONS_FOUND") {
-      setCallbackStage("no_locations");
-    } else {
-      setCallbackStage("not_connected");
-    }
+    applyConnectStage(locationsQuery.data.stage, locationsQuery.data.locations);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [locationsQuery.data]);
 

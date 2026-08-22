@@ -46,8 +46,14 @@ export const StartReviewProviderConnectionResponse = zod.object({
   "lastError": zod.string().nullable(),
   "remainingImportCapacity": zod.int().nullable().describe('Provider\'s remaining monthly Google review import capacity for this account, as of the last successful sync. Null until a sync reports it.')
 }),
-  "authUrl": zod.url()
-})
+  "authUrl": zod.url().nullable(),
+  "stage": zod.enum(['NOT_CONNECTED', 'NEEDS_LOCATION', 'NO_LOCATIONS_FOUND', 'READY']).describe('NOT_CONNECTED: the Google OAuth step hasn\'t completed yet (or was cancelled\/failed) — no business account is attached. NEEDS_LOCATION: Google access is granted; pick one of `locations` to finish connecting. NO_LOCATIONS_FOUND: Google access is granted but no eligible business locations were found on that account. READY: a location is already selected and syncing is starting.'),
+  "locations": zod.array(zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "address": zod.string().nullable()
+}))
+}).describe('`authUrl` is set when a fresh Google OAuth round trip is needed — open it in a new tab. It is null when bundle.social already has a Google Business account connected for this organization\'s team (e.g. a previous attempt got interrupted before a location was picked); in that case `stage`\/`locations` describe what to do next, exactly like the connection-locations endpoint, and no new tab is needed.')
 
 
 /**

@@ -6,8 +6,16 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { ReviewProviderConnection } from './reviewProviderConnection';
+import type { ReviewProviderLocationOption } from './reviewProviderLocationOption';
+import type { ReviewProviderLocationStage } from './reviewProviderLocationStage';
 
+/**
+ * `authUrl` is set when a fresh Google OAuth round trip is needed — open it in a new tab. It is null when bundle.social already has a Google Business account connected for this organization's team (e.g. a previous attempt got interrupted before a location was picked); in that case `stage`/`locations` describe what to do next, exactly like the connection-locations endpoint, and no new tab is needed.
+ */
 export interface ReviewProviderConnectionStartResult {
   connection: ReviewProviderConnection;
-  authUrl: string;
+  /** @nullable */
+  authUrl: string | null;
+  stage: ReviewProviderLocationStage;
+  locations: ReviewProviderLocationOption[];
 }

@@ -477,6 +477,10 @@ test("starting a connection provisions a provider team and returns Google's OAut
       teamCreates += 1;
       return { body: { id: "team-created-1" } };
     }
+    if (path.endsWith("/social-account/by-type") && method === "GET") {
+      // No account connected yet for this team, so a fresh OAuth link is needed.
+      return { status: 404, body: { message: "not found" } };
+    }
     if (path.endsWith("/social-account/connect") && method === "POST") {
       const body = JSON.parse(String(init.body)) as Record<string, unknown>;
       assert.equal(body.teamId, "team-created-1");
@@ -492,6 +496,8 @@ test("starting a connection provisions a provider team and returns Google's OAut
 
   const result = await startReviewProviderConnection(org.id);
   assert.equal(result.authUrl, authUrl);
+  assert.equal(result.stage, "NOT_CONNECTED");
+  assert.deepEqual(result.locations, []);
   assert.equal(result.connection.status, "PENDING");
   assert.equal(teamCreates, 1);
 
@@ -515,6 +521,9 @@ test("starting a connection provisions a provider team and returns Google's OAut
     if (path.endsWith("/team/") && method === "POST") {
       throw new Error("must not create a second team for the same organization");
     }
+    if (path.endsWith("/social-account/by-type") && method === "GET") {
+      return { status: 404, body: { message: "not found" } };
+    }
     if (path.endsWith("/social-account/connect") && method === "POST") {
       return { body: { url: authUrl } };
     }
@@ -522,6 +531,47 @@ test("starting a connection provisions a provider team and returns Google's OAut
   };
   const again = await startReviewProviderConnection(org.id);
   assert.equal(again.authUrl, authUrl);
+});
+
+test("starting a connection reconciles instead of failing when bundle.social already has an account connected", async () => {
+  // Reproduces a real bug: bundle.social 400s "already connected... disconnect
+  // it first" for a team that has a Google Business account from an earlier
+  // interrupted attempt (or reused test team). Reconnecting must recover into
+  // the right stage instead of surfacing that 400 as "failed to start connection".
+  const org = await createOrg("alreadyconnected");
+  providerFetch.handler = (url, init) => {
+    const method = (init.method ?? "GET").toUpperCase();
+    const path = url.pathname;
+    if (path.endsWith("/organization/") && method === "GET") {
+      return { body: { teams: [] } };
+    }
+    if (path.endsWith("/team/") && method === "POST") {
+      return { body: { id: "team-already-1" } };
+    }
+    if (path.endsWith("/social-account/by-type") && method === "GET") {
+      assert.equal(url.searchParams.get("teamId"), "team-already-1");
+      return {
+        body: {
+          id: "sa-1",
+          type: "GOOGLE_BUSINESS",
+          externalId: null,
+          channels: [{ id: "ch-1", name: "Downtown", address: "1 Main St" }],
+        },
+      };
+    }
+    if (path.endsWith("/social-account/connect") && method === "POST") {
+      throw new Error("must not attempt a fresh OAuth connect when an account already exists");
+    }
+    throw new Error(`Unexpected provider request: ${method} ${path}`);
+  };
+
+  const result = await startReviewProviderConnection(org.id);
+  assert.equal(result.authUrl, null);
+  assert.equal(result.stage, "NEEDS_LOCATION");
+  assert.deepEqual(result.locations, [
+    { id: "ch-1", name: "Downtown", address: "1 Main St" },
+  ]);
+  assert.equal(result.connection.status, "PENDING");
 });
 
 test("starting a connection fails loudly when the provider returns no OAuth link", async () => {
@@ -534,6 +584,9 @@ test("starting a connection fails loudly when the provider returns no OAuth link
     }
     if (path.endsWith("/team/") && method === "POST") {
       return { body: { id: "team-nolink-1" } };
+    }
+    if (path.endsWith("/social-account/by-type") && method === "GET") {
+      return { status: 404, body: { message: "not found" } };
     }
     return { body: {} }; // connect endpoint returns no url
   };

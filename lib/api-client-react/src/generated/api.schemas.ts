@@ -742,11 +742,6 @@ export interface ReviewDashboardResult {
   summary: ReviewInboxSummary;
 }
 
-export interface ReviewProviderConnectionStartResult {
-  connection: ReviewProviderConnection;
-  authUrl: string;
-}
-
 /**
  * NOT_CONNECTED: the Google OAuth step hasn't completed yet (or was cancelled/failed) — no business account is attached. NEEDS_LOCATION: Google access is granted; pick one of `locations` to finish connecting. NO_LOCATIONS_FOUND: Google access is granted but no eligible business locations were found on that account. READY: a location is already selected and syncing is starting.
  */
@@ -765,6 +760,17 @@ export interface ReviewProviderLocationOption {
   name: string;
   /** @nullable */
   address: string | null;
+}
+
+/**
+ * `authUrl` is set when a fresh Google OAuth round trip is needed — open it in a new tab. It is null when bundle.social already has a Google Business account connected for this organization's team (e.g. a previous attempt got interrupted before a location was picked); in that case `stage`/`locations` describe what to do next, exactly like the connection-locations endpoint, and no new tab is needed.
+ */
+export interface ReviewProviderConnectionStartResult {
+  connection: ReviewProviderConnection;
+  /** @nullable */
+  authUrl: string | null;
+  stage: ReviewProviderLocationStage;
+  locations: ReviewProviderLocationOption[];
 }
 
 export interface ReviewProviderLocationsResult {

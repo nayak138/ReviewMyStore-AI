@@ -359,6 +359,25 @@ export async function startReviewProviderConnection(organizationId: string) {
     })
     .returning();
 
+  // bundle.social rejects a second `connect` call for a team that already
+  // has a Google Business account attached (e.g. a previous attempt was
+  // interrupted before a location got picked, or this team was reused from
+  // manual testing) — it 400s with "already connected... disconnect it
+  // first" instead of returning a fresh OAuth URL. Check first and, when
+  // that's the case, skip straight to reporting where that existing account
+  // actually stands instead of trying (and failing) to start a new OAuth
+  // round trip.
+  const existingAccount = await findGoogleBusinessSocialAccount(teamId);
+  if (existingAccount) {
+    const { stage, locations } = resolveLocationStage(existingAccount);
+    return {
+      connection: connectionResult(connection),
+      authUrl: null,
+      stage,
+      locations,
+    };
+  }
+
   const redirectUrl = getConnectCallbackUrl();
   if (!redirectUrl) {
     throw new ReviewProviderError(
@@ -386,7 +405,12 @@ export async function startReviewProviderConnection(organizationId: string) {
       "The review provider did not return a connection link.",
     );
   }
-  return { connection: connectionResult(connection), authUrl };
+  return {
+    connection: connectionResult(connection),
+    authUrl,
+    stage: "NOT_CONNECTED" as const,
+    locations: [],
+  };
 }
 
 /**
@@ -413,17 +437,12 @@ async function findGoogleBusinessSocialAccount(
 }
 
 /**
- * Reports where the in-progress custom connect flow stands. Called by the
- * callback page the browser lands on after Google OAuth completes.
+ * Turns a bundle.social social-account record (or its absence) into the
+ * four-stage connect-flow status. Shared by the callback page's status
+ * check and by `startReviewProviderConnection`, which needs the same
+ * decision when bundle.social reports an account is already connected.
  */
-export async function getReviewProviderConnectionLocations(
-  organizationId: string,
-) {
-  const connection = await getRequiredConnection(organizationId);
-  const account = await findGoogleBusinessSocialAccount(
-    connection.externalProfileId,
-  );
-
+function resolveLocationStage(account: JsonRecord | null) {
   if (!account) {
     return { stage: "NOT_CONNECTED" as const, locations: [] };
   }
@@ -444,6 +463,20 @@ export async function getReviewProviderConnectionLocations(
       address: valueString(channel.address),
     })).filter((location) => location.id),
   };
+}
+
+/**
+ * Reports where the in-progress custom connect flow stands. Called by the
+ * callback page the browser lands on after Google OAuth completes.
+ */
+export async function getReviewProviderConnectionLocations(
+  organizationId: string,
+) {
+  const connection = await getRequiredConnection(organizationId);
+  const account = await findGoogleBusinessSocialAccount(
+    connection.externalProfileId,
+  );
+  return resolveLocationStage(account);
 }
 
 /**
