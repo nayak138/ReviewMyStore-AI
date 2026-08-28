@@ -1,0 +1,28 @@
+kind = "video"
+previewPath = "/reviewmystore-product-video/"
+title = "ReviewMyStore.ai — Product Video"
+description = "A looping 16:9 animated product story showing ReviewMyStore.ai from business search to QR and NFC review collection, AI-assisted workflows, and reputation growth."
+version = "1.0.0"
+id = "artifacts/reviewmystore-product-video"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/reviewmystore-product-video/" ]
+localPort = 22462
+
+[services.development]
+run = "pnpm --filter @workspace/reviewmystore-product-video run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/reviewmystore-product-video", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/reviewmystore-product-video/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "22462"
+BASE_PATH = "/reviewmystore-product-video/"
