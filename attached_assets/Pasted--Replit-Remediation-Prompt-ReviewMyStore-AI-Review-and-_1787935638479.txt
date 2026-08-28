@@ -1,0 +1,79 @@
+# Replit Remediation Prompt: ReviewMyStore AI
+
+Review and improve the existing ReviewMyStore AI codebase. First inspect the current implementation and tests; do not blindly apply this prompt if the code has already changed. Keep edits focused, preserve the current architecture and API style, and avoid unrelated refactors.
+
+## Goal
+
+Fix the security and lifecycle issues below, add focused regression tests, and run the relevant validation commands. Do not start any new product sprint or add payment functionality.
+
+## Required fixes
+
+### 1. Restrict credentialed CORS and protect state-changing requests
+
+In `artifacts/api-server/src/app.ts`, replace the permissive `cors({ credentials: true, origin: true })` configuration.
+
+- Allow credentialed browser requests only from explicitly configured trusted frontend origins.
+- Use an environment variable such as `CORS_ALLOWED_ORIGINS`, parsed as a comma-separated allowlist. Include the known development/Replit domain only when it is explicitly configured; do not reflect arbitrary request origins.
+- Ensure preflight handling works for the web app.
+- Add suitable CSRF/origin protection for authenticated state-changing requests, consistent with the existing Clerk cookie-based flow. Do not rely only on CORS to prevent CSRF.
+- Return a safe rejection for unknown origins without leaking configuration.
+- Add tests for an allowed origin and a rejected untrusted origin.
+
+### 2. Protect private object downloads
+
+In `artifacts/api-server/src/routes/storage.ts`, the `/storage/objects/*path` route currently retrieves objects from `PRIVATE_OBJECT_DIR` without authentication or authorization.
+
+- Require Clerk authentication for this route.
+- Enforce object-level read authorization using the existing object ACL helpers, not merely obscurity of object paths.
+- Return `401` for unauthenticated callers and `403` for authenticated callers without read permission.
+- Keep `/storage/public-objects/*filePath` publicly accessible.
+- Confirm uploads receive a deliberate default ACL/ownership policy so legitimate uploaders can read their own files.
+- Add focused route tests covering unauthenticated, forbidden, allowed, and public-object behavior.
+
+### 3. Enforce public business and campaign lifecycle states
+
+In `artifacts/api-server/src/services/publicReviewService.ts`, harden `findActivePublicCampaign` so public review endpoints cannot expose inactive records.
+
+- Require the campaign to be `ACTIVE`, not soft-deleted, and not archived.
+- Require the business to be `ACTIVE`, not soft-deleted, and not archived.
+- Apply this single source of truth to public review page retrieval, AI generation, and redirect tracking.
+- Verify direct public URLs stop working immediately after a business/campaign is suspended, disabled, archived, or soft-deleted.
+- Add regression tests for every relevant lifecycle state.
+
+### 4. Make AI-generation quotas enforceable
+
+In `artifacts/api-server/src/services/publicReviewService.ts`, do not trust a freely client-generated `sessionId` as the sole generation quota mechanism.
+
+- Bind review sessions to the specific campaign, and reject or safely reset a session token reused for another campaign.
+- Make the generation-count increment atomic so concurrent requests cannot all pass the same pre-check.
+- Do not call the AI provider if the quota cannot be reserved.
+- Enforce the existing organization-level `aiQuota` (or introduce an explicitly named, well-tested quota mechanism if the current field is not suitable). Define whether quota is per billing period or lifetime and keep the implementation internally consistent.
+- Preserve the customer-facing three-generation experience for legitimate sessions.
+- Add tests for rotated session IDs, cross-campaign session reuse, concurrent generation attempts, and organization quota exhaustion.
+
+## Quality bar
+
+- Reuse existing services, middleware, Zod schemas, and testing conventions where appropriate.
+- Do not expose secrets, signed URLs, access tokens, or private object metadata in logs or error responses.
+- Preserve tenant isolation: never accept an organization ID from the client to authorize access.
+- Update API/OpenAPI schemas only when the external contract truly changes, then regenerate generated clients/schemas as required by the repository instructions.
+- Add or update concise documentation for required environment variables and deployment assumptions.
+
+## Validation and handoff
+
+Run the smallest relevant tests first, then run:
+
+```sh
+pnpm --filter @workspace/api-server run test
+pnpm run typecheck
+pnpm run build
+```
+
+If any command fails because of a pre-existing, unrelated issue, do not hide it. Report the exact command, failure, and whether the failure is unrelated to these changes.
+
+At the end, provide:
+
+1. A concise summary of changed files and behavior.
+2. The security/lifecycle tests added and their coverage.
+3. The commands run and outcomes.
+4. Any required environment variables or manual deployment steps.
