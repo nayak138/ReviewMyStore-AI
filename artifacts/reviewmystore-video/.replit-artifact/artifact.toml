@@ -1,5 +1,5 @@
 kind = "web"
-previewPath = "/"
+previewPath = "/reviewmystore-video/"
 title = "ReviewMyStore.ai — Product Video"
 description = "A looping 16:9 motion story showing ReviewMyStore.ai from business search to reputation growth."
 version = "1.0.0"
@@ -8,7 +8,7 @@ router = "path"
 
 [[services]]
 name = "web"
-paths = [ "/" ]
+paths = [ "/reviewmystore-video/" ]
 localPort = 25505
 
 [services.development]
@@ -25,7 +25,7 @@ to = "/index.html"
 
 [services.env]
 PORT = "25505"
-BASE_PATH = "/"
+BASE_PATH = "/reviewmystore-video/"
 
 [video]
 videoAspectRatio = "16:9"
