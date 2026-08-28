@@ -53,6 +53,27 @@ export const COMPLETED_RESERVATION_RETENTION_DAYS = 30;
 export const COMPLETED_RESERVATION_CLEANUP_BATCH_SIZE = 500;
 const MILLISECONDS_PER_DAY = 24 * 60 * 60 * 1000;
 
+export async function countStaleCompletedGenerationReservations(
+  options: { now?: Date } = {},
+): Promise<number> {
+  const { now = new Date() } = options;
+  const cutoff = new Date(
+    now.getTime() - COMPLETED_RESERVATION_RETENTION_DAYS * MILLISECONDS_PER_DAY,
+  );
+
+  const result = await db.execute(sql`
+    SELECT COUNT(*)::int AS count
+    FROM ${reviewGenerationReservationsTable}
+    WHERE ${reviewGenerationReservationsTable.status} IN (
+      ${SUCCEEDED_RESERVATION},
+      ${FAILED_RESERVATION}
+    )
+      AND ${reviewGenerationReservationsTable.updatedAt} < ${cutoff}
+  `);
+
+  return Number(result.rows[0]?.count ?? 0);
+}
+
 export async function cleanupCompletedGenerationReservations(
   options: {
     now?: Date;

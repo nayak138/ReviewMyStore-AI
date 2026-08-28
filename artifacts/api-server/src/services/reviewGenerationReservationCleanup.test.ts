@@ -13,6 +13,7 @@ import {
 } from "@workspace/db";
 import {
   cleanupCompletedGenerationReservations,
+  countStaleCompletedGenerationReservations,
   COMPLETED_RESERVATION_RETENTION_DAYS,
 } from "./publicReviewService";
 
@@ -187,6 +188,7 @@ test("removes old completed rows in bounded batches without touching accounting"
       reservationIds.freshSucceeded,
     ]),
   );
+  assert.equal(await countStaleCompletedGenerationReservations({ now }), 1);
 
   assert.equal(
     await cleanupCompletedGenerationReservations({ now, batchSize: 2 }),
@@ -226,4 +228,5 @@ test("removes old completed rows in bounded batches without touching accounting"
     .where(eq(reviewSessionsTable.id, sessionId));
   assert.equal(organizationAfter.aiQuota, organizationBefore.aiQuota);
   assert.equal(sessionAfter.generationCount, sessionBefore.generationCount);
+  assert.equal(await countStaleCompletedGenerationReservations({ now }), 0);
 });

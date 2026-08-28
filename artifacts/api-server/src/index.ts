@@ -3,6 +3,7 @@ import { logger } from "./lib/logger";
 import { disposeAllRateLimiters } from "./middlewares/rateLimit";
 import {
   cleanupCompletedGenerationReservations,
+  countStaleCompletedGenerationReservations,
   COMPLETED_RESERVATION_CLEANUP_BATCH_SIZE,
 } from "./services/publicReviewService";
 
@@ -30,22 +31,58 @@ const server = app.listen(port, (err) => {
 });
 
 const RESERVATION_CLEANUP_INTERVAL_MS = 24 * 60 * 60 * 1000;
+const RESERVATION_CLEANUP_BACKLOG_ALERT_AFTER_RUNS = 2;
+
+let consecutiveReservationCleanupFailures = 0;
+let consecutiveReservationCleanupBacklogRuns = 0;
 
 async function runReservationCleanup(): Promise<void> {
   try {
     const deletedCount = await cleanupCompletedGenerationReservations();
+    const staleCount = await countStaleCompletedGenerationReservations();
+    consecutiveReservationCleanupFailures = 0;
+
     if (deletedCount > 0) {
       logger.info(
         {
           deletedCount,
+          staleCount,
           batchSize: COMPLETED_RESERVATION_CLEANUP_BATCH_SIZE,
+          operation: "completed_ai_generation_reservation_retention_cleanup",
         },
         "Cleaned up completed AI generation reservations",
       );
     }
+
+    if (staleCount > 0) {
+      consecutiveReservationCleanupBacklogRuns += 1;
+      if (
+        consecutiveReservationCleanupBacklogRuns >=
+        RESERVATION_CLEANUP_BACKLOG_ALERT_AFTER_RUNS
+      ) {
+        logger.warn(
+          {
+            staleCount,
+            deletedCount,
+            batchSize: COMPLETED_RESERVATION_CLEANUP_BATCH_SIZE,
+            consecutiveBacklogRuns: consecutiveReservationCleanupBacklogRuns,
+            operation: "completed_ai_generation_reservation_retention_cleanup",
+          },
+          "Completed AI generation reservation cleanup backlog persists",
+        );
+      }
+    } else {
+      consecutiveReservationCleanupBacklogRuns = 0;
+    }
   } catch (err) {
+    consecutiveReservationCleanupFailures += 1;
+    consecutiveReservationCleanupBacklogRuns = 0;
     logger.error(
-      { err },
+      {
+        err,
+        consecutiveFailureCount: consecutiveReservationCleanupFailures,
+        operation: "completed_ai_generation_reservation_retention_cleanup",
+      },
       "Failed to clean up completed AI generation reservations",
     );
   }
