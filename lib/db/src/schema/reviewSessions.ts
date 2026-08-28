@@ -5,8 +5,8 @@ import { campaignsTable } from "./campaigns";
 // public review page. The id is a client-generated opaque token (e.g. a
 // UUID kept in sessionStorage for that page load) — there is no login, so
 // this is the only handle the server has to rate-limit regenerations for a
-// single customer. Rows are small and self-contained; a periodic cleanup of
-// old rows can be added later if volume warrants it.
+// single customer. generationCount includes an in-flight reservation briefly;
+// failed reservations are atomically rolled back by the service.
 export const reviewSessionsTable = pgTable(
   "review_sessions",
   {

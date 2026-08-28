@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { after, before, test } from "node:test";
+import { after, before, beforeEach, test } from "node:test";
 import { randomUUID } from "node:crypto";
 import { and, eq } from "drizzle-orm";
 import { openrouter } from "@workspace/integrations-openrouter-ai";
@@ -9,6 +9,7 @@ import {
   db,
   organizationsTable,
   pool,
+  reviewGenerationReservationsTable,
   reviewSessionsTable,
 } from "@workspace/db";
 import {
@@ -18,6 +19,7 @@ import {
   PublicCampaignNotFoundError,
   SessionCampaignMismatchError,
 } from "./publicReviewService";
+import { AIGenerationError } from "./aiService";
 
 const runId = randomUUID().slice(0, 8);
 const originalCreate = openrouter.chat.completions.create;
@@ -27,10 +29,6 @@ let activeCampaignId: string;
 let secondCampaignId: string;
 
 before(async () => {
-  openrouter.chat.completions.create = (async () => ({
-    choices: [{ message: { content: "A generated review." } }],
-  })) as unknown as typeof openrouter.chat.completions.create;
-
   const [organization] = await db
     .insert(organizationsTable)
     .values({
@@ -74,9 +72,18 @@ before(async () => {
   secondCampaignId = secondCampaign.id;
 });
 
+beforeEach(() => {
+  openrouter.chat.completions.create = (async () => ({
+    choices: [{ message: { content: "A generated review." } }],
+  })) as unknown as typeof openrouter.chat.completions.create;
+});
+
 after(async () => {
   openrouter.chat.completions.create = originalCreate;
   if (orgId) {
+    await db
+      .delete(reviewGenerationReservationsTable)
+      .where(eq(reviewGenerationReservationsTable.organizationId, orgId));
     await db.delete(organizationsTable).where(eq(organizationsTable.id, orgId));
   }
   await pool.end();
@@ -276,4 +283,178 @@ test("organization quota rejects generation when the atomic allowance is empty",
     ),
     (error: unknown) => error instanceof OrganizationQuotaExhaustedError,
   );
+});
+
+test("provider failure restores the organization quota and session attempt", async () => {
+  await db
+    .update(organizationsTable)
+    .set({ aiQuota: 7 })
+    .where(eq(organizationsTable.id, orgId));
+  openrouter.chat.completions.create = (async () => {
+    throw new Error("temporary provider timeout");
+  }) as unknown as typeof openrouter.chat.completions.create;
+
+  const sessionId = `failed-generation-session-${runId}`;
+  await assert.rejects(
+    generatePublicReview(
+      `security-test-store-${runId}`,
+      `active-${runId}`,
+      sessionId,
+      ["helpful staff"],
+    ),
+    (error: unknown) => error instanceof AIGenerationError,
+  );
+
+  const [organization] = await db
+    .select({ aiQuota: organizationsTable.aiQuota })
+    .from(organizationsTable)
+    .where(eq(organizationsTable.id, orgId));
+  const [session] = await db
+    .select({ generationCount: reviewSessionsTable.generationCount })
+    .from(reviewSessionsTable)
+    .where(eq(reviewSessionsTable.id, sessionId));
+  assert.equal(organization.aiQuota, 7);
+  assert.equal(session.generationCount, 0);
+});
+
+test("a transient provider failure can be retried with the same quota and session", async () => {
+  await db
+    .update(organizationsTable)
+    .set({ aiQuota: 1 })
+    .where(eq(organizationsTable.id, orgId));
+  let shouldFail = true;
+  openrouter.chat.completions.create = (async () => {
+    if (shouldFail) {
+      shouldFail = false;
+      throw new Error("transient provider error");
+    }
+    return { choices: [{ message: { content: "Retry succeeded." } }] };
+  }) as unknown as typeof openrouter.chat.completions.create;
+
+  const sessionId = `retry-generation-session-${runId}`;
+  await assert.rejects(
+    generatePublicReview(
+      `security-test-store-${runId}`,
+      `active-${runId}`,
+      sessionId,
+      ["friendly team"],
+    ),
+    (error: unknown) => error instanceof AIGenerationError,
+  );
+  const result = await generatePublicReview(
+    `security-test-store-${runId}`,
+    `active-${runId}`,
+    sessionId,
+    ["friendly team"],
+  );
+
+  assert.equal(result.reviewText, "Retry succeeded.");
+  assert.equal(result.remainingGenerations, 2);
+  const [organization] = await db
+    .select({ aiQuota: organizationsTable.aiQuota })
+    .from(organizationsTable)
+    .where(eq(organizationsTable.id, orgId));
+  const [session] = await db
+    .select({ generationCount: reviewSessionsTable.generationCount })
+    .from(reviewSessionsTable)
+    .where(eq(reviewSessionsTable.id, sessionId));
+  assert.equal(organization.aiQuota, 0);
+  assert.equal(session.generationCount, 1);
+});
+
+test("a failed request does not roll back a concurrent successful reservation", async () => {
+  await db
+    .update(organizationsTable)
+    .set({ aiQuota: 2 })
+    .where(eq(organizationsTable.id, orgId));
+
+  let providerCall = 0;
+  let providerStarted!: () => void;
+  const firstProviderStarted = new Promise<void>((resolve) => {
+    providerStarted = resolve;
+  });
+  let releaseFailure!: () => void;
+  const failureGate = new Promise<void>((resolve) => {
+    releaseFailure = resolve;
+  });
+  openrouter.chat.completions.create = (async () => {
+    providerCall += 1;
+    if (providerCall === 1) {
+      providerStarted();
+      await failureGate;
+      throw new Error("first provider call failed");
+    }
+    return { choices: [{ message: { content: "Concurrent success." } }] };
+  }) as unknown as typeof openrouter.chat.completions.create;
+
+  const sessionId = `mixed-generation-session-${runId}`;
+  const failedRequest = generatePublicReview(
+    `security-test-store-${runId}`,
+    `active-${runId}`,
+    sessionId,
+    ["helpful staff"],
+  );
+  await firstProviderStarted;
+
+  const successfulRequest = generatePublicReview(
+    `security-test-store-${runId}`,
+    `active-${runId}`,
+    sessionId,
+    ["helpful staff"],
+  );
+  await successfulRequest;
+  releaseFailure();
+
+  await assert.rejects(
+    failedRequest,
+    (error: unknown) => error instanceof AIGenerationError,
+  );
+
+  const [organization] = await db
+    .select({ aiQuota: organizationsTable.aiQuota })
+    .from(organizationsTable)
+    .where(eq(organizationsTable.id, orgId));
+  const [session] = await db
+    .select({ generationCount: reviewSessionsTable.generationCount })
+    .from(reviewSessionsTable)
+    .where(eq(reviewSessionsTable.id, sessionId));
+  assert.equal(organization.aiQuota, 1);
+  assert.equal(session.generationCount, 1);
+});
+
+test("simultaneous requests cannot drive organization quota below zero", async () => {
+  await db
+    .update(organizationsTable)
+    .set({ aiQuota: 1 })
+    .where(eq(organizationsTable.id, orgId));
+
+  const results = await Promise.allSettled(
+    Array.from({ length: 5 }, (_, index) =>
+      generatePublicReview(
+        `security-test-store-${runId}`,
+        `active-${runId}`,
+        `quota-floor-session-${runId}-${index}`,
+        ["quick service"],
+      ),
+    ),
+  );
+
+  assert.equal(
+    results.filter((result) => result.status === "fulfilled").length,
+    1,
+  );
+  assert.equal(
+    results.filter(
+      (result) =>
+        result.status === "rejected" &&
+        result.reason instanceof OrganizationQuotaExhaustedError,
+    ).length,
+    4,
+  );
+  const [organization] = await db
+    .select({ aiQuota: organizationsTable.aiQuota })
+    .from(organizationsTable)
+    .where(eq(organizationsTable.id, orgId));
+  assert.equal(organization.aiQuota, 0);
+  assert.ok(organization.aiQuota >= 0);
 });

@@ -13,3 +13,4 @@ export * from "./reviewLocations";
 export * from "./managedReviews";
 export * from "./reviewAuditEvents";
 export * from "./objectUploads";
+export * from "./reviewGenerationReservations";

@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { and, asc, eq, isNull, sql } from "drizzle-orm";
 import {
   db,
@@ -5,9 +6,11 @@ import {
   campaignsTable,
   keywordsTable,
   organizationsTable,
+  reviewGenerationReservationsTable,
   reviewSessionsTable,
 } from "@workspace/db";
 import { generateReviewText } from "./aiService";
+import { logger } from "../lib/logger";
 import { logScanEvent, type RequestMeta } from "./scanEventService";
 
 export class PublicCampaignNotFoundError extends Error {
@@ -39,6 +42,9 @@ export class OrganizationQuotaExhaustedError extends Error {
 }
 
 const MAX_GENERATIONS = 3;
+const PENDING_RESERVATION = "PENDING" as const;
+const SUCCEEDED_RESERVATION = "SUCCEEDED" as const;
+const FAILED_RESERVATION = "FAILED" as const;
 
 /** Only ACTIVE, non-archived, non-deleted campaigns under a non-deleted
  * business are reachable — this is what keeps a DRAFT or paused campaign's
@@ -139,7 +145,8 @@ export async function generatePublicReview(
     campaignSlug,
   );
 
-  const reservedGeneration = await db.transaction(async (tx) => {
+  const reservationId = randomUUID();
+  await db.transaction(async (tx) => {
     const [existingSession] = await tx
       .select()
       .from(reviewSessionsTable)
@@ -162,6 +169,7 @@ export async function generatePublicReview(
       .returning({ aiQuota: organizationsTable.aiQuota });
     if (!organization) throw new OrganizationQuotaExhaustedError();
 
+    let generationCount: number;
     if (existingSession) {
       const [updated] = await tx
         .update(reviewSessionsTable)
@@ -178,58 +186,159 @@ export async function generatePublicReview(
         )
         .returning({ generationCount: reviewSessionsTable.generationCount });
       if (!updated) throw new RegenerationLimitReachedError(MAX_GENERATIONS);
-      return updated.generationCount;
+      generationCount = updated.generationCount;
+    } else {
+      const [inserted] = await tx
+        .insert(reviewSessionsTable)
+        .values({ id: sessionId, campaignId: campaign.id, generationCount: 1 })
+        .onConflictDoNothing()
+        .returning({ generationCount: reviewSessionsTable.generationCount });
+
+      if (inserted) {
+        generationCount = inserted.generationCount;
+      } else {
+        const [updated] = await tx
+          .update(reviewSessionsTable)
+          .set({
+            generationCount: sql`${reviewSessionsTable.generationCount} + 1`,
+            updatedAt: new Date(),
+          })
+          .where(
+            and(
+              eq(reviewSessionsTable.id, sessionId),
+              eq(reviewSessionsTable.campaignId, campaign.id),
+              sql`${reviewSessionsTable.generationCount} < ${MAX_GENERATIONS}`,
+            ),
+          )
+          .returning({ generationCount: reviewSessionsTable.generationCount });
+        if (!updated) throw new RegenerationLimitReachedError(MAX_GENERATIONS);
+        generationCount = updated.generationCount;
+      }
     }
 
-    const [inserted] = await tx
-      .insert(reviewSessionsTable)
-      .values({ id: sessionId, campaignId: campaign.id, generationCount: 1 })
-      .onConflictDoNothing()
-      .returning({ generationCount: reviewSessionsTable.generationCount });
-    if (inserted) return inserted.generationCount;
+    await tx.insert(reviewGenerationReservationsTable).values({
+      id: reservationId,
+      sessionId,
+      campaignId: campaign.id,
+      organizationId: business.organizationId,
+      status: PENDING_RESERVATION,
+    });
 
-    const [updated] = await tx
-      .update(reviewSessionsTable)
+    return generationCount;
+  });
+
+  try {
+    const reviewText = await generateReviewText({
+      businessName: business.name,
+      category: business.category,
+      keywords,
+      organizationId: business.organizationId,
+      businessId: business.id,
+      campaignId: campaign.id,
+    });
+
+    const finalizedGenerationCount = await db.transaction(async (tx) => {
+      const [updatedSession] = await tx
+        .update(reviewSessionsTable)
+        .set({ lastReviewText: reviewText, updatedAt: new Date() })
+        .where(
+          and(
+            eq(reviewSessionsTable.id, sessionId),
+            eq(reviewSessionsTable.campaignId, campaign.id),
+          ),
+        )
+        .returning({ generationCount: reviewSessionsTable.generationCount });
+
+      if (!updatedSession) {
+        throw new Error("Review session no longer exists");
+      }
+
+      const [finalizedReservation] = await tx
+        .update(reviewGenerationReservationsTable)
+        .set({
+          status: SUCCEEDED_RESERVATION,
+          updatedAt: new Date(),
+        })
+        .where(
+          and(
+            eq(reviewGenerationReservationsTable.id, reservationId),
+            eq(reviewGenerationReservationsTable.status, PENDING_RESERVATION),
+          ),
+        )
+        .returning({ id: reviewGenerationReservationsTable.id });
+
+      if (!finalizedReservation) {
+        throw new Error("Review generation reservation is no longer pending");
+      }
+
+      return updatedSession.generationCount;
+    });
+
+    return {
+      reviewText,
+      remainingGenerations: Math.max(
+        0,
+        MAX_GENERATIONS - finalizedGenerationCount,
+      ),
+      maxGenerations: MAX_GENERATIONS,
+    };
+  } catch (error) {
+    try {
+      await releaseGenerationReservation(reservationId);
+    } catch (releaseError) {
+      logger.error(
+        { reservationId, err: releaseError },
+        "Failed to release public review generation reservation",
+      );
+    }
+    throw error;
+  }
+}
+
+async function releaseGenerationReservation(reservationId: string): Promise<void> {
+  await db.transaction(async (tx) => {
+    const [reservation] = await tx
+      .update(reviewGenerationReservationsTable)
       .set({
-        generationCount: sql`${reviewSessionsTable.generationCount} + 1`,
+        status: FAILED_RESERVATION,
         updatedAt: new Date(),
       })
       .where(
         and(
-          eq(reviewSessionsTable.id, sessionId),
-          eq(reviewSessionsTable.campaignId, campaign.id),
-          sql`${reviewSessionsTable.generationCount} < ${MAX_GENERATIONS}`,
+          eq(reviewGenerationReservationsTable.id, reservationId),
+          eq(reviewGenerationReservationsTable.status, PENDING_RESERVATION),
         ),
       )
-      .returning({ generationCount: reviewSessionsTable.generationCount });
-    if (!updated) throw new RegenerationLimitReachedError(MAX_GENERATIONS);
-    return updated.generationCount;
+      .returning({
+        sessionId: reviewGenerationReservationsTable.sessionId,
+        organizationId: reviewGenerationReservationsTable.organizationId,
+        campaignId: reviewGenerationReservationsTable.campaignId,
+      });
+
+    if (!reservation) return;
+
+    await tx
+      .update(reviewSessionsTable)
+      .set({
+        generationCount: sql`GREATEST(${reviewSessionsTable.generationCount} - 1, 0)`,
+        updatedAt: new Date(),
+      })
+      .where(
+        and(
+          eq(reviewSessionsTable.id, reservation.sessionId),
+          eq(reviewSessionsTable.campaignId, reservation.campaignId),
+          sql`${reviewSessionsTable.generationCount} > 0`,
+        ),
+      );
+
+    await tx
+      .update(organizationsTable)
+      .set({
+        aiQuota: sql`GREATEST(${organizationsTable.aiQuota} + 1, 0)`,
+        updatedAt: new Date(),
+      })
+      .where(eq(organizationsTable.id, reservation.organizationId));
   });
-
-  const reviewText = await generateReviewText({
-    businessName: business.name,
-    category: business.category,
-    keywords,
-    organizationId: business.organizationId,
-    businessId: business.id,
-    campaignId: campaign.id,
-  });
-
-  await db
-    .update(reviewSessionsTable)
-    .set({ lastReviewText: reviewText, updatedAt: new Date() })
-    .where(
-      and(
-        eq(reviewSessionsTable.id, sessionId),
-        eq(reviewSessionsTable.campaignId, campaign.id),
-      ),
-    );
-
-  return {
-    reviewText,
-    remainingGenerations: MAX_GENERATIONS - reservedGeneration,
-    maxGenerations: MAX_GENERATIONS,
-  };
 }
 
 /** Logs the end of the funnel: a customer clicked "Copy & Post to Google".
