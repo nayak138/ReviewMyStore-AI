@@ -5,6 +5,7 @@ import { ArrowRight, Check, MapPin, MessageSquareText, QrCode, Star, X } from "l
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { BusinessSearch } from "@/components/business-search";
+import { BrandIcon } from "@/components/brand-logo";
 import { useGetPlaceDetails, getGetPlaceDetailsQueryKey, type PlaceAutocompleteSuggestion } from "@workspace/api-client-react";
 import { placePhotoUrl, saveSelectedPlace } from "@/lib/selected-place";
 
@@ -97,7 +98,7 @@ export function HeroSection() {
 
 function HeroProductPreview() {
   return (
-    <motion.div initial={{ opacity: 0, x: 18 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.3, duration: 0.7 }} className="relative hidden min-h-[27rem] lg:block">
+       <motion.div initial={{ opacity: 0, x: 18 }} animate={{ opacity: 1, x: 0, y: [0, -5, 0] }} transition={{ delay: 0.3, duration: 0.7, y: { delay: 1.1, duration: 6, repeat: Infinity, ease: "easeInOut" } }} className="relative hidden min-h-[27rem] lg:block">
       <div className="absolute inset-x-0 top-8 rounded-2xl border border-border bg-card p-5 shadow-[0_35px_80px_-48px_hsl(var(--foreground)/0.65)]">
         <div className="mb-7 flex items-center justify-between border-b border-border pb-4"><div><p className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">Overview</p><p className="mt-1 text-sm font-semibold">The Daily Standard</p></div><span className="rounded-md border border-border px-2 py-1 text-[10px] font-medium text-muted-foreground">Last 30 days</span></div>
         <div className="grid grid-cols-3 gap-3">
@@ -108,16 +109,43 @@ function HeroProductPreview() {
            <svg viewBox="0 0 600 155" className="h-36 w-full" role="img" aria-label="Review activity trending upward"><path d="M0 130H600M0 80H600M0 30H600" stroke="hsl(var(--border))" strokeDasharray="3 6" /><path d="M0 124 C65 119 68 102 122 108 S184 98 226 100 S292 72 335 83 S400 69 445 58 S518 67 600 24" fill="none" stroke="hsl(var(--google-blue))" strokeWidth="3" strokeLinecap="round" /><circle cx="445" cy="58" r="5" fill="hsl(var(--card))" stroke="hsl(var(--google-red))" strokeWidth="3" /></svg>
         </div>
       </div>
-      <div className="absolute -bottom-1 -left-8 w-64 rounded-xl border border-border bg-background p-4 shadow-[0_25px_55px_-35px_hsl(var(--foreground)/0.65)]">
+       <motion.div animate={{ y: [0, -5, 0] }} transition={{ delay: 1.6, duration: 5, repeat: Infinity, ease: "easeInOut" }} className="absolute -bottom-1 -left-8 w-64 rounded-xl border border-border bg-background p-4 shadow-[0_25px_55px_-35px_hsl(var(--foreground)/0.65)]">
         <div className="mb-3 flex items-center justify-between"><span className="text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">New review</span><span className="inline-flex gap-0.5 text-amber-500" aria-label="Five star review">{[1, 2, 3, 4, 5].map((star) => <Star key={star} className="h-3 w-3 fill-current" />)}</span></div>
         <p className="text-sm leading-relaxed text-foreground/80">“The team made the whole experience feel easy.”</p>
         <div className="mt-3 flex items-center gap-2 text-[11px] text-muted-foreground"><span className="flex h-6 w-6 items-center justify-center rounded-full bg-accent font-bold text-accent-foreground">AM</span> Alex M. · today</div>
-      </div>
-      <div className="absolute -bottom-6 -right-3 flex items-center gap-3 rounded-xl border border-border bg-background px-4 py-3 shadow-[0_22px_55px_-35px_hsl(var(--foreground)/0.65)]"><div className="flex h-9 w-9 items-center justify-center rounded-lg bg-accent"><QrCode className="h-4 w-4 text-accent-foreground" /></div><div><p className="text-xs font-bold">Your review link</p><p className="mt-0.5 text-[10px] text-muted-foreground">Ready to share</p></div></div>
+       </motion.div>
+       <motion.div animate={{ y: [0, 5, 0] }} transition={{ delay: 1.9, duration: 5.5, repeat: Infinity, ease: "easeInOut" }} className="absolute -bottom-6 -right-3 flex items-center gap-3 rounded-xl border border-border bg-background px-4 py-3 shadow-[0_22px_55px_-35px_hsl(var(--foreground)/0.65)]"><div className="flex h-9 w-9 items-center justify-center rounded-lg bg-accent"><QrCode className="h-4 w-4 text-accent-foreground" /></div><div><p className="text-xs font-bold">Your review link</p><p className="mt-0.5 text-[10px] text-muted-foreground">Ready to share</p></div></motion.div>
     </motion.div>
   );
 }
 
 export function TrustedBySection() {
-  return <section className="border-b border-border bg-secondary/35 py-7"><div className="container mx-auto flex flex-col items-center justify-between gap-4 px-4 sm:flex-row sm:px-6 lg:px-8"><p className="text-xs font-medium uppercase tracking-[0.16em] text-muted-foreground">Made for the places people return to</p><div className="flex flex-wrap justify-center gap-x-7 gap-y-2 text-sm font-semibold tracking-tight text-muted-foreground/70"><span>CAFÉS</span><span>CLINICS</span><span>SALONS</span><span>HOSPITALITY</span><span>RETAIL</span></div></div></section>;
+  const categories = [
+    ["CAFÉS", "bg-google-blue"],
+    ["CLINICS", "bg-google-red"],
+    ["SALONS", "bg-google-yellow"],
+    ["HOSPITALITY", "bg-google-green"],
+    ["RETAIL", "bg-google-blue"],
+  ];
+
+  return (
+    <motion.section initial={{ opacity: 0, y: 14 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.4 }} transition={{ duration: 0.6 }} className="border-b border-border bg-secondary/35 py-7">
+      <div className="container mx-auto flex flex-col items-center justify-between gap-6 px-4 sm:flex-row sm:px-6 lg:px-8">
+        <div className="flex items-center gap-3">
+          <motion.div initial={{ scale: 0.85, rotate: -8 }} whileInView={{ scale: 1, rotate: 0 }} viewport={{ once: true }} transition={{ delay: 0.15, type: "spring", stiffness: 220, damping: 14 }} className="flex h-10 w-10 items-center justify-center rounded-xl bg-background p-1.5 shadow-sm ring-1 ring-google-blue/20">
+            <BrandIcon className="h-full w-full rounded-lg" alt="" />
+          </motion.div>
+          <p className="text-xs font-medium uppercase tracking-[0.16em] text-muted-foreground">Made for the places people return to</p>
+        </div>
+        <div className="flex flex-wrap justify-center gap-x-6 gap-y-3 text-sm font-semibold tracking-tight text-muted-foreground/75">
+          {categories.map(([label, color], index) => (
+            <motion.span key={label} initial={{ opacity: 0, x: 8 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ delay: 0.2 + index * 0.06 }} className="flex items-center gap-2">
+              <span className={`h-1.5 w-1.5 rounded-full ${color}`} aria-hidden="true" />
+              {label}
+            </motion.span>
+          ))}
+        </div>
+      </div>
+    </motion.section>
+  );
 }
