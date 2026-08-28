@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,600;9..144,700&display=swap');
 @import 'tailwindcss';
 @import 'tw-animate-css';
 @import '@clerk/themes/shadcn.css';
@@ -62,87 +63,75 @@
 }
 
 :root {
-  --app-font-sans: 'Inter', sans-serif;
-  --radius: 0.75rem;
+  --app-font-sans: 'DM Sans', sans-serif;
+  --app-font-display: 'Fraunces', serif;
+  --radius: 0.875rem;
 
-  /* Light mode — soft neutral background, Google-blue primary, semantic
-     status colors for success/warning/danger used by badges/toasts/status
-     chips across Campaigns, Keywords, and the review flow. */
-  --background: 210 20% 98%;
-  --foreground: 222 47% 11%;
+  /* Warm porcelain + deep storefront cobalt. The accent is a toasted
+     Google-yellow, used sparingly to make the review moment feel human. */
+  --background: 42 42% 97%;
+  --foreground: 224 34% 17%;
 
-  --card: 0 0% 100%;
-  --card-foreground: 222 47% 11%;
-  --card-border: 214 32% 91%;
+  --card: 45 50% 99%;
+  --card-foreground: 224 34% 17%;
+  --card-border: 40 24% 87%;
 
-  --popover: 0 0% 100%;
-  --popover-foreground: 222 47% 11%;
-  --popover-border: 214 32% 91%;
+  --popover: 45 50% 99%;
+  --popover-foreground: 224 34% 17%;
+  --popover-border: 40 24% 87%;
 
-  --primary: 221 83% 53%; /* Match the deep Google/SaaS blue from mockup */
-  --primary-foreground: 0 0% 100%;
+  --primary: 221 68% 39%;
+  --primary-foreground: 45 50% 99%;
 
-  --secondary: 210 20% 95%;
-  --secondary-foreground: 222 47% 11%;
+  --secondary: 40 27% 92%;
+  --secondary-foreground: 224 34% 17%;
 
-  --muted: 210 20% 95%;
-  --muted-foreground: 215 16% 47%;
+  --muted: 40 27% 93%;
+  --muted-foreground: 220 13% 43%;
 
-  --accent: 217 89% 95%;
-  --accent-foreground: 217 89% 40%;
+  --accent: 43 94% 89%;
+  --accent-foreground: 27 74% 26%;
 
-  --destructive: 5 81% 56%; /* #EA4335 */
-  --destructive-foreground: 0 0% 100%;
+  --destructive: 5 72% 48%;
+  --destructive-foreground: 45 50% 99%;
 
-  --success: 136 53% 43%; /* #34A853 */
-  --success-foreground: 0 0% 100%;
+  --success: 145 42% 34%;
+  --success-foreground: 45 50% 99%;
 
-  --warning: 45 97% 50%; /* #FBBC05 */
-  --warning-foreground: 26 60% 16%;
+  --warning: 39 92% 47%;
+  --warning-foreground: 27 74% 20%;
 
-  --border: 214 32% 91%;
-  --input: 214 32% 91%;
-  --ring: 217 89% 61%;
+  --border: 40 24% 87%;
+  --input: 40 24% 82%;
+  --ring: 221 68% 39%;
 }
 
 .dark {
-  /* Dark mode — matches the requested #111827 background / #1F2937 card
-     tokens, with status colors lightened slightly to stay legible. */
-  --background: 221 39% 11%; /* #111827 */
-  --foreground: 210 20% 96%;
-
-  --card: 215 28% 17%; /* #1F2937 */
-  --card-foreground: 210 20% 96%;
-  --card-border: 215 25% 27%;
-
-  --popover: 215 28% 17%;
-  --popover-foreground: 210 20% 96%;
-  --popover-border: 215 25% 27%;
-
-  --primary: 217 89% 68%;
-  --primary-foreground: 222 47% 11%;
-
-  --secondary: 215 25% 23%;
-  --secondary-foreground: 210 20% 96%;
-
-  --muted: 215 25% 23%;
-  --muted-foreground: 217 15% 65%;
-
-  --accent: 217 50% 22%;
-  --accent-foreground: 217 89% 85%;
-
-  --destructive: 5 78% 62%;
-  --destructive-foreground: 222 47% 11%;
-
-  --success: 136 45% 52%;
-  --success-foreground: 222 47% 11%;
-
-  --warning: 45 90% 58%;
-  --warning-foreground: 26 60% 14%;
-
-  --border: 215 25% 27%;
-  --input: 215 25% 27%;
-  --ring: 217 89% 68%;
+  --background: 224 34% 10%;
+  --foreground: 42 42% 96%;
+  --card: 224 29% 15%;
+  --card-foreground: 42 42% 96%;
+  --card-border: 220 20% 25%;
+  --popover: 224 29% 15%;
+  --popover-foreground: 42 42% 96%;
+  --popover-border: 220 20% 25%;
+  --primary: 218 82% 70%;
+  --primary-foreground: 224 34% 10%;
+  --secondary: 222 23% 21%;
+  --secondary-foreground: 42 42% 96%;
+  --muted: 222 23% 21%;
+  --muted-foreground: 220 15% 69%;
+  --accent: 40 52% 25%;
+  --accent-foreground: 43 94% 89%;
+  --destructive: 5 78% 64%;
+  --destructive-foreground: 224 34% 10%;
+  --success: 145 43% 54%;
+  --success-foreground: 224 34% 10%;
+  --warning: 39 92% 62%;
+  --warning-foreground: 27 74% 14%;
+  --border: 220 20% 25%;
+  --input: 220 20% 31%;
+  --ring: 218 82% 70%;
 }
 
 @layer base {
@@ -151,6 +140,18 @@
   }
   body {
     @apply bg-background text-foreground font-sans antialiased;
+    background-image: radial-gradient(circle at 10% 0%, hsl(var(--accent) / 0.25), transparent 28rem);
+  }
+
+  button,
+  a,
+  input,
+  textarea {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  ::selection {
+    background: hsl(var(--primary) / 0.18);
   }
 
   /* Baseline heading hierarchy. Element selectors have lower specificity
@@ -176,6 +177,23 @@
   h6 {
     @apply text-lg font-semibold;
     line-height: 1.35;
+  }
+}
+
+@layer utilities {
+  .font-display {
+    font-family: var(--app-font-display);
+  }
+
+  .review-noise::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.035;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.6'/%3E%3C/svg%3E");
+    mix-blend-mode: multiply;
+    z-index: 50;
   }
 }
 

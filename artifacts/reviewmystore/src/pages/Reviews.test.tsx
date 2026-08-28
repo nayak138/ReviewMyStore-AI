@@ -49,11 +49,35 @@ vi.mock('@workspace/api-client-react', () => ({
   // the caller's `onSuccess` with a fake bundle.social portal response, just
   // like react-query would once the request resolves.
   useStartReviewProviderConnection: (config?: {
-    mutation?: { onSuccess?: (data: { authUrl: string }) => void };
+    mutation?: {
+      onSuccess?: (data: {
+        authUrl: string | null;
+        stage: 'NOT_CONNECTED' | 'NEEDS_LOCATION' | 'NO_LOCATIONS_FOUND' | 'READY';
+        locations: unknown[];
+      }) => void;
+    };
   }) => ({
     mutate: (...args: unknown[]) => {
       mocks.startConnectionMutate(...args);
-      config?.mutation?.onSuccess?.({ authUrl: 'https://bundle.social/portal/abc123' });
+      config?.mutation?.onSuccess?.({
+        authUrl: 'https://bundle.social/portal/abc123',
+        stage: 'NOT_CONNECTED',
+        locations: [],
+      });
+    },
+    isPending: false,
+  }),
+  useGetReviewProviderLocations: () => ({
+    data: undefined,
+    isLoading: false,
+  }),
+  getGetReviewProviderLocationsQueryKey: () => ['/api/review-management/connection/locations'],
+  useSelectReviewProviderLocation: (config?: {
+    mutation?: { onSuccess?: () => void };
+  }) => ({
+    mutate: (...args: unknown[]) => {
+      mocks.syncMutate(...args);
+      config?.mutation?.onSuccess?.();
     },
     isPending: false,
   }),

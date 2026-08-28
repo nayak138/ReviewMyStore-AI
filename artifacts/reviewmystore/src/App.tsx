@@ -7,7 +7,7 @@ import { QueryClient, QueryClientProvider, useQueryClient } from "@tanstack/reac
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/components/theme-provider";
-import { BrandIcon, BrandLogo } from "@/components/brand-logo";
+import { BrandIcon } from "@/components/brand-logo";
 
 // Route-level code splitting: each page loads its own chunk so first-time
 // visitors to the marketing page don't download the authenticated app.
@@ -67,39 +67,39 @@ const clerkAppearance = {
     logoImageUrl: `${window.location.origin}${basePath}/brand/logo-icon.png`,
   },
   variables: {
-    colorPrimary: "hsl(217, 89%, 61%)",
-    colorForeground: "hsl(222, 47%, 11%)",
-    colorMutedForeground: "hsl(215, 16%, 47%)",
-    colorDanger: "hsl(5, 81%, 56%)",
-    colorSuccess: "hsl(136, 53%, 43%)",
-    colorWarning: "hsl(45, 97%, 50%)",
-    colorBackground: "hsl(210, 20%, 98%)",
-    colorInput: "hsl(0, 0%, 100%)",
-    colorInputForeground: "hsl(222, 47%, 11%)",
-    colorNeutral: "hsl(214, 32%, 91%)",
-    fontFamily: "'Inter', sans-serif",
-    borderRadius: "0.5rem",
+    colorPrimary: "hsl(221, 68%, 39%)",
+    colorForeground: "hsl(224, 34%, 17%)",
+    colorMutedForeground: "hsl(220, 13%, 43%)",
+    colorDanger: "hsl(5, 72%, 48%)",
+    colorSuccess: "hsl(145, 42%, 34%)",
+    colorWarning: "hsl(39, 92%, 47%)",
+    colorBackground: "hsl(42, 42%, 97%)",
+    colorInput: "hsl(45, 50%, 99%)",
+    colorInputForeground: "hsl(224, 34%, 17%)",
+    colorNeutral: "hsl(40, 24%, 87%)",
+    fontFamily: "'DM Sans', sans-serif",
+    borderRadius: "0.875rem",
   },
   elements: {
     rootBox: "w-full flex justify-center",
-    cardBox: "bg-white dark:bg-zinc-950 rounded-2xl w-[440px] max-w-full overflow-hidden border border-zinc-200 dark:border-zinc-800 shadow-xl",
+    cardBox: "bg-card rounded-[1.25rem] w-[440px] max-w-full overflow-hidden border border-border shadow-[0_20px_70px_-28px_hsl(224_34%_17%_/_0.38)]",
     card: "!shadow-none !border-0 !bg-transparent !rounded-none",
     footer: "!shadow-none !border-0 !bg-transparent !rounded-none",
-    headerTitle: "!text-zinc-950 dark:!text-zinc-50 font-semibold",
-    headerSubtitle: "!text-zinc-500 dark:!text-zinc-400",
-    socialButtonsBlockButtonText: "!text-zinc-950 dark:!text-zinc-50 font-medium",
-    formFieldLabel: "!text-zinc-950 dark:!text-zinc-50 font-medium",
+    headerTitle: "!text-foreground font-semibold",
+    headerSubtitle: "!text-muted-foreground",
+    socialButtonsBlockButtonText: "!text-foreground font-medium",
+    formFieldLabel: "!text-foreground font-medium",
     footerActionLink: "!text-primary hover:!text-primary/90 font-medium",
-    footerActionText: "!text-zinc-500 dark:!text-zinc-400",
-    dividerText: "!text-zinc-500 dark:!text-zinc-400",
+    footerActionText: "!text-muted-foreground",
+    dividerText: "!text-muted-foreground",
     identityPreviewEditButton: "!text-primary hover:!text-primary/90",
     formFieldSuccessText: "!text-emerald-600",
-    alertText: "!text-zinc-950 dark:!text-zinc-50",
+    alertText: "!text-foreground",
     logoBox: "mb-2",
     logoImage: "w-8 h-8",
-    socialButtonsBlockButton: "border-zinc-200 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-900 transition-colors",
-    formButtonPrimary: "bg-primary text-white hover:bg-primary/90 transition-colors shadow-sm",
-    formFieldInput: "bg-white dark:bg-zinc-950 border-zinc-200 dark:border-zinc-800 text-zinc-950 dark:text-zinc-50 focus:ring-2 focus:ring-primary focus:border-transparent transition-all",
+    socialButtonsBlockButton: "border-border hover:bg-accent transition-colors",
+    formButtonPrimary: "bg-primary !text-white hover:bg-primary/90 transition-colors shadow-sm",
+    formFieldInput: "bg-card border-border text-foreground focus:ring-2 focus:ring-primary focus:border-transparent transition-all",
     footerAction: "mt-4",
     dividerLine: "bg-zinc-200 dark:bg-zinc-800",
     alert: "border-zinc-200 dark:border-zinc-800",
@@ -114,29 +114,40 @@ const clerkAppearance = {
  * the other side. Collapses to a single stacked column on mobile. */
 function AuthLayout({ children }: { children: ReactNode }) {
   return (
-    <div className="flex min-h-[100dvh] bg-background">
-      <div className="hidden lg:flex lg:w-1/2 items-center justify-center relative overflow-hidden bg-gradient-to-br from-slate-50 to-slate-100 dark:from-zinc-900 dark:to-zinc-950">
-        <div
-          className="absolute inset-0 opacity-[0.15] blur-3xl"
-          style={{
-            backgroundImage:
-              "radial-gradient(circle at 15% 20%, #4285F4 0, transparent 30%), radial-gradient(circle at 85% 15%, #EA4335 0, transparent 25%), radial-gradient(circle at 20% 85%, #FBBC05 0, transparent 28%), radial-gradient(circle at 85% 80%, #34A853 0, transparent 30%)",
-          }}
-        />
-        <div className="relative z-10 flex flex-col items-center text-center px-12 max-w-md">
-          <BrandIcon className="w-24 h-24 drop-shadow-sm" />
-          <BrandLogo className="w-full max-w-xs mt-8" />
-          <p className="mt-6 text-muted-foreground text-base leading-relaxed">
-            Turn happy customers into 5-star Google reviews — in seconds, not minutes.
+    <div className="min-h-[100dvh] bg-background lg:grid lg:grid-cols-[minmax(360px,0.92fr)_1.08fr]">
+      <aside className="relative hidden overflow-hidden bg-primary px-12 py-14 text-primary-foreground lg:flex lg:flex-col lg:justify-between">
+        <div className="absolute -right-24 -top-24 h-72 w-72 rounded-full border-[36px] border-primary-foreground/10" />
+        <div className="absolute -bottom-28 -left-20 h-80 w-80 rounded-full border-[48px] border-primary-foreground/10" />
+        <div className="relative z-10 flex items-center gap-3">
+          <BrandIcon className="h-10 w-10 rounded-xl bg-primary-foreground/10 p-1" />
+          <span className="font-display text-xl font-semibold tracking-tight">ReviewMyStore.AI</span>
+        </div>
+        <div className="relative z-10 max-w-md pb-8">
+          <div className="mb-8 flex gap-2" aria-label="Google rating">
+            {["#4285F4", "#EA4335", "#FBBC05", "#34A853", "#4285F4"].map((color, index) => (
+              <span key={`${color}-${index}`} className="h-2.5 w-10 rounded-full" style={{ backgroundColor: color }} />
+            ))}
+          </div>
+          <h1 className="font-display text-5xl font-semibold leading-[1.02] tracking-tight text-primary-foreground">
+            Make the good
+            <br />
+            moments visible.
+          </h1>
+          <p className="mt-6 max-w-sm text-base leading-relaxed text-primary-foreground/75">
+            A calmer way to turn real customer experiences into reviews your next guest can trust.
           </p>
         </div>
-      </div>
-      <div className="flex-1 flex flex-col items-center justify-center px-4 py-12">
-        <div className="lg:hidden w-full max-w-[280px] mb-8 flex justify-center">
-          <BrandLogo className="w-full" />
+        <p className="relative z-10 text-xs uppercase tracking-[0.18em] text-primary-foreground/50">
+          Built for thoughtful local businesses
+        </p>
+      </aside>
+      <main className="flex min-h-[100dvh] flex-col items-center justify-center px-4 py-10 sm:px-8">
+        <div className="mb-8 flex items-center gap-2 lg:hidden">
+          <BrandIcon className="h-9 w-9 rounded-lg" />
+          <span className="font-display text-lg font-semibold tracking-tight">ReviewMyStore.AI</span>
         </div>
         {children}
-      </div>
+      </main>
     </div>
   );
 }
