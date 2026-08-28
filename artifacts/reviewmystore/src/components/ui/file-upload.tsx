@@ -9,12 +9,20 @@ import { useToast } from "@/hooks/use-toast";
 interface FileUploadProps {
   value?: string | null;
   onChange: (url: string | null) => void;
+  visibility?: "private" | "public";
   className?: string;
   placeholder?: string;
   accept?: string;
 }
 
-export function FileUpload({ value, onChange, className, placeholder = "Upload an image", accept = "image/*" }: FileUploadProps) {
+export function FileUpload({
+  value,
+  onChange,
+  visibility = "private",
+  className,
+  placeholder = "Upload an image",
+  accept = "image/*",
+}: FileUploadProps) {
   const { uploadFile, isUploading, progress } = useUpload();
   const [dragActive, setDragActive] = useState(false);
   const [processing, setProcessing] = useState(false);
@@ -28,7 +36,25 @@ export function FileUpload({ value, onChange, className, placeholder = "Upload a
       const compressed = await compressImage(file);
       const response = await uploadFile(compressed);
       if (response) {
-        onChange(response.objectPath);
+        const finalizeResponse = await fetch(
+          `${import.meta.env.BASE_URL}api/storage/uploads/finalize`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              objectPath: response.objectPath,
+              visibility,
+            }),
+          },
+        );
+        if (!finalizeResponse.ok) {
+          const errorData = await finalizeResponse.json().catch(() => ({}));
+          throw new Error(errorData.error || "Failed to finalize upload");
+        }
+        const finalized = (await finalizeResponse.json()) as {
+          objectPath: string;
+        };
+        onChange(finalized.objectPath);
       } else {
         toast({ title: "Upload failed. Please try again.", variant: "destructive" });
       }

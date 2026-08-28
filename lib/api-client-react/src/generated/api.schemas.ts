@@ -564,6 +564,24 @@ export interface UploadUrlResponse {
   metadata?: UploadUrlRequest;
 }
 
+export type FinalizeUploadRequestVisibility = typeof FinalizeUploadRequestVisibility[keyof typeof FinalizeUploadRequestVisibility];
+
+
+export const FinalizeUploadRequestVisibility = {
+  private: 'private',
+  public: 'public',
+} as const;
+
+export interface FinalizeUploadRequest {
+  /** @pattern ^/objects/uploads/[^/]+$ */
+  objectPath: string;
+  visibility?: FinalizeUploadRequestVisibility;
+}
+
+export interface UploadFinalizeResult {
+  objectPath: string;
+}
+
 export interface CampaignQrInfo {
   code: string;
   /** Relative short-link path (e.g. /r/abc123) the QR encodes, resolved against the web app origin. */

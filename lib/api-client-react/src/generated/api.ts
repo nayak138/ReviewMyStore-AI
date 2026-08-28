@@ -40,6 +40,7 @@ import type {
   DemoRequestResult,
   DemoRequestStatusUpdate,
   ErrorResponse,
+  FinalizeUploadRequest,
   GetPlacePhotoParams,
   HealthStatus,
   Keyword,
@@ -72,6 +73,7 @@ import type {
   ReviewProviderLocationsResult,
   SelectReviewProviderLocationRequest,
   SessionInfo,
+  UploadFinalizeResult,
   UploadUrlRequest,
   UploadUrlResponse
 } from './api.schemas';
@@ -4220,6 +4222,77 @@ export const useRequestUploadUrl = <TError = ErrorType<ErrorResponse>,
       return useMutation(getRequestUploadUrlMutationOptions(options));
     }
 
+export const getFinalizeUploadUrl = () => {
+
+
+
+
+  return `/api/storage/uploads/finalize`
+}
+
+/**
+ * @summary Finalize an authenticated object upload and assign its ACL
+ */
+export const finalizeUpload = async (finalizeUploadRequest: FinalizeUploadRequest, options?: Parameters<typeof customFetch>[1]): Promise<UploadFinalizeResult> => {
+
+  return customFetch<UploadFinalizeResult>(getFinalizeUploadUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(finalizeUploadRequest)
+  }
+);}
+
+
+
+
+
+export const getFinalizeUploadMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof finalizeUpload>>, TError,{data: BodyType<FinalizeUploadRequest>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof finalizeUpload>>, TError,{data: BodyType<FinalizeUploadRequest>}, TContext> => {
+
+const mutationKey = ['finalizeUpload'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof finalizeUpload>>, {data: BodyType<FinalizeUploadRequest>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  finalizeUpload(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type FinalizeUploadMutationResult = NonNullable<Awaited<ReturnType<typeof finalizeUpload>>>
+    export type FinalizeUploadMutationBody = BodyType<FinalizeUploadRequest>
+    export type FinalizeUploadMutationError = ErrorType<ErrorResponse>
+
+    /**
+ * @summary Finalize an authenticated object upload and assign its ACL
+ */
+export const useFinalizeUpload = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof finalizeUpload>>, TError,{data: BodyType<FinalizeUploadRequest>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof finalizeUpload>>,
+        TError,
+        {data: BodyType<FinalizeUploadRequest>},
+        TContext
+      > => {
+      return useMutation(getFinalizeUploadMutationOptions(options));
+    }
+
 export const getGetPublicObjectUrl = (filePath: string,) => {
 
 
@@ -4362,6 +4435,83 @@ export function useGetStorageObject<TData = Awaited<ReturnType<typeof getStorage
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getGetStorageObjectQueryOptions(objectPath,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetPublicAssetUrl = (filePath: string,) => {
+
+
+
+
+  return `/api/storage/public-assets/${filePath}`
+}
+
+/**
+ * @summary Serve an object with an explicit public ACL
+ */
+export const getPublicAsset = async (filePath: string, options?: Parameters<typeof customFetch>[1]): Promise<Blob> => {
+
+  return customFetch<Blob>(getGetPublicAssetUrl(filePath),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetPublicAssetQueryKey = (filePath: string,) => {
+    return [
+    `/api/storage/public-assets/${filePath}`
+    ] as const;
+    }
+
+
+export const getGetPublicAssetQueryOptions = <TData = Awaited<ReturnType<typeof getPublicAsset>>, TError = ErrorType<ErrorResponse>>(filePath: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getPublicAsset>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetPublicAssetQueryKey(filePath);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getPublicAsset>>> = ({ signal }) => getPublicAsset(filePath, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: filePath !== null && filePath !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getPublicAsset>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetPublicAssetQueryResult = NonNullable<Awaited<ReturnType<typeof getPublicAsset>>>
+export type GetPublicAssetQueryError = ErrorType<ErrorResponse>
+
+
+/**
+ * @summary Serve an object with an explicit public ACL
+ */
+
+export function useGetPublicAsset<TData = Awaited<ReturnType<typeof getPublicAsset>>, TError = ErrorType<ErrorResponse>>(
+ filePath: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getPublicAsset>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetPublicAssetQueryOptions(filePath,options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 

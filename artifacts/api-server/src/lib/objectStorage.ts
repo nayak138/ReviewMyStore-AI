@@ -72,6 +72,9 @@ export class ObjectStorageService {
   }
 
   async searchPublicObject(filePath: string): Promise<File | null> {
+    if (filePath.split("/").some((part) => !part || part === "." || part === "..")) {
+      return null;
+    }
     for (const searchPath of this.getPublicObjectSearchPaths()) {
       const fullPath = `${searchPath}/${filePath}`;
 
@@ -139,7 +142,10 @@ export class ObjectStorageService {
     }
 
     const parts = objectPath.slice(1).split('/');
-    if (parts.length < 2) {
+    if (
+      parts.length < 2 ||
+      parts.some((part) => !part || part === "." || part === "..")
+    ) {
       throw new ObjectNotFoundError();
     }
 

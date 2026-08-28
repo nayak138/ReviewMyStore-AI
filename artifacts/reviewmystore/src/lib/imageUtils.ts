@@ -12,6 +12,10 @@ export function objectUrl(path: string | null | undefined): string | undefined {
     const base = import.meta.env.BASE_URL.replace(/\/$/, "");
     return `${base}/api/storage${path}`;
   }
+  if (path.startsWith("/public-assets/")) {
+    const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+    return `${base}/api/storage${path}`;
+  }
   return path;
 }
 

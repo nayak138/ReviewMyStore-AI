@@ -26,7 +26,8 @@ export const subscriptionStatusEnum = pgEnum("subscription_status", [
 // device (added in later sprints) will belong to exactly one Organization.
 // Subscription/billing fields are populated manually by a Super Admin for
 // now (no payment integration in the MVP) but are shaped so a future
-// Stripe integration can populate them without a schema change.
+// Stripe integration can populate them without a schema change. aiQuota is a
+// lifetime remaining-generation allowance until a billing-period ledger exists.
 export const organizationsTable = pgTable("organizations", {
   id: text("id")
     .primaryKey()

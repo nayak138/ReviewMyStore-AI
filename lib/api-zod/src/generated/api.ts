@@ -1501,6 +1501,22 @@ export const RequestUploadUrlResponse = zod.object({
 
 
 /**
+ * @summary Finalize an authenticated object upload and assign its ACL
+ */
+export const finalizeUploadBodyObjectPathRegExp = new RegExp('^/objects/uploads/[^/]+$');
+export const finalizeUploadBodyVisibilityDefault = `private`;
+
+export const FinalizeUploadBody = zod.object({
+  "objectPath": zod.string().regex(finalizeUploadBodyObjectPathRegExp),
+  "visibility": zod.enum(['private', 'public']).default(finalizeUploadBodyVisibilityDefault)
+})
+
+export const FinalizeUploadResponse = zod.object({
+  "objectPath": zod.string()
+})
+
+
+/**
  * @summary Serve a public asset from PUBLIC_OBJECT_SEARCH_PATHS
  */
 export const GetPublicObjectParams = zod.object({
@@ -1518,5 +1534,15 @@ export const GetStorageObjectParams = zod.object({
 })
 
 export const GetStorageObjectResponse = zod.unknown()
+
+
+/**
+ * @summary Serve an object with an explicit public ACL
+ */
+export const GetPublicAssetParams = zod.object({
+  "filePath": zod.coerce.string()
+})
+
+export const GetPublicAssetResponse = zod.unknown()
 
 

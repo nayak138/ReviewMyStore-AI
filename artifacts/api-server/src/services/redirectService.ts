@@ -1,5 +1,5 @@
 import { randomBytes } from "node:crypto";
-import { and, eq, isNull } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import {
   db,
   businessesTable,
@@ -128,6 +128,31 @@ export async function setNfcDeviceLinkActive(
     .where(eq(redirectLinksTable.nfcDeviceId, nfcDeviceId));
 }
 
+export function isLiveRedirect(input: {
+  linkActive: boolean;
+  sourceType: "QR" | "NFC";
+  deviceStatus?: string | null;
+  campaignStatus: string;
+  businessStatus: string;
+  campaignDeletedAt?: Date | null;
+  campaignArchivedAt?: Date | null;
+  businessDeletedAt?: Date | null;
+  businessArchivedAt?: Date | null;
+}): boolean {
+  const deviceNotLive =
+    input.sourceType === "NFC" && input.deviceStatus !== "ACTIVE";
+  return (
+    input.linkActive &&
+    !deviceNotLive &&
+    input.campaignStatus === "ACTIVE" &&
+    input.businessStatus === "ACTIVE" &&
+    !input.campaignDeletedAt &&
+    !input.campaignArchivedAt &&
+    !input.businessDeletedAt &&
+    !input.businessArchivedAt
+  );
+}
+
 /** Resolves a short code to its review page path and logs the scan event.
  * Failures (paused campaign, disabled device/link) are still logged with
  * redirectSuccess=false so owners can see demand on a paused surface. */
@@ -151,7 +176,7 @@ export async function resolveRedirect(
       eq(campaignsTable.businessId, businessesTable.id),
     )
     .where(
-      and(eq(redirectLinksTable.code, code), isNull(campaignsTable.deletedAt)),
+      and(eq(redirectLinksTable.code, code)),
     )
     .limit(1);
 
@@ -171,11 +196,17 @@ export async function resolveRedirect(
     deviceNotLive = !device || device.status !== "ACTIVE";
   }
 
-  const success =
-    link.active &&
-    !deviceNotLive &&
-    campaign.status === "ACTIVE" &&
-    !business.deletedAt;
+  const success = isLiveRedirect({
+    linkActive: link.active,
+    sourceType: link.sourceType,
+    deviceStatus: deviceNotLive ? "ASSIGNED" : "ACTIVE",
+    campaignStatus: campaign.status,
+    businessStatus: business.status,
+    campaignDeletedAt: campaign.deletedAt,
+    campaignArchivedAt: campaign.archivedAt,
+    businessDeletedAt: business.deletedAt,
+    businessArchivedAt: business.archivedAt,
+  });
 
   await logScanEvent({
     eventType: link.sourceType === "NFC" ? "NFC_TAP" : "QR_SCAN",

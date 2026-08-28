@@ -6,7 +6,9 @@ import {
 } from "@workspace/api-zod";
 import {
   PublicCampaignNotFoundError,
+  OrganizationQuotaExhaustedError,
   RegenerationLimitReachedError,
+  SessionCampaignMismatchError,
   generatePublicReview,
   getPublicReviewPage,
   trackGoogleRedirect,
@@ -90,6 +92,22 @@ router.post(
           success: false,
           code: "REGENERATION_LIMIT_REACHED",
           message: err.message,
+        });
+        return;
+      }
+      if (err instanceof SessionCampaignMismatchError) {
+        res.status(409).json({
+          success: false,
+          code: "SESSION_CAMPAIGN_MISMATCH",
+          message: "Start a new review session for this campaign.",
+        });
+        return;
+      }
+      if (err instanceof OrganizationQuotaExhaustedError) {
+        res.status(429).json({
+          success: false,
+          code: "AI_QUOTA_EXHAUSTED",
+          message: "This review service is temporarily unavailable.",
         });
         return;
       }

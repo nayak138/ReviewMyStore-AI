@@ -10,6 +10,11 @@ import {
   clerkProxyMiddleware,
   getClerkProxyHost,
 } from "./middlewares/clerkProxyMiddleware";
+import {
+  getConfiguredOrigins,
+  isTrustedOrigin,
+  originProtection,
+} from "./middlewares/originProtection";
 
 const app: Express = express();
 
@@ -42,7 +47,34 @@ app.use(
 
 app.use(CLERK_PROXY_PATH, clerkProxyMiddleware());
 
-app.use(cors({ credentials: true, origin: true }));
+const configuredOrigins = getConfiguredOrigins();
+app.use((req, res, next) => {
+  if (req.method === "OPTIONS") {
+    const origin = req.get("origin");
+    if (origin && !isTrustedOrigin(req, origin, configuredOrigins)) {
+      res.status(403).json({
+        success: false,
+        code: "ORIGIN_NOT_ALLOWED",
+        message: "Request origin is not allowed.",
+      });
+      return;
+    }
+  }
+  next();
+});
+app.use(
+  cors({
+    credentials: true,
+    origin: (origin, callback) => {
+      if (!origin) {
+        callback(null, true);
+        return;
+      }
+      const allowed = configuredOrigins.has(origin);
+      callback(null, allowed ? origin : false);
+    },
+  }),
+);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -58,6 +90,7 @@ app.use(
   })),
 );
 
+app.use(originProtection);
 app.use("/api", router);
 
 export default app;

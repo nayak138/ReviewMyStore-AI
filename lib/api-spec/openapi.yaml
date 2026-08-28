@@ -1877,6 +1877,49 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  /storage/uploads/finalize:
+    post:
+      tags: [Storage]
+      operationId: finalizeUpload
+      summary: Finalize an authenticated object upload and assign its ACL
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FinalizeUploadRequest"
+      responses:
+        "200":
+          description: Upload finalized.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UploadFinalizeResult"
+        "400":
+          description: Missing or invalid upload details.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Authentication required.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Upload is not owned by the caller.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Uploaded object was not found.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /storage/public-objects/{filePath}:
     get:
       tags: [Storage]
@@ -1924,6 +1967,32 @@ paths:
                 format: binary
         "404":
           description: Object not found.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /storage/public-assets/{filePath}:
+    get:
+      tags: [Storage]
+      operationId: getPublicAsset
+      summary: Serve an object with an explicit public ACL
+      parameters:
+        - name: filePath
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Public object content streamed with correct Content-Type.
+          content:
+            "*/*":
+              schema:
+                type: string
+                format: binary
+        "404":
+          description: File not found.
           content:
             application/json:
               schema:
@@ -2868,6 +2937,23 @@ components:
           type: string
         metadata:
           $ref: "#/components/schemas/UploadUrlRequest"
+    FinalizeUploadRequest:
+      type: object
+      properties:
+        objectPath:
+          type: string
+          pattern: "^/objects/uploads/[^/]+$"
+        visibility:
+          type: string
+          enum: [private, public]
+          default: private
+      required: [objectPath]
+    UploadFinalizeResult:
+      type: object
+      properties:
+        objectPath:
+          type: string
+      required: [objectPath]
 
     TopCampaignItem:
       type: object

@@ -13,6 +13,8 @@ Multi-tenant SaaS that helps local businesses collect more Google Reviews using 
 - Required env: `DATABASE_URL` — Postgres connection string
 - Required secrets: `CLERK_SECRET_KEY`, `CLERK_PUBLISHABLE_KEY`, `VITE_CLERK_PUBLISHABLE_KEY` (Replit-managed Clerk)
 - Optional env: `SUPER_ADMIN_EMAILS` — comma-separated emails that get provisioned as platform SUPER_ADMIN on first sign-in instead of getting their own Organization
+- Optional env: `CORS_ALLOWED_ORIGINS` — comma-separated exact frontend origins allowed to make credentialed cross-origin requests; same-origin requests remain supported, and unknown browser origins are rejected for preflight/state-changing requests
+- Required for object storage: `PRIVATE_OBJECT_DIR` and `PUBLIC_OBJECT_SEARCH_PATHS` — private uploads are finalized by the authenticated uploader, while branding uploads use an explicit public ACL and are served through the ACL-gated public-asset route
 
 ## Stack
 
@@ -39,7 +41,7 @@ Multi-tenant SaaS that helps local businesses collect more Google Reviews using 
 
 - **Auth is Clerk, authorization is ours.** Clerk owns login/session; on first authenticated request we JIT-provision a local `users` row bridged by `clerkUserId`. App roles (`SUPER_ADMIN`, `OWNER`) and org-scoping live only in Postgres, enforced by `requireAuth`/`requireRole` — never trust Clerk claims for authorization.
 - **SUPER_ADMIN bootstrapping** is via an allowlist env var (`SUPER_ADMIN_EMAILS`), checked only at JIT-provisioning time. Anyone else who signs up becomes an `OWNER` with a freshly created Organization (registration is open, no gating in the MVP).
-- **Organizations carry future-billing fields** (`plan`, `subscriptionStatus`, `aiQuota`, `businessesLimit`, `startDate`/`renewalDate`/`expiryDate`) even though there's no payment integration yet — a Super Admin manages these manually until Stripe (or similar) is wired up later.
+- **Organizations carry future-billing fields** (`plan`, `subscriptionStatus`, `aiQuota`, `businessesLimit`, `startDate`/`renewalDate`/`expiryDate`) even though there's no payment integration yet — a Super Admin manages these manually until Stripe (or similar) is wired up later. `aiQuota` is a lifetime remaining-generation allowance until a billing-period ledger is introduced.
 - **`organizationId` is nullable on `users`** — SUPER_ADMIN accounts are platform-wide and not scoped to a tenant; every OWNER must have exactly one Organization.
 
 ## Product

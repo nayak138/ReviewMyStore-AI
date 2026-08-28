@@ -699,7 +699,7 @@ export default function Businesses() {
                       <FormItem>
                         <FormLabel>Logo</FormLabel>
                         <FormControl>
-                          <FileUpload className="h-28" placeholder="Upload Logo" value={field.value} onChange={field.onChange} />
+                          <FileUpload visibility="public" className="h-28" placeholder="Upload Logo" value={field.value} onChange={field.onChange} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -712,7 +712,7 @@ export default function Businesses() {
                       <FormItem>
                         <FormLabel>Cover Image</FormLabel>
                         <FormControl>
-                          <FileUpload className="h-28" placeholder="Upload Cover" value={field.value} onChange={field.onChange} />
+                          <FileUpload visibility="public" className="h-28" placeholder="Upload Cover" value={field.value} onChange={field.onChange} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>

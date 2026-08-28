@@ -86,12 +86,28 @@ export async function setObjectAclPolicy(
 export async function getObjectAclPolicy(
   objectFile: File,
 ): Promise<ObjectAclPolicy | null> {
-  const [metadata] = await objectFile.getMetadata();
-  const aclPolicy = metadata?.metadata?.[ACL_POLICY_METADATA_KEY];
-  if (!aclPolicy) {
+  try {
+    const [metadata] = await objectFile.getMetadata();
+    const aclPolicy = metadata?.metadata?.[ACL_POLICY_METADATA_KEY];
+    if (!aclPolicy) return null;
+
+    const parsed: unknown = JSON.parse(aclPolicy as string);
+    if (
+      typeof parsed !== "object" ||
+      parsed === null ||
+      typeof (parsed as { owner?: unknown }).owner !== "string" ||
+      !["public", "private"].includes(
+        (parsed as { visibility?: unknown }).visibility as string,
+      )
+    ) {
+      return null;
+    }
+    return parsed as ObjectAclPolicy;
+  } catch {
+    // Malformed metadata must fail closed, not turn an access check into a
+    // storage or JSON parsing error.
     return null;
   }
-  return JSON.parse(aclPolicy as string);
 }
 
 export async function canAccessObject({
@@ -124,12 +140,17 @@ export async function canAccessObject({
   }
 
   for (const rule of aclPolicy.aclRules || []) {
-    const accessGroup = createObjectAccessGroup(rule.group);
-    if (
-      (await accessGroup.hasMember(userId)) &&
-      isPermissionAllowed(requestedPermission, rule.permission)
-    ) {
-      return true;
+    try {
+      const accessGroup = createObjectAccessGroup(rule.group);
+      if (
+        (await accessGroup.hasMember(userId)) &&
+        isPermissionAllowed(requestedPermission, rule.permission)
+      ) {
+        return true;
+      }
+    } catch {
+      // Unknown or malformed group rules are ignored rather than granting
+      // access or exposing an internal error to the caller.
     }
   }
 

@@ -1,9 +1,10 @@
-import { and, asc, eq } from "drizzle-orm";
+import { and, asc, eq, isNull, sql } from "drizzle-orm";
 import {
   db,
   businessesTable,
   campaignsTable,
   keywordsTable,
+  organizationsTable,
   reviewSessionsTable,
 } from "@workspace/db";
 import { generateReviewText } from "./aiService";
@@ -20,6 +21,20 @@ export class RegenerationLimitReachedError extends Error {
   constructor(readonly maxGenerations: number) {
     super(`Regeneration limit of ${maxGenerations} reached for this session`);
     this.name = "RegenerationLimitReachedError";
+  }
+}
+
+export class SessionCampaignMismatchError extends Error {
+  constructor() {
+    super("This review session is not valid for this campaign");
+    this.name = "SessionCampaignMismatchError";
+  }
+}
+
+export class OrganizationQuotaExhaustedError extends Error {
+  constructor() {
+    super("AI generation quota exhausted");
+    this.name = "OrganizationQuotaExhaustedError";
   }
 }
 
@@ -44,6 +59,11 @@ async function findActivePublicCampaign(
         eq(businessesTable.slug, businessSlug),
         eq(campaignsTable.slug, campaignSlug),
         eq(campaignsTable.status, "ACTIVE"),
+        isNull(campaignsTable.deletedAt),
+        isNull(campaignsTable.archivedAt),
+        eq(businessesTable.status, "ACTIVE"),
+        isNull(businessesTable.deletedAt),
+        isNull(businessesTable.archivedAt),
       ),
     )
     .limit(1);
@@ -54,6 +74,13 @@ async function findActivePublicCampaign(
 function buildGoogleReviewUrl(googlePlaceId: string | null): string | null {
   if (!googlePlaceId) return null;
   return `https://search.google.com/local/writereview?placeid=${encodeURIComponent(googlePlaceId)}`;
+}
+
+function publicAssetPath(path: string | null): string | null {
+  if (!path) return null;
+  return path.startsWith("/objects/")
+    ? `/public-assets/${path.slice("/objects/".length)}`
+    : path;
 }
 
 export async function getPublicReviewPage(
@@ -80,8 +107,8 @@ export async function getPublicReviewPage(
     business: {
       name: business.name,
       category: business.category,
-      logoUrl: business.logoUrl,
-      coverImageUrl: business.coverImageUrl,
+       logoUrl: publicAssetPath(business.logoUrl),
+       coverImageUrl: publicAssetPath(business.coverImageUrl),
       brandColor: business.brandColor,
       welcomeMessage: business.welcomeMessage,
       address: business.address,
@@ -112,16 +139,72 @@ export async function generatePublicReview(
     campaignSlug,
   );
 
-  const [existingSession] = await db
-    .select()
-    .from(reviewSessionsTable)
-    .where(eq(reviewSessionsTable.id, sessionId))
-    .limit(1);
+  const reservedGeneration = await db.transaction(async (tx) => {
+    const [existingSession] = await tx
+      .select()
+      .from(reviewSessionsTable)
+      .where(eq(reviewSessionsTable.id, sessionId))
+      .limit(1);
 
-  const currentCount = existingSession?.generationCount ?? 0;
-  if (currentCount >= MAX_GENERATIONS) {
-    throw new RegenerationLimitReachedError(MAX_GENERATIONS);
-  }
+    if (existingSession && existingSession.campaignId !== campaign.id) {
+      throw new SessionCampaignMismatchError();
+    }
+
+    const [organization] = await tx
+      .update(organizationsTable)
+      .set({ aiQuota: sql`${organizationsTable.aiQuota} - 1` })
+      .where(
+        and(
+          eq(organizationsTable.id, business.organizationId),
+          sql`${organizationsTable.aiQuota} > 0`,
+        ),
+      )
+      .returning({ aiQuota: organizationsTable.aiQuota });
+    if (!organization) throw new OrganizationQuotaExhaustedError();
+
+    if (existingSession) {
+      const [updated] = await tx
+        .update(reviewSessionsTable)
+        .set({
+          generationCount: sql`${reviewSessionsTable.generationCount} + 1`,
+          updatedAt: new Date(),
+        })
+        .where(
+          and(
+            eq(reviewSessionsTable.id, sessionId),
+            eq(reviewSessionsTable.campaignId, campaign.id),
+            sql`${reviewSessionsTable.generationCount} < ${MAX_GENERATIONS}`,
+          ),
+        )
+        .returning({ generationCount: reviewSessionsTable.generationCount });
+      if (!updated) throw new RegenerationLimitReachedError(MAX_GENERATIONS);
+      return updated.generationCount;
+    }
+
+    const [inserted] = await tx
+      .insert(reviewSessionsTable)
+      .values({ id: sessionId, campaignId: campaign.id, generationCount: 1 })
+      .onConflictDoNothing()
+      .returning({ generationCount: reviewSessionsTable.generationCount });
+    if (inserted) return inserted.generationCount;
+
+    const [updated] = await tx
+      .update(reviewSessionsTable)
+      .set({
+        generationCount: sql`${reviewSessionsTable.generationCount} + 1`,
+        updatedAt: new Date(),
+      })
+      .where(
+        and(
+          eq(reviewSessionsTable.id, sessionId),
+          eq(reviewSessionsTable.campaignId, campaign.id),
+          sql`${reviewSessionsTable.generationCount} < ${MAX_GENERATIONS}`,
+        ),
+      )
+      .returning({ generationCount: reviewSessionsTable.generationCount });
+    if (!updated) throw new RegenerationLimitReachedError(MAX_GENERATIONS);
+    return updated.generationCount;
+  });
 
   const reviewText = await generateReviewText({
     businessName: business.name,
@@ -132,28 +215,19 @@ export async function generatePublicReview(
     campaignId: campaign.id,
   });
 
-  const nextCount = currentCount + 1;
-  if (existingSession) {
-    await db
-      .update(reviewSessionsTable)
-      .set({
-        generationCount: nextCount,
-        lastReviewText: reviewText,
-        updatedAt: new Date(),
-      })
-      .where(eq(reviewSessionsTable.id, sessionId));
-  } else {
-    await db.insert(reviewSessionsTable).values({
-      id: sessionId,
-      campaignId: campaign.id,
-      generationCount: nextCount,
-      lastReviewText: reviewText,
-    });
-  }
+  await db
+    .update(reviewSessionsTable)
+    .set({ lastReviewText: reviewText, updatedAt: new Date() })
+    .where(
+      and(
+        eq(reviewSessionsTable.id, sessionId),
+        eq(reviewSessionsTable.campaignId, campaign.id),
+      ),
+    );
 
   return {
     reviewText,
-    remainingGenerations: MAX_GENERATIONS - nextCount,
+    remainingGenerations: MAX_GENERATIONS - reservedGeneration,
     maxGenerations: MAX_GENERATIONS,
   };
 }

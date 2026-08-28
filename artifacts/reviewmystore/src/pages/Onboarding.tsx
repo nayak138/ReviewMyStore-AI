@@ -402,7 +402,8 @@ export default function Onboarding() {
                           <FormItem>
                             <FormLabel>Logo</FormLabel>
                             <FormControl>
-                              <FileUpload 
+                              <FileUpload
+                                visibility="public"
                                 className="h-32" 
                                 placeholder="Upload Logo" 
                                 value={field.value} 
@@ -420,7 +421,8 @@ export default function Onboarding() {
                           <FormItem>
                             <FormLabel>Cover Image</FormLabel>
                             <FormControl>
-                              <FileUpload 
+                              <FileUpload
+                                visibility="public"
                                 className="h-32" 
                                 placeholder="Upload Cover" 
                                 value={field.value} 
