@@ -49,6 +49,11 @@
   --color-warning: hsl(var(--warning));
   --color-warning-foreground: hsl(var(--warning-foreground));
 
+  --color-google-blue: hsl(var(--google-blue));
+  --color-google-red: hsl(var(--google-red));
+  --color-google-yellow: hsl(var(--google-yellow));
+  --color-google-green: hsl(var(--google-green));
+
   --font-sans: var(--app-font-sans);
 
   --radius-sm: calc(var(--radius) - 4px);
@@ -67,7 +72,7 @@
   --app-font-display: 'Fraunces', serif;
   --radius: 0.75rem;
 
-  /* Quiet paper, ink and one confident storefront blue. */
+  /* Warm paper, ink, and the four Google-inspired accent colors. */
   --background: 42 36% 96%;
   --foreground: 220 30% 17%;
   --card: 42 42% 99%;
@@ -76,7 +81,7 @@
   --popover: 42 42% 99%;
   --popover-foreground: 220 30% 17%;
   --popover-border: 40 21% 86%;
-  --primary: 218 59% 35%;
+  --primary: 217 89% 61%;
   --primary-foreground: 42 42% 99%;
   --secondary: 40 24% 91%;
   --secondary-foreground: 220 30% 17%;
@@ -92,7 +97,12 @@
   --warning-foreground: 28 63% 20%;
   --border: 40 21% 86%;
   --input: 40 21% 80%;
-  --ring: 218 59% 35%;
+  --ring: 217 89% 61%;
+
+  --google-blue: 217 89% 61%;
+  --google-red: 4 82% 60%;
+  --google-yellow: 45 98% 51%;
+  --google-green: 143 54% 49%;
 }
 
 .dark {
@@ -121,6 +131,11 @@
   --border: 220 17% 25%;
   --input: 220 17% 31%;
   --ring: 213 64% 69%;
+
+  --google-blue: 217 89% 65%;
+  --google-red: 4 82% 64%;
+  --google-yellow: 45 98% 58%;
+  --google-green: 143 54% 56%;
 }
 
 @layer base {
@@ -129,7 +144,10 @@
   }
   body {
     @apply bg-background text-foreground font-sans antialiased;
-    background-image: linear-gradient(180deg, hsl(var(--background)), hsl(var(--background)));
+    background-image:
+      radial-gradient(circle at 86% 0%, hsl(var(--google-blue) / 0.055), transparent 24rem),
+      radial-gradient(circle at 7% 14%, hsl(var(--google-yellow) / 0.04), transparent 20rem),
+      linear-gradient(180deg, hsl(var(--background)), hsl(var(--background)));
   }
 
   button,
@@ -172,6 +190,16 @@
 @layer utilities {
   .font-display {
     font-family: var(--app-font-display);
+  }
+
+  .google-spectrum {
+    background: linear-gradient(
+      90deg,
+      hsl(var(--google-blue)) 0 25%,
+      hsl(var(--google-red)) 25% 50%,
+      hsl(var(--google-yellow)) 50% 75%,
+      hsl(var(--google-green)) 75% 100%
+    );
   }
 
   .review-noise::after {

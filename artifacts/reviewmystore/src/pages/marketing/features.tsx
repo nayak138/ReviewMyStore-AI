@@ -5,16 +5,16 @@ import { ArrowRight, BarChart3, Check, CheckCircle2, Clock3, ListChecks, Message
 
 export function WhyBusinessesLoveUs() {
   const reasons = [
-    { icon: MessageCircle, title: "A better ask", desc: "Give customers one clear, friendly path to share what went well." },
-    { icon: Clock3, title: "Less follow-up", desc: "Make review collection part of the moments you already have." },
-    { icon: TrendingUp, title: "Steadier growth", desc: "See what is working and build a reputation that compounds." },
-    { icon: ListChecks, title: "One calm inbox", desc: "Keep reviews, replies, campaigns and locations in one place." },
+    { icon: MessageCircle, title: "A better ask", desc: "Give customers one clear, friendly path to share what went well.", accent: "text-google-blue bg-google-blue/10 border-google-blue/20" },
+    { icon: Clock3, title: "Less follow-up", desc: "Make review collection part of the moments you already have.", accent: "text-google-red bg-google-red/10 border-google-red/20" },
+    { icon: TrendingUp, title: "Steadier growth", desc: "See what is working and build a reputation that compounds.", accent: "text-google-yellow bg-google-yellow/10 border-google-yellow/25" },
+    { icon: ListChecks, title: "One calm inbox", desc: "Keep reviews, replies, campaigns and locations in one place.", accent: "text-google-green bg-google-green/10 border-google-green/20" },
   ];
   return (
     <section className="border-b border-border bg-secondary/35 py-20 lg:py-28">
       <div className="container mx-auto grid gap-14 px-4 sm:px-6 lg:grid-cols-[0.78fr_1.22fr] lg:items-center lg:gap-24 lg:px-8">
         <div><p className="mb-4 text-xs font-bold uppercase tracking-[0.18em] text-primary">Why it works</p><h2 className="max-w-sm font-display text-4xl font-semibold leading-tight tracking-[-0.04em] sm:text-5xl">Reputation growth, made human.</h2><p className="mt-6 max-w-md leading-relaxed text-muted-foreground">The best review tools disappear into your day. ReviewMyStore.ai keeps the setup simple, the ask natural, and the work easy to see.</p></div>
-        <div className="grid gap-x-10 gap-y-10 sm:grid-cols-2">{reasons.map(({ icon: Icon, title, desc }) => <div key={title} className="border-t border-border pt-4"><Icon className="mb-5 h-5 w-5 text-primary" /><h3 className="text-base font-bold">{title}</h3><p className="mt-2 max-w-xs text-sm leading-relaxed text-muted-foreground">{desc}</p></div>)}</div>
+         <div className="grid gap-x-10 gap-y-10 sm:grid-cols-2">{reasons.map(({ icon: Icon, title, desc, accent }) => <div key={title} className="border-t border-border pt-4"><div className={`mb-5 flex h-9 w-9 items-center justify-center rounded-lg border ${accent}`}><Icon className="h-4 w-4" /></div><h3 className="text-base font-bold">{title}</h3><p className="mt-2 max-w-xs text-sm leading-relaxed text-muted-foreground">{desc}</p></div>)}</div>
       </div>
     </section>
   );
@@ -22,19 +22,19 @@ export function WhyBusinessesLoveUs() {
 
 export function FeaturesGrid() {
   const features = [
-    { icon: Wand2, title: "AI review drafts", desc: "Give customers a useful starting point for a specific, genuine review." },
-    { icon: MessageSquareText, title: "Thoughtful replies", desc: "Draft responses in your voice, then review and send when ready.", badge: "Roadmap" },
-    { icon: ListChecks, title: "Review management", desc: "Keep feedback organized and respond without losing the thread." },
-    { icon: QrCode, title: "QR campaigns", desc: "Create a link for every counter, receipt, package or campaign." },
-    { icon: Smartphone, title: "NFC collection", desc: "Let customers tap their phone and arrive at the right page." },
-    { icon: BarChart3, title: "Simple insights", desc: "Understand which locations and touchpoints are earning trust." },
+    { icon: Wand2, title: "AI review drafts", desc: "Give customers a useful starting point for a specific, genuine review.", accent: "text-google-blue bg-google-blue/10 border-google-blue/20" },
+    { icon: MessageSquareText, title: "Thoughtful replies", desc: "Draft responses in your voice, then review and send when ready.", badge: "Roadmap", accent: "text-google-red bg-google-red/10 border-google-red/20" },
+    { icon: ListChecks, title: "Review management", desc: "Keep feedback organized and respond without losing the thread.", accent: "text-google-yellow bg-google-yellow/10 border-google-yellow/25" },
+    { icon: QrCode, title: "QR campaigns", desc: "Create a link for every counter, receipt, package or campaign.", accent: "text-google-green bg-google-green/10 border-google-green/20" },
+    { icon: Smartphone, title: "NFC collection", desc: "Let customers tap their phone and arrive at the right page.", accent: "text-google-blue bg-google-blue/10 border-google-blue/20" },
+    { icon: BarChart3, title: "Simple insights", desc: "Understand which locations and touchpoints are earning trust.", accent: "text-google-red bg-google-red/10 border-google-red/20" },
   ];
   return (
     <section id="features" className="bg-background py-24 lg:py-32">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="mb-14 grid gap-6 lg:grid-cols-[0.9fr_1.1fr] lg:items-end"><div><p className="mb-4 text-xs font-bold uppercase tracking-[0.18em] text-primary">Everything in its place</p><h2 className="max-w-xl font-display text-4xl font-semibold leading-tight tracking-[-0.04em] sm:text-5xl">The essentials for a stronger presence on Google.</h2></div><p className="max-w-md text-base leading-relaxed text-muted-foreground lg:justify-self-end">From the first tap to the final reply, each tool is designed to make a real customer relationship easier to continue.</p></div>
         <div className="grid gap-px overflow-hidden border border-border bg-border md:grid-cols-2 lg:grid-cols-3">
-          {features.map(({ icon: Icon, title, desc, badge }) => <div key={title} className="group bg-card p-7 transition-colors duration-300 hover:bg-secondary/40"><div className="mb-12 flex items-start justify-between"><div className="flex h-10 w-10 items-center justify-center rounded-lg border border-border bg-background text-primary"><Icon className="h-5 w-5" /></div>{badge && <span className="rounded-full border border-border px-2 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-muted-foreground">{badge}</span>}</div><h3 className="text-lg font-bold">{title}</h3><p className="mt-2 max-w-xs text-sm leading-relaxed text-muted-foreground">{desc}</p></div>)}
+           {features.map(({ icon: Icon, title, desc, badge, accent }) => <div key={title} className="group bg-card p-7 transition-colors duration-300 hover:bg-secondary/40"><div className="mb-12 flex items-start justify-between"><div className={`flex h-10 w-10 items-center justify-center rounded-lg border bg-background ${accent}`}><Icon className="h-5 w-5" /></div>{badge && <span className="rounded-full border border-border px-2 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-muted-foreground">{badge}</span>}</div><h3 className="text-lg font-bold">{title}</h3><p className="mt-2 max-w-xs text-sm leading-relaxed text-muted-foreground">{desc}</p></div>)}
         </div>
         <div className="mt-8 flex justify-center"><a href="#solutions" onClick={(e) => { e.preventDefault(); document.getElementById("solutions")?.scrollIntoView({ behavior: "smooth" }); }} className="inline-flex items-center gap-2 text-sm font-bold text-primary transition-colors hover:text-primary/75">See how it comes together <ArrowRight className="h-4 w-4" /></a></div>
       </div>

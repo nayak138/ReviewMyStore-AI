@@ -33,8 +33,10 @@ export function HeroSection() {
   return (
     <section className="relative overflow-hidden border-b border-border bg-background">
       <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
-        <div className="absolute right-[-12rem] top-[-10rem] h-[32rem] w-[32rem] rounded-full border border-primary/10" />
-        <div className="absolute right-[-7rem] top-[-5rem] h-[22rem] w-[22rem] rounded-full border border-primary/10" />
+        <div className="google-spectrum absolute inset-x-0 top-0 h-1 opacity-90" />
+        <div className="absolute right-[-12rem] top-[-10rem] h-[32rem] w-[32rem] rounded-full border border-google-blue/15" />
+        <div className="absolute right-[-7rem] top-[-5rem] h-[22rem] w-[22rem] rounded-full border border-google-red/15" />
+        <div className="absolute right-[13rem] top-[8rem] h-2 w-2 rounded-full bg-google-yellow shadow-[0_0_0_6px_hsl(var(--google-yellow)/0.12)]" />
       </div>
       <div className="container relative mx-auto px-4 pb-20 pt-20 sm:px-6 lg:px-8 lg:pb-28 lg:pt-28">
         <div className="grid items-center gap-16 lg:grid-cols-[minmax(0,0.92fr)_minmax(29rem,1.08fr)] lg:gap-20">
@@ -99,11 +101,11 @@ function HeroProductPreview() {
       <div className="absolute inset-x-0 top-8 rounded-2xl border border-border bg-card p-5 shadow-[0_35px_80px_-48px_hsl(var(--foreground)/0.65)]">
         <div className="mb-7 flex items-center justify-between border-b border-border pb-4"><div><p className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">Overview</p><p className="mt-1 text-sm font-semibold">The Daily Standard</p></div><span className="rounded-md border border-border px-2 py-1 text-[10px] font-medium text-muted-foreground">Last 30 days</span></div>
         <div className="grid grid-cols-3 gap-3">
-          {[["Google rating", "4.9", "+0.2"], ["New reviews", "48", "+18.4%"], ["Response time", "2h", "-34m"]].map(([label, value, change]) => <div key={label} className="rounded-lg border border-border bg-background p-3"><p className="text-[10px] font-medium text-muted-foreground">{label}</p><p className="mt-2 text-2xl font-semibold tracking-tight">{value}</p><p className="mt-1 text-[10px] font-semibold text-success">{change}</p></div>)}
+         {[["Google rating", "4.9", "+0.2", "border-google-blue/30"], ["New reviews", "48", "+18.4%", "border-google-green/30"], ["Response time", "2h", "-34m", "border-google-yellow/40"]].map(([label, value, change, color]) => <div key={label} className={`rounded-lg border bg-background p-3 ${color}`}><p className="text-[10px] font-medium text-muted-foreground">{label}</p><p className="mt-2 text-2xl font-semibold tracking-tight">{value}</p><p className="mt-1 text-[10px] font-semibold text-success">{change}</p></div>)}
         </div>
         <div className="mt-4 rounded-lg border border-border p-4">
           <div className="mb-5 flex items-center justify-between"><p className="text-xs font-semibold">Review activity</p><div className="flex items-center gap-2 text-[10px] text-muted-foreground"><span className="h-2 w-2 rounded-full bg-primary" /> Reviews</div></div>
-          <svg viewBox="0 0 600 155" className="h-36 w-full" role="img" aria-label="Review activity trending upward"><path d="M0 130H600M0 80H600M0 30H600" stroke="hsl(var(--border))" strokeDasharray="3 6" /><path d="M0 124 C65 119 68 102 122 108 S184 98 226 100 S292 72 335 83 S400 69 445 58 S518 67 600 24" fill="none" stroke="hsl(var(--primary))" strokeWidth="3" strokeLinecap="round" /><circle cx="445" cy="58" r="5" fill="hsl(var(--card))" stroke="hsl(var(--primary))" strokeWidth="3" /></svg>
+           <svg viewBox="0 0 600 155" className="h-36 w-full" role="img" aria-label="Review activity trending upward"><path d="M0 130H600M0 80H600M0 30H600" stroke="hsl(var(--border))" strokeDasharray="3 6" /><path d="M0 124 C65 119 68 102 122 108 S184 98 226 100 S292 72 335 83 S400 69 445 58 S518 67 600 24" fill="none" stroke="hsl(var(--google-blue))" strokeWidth="3" strokeLinecap="round" /><circle cx="445" cy="58" r="5" fill="hsl(var(--card))" stroke="hsl(var(--google-red))" strokeWidth="3" /></svg>
         </div>
       </div>
       <div className="absolute -bottom-1 -left-8 w-64 rounded-xl border border-border bg-background p-4 shadow-[0_25px_55px_-35px_hsl(var(--foreground)/0.65)]">
