@@ -11,17 +11,6 @@ import { useGetPlaceDetails, getGetPlaceDetailsQueryKey, type PlaceAutocompleteS
 import { saveSelectedPlace, placePhotoUrl } from "@/lib/selected-place";
 import { Button } from "@/components/ui/button";
 
-const GoogleLogoText = () => (
-  <span className="font-bold tracking-tight">
-    <span className="text-[#4285F4]">G</span>
-    <span className="text-[#EA4335]">o</span>
-    <span className="text-[#FBBC05]">o</span>
-    <span className="text-[#4285F4]">g</span>
-    <span className="text-[#34A853]">l</span>
-    <span className="text-[#EA4335]">e</span>
-  </span>
-);
-
 const EXAMPLE_SEARCHES = [
   "The Taj Mahal Palace, Mumbai",
   "The Peninsula Hong Kong",
@@ -56,9 +45,9 @@ export function HeroSection() {
   };
 
   return (
-    <section className="relative pt-12 pb-16 lg:pt-24 lg:pb-20 overflow-hidden bg-background">
-      {/* Background soft blob */}
-      <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-blue-50/50 rounded-full blur-3xl pointer-events-none -z-10 translate-x-1/3 -translate-y-1/4" />
+    <section className="relative isolate overflow-hidden bg-[linear-gradient(135deg,hsl(var(--background))_0%,hsl(var(--background))_52%,hsl(218_82%_96%)_100%)] pt-14 pb-20 dark:bg-[linear-gradient(135deg,hsl(var(--background))_0%,hsl(var(--background))_52%,hsl(224_34%_15%)_100%)] lg:pt-28 lg:pb-28">
+      <div className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[34rem] bg-[radial-gradient(circle_at_14%_16%,hsl(var(--warning)_/_0.18),transparent_25rem),radial-gradient(circle_at_84%_24%,hsl(var(--primary)_/_0.18),transparent_28rem)]" />
+      <div className="pointer-events-none absolute -right-20 top-12 -z-10 h-[34rem] w-[34rem] rounded-full border border-primary/10 bg-primary/[0.035] blur-3xl" />
       
       <div className="container mx-auto px-4 lg:px-8">
         <div className="flex flex-col lg:flex-row items-center gap-12 lg:gap-8">
@@ -68,7 +57,7 @@ export function HeroSection() {
             <motion.div 
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 text-xs font-bold uppercase tracking-wide mb-6 border border-emerald-100 dark:border-emerald-500/20 shadow-sm"
+              className="mb-7 inline-flex items-center gap-2 rounded-full border border-primary/15 bg-background/75 px-3.5 py-2 text-[11px] font-bold uppercase tracking-[0.14em] text-primary shadow-[0_10px_30px_-22px_hsl(var(--primary)/0.75)] backdrop-blur-sm dark:bg-background/60"
             >
               <Sparkles className="w-3.5 h-3.5" />
               <span>The AI-Powered Google Review Platform</span>
@@ -78,13 +67,13 @@ export function HeroSection() {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
-              className="text-5xl lg:text-[4rem] font-extrabold tracking-tight text-foreground mb-6 leading-[1.1]"
+              className="mb-6 font-display text-5xl font-semibold leading-[0.98] tracking-[-0.045em] text-foreground sm:text-6xl lg:text-[4.6rem]"
             >
-              5 ⭐ <GoogleLogoText /> <br className="hidden lg:block" />
-              Reviews with{" "}
+              Make every happy <br className="hidden lg:block" />
+              customer a <span className="text-amber-500">five-star</span>{" "}
               <span className="relative inline-flex whitespace-nowrap align-baseline">
                 <span className="bg-gradient-to-r from-blue-600 via-violet-600 to-fuchsia-500 bg-clip-text text-transparent">
-                  AI
+                  advocate
                 </span>
                 <Sparkles
                   aria-hidden="true"
@@ -97,9 +86,9 @@ export function HeroSection() {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
-              className="text-lg text-muted-foreground mb-8 max-w-xl mx-auto lg:mx-0 leading-relaxed font-medium"
+              className="mb-8 max-w-xl text-lg leading-relaxed text-muted-foreground sm:text-xl mx-auto lg:mx-0"
             >
-              Get more 5-star reviews, reply instantly with AI, and turn happy customers into your biggest growth engine.
+              Give customers an effortless way to share feedback, then turn every review into momentum for your business.
             </motion.p>
             
             <motion.div 
@@ -244,7 +233,7 @@ export function HeroSection() {
                 initial={{ y: 20, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ delay: 0.8 }}
-                className="absolute -bottom-8 -right-4 bg-background rounded-2xl shadow-xl border border-border p-4 flex items-start gap-4 w-72 z-20 animate-[bounce_4s_infinite]"
+                className="absolute -bottom-8 -right-4 z-20 flex w-72 items-start gap-4 rounded-2xl border border-border/80 bg-background/90 p-4 shadow-[0_24px_60px_-28px_hsl(var(--foreground)/0.55)] backdrop-blur-xl animate-[bounce_4s_infinite]"
               >
                 <div className="w-10 h-10 rounded-xl bg-purple-100 dark:bg-purple-500/15 flex items-center justify-center shrink-0">
                   <Sparkles className="w-5 h-5 text-purple-600" />
@@ -398,9 +387,9 @@ export function TrustedBySection() {
   ];
 
   return (
-    <section className="py-10 bg-background border-b border-border/50">
-      <div className="container mx-auto px-4 lg:px-8">
-        <p className="text-center text-xs font-bold text-muted-foreground/70 mb-6 tracking-wide">
+    <section className="border-y border-border/60 bg-background/70 py-10 backdrop-blur-sm">
+      <div className="container mx-auto max-w-7xl px-4 lg:px-8">
+        <p className="mb-6 text-center text-[11px] font-bold uppercase tracking-[0.16em] text-muted-foreground/70">
           Trusted by 10,000+ businesses worldwide
         </p>
 

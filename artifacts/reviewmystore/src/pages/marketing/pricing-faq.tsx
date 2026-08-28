@@ -46,7 +46,8 @@ export function PricingSection() {
   ];
 
   return (
-    <section id="pricing" className="py-24 bg-background">
+    <section id="pricing" className="relative overflow-hidden bg-background py-24">
+      <div className="pointer-events-none absolute right-0 top-24 h-72 w-72 rounded-full bg-emerald-400/[0.07] blur-3xl" />
       <div className="container mx-auto px-4 lg:px-8">
         <div className="text-center max-w-3xl mx-auto mb-16">
           <div className="inline-flex items-center px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-xs font-semibold uppercase tracking-wider mb-4 border border-emerald-500/20">
@@ -74,7 +75,7 @@ export function PricingSection() {
 
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto">
           {plans.map((plan, i) => (
-            <div key={i} className={`relative p-8 rounded-2xl border ${plan.highlight ? 'border-primary shadow-xl bg-card' : 'border-border bg-card hover:border-border/80 shadow-sm'} flex flex-col`}>
+            <div key={i} className={`relative flex flex-col rounded-3xl border p-8 transition-transform duration-300 hover:-translate-y-1 ${plan.highlight ? 'border-primary bg-card shadow-[0_28px_70px_-42px_hsl(var(--primary)/0.75)]' : 'border-border bg-card/80 shadow-[0_18px_50px_-42px_hsl(var(--foreground)/0.55)] hover:border-primary/30'}`}>
               {plan.highlight && (
                 <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-primary text-primary-foreground text-xs font-bold uppercase tracking-wider px-3 py-1 rounded-full">
                   Most Popular
@@ -135,7 +136,7 @@ export function TestimonialsSection() {
   ];
 
   return (
-    <section className="py-24 bg-zinc-50 dark:bg-zinc-900/20 border-t border-border">
+    <section className="border-y border-border bg-muted/30 py-24 dark:bg-muted/10">
       <div className="container mx-auto px-4 lg:px-8">
         <div className="text-center max-w-3xl mx-auto mb-16">
           <h2 className="text-3xl md:text-5xl font-bold tracking-tight mb-6 text-foreground">Made for businesses like yours</h2>
@@ -143,7 +144,7 @@ export function TestimonialsSection() {
         </div>
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
           {testimonials.map((t, i) => (
-            <div key={i} className="bg-card border border-border p-6 rounded-2xl shadow-sm">
+            <div key={i} className="rounded-3xl border border-border bg-card/85 p-6 shadow-[0_18px_44px_-38px_hsl(var(--foreground)/0.55)] transition-transform duration-300 hover:-translate-y-1">
               <div className="flex text-amber-400 mb-4 gap-0.5">
                 {[1,2,3,4,5].map(s => <Star key={s} className="w-4 h-4 fill-current" />)}
               </div>

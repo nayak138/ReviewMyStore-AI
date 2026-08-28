@@ -61,8 +61,8 @@ export function MarketingLayout({ children }: { children: ReactNode }) {
 
   return (
     <div className="min-h-[100dvh] flex flex-col bg-background selection:bg-blue-100 transition-colors text-foreground font-sans">
-      <header className={`fixed top-0 inset-x-0 z-50 transition-all duration-300 border-b ${isScrolled ? "bg-background/90 backdrop-blur-md border-border shadow-sm" : "bg-background border-border/50"}`}>
-        <div className="container mx-auto px-4 lg:px-8 h-16 flex items-center justify-between">
+      <header className="fixed inset-x-0 top-0 z-50 px-3 pt-3 sm:px-5">
+        <div className={`container mx-auto flex h-14 max-w-7xl items-center justify-between rounded-2xl border px-3 transition-all duration-300 sm:px-5 ${isScrolled ? "border-border/80 bg-background/85 shadow-[0_12px_40px_-24px_hsl(var(--foreground)/0.45)] backdrop-blur-xl" : "border-transparent bg-background/55 backdrop-blur-sm"}`}>
           <Link href="/" className="flex items-center gap-2 cursor-pointer shrink-0">
             <BrandLogo className="h-7 w-auto" />
           </Link>

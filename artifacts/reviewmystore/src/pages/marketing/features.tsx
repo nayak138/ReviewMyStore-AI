@@ -19,13 +19,13 @@ export function WhyBusinessesLoveUs() {
   ];
 
   return (
-    <section className="py-24 bg-muted/30 dark:bg-muted/10 border-b border-border/50 overflow-hidden">
+    <section className="overflow-hidden border-b border-border/50 bg-muted/30 py-24 dark:bg-muted/10">
       <div className="container mx-auto px-4 lg:px-8">
         <div className="flex flex-col lg:flex-row items-center gap-16 lg:gap-24">
           
           {/* Left: Find Your Business Mockup */}
           <div className="flex-1 w-full relative">
-            <div className="bg-background rounded-3xl p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-border/50 max-w-md mx-auto">
+            <div className="mx-auto max-w-md rounded-3xl border border-border/70 bg-background/90 p-8 shadow-[0_28px_70px_-45px_hsl(var(--foreground)/0.55)] backdrop-blur-sm">
               <h3 className="text-xl font-bold text-foreground mb-2 text-center">Find Your Business</h3>
               <p className="text-sm font-medium text-muted-foreground mb-6 text-center">Start by searching your business on Google</p>
               
@@ -98,7 +98,8 @@ export function FeaturesGrid() {
   ];
 
   return (
-    <section id="features" className="py-24 bg-background">
+    <section id="features" className="relative overflow-hidden bg-background py-24">
+      <div className="pointer-events-none absolute left-1/2 top-0 h-80 w-80 -translate-x-1/2 rounded-full bg-primary/[0.06] blur-3xl" />
       <div className="container mx-auto px-4 lg:px-8 text-center">
         <p className="text-sm font-bold text-blue-600 mb-3 tracking-wide">Powerful Features</p>
         <h2 className="text-3xl md:text-4xl font-extrabold text-foreground mb-16">
@@ -107,7 +108,7 @@ export function FeaturesGrid() {
 
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto mb-12">
           {features.map((f, i) => (
-            <div key={i} className="p-6 bg-background border border-border rounded-2xl shadow-sm hover:shadow-md transition-shadow text-center relative group">
+            <div key={i} className="group relative rounded-3xl border border-border bg-card/85 p-6 text-center shadow-[0_20px_50px_-42px_hsl(var(--foreground)/0.55)] transition-all duration-300 hover:-translate-y-1 hover:border-primary/30 hover:shadow-[0_28px_55px_-38px_hsl(var(--primary)/0.55)]">
               {f.badge && (
                 <span className="absolute top-4 right-4 bg-emerald-100 text-emerald-700 text-[10px] font-bold px-2 py-0.5 rounded-full">
                   {f.badge}
@@ -312,8 +313,8 @@ export function DashboardShowcase() {
 
 export function CtaBand() {
   return (
-    <section className="px-4 lg:px-8 pb-24 bg-background">
-      <div className="container mx-auto max-w-6xl relative overflow-hidden rounded-3xl bg-gradient-to-r from-blue-600 to-violet-600 px-8 py-20 text-center shadow-xl">
+    <section className="bg-background px-4 pb-24 lg:px-8">
+      <div className="container relative mx-auto max-w-6xl overflow-hidden rounded-[2rem] border border-primary/10 bg-[linear-gradient(120deg,hsl(221_68%_39%)_0%,hsl(245_65%_52%)_58%,hsl(285_58%_52%)_100%)] px-8 py-20 text-center shadow-[0_30px_80px_-35px_rgba(49,46,129,0.65)]">
         {/* Decorative background circles */}
         <div className="absolute top-0 right-0 w-96 h-96 bg-background opacity-5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
         <div className="absolute bottom-0 left-0 w-96 h-96 bg-blue-300 opacity-10 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2" />

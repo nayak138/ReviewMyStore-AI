@@ -8,7 +8,7 @@ import {
   DashboardShowcase, 
   CtaBand 
 } from "./marketing/features";
-import { PricingSection, FaqSection } from "./marketing/pricing-faq";
+import { PricingSection, FaqSection, TestimonialsSection } from "./marketing/pricing-faq";
 
 export default function Marketing() {
   // Support deep links like /#features from other pages.
@@ -28,6 +28,7 @@ export default function Marketing() {
       <FeaturesGrid />
       <HowItWorks />
       <DashboardShowcase />
+      <TestimonialsSection />
       <PricingSection />
       <FaqSection />
       <CtaBand />
