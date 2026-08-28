@@ -1,407 +1,121 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { motion } from "framer-motion";
+import { ArrowRight, Check, MapPin, MessageSquareText, QrCode, Star, X } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { BusinessSearch } from "@/components/business-search";
-import { 
-  Check, X, ArrowRight, MapPin, Sparkles, 
-  Coffee, Hexagon, Scissors, HeartPulse, Home, Utensils
-} from "lucide-react";
-import { useGetPlaceDetails, getGetPlaceDetailsQueryKey, type PlaceAutocompleteSuggestion } from "@workspace/api-client-react";
-import { saveSelectedPlace, placePhotoUrl } from "@/lib/selected-place";
 import { Button } from "@/components/ui/button";
+import { BusinessSearch } from "@/components/business-search";
+import { useGetPlaceDetails, getGetPlaceDetailsQueryKey, type PlaceAutocompleteSuggestion } from "@workspace/api-client-react";
+import { placePhotoUrl, saveSelectedPlace } from "@/lib/selected-place";
 
-const EXAMPLE_SEARCHES = [
-  "The Taj Mahal Palace, Mumbai",
-  "The Peninsula Hong Kong",
-  "The Plaza Hotel, New York",
-];
+const EXAMPLE_SEARCHES = ["The Taj Mahal Palace, Mumbai", "The Peninsula Hong Kong", "The Plaza Hotel, New York"];
 
 export function HeroSection() {
   const [, setLocation] = useLocation();
   const [selected, setSelected] = useState<PlaceAutocompleteSuggestion | null>(null);
   const [query, setQuery] = useState("");
-
   const { data: details, isLoading, isError } = useGetPlaceDetails(selected?.placeId ?? "", {
     query: { enabled: !!selected, queryKey: getGetPlaceDetailsQueryKey(selected?.placeId ?? "") },
   });
 
+  const clearSelection = () => { setSelected(null); setQuery(""); };
   const handleContinue = () => {
     if (!details) return;
     saveSelectedPlace({
-      placeId: details.placeId,
-      name: details.name,
-      category: details.category,
-      formattedAddress: details.formattedAddress,
-      phone: details.phone,
-      website: details.website,
-      latitude: details.latitude,
-      longitude: details.longitude,
-      rating: details.rating,
-      userRatingCount: details.userRatingCount,
-      photoName: details.photoName,
+      placeId: details.placeId, name: details.name, category: details.category,
+      formattedAddress: details.formattedAddress, phone: details.phone, website: details.website,
+      latitude: details.latitude, longitude: details.longitude, rating: details.rating,
+      userRatingCount: details.userRatingCount, photoName: details.photoName,
     });
     setLocation("/sign-up");
   };
 
   return (
-    <section className="relative isolate overflow-hidden bg-[linear-gradient(135deg,hsl(var(--background))_0%,hsl(var(--background))_52%,hsl(218_82%_96%)_100%)] pt-14 pb-20 dark:bg-[linear-gradient(135deg,hsl(var(--background))_0%,hsl(var(--background))_52%,hsl(224_34%_15%)_100%)] lg:pt-28 lg:pb-28">
-      <div className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[34rem] bg-[radial-gradient(circle_at_14%_16%,hsl(var(--warning)_/_0.18),transparent_25rem),radial-gradient(circle_at_84%_24%,hsl(var(--primary)_/_0.18),transparent_28rem)]" />
-      <div className="pointer-events-none absolute -right-20 top-12 -z-10 h-[34rem] w-[34rem] rounded-full border border-primary/10 bg-primary/[0.035] blur-3xl" />
-      
-      <div className="container mx-auto px-4 lg:px-8">
-        <div className="flex flex-col lg:flex-row items-center gap-12 lg:gap-8">
-          
-          {/* Left Column: Text & Search */}
-          <div className="flex-1 lg:pr-8 w-full z-10 text-center lg:text-left">
-            <motion.div 
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="mb-7 inline-flex items-center gap-2 rounded-full border border-primary/15 bg-background/75 px-3.5 py-2 text-[11px] font-bold uppercase tracking-[0.14em] text-primary shadow-[0_10px_30px_-22px_hsl(var(--primary)/0.75)] backdrop-blur-sm dark:bg-background/60"
-            >
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>The AI-Powered Google Review Platform</span>
-            </motion.div>
-            
-            <motion.h1 
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
-              className="mb-6 font-display text-5xl font-semibold leading-[0.98] tracking-[-0.045em] text-foreground sm:text-6xl lg:text-[4.6rem]"
-            >
-              Make every happy <br className="hidden lg:block" />
-              customer a <span className="text-amber-500">five-star</span>{" "}
-              <span className="relative inline-flex whitespace-nowrap align-baseline">
-                <span className="bg-gradient-to-r from-blue-600 via-violet-600 to-fuchsia-500 bg-clip-text text-transparent">
-                  advocate
-                </span>
-                <Sparkles
-                  aria-hidden="true"
-                  className="absolute -right-5 -top-3 h-4 w-4 text-violet-500"
-                />
-              </span>
-            </motion.h1>
-            
-            <motion.p 
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-              className="mb-8 max-w-xl text-lg leading-relaxed text-muted-foreground sm:text-xl mx-auto lg:mx-0"
-            >
-              Give customers an effortless way to share feedback, then turn every review into momentum for your business.
+    <section className="relative overflow-hidden border-b border-border bg-background">
+      <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
+        <div className="absolute right-[-12rem] top-[-10rem] h-[32rem] w-[32rem] rounded-full border border-primary/10" />
+        <div className="absolute right-[-7rem] top-[-5rem] h-[22rem] w-[22rem] rounded-full border border-primary/10" />
+      </div>
+      <div className="container relative mx-auto px-4 pb-20 pt-20 sm:px-6 lg:px-8 lg:pb-28 lg:pt-28">
+        <div className="grid items-center gap-16 lg:grid-cols-[minmax(0,0.92fr)_minmax(29rem,1.08fr)] lg:gap-20">
+          <div className="max-w-2xl">
+            <motion.p initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="mb-7 flex items-center gap-2 text-xs font-bold uppercase tracking-[0.18em] text-primary">
+              <span className="h-px w-8 bg-primary" /> Reputation, without the busywork
             </motion.p>
-            
-            <motion.div 
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
-              className="max-w-md mx-auto lg:mx-0 w-full"
-            >
-              <div className="relative overflow-visible rounded-[1.75rem] border border-blue-100/80 bg-gradient-to-br from-background via-background to-blue-50/70 p-4 shadow-[0_18px_50px_-28px_rgba(37,99,235,0.45)] dark:border-blue-500/20 dark:from-background dark:via-background dark:to-blue-500/[0.08] sm:p-5">
-                <div className="pointer-events-none absolute -right-8 -top-8 h-24 w-24 rounded-full bg-violet-400/10 blur-2xl" />
-                <div className="relative">
-                  <div className="mb-3 flex items-center gap-2 text-left">
-                    <span className="flex h-7 w-7 items-center justify-center rounded-full bg-blue-600/10 text-blue-600 dark:bg-blue-400/10 dark:text-blue-400">
-                      <MapPin className="h-3.5 w-3.5" />
-                    </span>
-                    <div>
-                      <p className="text-sm font-bold text-foreground">Try searching for your business</p>
-                      <p className="text-[11px] font-medium text-muted-foreground">Find your Google profile in seconds</p>
-                    </div>
-                  </div>
+            <motion.h1 initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }} className="mb-7 max-w-xl font-display text-[3.25rem] font-semibold leading-[0.98] tracking-[-0.055em] text-foreground sm:text-6xl lg:text-[5.25rem]">
+              Good experiences deserve to be <em className="text-primary not-italic">seen.</em>
+            </motion.h1>
+            <motion.p initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.16 }} className="mb-9 max-w-lg text-lg leading-relaxed text-muted-foreground sm:text-xl">
+              ReviewMyStore.ai gives happy customers a simple path to Google Reviews — and gives you the tools to keep every response thoughtful.
+            </motion.p>
 
-                  <div className="relative">
-                    <BusinessSearch
-                      placeholder="Start typing your business name..."
-                      value={query}
-                      onQueryChange={setQuery}
-                      openOnValueChange
-                      onSelect={(s) => setSelected(s)}
-                      inputClassName="h-14 rounded-2xl border-blue-100 bg-background/90 text-base shadow-[0_8px_24px_-16px_rgba(37,99,235,0.55)] transition-shadow placeholder:text-muted-foreground/80 focus-visible:border-blue-400 focus-visible:ring-4 focus-visible:ring-blue-500/10 dark:border-blue-500/20 dark:bg-background/80"
-                    />
-
-                    {selected && (
-                      <motion.div 
-                        initial={{ opacity: 0, height: 0, marginTop: 0 }}
-                        animate={{ opacity: 1, height: 'auto', marginTop: 16 }}
-                        className="rounded-xl border border-border bg-background shadow-lg p-4 relative overflow-hidden text-left"
-                      >
-                    <button
-                      type="button"
-                      onClick={() => { setSelected(null); setQuery(""); }}
-                      className="absolute top-3 right-3 text-muted-foreground/70 hover:text-muted-foreground transition-colors z-10 bg-background/80 backdrop-blur rounded-full p-1"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
-
-                    {isError ? (
-                      <div className="text-sm text-muted-foreground py-2">
-                        Couldn't load this business right now. Please try another search.
-                      </div>
-                    ) : isLoading || !details ? (
-                      <div className="flex gap-4 items-center">
-                        <Skeleton className="w-16 h-16 rounded-xl shrink-0" />
-                        <div className="space-y-2 flex-1 w-full">
-                          <Skeleton className="h-4 w-3/4" />
-                          <Skeleton className="h-3 w-1/2" />
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="flex gap-4 items-start">
-                        <div className="w-16 h-16 rounded-xl overflow-hidden bg-muted shrink-0 flex items-center justify-center border border-border">
-                          {details.photoName ? (
-                            <img src={placePhotoUrl(details.photoName, 120)} alt={details.name} className="w-full h-full object-cover" />
-                          ) : (
-                            <MapPin className="w-6 h-6 text-muted-foreground/70" />
-                          )}
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <h3 className="text-base font-bold text-foreground truncate">{details.name}</h3>
-                          {details.formattedAddress && (
-                            <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5">{details.formattedAddress}</p>
-                          )}
-                          {typeof details.rating === "number" && (
-                            <p className="text-xs font-bold text-foreground/80 flex items-center gap-1 mt-1.5">
-                              <span className="text-amber-500">★</span> {details.rating.toFixed(1)}
-                              <span className="text-muted-foreground font-normal">({details.userRatingCount} reviews)</span>
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                    )}
-
-                    <Button 
-                      className="w-full mt-4 h-10 text-sm font-semibold shadow-sm bg-blue-600 hover:bg-blue-700 text-white" 
-                      disabled={!details} 
-                      onClick={handleContinue}
-                    >
-                      {isLoading ? "Loading business..." : "Get Started"}
-                      <ArrowRight className="w-4 h-4 ml-2" />
-                    </Button>
-                    <button
-                      type="button"
-                      onClick={() => { setSelected(null); setQuery(""); }}
-                      className="mt-3 w-full text-center text-xs font-semibold text-blue-600 underline-offset-4 transition-colors hover:text-blue-700 hover:underline dark:text-blue-400 dark:hover:text-blue-300"
-                    >
-                      Can't find your business?
-                    </button>
-                      </motion.div>
-                    )}
-                  </div>
-
-                  {!selected && (
-                    <div className="mt-4 flex flex-wrap gap-2">
-                      {EXAMPLE_SEARCHES.map((example) => (
-                        <button
-                          key={example}
-                          type="button"
-                          onClick={() => setQuery(example)}
-                          className="group inline-flex items-center gap-1.5 rounded-full border border-border/80 bg-background/75 px-3 py-1.5 text-[11px] font-semibold text-muted-foreground shadow-sm transition-all hover:-translate-y-0.5 hover:border-blue-300 hover:bg-blue-50/70 hover:text-blue-700 hover:shadow-md dark:bg-muted/10 dark:hover:border-blue-500/50 dark:hover:bg-blue-500/10 dark:hover:text-blue-300"
-                        >
-                          <MapPin className="h-3 w-3 text-blue-500/70 transition-colors group-hover:text-blue-600 dark:group-hover:text-blue-300" />
-                          {example}
-                        </button>
-                      ))}
-                    </div>
-                  )}
+            <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.24 }} className="max-w-lg">
+              <div className="rounded-xl border border-border bg-card p-3 shadow-[0_20px_55px_-38px_hsl(var(--foreground)/0.5)] sm:p-4">
+                <div className="mb-3 flex items-center gap-2 px-1 text-sm font-semibold text-foreground">
+                  <MapPin className="h-4 w-4 text-primary" /> Find your business to begin
                 </div>
+                <BusinessSearch
+                  placeholder="Search your business name..."
+                  value={query}
+                  onQueryChange={setQuery}
+                  openOnValueChange
+                  onSelect={(suggestion) => setSelected(suggestion)}
+                  inputClassName="h-12 rounded-lg border-border bg-background pl-11 pr-11 text-sm shadow-none focus-visible:ring-2 focus-visible:ring-primary/20"
+                />
+                {selected && (
+                  <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} className="relative mt-3 overflow-hidden rounded-lg border border-border bg-background p-3">
+                    <button type="button" data-testid="button-clear-selected-business" onClick={clearSelection} aria-label="Clear selected business" className="absolute right-2 top-2 rounded-md p-1 text-muted-foreground hover:bg-secondary hover:text-foreground">
+                      <X className="h-4 w-4" />
+                    </button>
+                    {isError ? <p className="py-2 pr-5 text-sm text-muted-foreground">We couldn't load this business. Please try another search.</p> :
+                      isLoading || !details ? <div className="flex items-center gap-3"><Skeleton className="h-12 w-12 rounded-md" /><div className="flex-1 space-y-2"><Skeleton className="h-3 w-3/4" /><Skeleton className="h-3 w-1/2" /></div></div> :
+                        <div className="flex items-center gap-3 pr-5">
+                          <div className="h-12 w-12 shrink-0 overflow-hidden rounded-md border border-border bg-muted">
+                            {details.photoName ? <img src={placePhotoUrl(details.photoName, 120)} alt={details.name} className="h-full w-full object-cover" /> : <MapPin className="m-auto h-5 w-5 translate-y-3 text-muted-foreground" />}
+                          </div>
+                          <div className="min-w-0"><h3 className="truncate text-sm font-bold">{details.name}</h3><p className="mt-0.5 truncate text-xs text-muted-foreground">{details.formattedAddress}</p>{typeof details.rating === "number" && <p className="mt-1 flex items-center gap-1 text-xs font-semibold"><Star className="h-3 w-3 fill-current text-amber-500" /> {details.rating.toFixed(1)} <span className="font-normal text-muted-foreground">({details.userRatingCount} reviews)</span></p>}</div>
+                        </div>}
+                    <Button data-testid="button-get-started" disabled={!details} onClick={handleContinue} className="mt-3 h-10 w-full rounded-lg font-semibold">{isLoading ? "Loading business..." : "Continue with this business"} <ArrowRight className="ml-2 h-4 w-4" /></Button>
+                    <button type="button" data-testid="button-business-not-found" onClick={clearSelection} className="mt-2 w-full text-center text-xs font-semibold text-primary hover:underline">Can't find your business?</button>
+                  </motion.div>
+                )}
+                {!selected && <div className="mt-3 flex flex-wrap gap-2 px-1">{EXAMPLE_SEARCHES.map((example) => <button key={example} type="button" data-testid={`button-example-search-${example.slice(0, 5).toLowerCase()}`} onClick={() => setQuery(example)} className="rounded-md border border-border px-2.5 py-1.5 text-[11px] font-medium text-muted-foreground transition-colors hover:border-primary/40 hover:bg-secondary hover:text-foreground"><MapPin className="mr-1 inline h-3 w-3" />{example}</button>)}</div>}
               </div>
-
-              <div className="mt-5 grid grid-cols-2 gap-2 text-left sm:flex sm:flex-wrap sm:items-center sm:justify-center sm:gap-x-4 sm:gap-y-2 lg:justify-start">
-                {["14-Day Free Trial", "No Credit Card", "Cancel Anytime", "GDPR Compliant"].map((item) => (
-                  <span key={item} className="inline-flex items-center gap-1.5 rounded-full bg-blue-50/70 px-2.5 py-1.5 text-[10px] font-bold text-muted-foreground dark:bg-blue-500/[0.08]">
-                    <Check className="h-3.5 w-3.5 shrink-0 text-blue-600 dark:text-blue-400" />
-                    {item}
-                  </span>
-                ))}
+              <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-xs font-medium text-muted-foreground">
+                {["14-day free trial", "No credit card", "Cancel anytime"].map((item) => <span key={item} className="flex items-center gap-1.5"><Check className="h-3.5 w-3.5 text-success" />{item}</span>)}
               </div>
             </motion.div>
           </div>
-          
-          {/* Right Column: Visual Mockup */}
-          <div className="flex-1 w-full relative z-10 hidden md:block">
-            <motion.div 
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.4, duration: 0.7 }}
-              className="relative w-full max-w-[700px] ml-auto"
-            >
-              <HeroDashboardMockup />
-              
-              {/* Floating Card: AI Reply Assistant */}
-              <motion.div 
-                initial={{ y: 20, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ delay: 0.8 }}
-                className="absolute -bottom-8 -right-4 z-20 flex w-72 items-start gap-4 rounded-2xl border border-border/80 bg-background/90 p-4 shadow-[0_24px_60px_-28px_hsl(var(--foreground)/0.55)] backdrop-blur-xl animate-[bounce_4s_infinite]"
-              >
-                <div className="w-10 h-10 rounded-xl bg-purple-100 dark:bg-purple-500/15 flex items-center justify-center shrink-0">
-                  <Sparkles className="w-5 h-5 text-purple-600" />
-                </div>
-                <div>
-                  <h4 className="text-sm font-bold text-foreground mb-1">AI Reply Assistant</h4>
-                  <p className="text-[11px] text-muted-foreground font-medium leading-relaxed">Reply to reviews instantly with AI power</p>
-                </div>
-              </motion.div>
-            </motion.div>
-          </div>
+          <HeroProductPreview />
         </div>
       </div>
     </section>
   );
 }
 
-function HeroDashboardMockup() {
+function HeroProductPreview() {
   return (
-    <div className="bg-background rounded-2xl shadow-[0_20px_50px_-12px_rgba(0,0,0,0.1)] border border-border overflow-hidden w-full text-left font-sans">
-      {/* Top Bar */}
-      <div className="h-12 border-b border-border/50 bg-background flex items-center px-4 justify-between">
-        <div className="flex gap-1.5">
-          <div className="w-2.5 h-2.5 rounded-full bg-muted/80" />
-          <div className="w-2.5 h-2.5 rounded-full bg-muted/80" />
-          <div className="w-2.5 h-2.5 rounded-full bg-muted/80" />
+    <motion.div initial={{ opacity: 0, x: 18 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.3, duration: 0.7 }} className="relative hidden min-h-[27rem] lg:block">
+      <div className="absolute inset-x-0 top-8 rounded-2xl border border-border bg-card p-5 shadow-[0_35px_80px_-48px_hsl(var(--foreground)/0.65)]">
+        <div className="mb-7 flex items-center justify-between border-b border-border pb-4"><div><p className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">Overview</p><p className="mt-1 text-sm font-semibold">The Daily Standard</p></div><span className="rounded-md border border-border px-2 py-1 text-[10px] font-medium text-muted-foreground">Last 30 days</span></div>
+        <div className="grid grid-cols-3 gap-3">
+          {[["Google rating", "4.9", "+0.2"], ["New reviews", "48", "+18.4%"], ["Response time", "2h", "-34m"]].map(([label, value, change]) => <div key={label} className="rounded-lg border border-border bg-background p-3"><p className="text-[10px] font-medium text-muted-foreground">{label}</p><p className="mt-2 text-2xl font-semibold tracking-tight">{value}</p><p className="mt-1 text-[10px] font-semibold text-success">{change}</p></div>)}
         </div>
-        <div className="font-bold text-foreground/90 text-sm flex-1 text-center pl-8">Overview</div>
-        <div className="flex gap-2 items-center">
-          <div className="h-6 w-24 bg-muted/30 dark:bg-muted/10 border border-border/50 rounded text-[10px] font-semibold text-muted-foreground flex items-center justify-center px-2">All Locations ▾</div>
-          <div className="h-6 w-20 bg-muted/30 dark:bg-muted/10 border border-border/50 rounded text-[10px] font-semibold text-muted-foreground flex items-center justify-center px-2">Last 30 Days ▾</div>
-          <div className="w-6 h-6 rounded-full bg-muted/80 border border-slate-300 dark:border-slate-600 ml-2" />
+        <div className="mt-4 rounded-lg border border-border p-4">
+          <div className="mb-5 flex items-center justify-between"><p className="text-xs font-semibold">Review activity</p><div className="flex items-center gap-2 text-[10px] text-muted-foreground"><span className="h-2 w-2 rounded-full bg-primary" /> Reviews</div></div>
+          <svg viewBox="0 0 600 155" className="h-36 w-full" role="img" aria-label="Review activity trending upward"><path d="M0 130H600M0 80H600M0 30H600" stroke="hsl(var(--border))" strokeDasharray="3 6" /><path d="M0 124 C65 119 68 102 122 108 S184 98 226 100 S292 72 335 83 S400 69 445 58 S518 67 600 24" fill="none" stroke="hsl(var(--primary))" strokeWidth="3" strokeLinecap="round" /><circle cx="445" cy="58" r="5" fill="hsl(var(--card))" stroke="hsl(var(--primary))" strokeWidth="3" /></svg>
         </div>
       </div>
-      
-      <div className="flex h-[420px]">
-        {/* Sidebar */}
-        <div className="w-14 border-r border-border/50 bg-muted/30 dark:bg-muted/10/50 flex flex-col items-center py-4 gap-4">
-          <div className="w-8 h-8 rounded-lg bg-blue-100 dark:bg-blue-500/15 text-blue-600 dark:text-blue-400 flex items-center justify-center"><Home className="w-4 h-4" /></div>
-          <div className="w-8 h-8 rounded-lg hover:bg-muted text-muted-foreground/70 flex items-center justify-center"><MapPin className="w-4 h-4" /></div>
-          <div className="w-8 h-8 rounded-lg hover:bg-muted text-muted-foreground/70 flex items-center justify-center"><Sparkles className="w-4 h-4" /></div>
-          <div className="w-8 h-8 rounded-lg hover:bg-muted text-muted-foreground/70 flex items-center justify-center"><Utensils className="w-4 h-4" /></div>
-        </div>
-        
-        {/* Main Content */}
-        <div className="flex-1 p-5 bg-background flex flex-col gap-5 overflow-hidden">
-          {/* Stats Row */}
-          <div className="grid grid-cols-4 gap-3">
-            <div className="border border-border/50 rounded-xl p-3 bg-background">
-              <div className="text-[10px] font-semibold text-muted-foreground/70 mb-1">Total Reviews</div>
-              <div className="flex items-center gap-1.5 mb-1">
-                <span className="text-blue-500 font-bold text-sm">G</span>
-                <span className="text-lg font-extrabold text-foreground">4,782</span>
-              </div>
-              <div className="text-[10px] font-bold text-emerald-500">↑ 15.8%</div>
-            </div>
-            <div className="border border-border/50 rounded-xl p-3 bg-background">
-              <div className="text-[10px] font-semibold text-muted-foreground/70 mb-1">Average Rating</div>
-              <div className="flex items-center gap-1.5 mb-1">
-                <span className="text-amber-400 text-sm">★</span>
-                <span className="text-lg font-extrabold text-foreground">4.9</span>
-              </div>
-              <div className="text-[10px] font-bold text-emerald-500">↑ 0.1</div>
-            </div>
-            <div className="border border-border/50 rounded-xl p-3 bg-background">
-              <div className="text-[10px] font-semibold text-muted-foreground/70 mb-1">Reviews This Month</div>
-              <div className="flex items-center gap-1.5 mb-1">
-                <span className="text-blue-500 font-bold text-sm">📊</span>
-                <span className="text-lg font-extrabold text-foreground">1,246</span>
-              </div>
-              <div className="text-[10px] font-bold text-emerald-500">↑ 32.4%</div>
-            </div>
-            <div className="border border-border/50 rounded-xl p-3 bg-background">
-              <div className="text-[10px] font-semibold text-muted-foreground/70 mb-1">AI Replies Sent</div>
-              <div className="flex items-center gap-1.5 mb-1">
-                <span className="text-emerald-500 font-bold text-sm">✨</span>
-                <span className="text-lg font-extrabold text-foreground">352</span>
-              </div>
-              <div className="text-[10px] font-bold text-emerald-500">↑ 24.2%</div>
-            </div>
-          </div>
-          
-          {/* Charts Row */}
-          <div className="flex gap-5 flex-1 min-h-0">
-            {/* Main Chart */}
-            <div className="flex-1 border border-border/50 rounded-xl p-4 flex flex-col">
-              <div className="flex justify-between items-center mb-4">
-                <span className="text-xs font-bold text-foreground/90">Review Growth</span>
-                <div className="flex gap-2 text-[9px] font-semibold text-muted-foreground/70">
-                  <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-blue-500"/> Reviews</span>
-                  <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-500"/> Ratings</span>
-                </div>
-              </div>
-              <div className="flex-1 relative">
-                <svg viewBox="0 0 400 150" className="w-full h-full overflow-visible" preserveAspectRatio="none">
-                  <path d="M 0 30 H 400 M 0 75 H 400 M 0 120 H 400" stroke="#f1f5f9" strokeWidth="1" strokeDasharray="4" />
-                  <path d="M 0 100 C 50 100, 80 80, 120 90 C 180 110, 220 50, 280 60 C 340 70, 380 40, 400 30" fill="none" stroke="#3b82f6" strokeWidth="2.5" strokeLinecap="round" />
-                  <path d="M 0 120 C 60 110, 100 130, 150 100 C 200 70, 250 80, 300 50 C 350 20, 380 40, 400 45" fill="none" stroke="#10b981" strokeWidth="2.5" strokeLinecap="round" />
-                  
-                  {/* Tooltip Dot */}
-                  <circle cx="280" cy="60" r="4" fill="white" stroke="#3b82f6" strokeWidth="2" />
-                </svg>
-                {/* Tooltip Box */}
-                <div className="absolute top-4 left-1/2 ml-10 bg-background border border-border shadow-md rounded p-1.5 pointer-events-none">
-                  <div className="text-[8px] font-bold text-foreground/90">May 12, 2024</div>
-                  <div className="text-[8px] text-muted-foreground">Reviews: <span className="font-bold">48</span></div>
-                </div>
-                {/* X axis labels */}
-                <div className="absolute bottom-[-16px] w-full flex justify-between text-[8px] font-semibold text-muted-foreground/70 px-2">
-                  <span>Jan</span><span>Feb</span><span>Mar</span><span>Apr</span><span>May</span><span>Jun</span><span>Jul</span>
-                </div>
-              </div>
-            </div>
-            
-            {/* Side column widgets */}
-            <div className="w-40 flex flex-col gap-4">
-              <div className="flex-1 border border-border/50 rounded-xl p-3 flex flex-col justify-center">
-                <span className="text-[10px] font-bold text-foreground/90 mb-2">Top Source</span>
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full border-4 border-border/50 border-t-blue-500 border-r-blue-500 relative"></div>
-                  <div>
-                    <div className="text-[9px] font-semibold text-muted-foreground/70">QR Codes</div>
-                    <div className="text-sm font-extrabold text-foreground">1,856</div>
-                  </div>
-                </div>
-              </div>
-              <div className="flex-1 border border-border/50 rounded-xl p-3 flex flex-col justify-center relative overflow-hidden">
-                <span className="text-[10px] font-bold text-foreground/90 mb-2">AI Reply Rate</span>
-                <div className="text-2xl font-extrabold text-foreground mb-1">98%</div>
-                <div className="text-[9px] font-bold text-emerald-500">↑ 14.2%</div>
-                <svg className="absolute bottom-0 right-0 w-24 h-12 text-emerald-100" viewBox="0 0 100 50">
-                  <path d="M0 50 Q 25 30 50 40 T 100 10 L 100 50 Z" fill="currentColor" />
-                </svg>
-              </div>
-            </div>
-          </div>
-        </div>
+      <div className="absolute -bottom-1 -left-8 w-64 rounded-xl border border-border bg-background p-4 shadow-[0_25px_55px_-35px_hsl(var(--foreground)/0.65)]">
+        <div className="mb-3 flex items-center justify-between"><span className="text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">New review</span><span className="inline-flex gap-0.5 text-amber-500" aria-label="Five star review">{[1, 2, 3, 4, 5].map((star) => <Star key={star} className="h-3 w-3 fill-current" />)}</span></div>
+        <p className="text-sm leading-relaxed text-foreground/80">“The team made the whole experience feel easy.”</p>
+        <div className="mt-3 flex items-center gap-2 text-[11px] text-muted-foreground"><span className="flex h-6 w-6 items-center justify-center rounded-full bg-accent font-bold text-accent-foreground">AM</span> Alex M. · today</div>
       </div>
-    </div>
+      <div className="absolute -bottom-6 -right-3 flex items-center gap-3 rounded-xl border border-border bg-background px-4 py-3 shadow-[0_22px_55px_-35px_hsl(var(--foreground)/0.65)]"><div className="flex h-9 w-9 items-center justify-center rounded-lg bg-accent"><QrCode className="h-4 w-4 text-accent-foreground" /></div><div><p className="text-xs font-bold">Your review link</p><p className="mt-0.5 text-[10px] text-muted-foreground">Ready to share</p></div></div>
+    </motion.div>
   );
 }
 
 export function TrustedBySection() {
-  const logos = [
-    { name: "CAFE ESCURO", icon: <Coffee className="w-5 h-5" /> },
-    { name: "TechFlex", icon: <Hexagon className="w-5 h-5" /> },
-    { name: "SALON 247", icon: <Scissors className="w-5 h-5" /> },
-    { name: "HealthCare", icon: <HeartPulse className="w-5 h-5" /> },
-    { name: "HomeDecor", icon: <Home className="w-5 h-5" /> },
-    { name: "UrbanBite", icon: <Utensils className="w-5 h-5" /> },
-  ];
-
-  return (
-    <section className="border-y border-border/60 bg-background/70 py-10 backdrop-blur-sm">
-      <div className="container mx-auto max-w-7xl px-4 lg:px-8">
-        <p className="mb-6 text-center text-[11px] font-bold uppercase tracking-[0.16em] text-muted-foreground/70">
-          Trusted by 10,000+ businesses worldwide
-        </p>
-
-        <div className="flex flex-wrap justify-center items-center gap-x-12 gap-y-6 text-muted-foreground/70">
-          {logos.map((logo, i) => (
-            <div key={i} className="flex items-center gap-2 font-bold text-sm tracking-tight grayscale opacity-70 hover:grayscale-0 hover:opacity-100 hover:text-foreground/80 transition-all">
-              {logo.icon}
-              <span>{logo.name}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
+  return <section className="border-b border-border bg-secondary/35 py-7"><div className="container mx-auto flex flex-col items-center justify-between gap-4 px-4 sm:flex-row sm:px-6 lg:px-8"><p className="text-xs font-medium uppercase tracking-[0.16em] text-muted-foreground">Made for the places people return to</p><div className="flex flex-wrap justify-center gap-x-7 gap-y-2 text-sm font-semibold tracking-tight text-muted-foreground/70"><span>CAFÉS</span><span>CLINICS</span><span>SALONS</span><span>HOSPITALITY</span><span>RETAIL</span></div></div></section>;
 }

@@ -65,73 +65,62 @@
 :root {
   --app-font-sans: 'DM Sans', sans-serif;
   --app-font-display: 'Fraunces', serif;
-  --radius: 0.875rem;
+  --radius: 0.75rem;
 
-  /* Warm porcelain + deep storefront cobalt. The accent is a toasted
-     Google-yellow, used sparingly to make the review moment feel human. */
-  --background: 42 42% 97%;
-  --foreground: 224 34% 17%;
-
-  --card: 45 50% 99%;
-  --card-foreground: 224 34% 17%;
-  --card-border: 40 24% 87%;
-
-  --popover: 45 50% 99%;
-  --popover-foreground: 224 34% 17%;
-  --popover-border: 40 24% 87%;
-
-  --primary: 221 68% 39%;
-  --primary-foreground: 45 50% 99%;
-
-  --secondary: 40 27% 92%;
-  --secondary-foreground: 224 34% 17%;
-
-  --muted: 40 27% 93%;
-  --muted-foreground: 220 13% 43%;
-
-  --accent: 43 94% 89%;
-  --accent-foreground: 27 74% 26%;
-
-  --destructive: 5 72% 48%;
-  --destructive-foreground: 45 50% 99%;
-
-  --success: 145 42% 34%;
-  --success-foreground: 45 50% 99%;
-
-  --warning: 39 92% 47%;
-  --warning-foreground: 27 74% 20%;
-
-  --border: 40 24% 87%;
-  --input: 40 24% 82%;
-  --ring: 221 68% 39%;
+  /* Quiet paper, ink and one confident storefront blue. */
+  --background: 42 36% 96%;
+  --foreground: 220 30% 17%;
+  --card: 42 42% 99%;
+  --card-foreground: 220 30% 17%;
+  --card-border: 40 21% 86%;
+  --popover: 42 42% 99%;
+  --popover-foreground: 220 30% 17%;
+  --popover-border: 40 21% 86%;
+  --primary: 218 59% 35%;
+  --primary-foreground: 42 42% 99%;
+  --secondary: 40 24% 91%;
+  --secondary-foreground: 220 30% 17%;
+  --muted: 40 24% 92%;
+  --muted-foreground: 220 12% 45%;
+  --accent: 43 86% 87%;
+  --accent-foreground: 28 63% 25%;
+  --destructive: 5 67% 47%;
+  --destructive-foreground: 42 42% 99%;
+  --success: 148 35% 34%;
+  --success-foreground: 42 42% 99%;
+  --warning: 38 79% 45%;
+  --warning-foreground: 28 63% 20%;
+  --border: 40 21% 86%;
+  --input: 40 21% 80%;
+  --ring: 218 59% 35%;
 }
 
 .dark {
-  --background: 224 34% 10%;
-  --foreground: 42 42% 96%;
-  --card: 224 29% 15%;
-  --card-foreground: 42 42% 96%;
-  --card-border: 220 20% 25%;
-  --popover: 224 29% 15%;
-  --popover-foreground: 42 42% 96%;
-  --popover-border: 220 20% 25%;
-  --primary: 218 82% 70%;
-  --primary-foreground: 224 34% 10%;
-  --secondary: 222 23% 21%;
-  --secondary-foreground: 42 42% 96%;
-  --muted: 222 23% 21%;
-  --muted-foreground: 220 15% 69%;
-  --accent: 40 52% 25%;
-  --accent-foreground: 43 94% 89%;
-  --destructive: 5 78% 64%;
-  --destructive-foreground: 224 34% 10%;
-  --success: 145 43% 54%;
-  --success-foreground: 224 34% 10%;
-  --warning: 39 92% 62%;
-  --warning-foreground: 27 74% 14%;
-  --border: 220 20% 25%;
-  --input: 220 20% 31%;
-  --ring: 218 82% 70%;
+  --background: 220 27% 11%;
+  --foreground: 42 36% 95%;
+  --card: 220 25% 15%;
+  --card-foreground: 42 36% 95%;
+  --card-border: 220 17% 25%;
+  --popover: 220 25% 15%;
+  --popover-foreground: 42 36% 95%;
+  --popover-border: 220 17% 25%;
+  --primary: 213 64% 69%;
+  --primary-foreground: 220 27% 11%;
+  --secondary: 220 20% 20%;
+  --secondary-foreground: 42 36% 95%;
+  --muted: 220 20% 20%;
+  --muted-foreground: 220 13% 69%;
+  --accent: 39 43% 25%;
+  --accent-foreground: 43 86% 87%;
+  --destructive: 5 70% 63%;
+  --destructive-foreground: 220 27% 11%;
+  --success: 148 36% 53%;
+  --success-foreground: 220 27% 11%;
+  --warning: 38 79% 61%;
+  --warning-foreground: 28 63% 14%;
+  --border: 220 17% 25%;
+  --input: 220 17% 31%;
+  --ring: 213 64% 69%;
 }
 
 @layer base {
@@ -140,7 +129,7 @@
   }
   body {
     @apply bg-background text-foreground font-sans antialiased;
-    background-image: radial-gradient(circle at 10% 0%, hsl(var(--accent) / 0.25), transparent 28rem);
+    background-image: linear-gradient(180deg, hsl(var(--background)), hsl(var(--background)));
   }
 
   button,
