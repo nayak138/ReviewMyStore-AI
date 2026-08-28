@@ -46,6 +46,61 @@ const PENDING_RESERVATION = "PENDING" as const;
 const SUCCEEDED_RESERVATION = "SUCCEEDED" as const;
 const FAILED_RESERVATION = "FAILED" as const;
 
+/** Completed reservation rows are retained for 30 days for operational
+ * auditing, then removed by the bounded cleanup job. Pending rows are never
+ * eligible for retention cleanup. */
+export const COMPLETED_RESERVATION_RETENTION_DAYS = 30;
+export const COMPLETED_RESERVATION_CLEANUP_BATCH_SIZE = 500;
+const MILLISECONDS_PER_DAY = 24 * 60 * 60 * 1000;
+
+export async function cleanupCompletedGenerationReservations(
+  options: {
+    now?: Date;
+    batchSize?: number;
+  } = {},
+): Promise<number> {
+  const {
+    now = new Date(),
+    batchSize = COMPLETED_RESERVATION_CLEANUP_BATCH_SIZE,
+  } = options;
+
+  if (!Number.isInteger(batchSize) || batchSize <= 0) {
+    throw new RangeError(
+      "Reservation cleanup batch size must be a positive integer",
+    );
+  }
+
+  const boundedBatchSize = Math.min(
+    batchSize,
+    COMPLETED_RESERVATION_CLEANUP_BATCH_SIZE,
+  );
+  const cutoff = new Date(
+    now.getTime() - COMPLETED_RESERVATION_RETENTION_DAYS * MILLISECONDS_PER_DAY,
+  );
+
+  const deleted = await db.execute(sql`
+    WITH stale_reservations AS (
+      SELECT ${reviewGenerationReservationsTable.id} AS id
+      FROM ${reviewGenerationReservationsTable}
+      WHERE ${reviewGenerationReservationsTable.status} IN (
+        ${SUCCEEDED_RESERVATION},
+        ${FAILED_RESERVATION}
+      )
+        AND ${reviewGenerationReservationsTable.updatedAt} < ${cutoff}
+      ORDER BY ${reviewGenerationReservationsTable.updatedAt} ASC
+      LIMIT ${boundedBatchSize}
+      FOR UPDATE SKIP LOCKED
+    )
+    DELETE FROM ${reviewGenerationReservationsTable}
+    WHERE ${reviewGenerationReservationsTable.id} IN (
+      SELECT id FROM stale_reservations
+    )
+    RETURNING ${reviewGenerationReservationsTable.id}
+  `);
+
+  return deleted.rows.length;
+}
+
 /** Only ACTIVE, non-archived, non-deleted campaigns under a non-deleted
  * business are reachable — this is what keeps a DRAFT or paused campaign's
  * URL from working just because someone guesses the slugs. */
@@ -113,8 +168,8 @@ export async function getPublicReviewPage(
     business: {
       name: business.name,
       category: business.category,
-       logoUrl: publicAssetPath(business.logoUrl),
-       coverImageUrl: publicAssetPath(business.coverImageUrl),
+      logoUrl: publicAssetPath(business.logoUrl),
+      coverImageUrl: publicAssetPath(business.coverImageUrl),
       brandColor: business.brandColor,
       welcomeMessage: business.welcomeMessage,
       address: business.address,
@@ -295,7 +350,9 @@ export async function generatePublicReview(
   }
 }
 
-async function releaseGenerationReservation(reservationId: string): Promise<void> {
+async function releaseGenerationReservation(
+  reservationId: string,
+): Promise<void> {
   await db.transaction(async (tx) => {
     const [reservation] = await tx
       .update(reviewGenerationReservationsTable)

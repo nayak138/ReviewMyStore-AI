@@ -1,9 +1,7 @@
 import { index, pgTable, text, timestamp } from "drizzle-orm/pg-core";
 
 export type ReviewGenerationReservationStatus =
-  | "PENDING"
-  | "SUCCEEDED"
-  | "FAILED";
+  "PENDING" | "SUCCEEDED" | "FAILED";
 
 /**
  * One durable record per public AI generation attempt. The counters on the
@@ -39,6 +37,10 @@ export const reviewGenerationReservationsTable = pgTable(
       table.organizationId,
     ),
     index("review_generation_reservations_status_idx").on(table.status),
+    index("review_generation_reservations_cleanup_idx").on(
+      table.status,
+      table.updatedAt,
+    ),
   ],
 );
 

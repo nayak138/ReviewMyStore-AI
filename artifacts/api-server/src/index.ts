@@ -1,6 +1,10 @@
 import app from "./app";
 import { logger } from "./lib/logger";
 import { disposeAllRateLimiters } from "./middlewares/rateLimit";
+import {
+  cleanupCompletedGenerationReservations,
+  COMPLETED_RESERVATION_CLEANUP_BATCH_SIZE,
+} from "./services/publicReviewService";
 
 const rawPort = process.env["PORT"];
 
@@ -25,6 +29,35 @@ const server = app.listen(port, (err) => {
   logger.info({ port }, "Server listening");
 });
 
+const RESERVATION_CLEANUP_INTERVAL_MS = 24 * 60 * 60 * 1000;
+
+async function runReservationCleanup(): Promise<void> {
+  try {
+    const deletedCount = await cleanupCompletedGenerationReservations();
+    if (deletedCount > 0) {
+      logger.info(
+        {
+          deletedCount,
+          batchSize: COMPLETED_RESERVATION_CLEANUP_BATCH_SIZE,
+        },
+        "Cleaned up completed AI generation reservations",
+      );
+    }
+  } catch (err) {
+    logger.error(
+      { err },
+      "Failed to clean up completed AI generation reservations",
+    );
+  }
+}
+
+void runReservationCleanup();
+const reservationCleanupTimer = setInterval(
+  runReservationCleanup,
+  RESERVATION_CLEANUP_INTERVAL_MS,
+);
+reservationCleanupTimer.unref();
+
 /** How long to wait for in-flight requests to drain before forcing exit. */
 const SHUTDOWN_TIMEOUT_MS = 10_000;
 
@@ -33,6 +66,7 @@ let shuttingDown = false;
 function shutdown(signal: NodeJS.Signals): void {
   if (shuttingDown) return;
   shuttingDown = true;
+  clearInterval(reservationCleanupTimer);
 
   logger.info({ signal }, "Received shutdown signal; draining connections");
 
