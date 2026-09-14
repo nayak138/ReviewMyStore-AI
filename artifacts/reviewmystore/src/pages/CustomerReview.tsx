@@ -36,7 +36,7 @@ import { isRtlLanguage } from "@/lib/languages";
 import { getReviewPageStrings } from "@/lib/reviewPageTranslations";
 import { LanguageSelector } from "@/components/customer-review/LanguageSelector";
 import { PrivateFeedbackModal } from "@/components/customer-review/PrivateFeedbackModal";
-import { BrandIcon } from "@/components/brand-logo";
+import { BrandLogo } from "@/components/brand-logo";
 
 const socialAssetBase = `${import.meta.env.BASE_URL}social`;
 const WHATSAPP_ICON = `${socialAssetBase}/whatsapp.png`;
@@ -770,8 +770,8 @@ export default function CustomerReview() {
             aria-label="Visit 5-Star.AI"
             className="inline-flex items-center gap-2 rounded-md transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
-            <BrandIcon className="h-5 w-5 object-contain opacity-80" />
-            <span>Powered by 5-Star.AI</span>
+            <span>Powered by</span>
+            <BrandLogo className="h-6 w-auto max-w-[8rem] opacity-90" />
           </a>
         </footer>
       </main>

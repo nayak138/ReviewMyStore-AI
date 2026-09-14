@@ -24,6 +24,7 @@ import {
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { BrandLogo } from "@/components/brand-logo";
 
 const NAV_ITEMS = [
   { name: "Dashboard", icon: LayoutDashboard, href: "/dashboard", ready: true },
@@ -93,8 +94,7 @@ export function AppLayout({ children, title }: AppLayoutProps) {
       )}>
         <div className="h-16 flex items-center justify-between px-6 border-b border-border">
           <div className="flex items-center gap-2">
-            <img src={`${import.meta.env.BASE_URL}brand/logo-icon.png`} alt="Logo" className="w-6 h-6 rounded-md" />
-            <span className="font-semibold text-sm tracking-tight text-foreground">5-Star.AI</span>
+            <BrandLogo className="h-8 w-auto max-w-[10rem]" />
           </div>
           <button className="md:hidden text-muted-foreground hover:text-foreground" onClick={() => setMobileMenuOpen(false)}>
             <X className="w-5 h-5" />
