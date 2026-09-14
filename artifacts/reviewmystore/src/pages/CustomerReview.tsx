@@ -39,6 +39,7 @@ import { BrandIcon } from "@/components/brand-logo";
 const socialAssetBase = `${import.meta.env.BASE_URL}social`;
 const WHATSAPP_ICON = `${socialAssetBase}/whatsapp.png`;
 const INSTAGRAM_ICON = `${socialAssetBase}/instagram.png`;
+const landingPageHref = import.meta.env.BASE_URL || "/";
 
 const LOW_RATING_THRESHOLD = 3; // ratings below this trigger the private-feedback modal
 const TONE_OPTIONS = [
@@ -505,23 +506,25 @@ export default function CustomerReview() {
           </div>
         </header>
 
-        <div className="flex flex-wrap items-center gap-2 border-b border-white/10 bg-[#0a1430] px-4 py-4 sm:px-7">
+        <div className="border-b border-white/10 bg-[#0a1430] px-4 py-4 sm:px-7">
+          <div className="flex flex-wrap items-center justify-center gap-2 sm:justify-start">
           {business.phone && (
-            <Button asChild size="sm" className="h-11 rounded-full bg-[#1769ff] px-5 text-sm font-semibold shadow-[0_8px_18px_rgba(23,105,255,0.28)] hover:bg-[#0e59df]">
+            <Button asChild size="sm" className="h-11 min-w-0 flex-1 rounded-full bg-[#1769ff] px-3 text-xs font-semibold shadow-[0_8px_18px_rgba(23,105,255,0.28)] hover:bg-[#0e59df] sm:flex-none sm:px-5 sm:text-sm">
               <a href={`tel:${business.phone}`}><Phone className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" />Call</a>
             </Button>
           )}
           {(business.phone || business.address || business.website) && (
-            <Button variant="outline" size="sm" className="h-11 rounded-full border-white/15 bg-[#172548] px-4 text-sm font-semibold text-slate-100 hover:bg-[#21345f]" onClick={() => downloadVCard({ name: business.name, phone: business.phone, address: business.address, website: business.website })}>
+            <Button variant="outline" size="sm" className="h-11 min-w-0 flex-1 rounded-full border-white/15 bg-[#172548] px-3 text-xs font-semibold text-slate-100 hover:bg-[#21345f] sm:flex-none sm:px-4 sm:text-sm" onClick={() => downloadVCard({ name: business.name, phone: business.phone, address: business.address, website: business.website })}>
               <IdCard className="mr-1.5 h-4 w-4 text-[#5b83ff]" aria-hidden="true" />Save contact
             </Button>
           )}
           {directionsHref && (
-            <Button asChild variant="outline" size="sm" className="h-11 rounded-full border-white/15 bg-[#172548] px-4 text-sm font-semibold text-slate-100 hover:bg-[#21345f]">
+            <Button asChild variant="outline" size="sm" className="h-11 min-w-0 flex-1 rounded-full border-white/15 bg-[#172548] px-3 text-xs font-semibold text-slate-100 hover:bg-[#21345f] sm:flex-none sm:px-4 sm:text-sm">
               <a href={directionsHref} target="_blank" rel="noopener noreferrer"><MapPin className="mr-1.5 h-4 w-4 text-[#19d7a5]" aria-hidden="true" />Directions</a>
             </Button>
           )}
-          <div className="ml-auto flex items-center gap-2">
+          </div>
+          <div className="mt-3 flex w-full items-center justify-center gap-2">
             {socialLinks.filter((link) => !["call"].includes(link.key)).map((link) => (
               <a
                 key={link.key}
@@ -530,7 +533,7 @@ export default function CustomerReview() {
                 rel="noopener noreferrer"
                 aria-label={link.label}
                 title={link.label}
-                className="flex h-11 w-11 items-center justify-center overflow-hidden rounded-xl border border-white/15 bg-[#172548] transition-transform hover:-translate-y-0.5 hover:bg-[#21345f]"
+                className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-white/15 bg-[#172548] transition-transform hover:-translate-y-0.5 hover:bg-[#21345f]"
               >
                 {link.kind === "image" ? <img src={link.image} alt="" className="h-full w-full object-cover" /> : <link.icon className="h-5 w-5 text-slate-200" aria-hidden="true" />}
               </a>
@@ -686,9 +689,15 @@ export default function CustomerReview() {
             </div>
           )}
         </section>
-        <footer className="flex items-center justify-center gap-2 border-t border-white/10 px-4 py-5 text-xs text-slate-400">
-          <BrandIcon className="h-5 w-5 object-contain opacity-80" />
-          <span>Powered by 5-Star.AI</span>
+        <footer className="flex items-center justify-center border-t border-white/10 px-4 py-5 text-xs text-slate-400">
+          <a
+            href={landingPageHref}
+            aria-label="Visit 5-Star.AI"
+            className="inline-flex items-center gap-2 rounded-md transition-colors hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
+          >
+            <BrandIcon className="h-5 w-5 object-contain opacity-80" />
+            <span>Powered by 5-Star.AI</span>
+          </a>
         </footer>
       </main>
     </div>
