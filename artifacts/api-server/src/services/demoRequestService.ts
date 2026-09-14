@@ -1,6 +1,7 @@
 import { desc, eq } from "drizzle-orm";
 import { db, demoRequestsTable } from "@workspace/db";
 import { sendDemoRequestAlert } from "./notificationService";
+import { appendLeadToGoogleSheet } from "./googleSheetsService";
 
 export async function createDemoRequest(input: {
   name: string;
@@ -36,6 +37,16 @@ export async function createDemoRequest(input: {
     locations: input.locations?.trim() || null,
     message: input.message?.trim() || null,
     createdAt: row.createdAt.toISOString(),
+  });
+  void appendLeadToGoogleSheet({
+    id: row.id,
+    createdAt: row.createdAt.toISOString(),
+    name: input.name.trim(),
+    leadType: input.leadType,
+    company: input.company?.trim() || null,
+    phone: input.phone?.trim() || null,
+    email: input.email?.trim() || null,
+    website: null,
   });
 
   return { id: row.id };
