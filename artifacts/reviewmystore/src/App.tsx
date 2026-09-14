@@ -103,7 +103,7 @@ const clerkAppearance = {
     formFieldSuccessText: "!text-emerald-600",
     alertText: "!text-foreground",
     logoBox: "mb-2",
-    logoImage: "h-8 w-auto max-w-[11rem]",
+    logoImage: "!h-11 !w-auto !max-w-[14rem]",
     socialButtonsBlockButton: "border-border hover:bg-accent transition-colors",
     formButtonPrimary: "bg-primary !text-white hover:bg-primary/90 transition-colors shadow-sm",
     formFieldInput: "bg-card border-border text-foreground focus:ring-2 focus:ring-primary focus:border-transparent transition-all",
@@ -126,7 +126,7 @@ function AuthLayout({ children }: { children: ReactNode }) {
         <div className="absolute -right-24 -top-24 h-72 w-72 rounded-full border-[36px] border-primary-foreground/10" />
         <div className="absolute -bottom-28 -left-20 h-80 w-80 rounded-full border-[48px] border-primary-foreground/10" />
         <div className="relative z-10 flex items-center gap-3">
-          <img src={BRAND_LOGO_DARK} alt="5-Star.AI" className="h-10 w-auto max-w-[12rem] object-contain" />
+          <img src={BRAND_LOGO_LIGHT} alt="5-Star.AI" className="h-14 w-auto max-w-[14rem] object-contain" />
         </div>
         <div className="relative z-10 max-w-md pb-8">
           <div className="mb-8 flex gap-2" aria-label="Google rating">
@@ -149,7 +149,7 @@ function AuthLayout({ children }: { children: ReactNode }) {
       </aside>
       <main className="flex min-h-[100dvh] flex-col items-center justify-center px-4 py-10 sm:px-8">
         <div className="mb-8 flex items-center gap-2 lg:hidden">
-          <BrandLogo className="h-8 w-auto max-w-[10rem]" />
+          <BrandLogo className="h-10 w-auto max-w-[12rem]" />
         </div>
         {children}
       </main>
