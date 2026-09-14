@@ -24,7 +24,7 @@ export const blogPosts: BlogPost[] = [
     category: "Local SEO",
     date: "July 28, 2026",
     readTime: "6 min read",
-    author: { name: "The ReviewMyStore Team", role: "Editorial" },
+    author: { name: "The 5-Star.AI Team", role: "Editorial" },
     sections: [
       {
         paragraphs: [
@@ -43,7 +43,7 @@ export const blogPosts: BlogPost[] = [
         heading: "The asking problem",
         paragraphs: [
           "Most business owners know all this. The hard part is asking. Staff feel awkward, customers forget by the time they get home, and writing a review from scratch is enough friction that most people never do it.",
-          "That's the problem we built ReviewMyStore to solve: a QR code or NFC tap at the counter, an AI-drafted review the customer can edit in seconds, and one tap to post on Google. No awkward asking, no friction, no forgetting.",
+          "That's the problem we built 5-Star.AI to solve: a QR code or NFC tap at the counter, an AI-drafted review the customer can edit in seconds, and one tap to post on Google. No awkward asking, no friction, no forgetting.",
         ],
       },
       {
@@ -66,7 +66,7 @@ export const blogPosts: BlogPost[] = [
     category: "Best Practices",
     date: "July 14, 2026",
     readTime: "5 min read",
-    author: { name: "The ReviewMyStore Team", role: "Editorial" },
+    author: { name: "The 5-Star.AI Team", role: "Editorial" },
     sections: [
       {
         paragraphs: [
@@ -78,7 +78,7 @@ export const blogPosts: BlogPost[] = [
         heading: "Reference something specific",
         paragraphs: [
           "A reply that could be pasted under any review reads as automated. The best AI-assisted replies quote or reference a detail from the review itself: the dish they ordered, the staff member they mentioned, the problem they had.",
-          "ReviewMyStore's reply suggestions are generated from the review content, so every draft already includes that specificity — you just review and send.",
+          "5-Star.AI's reply suggestions are generated from the review content, so every draft already includes that specificity — you just review and send.",
         ],
       },
       {
@@ -107,11 +107,11 @@ export const blogPosts: BlogPost[] = [
     category: "Product",
     date: "June 30, 2026",
     readTime: "4 min read",
-    author: { name: "The ReviewMyStore Team", role: "Editorial" },
+    author: { name: "The 5-Star.AI Team", role: "Editorial" },
     sections: [
       {
         paragraphs: [
-          "Every ReviewMyStore campaign can be shared via QR code, NFC tap, or a short link. Businesses often ask which converts best. Based on what we've seen across placements, the honest answer is: it depends on where the customer encounters it.",
+          "Every 5-Star.AI campaign can be shared via QR code, NFC tap, or a short link. Businesses often ask which converts best. Based on what we've seen across placements, the honest answer is: it depends on where the customer encounters it.",
         ],
       },
       {
@@ -134,7 +134,7 @@ export const blogPosts: BlogPost[] = [
       {
         heading: "Our recommendation",
         paragraphs: [
-          "Use NFC stands at the counter where staff can prompt a tap, and QR codes everywhere else — receipts, signage, and follow-up emails. ReviewMyStore tracks scans and taps per campaign, so you can see exactly which placements drive reviews and double down.",
+          "Use NFC stands at the counter where staff can prompt a tap, and QR codes everywhere else — receipts, signage, and follow-up emails. 5-Star.AI tracks scans and taps per campaign, so you can see exactly which placements drive reviews and double down.",
         ],
       },
     ],
@@ -147,7 +147,7 @@ export const blogPosts: BlogPost[] = [
     category: "Growth",
     date: "June 12, 2026",
     readTime: "7 min read",
-    author: { name: "The ReviewMyStore Team", role: "Editorial" },
+    author: { name: "The 5-Star.AI Team", role: "Editorial" },
     sections: [
       {
         paragraphs: [

@@ -696,7 +696,7 @@ export default function Reviews() {
            </div>
            <h2 className="text-3xl md:text-4xl font-semibold tracking-tight text-foreground">Connect your Google Business</h2>
            <p className="text-muted-foreground max-w-lg mx-auto text-lg leading-relaxed">
-             Sync your Google reviews directly to ReviewMyStore. Reply to customers, generate thoughtful AI responses, and manage your reputation safely.
+             Sync your Google reviews directly to 5-Star.AI. Reply to customers, generate thoughtful AI responses, and manage your reputation safely.
            </p>
            <Button 
              size="lg" 
@@ -947,7 +947,7 @@ export default function Reviews() {
               <AlertDialogTitle>Disconnect this Google Business store?</AlertDialogTitle>
               <AlertDialogDescription>
                 Review syncing and Google reply actions will stop immediately. Your
-                imported review history stays in ReviewMyStore, and you can connect
+                imported review history stays in 5-Star.AI, and you can connect
                 this or a different store again whenever you’re ready.
               </AlertDialogDescription>
             </AlertDialogHeader>

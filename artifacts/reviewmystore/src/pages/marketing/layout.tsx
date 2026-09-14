@@ -1,37 +1,16 @@
 import { ReactNode, useEffect, useState } from "react";
 import { Link, useLocation } from "wouter";
+import { ArrowUpRight, Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { BookDemoDialog } from "@/components/book-demo-dialog";
 import { BrandLogo } from "@/components/brand-logo";
-import { Menu, Moon, Sun, X } from "lucide-react";
-import { useTheme } from "next-themes";
-
-function ThemeToggle() {
-  const { resolvedTheme, setTheme } = useTheme();
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => setMounted(true), []);
-  if (!mounted) return <div className="h-9 w-9" aria-hidden="true" />;
-
-  return (
-    <Button
-      variant="ghost"
-      size="icon"
-      data-testid="button-toggle-theme"
-      onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
-      className="h-9 w-9 rounded-lg text-muted-foreground hover:bg-secondary hover:text-foreground"
-      aria-label="Toggle theme"
-    >
-      {resolvedTheme === "dark" ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
-    </Button>
-  );
-}
 
 function scrollToId(id: string, attempts = 20) {
   const el = document.getElementById(id);
   if (el) {
-    el.scrollIntoView({ behavior: "smooth" });
+    el.scrollIntoView({ behavior: "smooth", block: "start" });
   } else if (attempts > 0) {
-    setTimeout(() => scrollToId(id, attempts - 1), 50);
+    window.setTimeout(() => scrollToId(id, attempts - 1), 50);
   }
 }
 
@@ -41,10 +20,15 @@ export function MarketingLayout({ children }: { children: ReactNode }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
-    const handleScroll = () => setIsScrolled(window.scrollY > 20);
-    window.addEventListener("scroll", handleScroll);
+    const handleScroll = () => setIsScrolled(window.scrollY > 16);
+    handleScroll();
+    window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  useEffect(() => {
+    setMobileMenuOpen(false);
+  }, [location]);
 
   const goToSection = (e: React.MouseEvent<HTMLAnchorElement>, id: string) => {
     e.preventDefault();
@@ -53,101 +37,101 @@ export function MarketingLayout({ children }: { children: ReactNode }) {
   };
 
   const navLinks = [
-    { label: "Features", id: "features" },
-    { label: "Solutions", id: "solutions" },
-    { label: "Pricing", id: "pricing" },
+    { label: "Approach", id: "approach" },
+    { label: "How it works", id: "how-it-works" },
+    { label: "For agencies", id: "agencies" },
     { label: "Resources", href: "/resources" },
-    { label: "Company", href: "/about" },
   ];
 
   return (
-    <div className="min-h-[100dvh] flex flex-col bg-background text-foreground font-sans">
-      <header className="fixed inset-x-0 top-0 z-50 border-b border-border/70">
-        <div className={`mx-auto flex h-[4.5rem] max-w-7xl items-center justify-between px-4 transition-colors duration-300 sm:px-6 lg:px-8 ${isScrolled ? "bg-background/95 backdrop-blur-xl" : "bg-background/85 backdrop-blur-md"}`}>
+    <div className="min-h-[100dvh] bg-background text-foreground font-sans">
+      <header className={`fixed inset-x-0 top-0 z-50 transition-all duration-300 ${isScrolled ? "border-b border-border/80 bg-background/90 backdrop-blur-xl" : "bg-background/70 backdrop-blur-sm"}`}>
+        <div className="mx-auto flex h-[4.75rem] max-w-[80rem] items-center justify-between px-5 sm:px-8 lg:px-10">
           <Link href="/" data-testid="link-home" className="flex shrink-0 items-center">
-            <BrandLogo className="h-7 w-auto" />
+            <BrandLogo className="h-9 w-auto max-w-[11.5rem] object-contain sm:h-10" />
           </Link>
 
-          <nav className="hidden lg:flex items-center gap-7" aria-label="Main navigation">
-            {navLinks.map((link) => {
-              const content = <span className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">{link.label}</span>;
-              return link.href ? (
-                <Link key={link.label} href={link.href} data-testid={`link-nav-${link.label.toLowerCase()}`} className="cursor-pointer">{content}</Link>
+          <nav className="hidden items-center gap-8 lg:flex" aria-label="Main navigation">
+            {navLinks.map((link) =>
+              link.href ? (
+                <Link key={link.label} href={link.href} data-testid={`link-nav-${link.label.toLowerCase().replaceAll(" ", "-")}`} className="text-sm font-medium text-foreground/65 transition-colors hover:text-foreground">
+                  {link.label}
+                </Link>
               ) : (
-                <a key={link.label} href={`#${link.id}`} data-testid={`link-nav-${link.label.toLowerCase()}`} onClick={(e) => goToSection(e, link.id!)} className="cursor-pointer">{content}</a>
-              );
-            })}
+                <a key={link.label} href={`#${link.id}`} data-testid={`link-nav-${link.label.toLowerCase().replaceAll(" ", "-")}`} onClick={(e) => goToSection(e, link.id!)} className="text-sm font-medium text-foreground/65 transition-colors hover:text-foreground">
+                  {link.label}
+                </a>
+              ),
+            )}
           </nav>
 
-          <div className="hidden lg:flex items-center gap-4">
-            <ThemeToggle />
-            <Link href="/sign-in" data-testid="link-login" className="px-1 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">Log in</Link>
-            <Button data-testid="button-start-free" onClick={() => setLocation("/sign-up")} className="h-10 rounded-lg bg-primary px-5 font-semibold text-primary-foreground shadow-none hover:bg-primary/90">Start Free</Button>
+          <div className="hidden items-center gap-3 lg:flex">
+            <Link href="/about" className="px-2 text-sm font-medium text-foreground/65 transition-colors hover:text-foreground">About</Link>
+            <BookDemoDialog>
+              <Button data-testid="button-header-book-demo" className="h-10 rounded-full bg-foreground px-5 text-sm font-semibold text-background shadow-[0_7px_18px_-11px_hsl(var(--foreground)/0.7)] hover:bg-foreground/90">
+                Book a strategy call <ArrowUpRight className="ml-1.5 h-4 w-4" />
+              </Button>
+            </BookDemoDialog>
           </div>
 
-          <div className="flex items-center gap-2 lg:hidden">
-            <ThemeToggle />
-            <Button variant="ghost" size="icon" data-testid="button-mobile-menu" onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="text-muted-foreground" aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}>
-              {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-            </Button>
-          </div>
+          <Button variant="ghost" size="icon" data-testid="button-mobile-menu" onClick={() => setMobileMenuOpen((open) => !open)} className="text-foreground lg:hidden" aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}>
+            {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          </Button>
         </div>
       </header>
 
       {mobileMenuOpen && (
-        <div className="fixed inset-0 z-40 border-b border-border bg-background pt-[4.5rem] lg:hidden">
-          <nav className="mx-auto flex max-w-7xl flex-col gap-1 p-5" aria-label="Mobile navigation">
-            {navLinks.map((link) => {
-              const content = <span className="py-3 text-base font-medium text-foreground/90">{link.label}</span>;
-              return link.href ? (
-                <Link key={link.label} href={link.href} onClick={() => setMobileMenuOpen(false)} className="border-b border-border/60">{content}</Link>
+        <div className="fixed inset-0 z-40 bg-background/98 pt-[4.75rem] lg:hidden">
+          <nav className="mx-auto flex max-w-2xl flex-col px-5 py-6 sm:px-8" aria-label="Mobile navigation">
+            {navLinks.map((link) =>
+              link.href ? (
+                <Link key={link.label} href={link.href} className="border-b border-border py-4 text-lg font-medium">{link.label}</Link>
               ) : (
-                <a key={link.label} href={`#${link.id}`} onClick={(e) => { goToSection(e, link.id!); setMobileMenuOpen(false); }} className="border-b border-border/60">{content}</a>
-              );
-            })}
-            <div className="flex flex-col gap-3 pt-7">
-              <Button variant="outline" data-testid="button-mobile-login" onClick={() => { setMobileMenuOpen(false); setLocation("/sign-in"); }} className="h-11 w-full rounded-lg text-sm font-semibold">Log in</Button>
-              <Button data-testid="button-mobile-start-free" onClick={() => { setMobileMenuOpen(false); setLocation("/sign-up"); }} className="h-11 w-full rounded-lg text-sm font-semibold">Start Free</Button>
-            </div>
+                <a key={link.label} href={`#${link.id}`} onClick={(e) => goToSection(e, link.id!)} className="border-b border-border py-4 text-lg font-medium">{link.label}</a>
+              ),
+            )}
+            <Link href="/about" className="border-b border-border py-4 text-lg font-medium">About</Link>
+            <BookDemoDialog>
+              <Button data-testid="button-mobile-book-demo" className="mt-7 h-12 w-full rounded-full bg-foreground text-background hover:bg-foreground/90">
+                Book a strategy call <ArrowUpRight className="ml-2 h-4 w-4" />
+              </Button>
+            </BookDemoDialog>
           </nav>
         </div>
       )}
 
-      <main className="w-full flex-1 overflow-hidden pt-[4.5rem]">{children}</main>
+      <main className="w-full overflow-hidden pt-[4.75rem]">{children}</main>
 
-      <footer className="border-t border-border bg-secondary/45 pt-20 pb-8" id="about">
-        <div className="container mx-auto px-4 lg:px-8">
-          <div className="mb-16 grid grid-cols-2 gap-x-6 gap-y-12 md:grid-cols-6">
-            <div className="col-span-2">
-              <BrandLogo className="mb-4 h-8 w-auto" />
-              <p className="mb-6 max-w-sm text-sm leading-relaxed text-muted-foreground">A quieter way to turn good customer experiences into more Google Reviews.</p>
-              <div className="flex items-center gap-4 text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground/60"><span>Local</span><span>Trusted</span><span>Useful</span></div>
+      <footer className="border-t border-border bg-secondary/35" id="about">
+        <div className="mx-auto max-w-[80rem] px-5 py-16 sm:px-8 lg:px-10 lg:py-20">
+          <div className="grid gap-12 md:grid-cols-[1.35fr_0.65fr_0.65fr_0.65fr]">
+            <div>
+              <BrandLogo className="mb-5 h-10 w-auto max-w-[12rem] object-contain" />
+              <p className="max-w-xs text-sm leading-relaxed text-muted-foreground">A hands-on reputation partner for local businesses and the agencies that help them grow.</p>
+              <BookDemoDialog>
+                <button type="button" className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-foreground underline decoration-primary/50 underline-offset-4 transition-colors hover:text-primary">Talk with our team <ArrowUpRight className="h-4 w-4" /></button>
+              </BookDemoDialog>
             </div>
-            <FooterColumn title="Product" links={[
-              { label: "Features", href: "#features", anchor: "features" },
-              { label: "AI Auto Reply", href: "#features", anchor: "features" },
-              { label: "Review Management", href: "#features", anchor: "features" },
-              { label: "QR & NFC", href: "#features", anchor: "features" },
-              { label: "Pricing", href: "#pricing", anchor: "pricing" },
-            ]} goToSection={goToSection} />
-            <FooterColumn title="Solutions" links={[
-              { label: "By Industry", href: "#solutions", anchor: "solutions" },
-              { label: "For Small Business", href: "#solutions", anchor: "solutions" },
-              { label: "For Multi-location", href: "#solutions", anchor: "solutions" },
-              { label: "Agencies", href: "#solutions", anchor: "solutions" },
+            <FooterColumn title="Explore" links={[
+              { label: "Approach", href: "#approach", anchor: "approach" },
+              { label: "How it works", href: "#how-it-works", anchor: "how-it-works" },
+              { label: "For agencies", href: "#agencies", anchor: "agencies" },
+              { label: "Questions", href: "#faq", anchor: "faq" },
             ]} goToSection={goToSection} />
             <FooterColumn title="Resources" links={[
-              { label: "Blog", href: "/blog" }, { label: "Guides", href: "/resources" },
-              { label: "Help Center", href: "#faq", anchor: "faq" }, { label: "Templates", href: "/resources" },
+              { label: "Resource library", href: "/resources" },
+              { label: "Blog", href: "/blog" },
+              { label: "About 5-Star.AI", href: "/about" },
             ]} goToSection={goToSection} />
-            <FooterColumn title="Company" links={[
-              { label: "About Us", href: "/about" }, { label: "Contact Us", href: "mailto:contact@reviewmystore.ai" },
-              { label: "Privacy", href: "/privacy" }, { label: "Terms", href: "/terms" },
+            <FooterColumn title="Legal" links={[
+              { label: "Privacy", href: "/privacy" },
+              { label: "Terms", href: "/terms" },
+               { label: "Contact", href: "mailto:hello@5-star.ai" },
             ]} goToSection={goToSection} />
           </div>
-          <div className="flex flex-col items-center justify-between gap-4 border-t border-border pt-8 text-sm font-medium text-muted-foreground md:flex-row">
-            <p>© {new Date().getFullYear()} ReviewMyStore.ai. All rights reserved.</p>
-            <p>Built for businesses that care about the details.</p>
+          <div className="mt-16 flex flex-col gap-3 border-t border-border pt-6 text-xs font-medium text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
+            <p>© {new Date().getFullYear()} 5-Star.AI. All rights reserved.</p>
+            <p>Good work deserves to be found.</p>
           </div>
         </div>
       </footer>
@@ -162,13 +146,15 @@ function FooterColumn({ title, links, goToSection }: {
 }) {
   return (
     <div>
-      <h4 className="mb-4 text-sm font-bold text-foreground">{title}</h4>
-      <ul className="space-y-3 text-sm font-medium text-muted-foreground">
-        {links.map((link) => <li key={link.label}>
-          {link.anchor ? <a href={link.href} onClick={(e) => goToSection(e, link.anchor!)} className="transition-colors hover:text-primary">{link.label}</a> :
-            link.href.startsWith("mailto:") ? <a href={link.href} className="transition-colors hover:text-primary">{link.label}</a> :
-            <Link href={link.href} className="transition-colors hover:text-primary">{link.label}</Link>}
-        </li>)}
+      <h4 className="mb-5 text-[11px] font-bold uppercase tracking-[0.18em] text-foreground/50">{title}</h4>
+      <ul className="space-y-3 text-sm text-foreground/75">
+        {links.map((link) => (
+          <li key={link.label}>
+            {link.anchor ? <a href={link.href} onClick={(e) => goToSection(e, link.anchor!)} className="transition-colors hover:text-primary">{link.label}</a> :
+              link.href.startsWith("mailto:") ? <a href={link.href} className="transition-colors hover:text-primary">{link.label}</a> :
+                <Link href={link.href} className="transition-colors hover:text-primary">{link.label}</Link>}
+          </li>
+        ))}
       </ul>
     </div>
   );

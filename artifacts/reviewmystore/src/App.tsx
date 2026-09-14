@@ -1,5 +1,5 @@
 import { Switch, Route, Redirect, useLocation, Router as WouterRouter } from 'wouter';
-import { ClerkProvider, SignIn, SignUp, Show, useClerk } from '@clerk/react';
+import { ClerkProvider, SignIn, Show, useClerk } from '@clerk/react';
 import { publishableKeyFromHost } from '@clerk/react/internal';
 import { shadcn } from '@clerk/themes';
 import { useEffect, useRef, useState, lazy, Suspense, type ReactNode } from 'react';
@@ -85,8 +85,8 @@ const clerkAppearance = {
     cardBox: "bg-card rounded-[1.25rem] w-[440px] max-w-full overflow-hidden border border-border shadow-[0_20px_70px_-28px_hsl(224_34%_17%_/_0.38)]",
     card: "!shadow-none !border-0 !bg-transparent !rounded-none",
     footer: "!shadow-none !border-0 !bg-transparent !rounded-none",
-    headerTitle: "!text-foreground font-semibold",
-    headerSubtitle: "!text-muted-foreground",
+    headerTitle: "!hidden",
+    headerSubtitle: "!hidden",
     socialButtonsBlockButtonText: "!text-foreground font-medium",
     formFieldLabel: "!text-foreground font-medium",
     footerActionLink: "!text-primary hover:!text-primary/90 font-medium",
@@ -120,7 +120,7 @@ function AuthLayout({ children }: { children: ReactNode }) {
         <div className="absolute -bottom-28 -left-20 h-80 w-80 rounded-full border-[48px] border-primary-foreground/10" />
         <div className="relative z-10 flex items-center gap-3">
           <BrandIcon className="h-10 w-10 rounded-xl bg-primary-foreground/10 p-1" />
-          <span className="font-display text-xl font-semibold tracking-tight">ReviewMyStore.AI</span>
+          <span className="font-display text-xl font-semibold tracking-tight">5-Star.AI</span>
         </div>
         <div className="relative z-10 max-w-md pb-8">
           <div className="mb-8 flex gap-2" aria-label="Google rating">
@@ -144,7 +144,7 @@ function AuthLayout({ children }: { children: ReactNode }) {
       <main className="flex min-h-[100dvh] flex-col items-center justify-center px-4 py-10 sm:px-8">
         <div className="mb-8 flex items-center gap-2 lg:hidden">
           <BrandIcon className="h-9 w-9 rounded-lg" />
-          <span className="font-display text-lg font-semibold tracking-tight">ReviewMyStore.AI</span>
+          <span className="font-display text-lg font-semibold tracking-tight">5-Star.AI</span>
         </div>
         {children}
       </main>
@@ -155,7 +155,15 @@ function AuthLayout({ children }: { children: ReactNode }) {
 function SignInPage() {
   return (
     <AuthLayout>
-      <SignIn routing="path" path={`${basePath}/sign-in`} signUpUrl={`${basePath}/sign-up`} />
+      <div className="w-full max-w-[440px]">
+        <h1 className="mb-4 text-center font-display text-2xl font-semibold tracking-tight text-foreground">
+          Sign in to 5-Star.AI
+        </h1>
+        <p className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-center text-sm font-semibold leading-relaxed text-red-700 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-300">
+          Agency Login only — contact the Admin at hello@5-star.ai
+        </p>
+        <SignIn routing="path" path={`${basePath}/sign-in`} />
+      </div>
     </AuthLayout>
   );
 }
@@ -163,7 +171,24 @@ function SignInPage() {
 function SignUpPage() {
   return (
     <AuthLayout>
-      <SignUp routing="path" path={`${basePath}/sign-up`} signInUrl={`${basePath}/sign-in`} />
+      <div className="w-full max-w-[440px] rounded-[1.25rem] border border-red-200 bg-red-50 p-8 text-center shadow-sm dark:border-red-900/60 dark:bg-red-950/30">
+        <h1 className="font-display text-3xl font-semibold tracking-tight text-red-800 dark:text-red-200">
+          Agency access only
+        </h1>
+        <p className="mt-3 text-sm leading-relaxed text-red-700 dark:text-red-300">
+          New accounts are created by the agency. Contact the Admin at{" "}
+          <a className="font-bold underline underline-offset-4" href="mailto:hello@5-star.ai">
+            hello@5-star.ai
+          </a>
+          .
+        </p>
+        <a
+          href={`${basePath}/sign-in`}
+          className="mt-6 inline-flex h-11 items-center justify-center rounded-lg bg-red-700 px-5 text-sm font-semibold text-white transition-colors hover:bg-red-800"
+        >
+          Agency login
+        </a>
+      </div>
     </AuthLayout>
   );
 }
@@ -275,18 +300,17 @@ function ClerkProviderWithRoutes() {
       proxyUrl={clerkProxyUrl}
       appearance={clerkAppearance}
       signInUrl={`${basePath}/sign-in`}
-      signUpUrl={`${basePath}/sign-up`}
       localization={{
         signIn: {
           start: {
-            title: "Sign in to ReviewMyStore",
-            subtitle: "Manage your reputation",
+            title: "Sign in to 5-Star.AI",
+            subtitle: "Agency access only",
           },
         },
         signUp: {
           start: {
-            title: "Start collecting reviews",
-            subtitle: "Set up your workspace",
+            title: "Agency access only",
+            subtitle: "Contact the Admin to request access",
           },
         },
       }}

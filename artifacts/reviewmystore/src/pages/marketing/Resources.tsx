@@ -1,8 +1,9 @@
-import { Link, useLocation } from "wouter";
+import { Link } from "wouter";
 import { MarketingLayout } from "./layout";
 import { usePageMeta } from "./use-page-meta";
 import { RESOURCES_META } from "./route-meta";
 import { Button } from "@/components/ui/button";
+import { BookDemoDialog } from "@/components/book-demo-dialog";
 import {
   Rocket,
   QrCode,
@@ -92,7 +93,6 @@ const guides = [
 ];
 
 export default function Resources() {
-  const [, setLocation] = useLocation();
   usePageMeta(RESOURCES_META.title, RESOURCES_META.description, "/resources");
 
   return (
@@ -175,7 +175,7 @@ export default function Resources() {
                 </span>
               </div>
             </Link>
-            <a href="mailto:contact@reviewmystore.ai" className="block group cursor-pointer">
+             <a href="mailto:hello@5-star.ai" className="block group cursor-pointer">
               <div className="h-full p-6 rounded-2xl border border-border bg-card hover:border-primary/40 hover:shadow-md transition-all">
                 <Mail className="w-6 h-6 text-primary mb-4" />
                 <h3 className="font-semibold text-foreground mb-1 group-hover:text-primary transition-colors">
@@ -199,13 +199,11 @@ export default function Resources() {
             <p className="text-muted-foreground max-w-xl mx-auto mb-8">
               Free during early access — set up your first campaign in minutes.
             </p>
-            <Button
-              size="lg"
-              onClick={() => setLocation("/sign-up")}
-              className="h-12 px-8 text-base shadow-sm hover:shadow transition-all"
-            >
-              Start Free
-            </Button>
+             <BookDemoDialog>
+               <Button size="lg" className="h-12 px-8 text-base shadow-sm transition-all hover:shadow">
+                 Start the 7-day trial
+               </Button>
+             </BookDemoDialog>
           </div>
         </div>
       </section>

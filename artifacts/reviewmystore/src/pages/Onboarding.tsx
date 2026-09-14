@@ -208,14 +208,14 @@ export default function Onboarding() {
         <div className="relative z-10">
           <div className="flex items-center gap-2 mb-16">
             <img src={`${import.meta.env.BASE_URL}brand/logo-icon.png`} alt="Logo" className="w-8 h-8 rounded-lg" />
-            <span className="font-bold text-xl tracking-tight text-foreground">ReviewMyStore</span>
+            <span className="font-bold text-xl tracking-tight text-foreground">5-Star.AI</span>
           </div>
 
           <h1 className="text-4xl font-bold tracking-tight text-foreground mb-6">
             Let's set up your first location.
           </h1>
           <p className="text-lg text-muted-foreground max-w-md">
-            ReviewMyStore works best when we know a little bit about your business. You can add more locations later from your dashboard.
+            5-Star.AI works best when we know a little bit about your business. You can add more locations later from your dashboard.
           </p>
 
           <div className="mt-16 space-y-6">
@@ -255,7 +255,7 @@ export default function Onboarding() {
         <div className="max-w-xl w-full mx-auto">
           <div className="lg:hidden flex items-center gap-2 mb-8">
             <img src={`${import.meta.env.BASE_URL}brand/logo-icon.png`} alt="Logo" className="w-6 h-6 rounded-md" />
-            <span className="font-bold text-lg tracking-tight">ReviewMyStore</span>
+            <span className="font-bold text-lg tracking-tight">5-Star.AI</span>
           </div>
 
           {step === "search" ? (

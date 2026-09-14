@@ -515,7 +515,7 @@ export default function CustomerReview() {
           <div className="flex items-center justify-center gap-2 py-2 text-[11px] text-muted-foreground">
             <span className="h-1.5 w-1.5 rounded-full bg-success" />
             Your review goes directly to Google
-            <Badge variant="outline" className="ml-1 border-border px-2 py-0.5 text-[10px] font-medium text-muted-foreground">ReviewMyStore.AI</Badge>
+            <Badge variant="outline" className="ml-1 border-border px-2 py-0.5 text-[10px] font-medium text-muted-foreground">5-Star.AI</Badge>
           </div>
         </section>
       </main>

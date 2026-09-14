@@ -36,7 +36,7 @@ router.post(
     if (website) {
       // Honeypot tripped: a hidden field only bots fill in. Pretend success
       // so the bot learns nothing, but don't persist the lead.
-      req.log.warn({ email: data.email }, "demo request honeypot tripped");
+      req.log.warn("demo request honeypot tripped");
       res.status(201).json(CreateDemoRequestResponse.parse({ id: "ok" }));
       return;
     }

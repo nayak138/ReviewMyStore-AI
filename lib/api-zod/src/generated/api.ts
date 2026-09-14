@@ -1156,7 +1156,7 @@ export const createDemoRequestBodyWebsiteMax = 200;
 
 export const CreateDemoRequestBody = zod.object({
   "name": zod.string().min(1).max(createDemoRequestBodyNameMax),
-  "email": zod.email().max(createDemoRequestBodyEmailMax),
+  "email": zod.email().max(createDemoRequestBodyEmailMax).optional(),
   "company": zod.string().max(createDemoRequestBodyCompanyMax).optional(),
   "phone": zod.string().max(createDemoRequestBodyPhoneMax).optional(),
   "locations": zod.string().max(createDemoRequestBodyLocationsMax).optional(),
@@ -1176,7 +1176,7 @@ export const ListDemoRequestsResponse = zod.object({
   "demoRequests": zod.array(zod.object({
   "id": zod.string(),
   "name": zod.string(),
-  "email": zod.string(),
+  "email": zod.string().nullish(),
   "company": zod.string().nullable(),
   "phone": zod.string().nullable(),
   "locations": zod.string().nullable(),
@@ -1207,7 +1207,7 @@ export const SetDemoRequestStatusBody = zod.object({
 export const SetDemoRequestStatusResponse = zod.object({
   "id": zod.string(),
   "name": zod.string(),
-  "email": zod.string(),
+  "email": zod.string().nullish(),
   "company": zod.string().nullable(),
   "phone": zod.string().nullable(),
   "locations": zod.string().nullable(),

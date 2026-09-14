@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { SITE_URL } from "@/site";
 
-const DEFAULT_TITLE = "ReviewMyStore.AI — The AI-Powered Google Review Platform";
+const DEFAULT_TITLE = "5-Star.AI — Your reputation partner";
 
 type MetaSelector =
   | { attr: "name"; value: string }

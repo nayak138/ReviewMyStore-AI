@@ -1,20 +1,20 @@
-import { Link, useParams, useLocation } from "wouter";
+import { Link, useParams } from "wouter";
 import { useEffect } from "react";
 import { MarketingLayout } from "./layout";
 import { usePageMeta } from "./use-page-meta";
 import { blogPostMeta } from "./route-meta";
 import { blogPosts, getBlogPost } from "./blog-data";
 import { Button } from "@/components/ui/button";
+import { BookDemoDialog } from "@/components/book-demo-dialog";
 import { ArrowLeft, ArrowRight, Clock } from "lucide-react";
 
 export default function BlogPost() {
   const params = useParams<{ slug: string }>();
-  const [, setLocation] = useLocation();
   const post = getBlogPost(params.slug);
 
   const meta = post
     ? blogPostMeta(post)
-    : { title: "Post not found — ReviewMyStore.AI Blog", description: "This article could not be found." };
+    : { title: "Post not found — 5-Star.AI Blog", description: "This article could not be found." };
   usePageMeta(meta.title, meta.description, post ? `/blog/${post.slug}` : undefined);
 
   useEffect(() => {
@@ -113,9 +113,9 @@ export default function BlogPost() {
               <p className="text-sm text-muted-foreground mb-6">
                 Set up your first campaign in minutes. Free during early access.
               </p>
-              <Button onClick={() => setLocation("/sign-up")} className="h-10 px-6">
-                Start Free
-              </Button>
+              <BookDemoDialog>
+                <Button className="h-10 px-6">Start the 7-day trial</Button>
+              </BookDemoDialog>
             </div>
           </div>
 

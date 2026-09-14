@@ -20,7 +20,7 @@ function escSubject(value: string): string {
 export async function sendDemoRequestAlert(data: {
   id: string;
   name: string;
-  email: string;
+  email?: string | null;
   company?: string | null;
   phone?: string | null;
   locations?: string | null;
@@ -54,10 +54,8 @@ export async function sendDemoRequestAlert(data: {
     if (data.locations) optionalRows.push(["Locations", data.locations]);
     if (data.message) optionalRows.push(["Message", data.message]);
 
-    const requiredRows: Array<[string, string]> = [
-      ["Name", data.name],
-      ["Email", data.email],
-    ];
+    const requiredRows: Array<[string, string]> = [["Name", data.name]];
+    if (data.email) requiredRows.push(["Email", data.email]);
 
     const allRows = [...requiredRows, ...optionalRows];
 
@@ -69,7 +67,7 @@ export async function sendDemoRequestAlert(data: {
       .join("\n");
 
     const subject = escSubject(
-      `New demo request from ${data.name}${data.company ? ` @ ${data.company}` : ""}`,
+      `New 5-Star.AI lead from ${data.name}${data.company ? ` @ ${data.company}` : ""}`,
     );
 
     const html = `<!DOCTYPE html>
@@ -81,13 +79,13 @@ export async function sendDemoRequestAlert(data: {
       <table width="600" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.08);">
         <tr>
           <td style="background:#0f172a;padding:20px 28px;">
-            <span style="color:#fff;font-size:18px;font-weight:700;">ReviewMyStore.ai</span>
+           <span style="color:#fff;font-size:18px;font-weight:700;">5-Star.AI</span>
           </td>
         </tr>
         <tr>
           <td style="padding:28px;">
-            <h2 style="margin:0 0 16px;font-size:20px;color:#0f172a;">\uD83C\uDF89 New Demo Request</h2>
-            <p style="margin:0 0 20px;color:#555;font-size:14px;">A new lead just submitted a demo request. Reach out while it&#39;s fresh!</p>
+             <h2 style="margin:0 0 16px;font-size:20px;color:#0f172a;">New agency lead</h2>
+             <p style="margin:0 0 20px;color:#555;font-size:14px;">A new 5-Star.AI lead just submitted the trial interest form. Reach out while it&#39;s fresh.</p>
             <table cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse;background:#f9fafb;border-radius:6px;overflow:hidden;">
               ${rowsHtml}
             </table>
@@ -101,7 +99,7 @@ export async function sendDemoRequestAlert(data: {
 </html>`;
 
     const payload = {
-      from: "ReviewMyStore.ai <onboarding@resend.dev>",
+      from: "5-Star.AI <onboarding@resend.dev>",
       to: recipients,
       subject,
       html,

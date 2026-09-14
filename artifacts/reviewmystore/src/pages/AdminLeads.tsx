@@ -102,13 +102,15 @@ function LeadCard({ lead }: { lead: DemoRequest }) {
             </div>
 
             <div className="mt-2 flex flex-wrap gap-x-5 gap-y-1.5 text-sm text-muted-foreground">
-              <a
-                href={`mailto:${lead.email}`}
-                className="flex items-center gap-1.5 hover:text-primary transition-colors"
-              >
-                <Mail className="w-3.5 h-3.5 shrink-0" />
-                {lead.email}
-              </a>
+              {lead.email && (
+                <a
+                  href={`mailto:${lead.email}`}
+                  className="flex items-center gap-1.5 hover:text-primary transition-colors"
+                >
+                  <Mail className="w-3.5 h-3.5 shrink-0" />
+                  {lead.email}
+                </a>
+              )}
               {lead.phone && (
                 <span className="flex items-center gap-1.5">
                   <Phone className="w-3.5 h-3.5 shrink-0" />

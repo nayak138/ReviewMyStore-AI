@@ -6,9 +6,9 @@ const sections = [
     title: "Agreement to these terms",
     body: (
       <p>
-        These Terms of Service ("Terms") govern your access to and use of the ReviewMyStore.AI
-        platform, website, and related services (the "Service") provided by ReviewMyStore.AI
-        ("ReviewMyStore", "we", "us"). By creating an account or using the Service, you agree to be
+        These Terms of Service ("Terms") govern your access to and use of the 5-Star.AI
+        platform, website, and related services (the "Service") provided by 5-Star.AI
+        ("5-Star.AI", "we", "us"). By creating an account or using the Service, you agree to be
         bound by these Terms. If you are using the Service on behalf of a business, you represent
         that you have authority to bind that business.
       </p>
@@ -18,7 +18,7 @@ const sections = [
     title: "The service",
     body: (
       <p>
-        ReviewMyStore helps businesses invite their customers to leave Google reviews using QR
+        5-Star.AI helps businesses invite their customers to leave Google reviews using QR
         codes, NFC tags, and AI-assisted review drafting. AI-generated drafts are suggestions that
         customers can edit or discard; posting is always the customer's decision. We do not
         guarantee any particular number of reviews, star rating, or search-ranking outcome.
@@ -103,7 +103,7 @@ const sections = [
     body: (
       <>
         <p>
-          The Service, including its software, design, and branding, is owned by ReviewMyStore and
+          The Service, including its software, design, and branding, is owned by 5-Star.AI and
           protected by intellectual-property laws. We grant you a limited, non-exclusive,
           non-transferable license to use the Service for your business purposes.
         </p>
@@ -142,7 +142,7 @@ const sections = [
     title: "Limitation of liability",
     body: (
       <p>
-        To the maximum extent permitted by law, ReviewMyStore will not be liable for any indirect,
+          To the maximum extent permitted by law, 5-Star.AI will not be liable for any indirect,
         incidental, special, consequential, or punitive damages, or any loss of profits, revenue,
         data, or goodwill, arising out of or related to your use of the Service. Our total liability
         for any claim will not exceed the amount you paid us in the twelve months preceding the
@@ -166,8 +166,8 @@ const sections = [
     body: (
       <p>
         Questions about these Terms? Email{" "}
-        <a href="mailto:contact@reviewmystore.ai" className="text-primary hover:underline">
-          contact@reviewmystore.ai
+        <a href="mailto:hello@5-star.ai" className="text-primary hover:underline">
+          hello@5-star.ai
         </a>
         .
       </p>
@@ -180,7 +180,7 @@ export default function Terms() {
     <LegalPage
       badge="Legal"
       title="Terms of Service"
-      intro="The rules for using ReviewMyStore.AI — plainly stated."
+      intro="The rules for using 5-Star.AI — plainly stated."
       lastUpdated="August 6, 2026"
       sections={sections}
       metaTitle={TERMS_META.title}

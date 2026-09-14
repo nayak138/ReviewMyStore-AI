@@ -148,12 +148,12 @@ export async function generateQrPdf(input: QrAssetInput): Promise<Buffer> {
       align: "center",
     });
 
-  // Footer branding: small storefront mark + "Powered by ReviewMyStore.AI".
+  // Footer branding: small storefront mark + "Powered by 5-Star.AI".
   // Deliberately understated and never implies Google endorsement — the
   // review flow only ever links out to the business's own Google listing.
   const brandingY = 5.75 * INCH;
   const logoSize = 0.22 * INCH;
-  const brandingLabel = "Powered by ReviewMyStore.AI";
+  const brandingLabel = "Powered by 5-Star.AI";
   doc.font("Helvetica").fontSize(8);
   const labelWidth = doc.widthOfString(brandingLabel);
   const groupWidth = logoSize + 0.08 * INCH + labelWidth;

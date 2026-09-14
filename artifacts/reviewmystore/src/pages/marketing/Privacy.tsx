@@ -7,14 +7,14 @@ const sections = [
     body: (
       <>
         <p>
-          ReviewMyStore.AI ("ReviewMyStore", "we", "us") provides a platform that helps businesses
+          5-Star.AI ("5-Star.AI", "we", "us") provides a platform that helps businesses
           collect Google reviews from their customers via QR codes, NFC taps, and AI-assisted review
           drafting. This Privacy Policy explains what information we collect, how we use it, and the
           choices you have.
         </p>
         <p>
           This policy covers both business users who create an account with us and customers of
-          those businesses who use a review link, QR code, or NFC tag powered by ReviewMyStore.
+          those businesses who use a review link, QR code, or NFC tag powered by 5-Star.AI.
         </p>
       </>
     ),
@@ -53,7 +53,7 @@ const sections = [
       <>
         <p>We use the information we collect to:</p>
         <ul className="list-disc pl-6 space-y-2">
-          <li>Provide, operate, and improve the ReviewMyStore platform;</li>
+          <li>Provide, operate, and improve the 5-Star.AI platform;</li>
           <li>Generate AI-assisted review drafts at the customer's request;</li>
           <li>Show businesses analytics about their review campaigns;</li>
           <li>Send service-related communications, such as account and security notices;</li>
@@ -131,8 +131,8 @@ const sections = [
         Depending on where you live, you may have rights to access, correct, delete, or export your
         personal information, and to object to or restrict certain processing. To exercise any of
         these rights, email us at{" "}
-        <a href="mailto:contact@reviewmystore.ai" className="text-primary hover:underline">
-          contact@reviewmystore.ai
+        <a href="mailto:hello@5-star.ai" className="text-primary hover:underline">
+          hello@5-star.ai
         </a>
         . We will respond within the timeframe required by applicable law.
       </p>
@@ -142,7 +142,7 @@ const sections = [
     title: "Children",
     body: (
       <p>
-        ReviewMyStore is intended for business use and is not directed at children under 16. We do
+        5-Star.AI is intended for business use and is not directed at children under 16. We do
         not knowingly collect personal information from children.
       </p>
     ),
@@ -162,8 +162,8 @@ const sections = [
     body: (
       <p>
         Questions about this policy or our data practices? Email{" "}
-        <a href="mailto:contact@reviewmystore.ai" className="text-primary hover:underline">
-          contact@reviewmystore.ai
+        <a href="mailto:hello@5-star.ai" className="text-primary hover:underline">
+          hello@5-star.ai
         </a>
         .
       </p>
@@ -176,7 +176,7 @@ export default function Privacy() {
     <LegalPage
       badge="Legal"
       title="Privacy Policy"
-      intro="How ReviewMyStore.AI collects, uses, and protects your information."
+      intro="How 5-Star.AI collects, uses, and protects your information."
       lastUpdated="August 6, 2026"
       sections={sections}
       metaTitle={PRIVACY_META.title}

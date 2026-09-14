@@ -6,44 +6,44 @@ export interface RouteMeta {
 }
 
 export const DEFAULT_META: RouteMeta = {
-  title: "ReviewMyStore.AI — The AI-Powered Google Review Platform",
+  title: "5-Star.AI — Your reputation partner",
   description:
-    "Collect more Google Reviews with AI. ReviewMyStore.AI helps businesses collect and grow Google Reviews using AI-powered review generation, QR codes and NFC devices.",
+    "5-Star.AI helps local businesses and agencies turn great customer moments into a stronger Google presence with practical reputation support.",
 };
 
 export const ABOUT_META: RouteMeta = {
-  title: "About Us — ReviewMyStore.AI",
+  title: "About Us — 5-Star.AI",
   description:
-    "ReviewMyStore.AI helps local businesses turn happy customers into 5-star Google reviews — without the awkward asking. Learn about our mission and values.",
+    "5-Star.AI helps local businesses turn happy customers into 5-star Google reviews — without the awkward asking. Learn about our mission and values.",
 };
 
 export const BLOG_META: RouteMeta = {
-  title: "Blog — ReviewMyStore.AI",
+  title: "Blog — 5-Star.AI",
   description:
-    "Practical guides on Google reviews, local SEO, and reputation management for local businesses, from the ReviewMyStore.AI team.",
+    "Practical guides on Google reviews, local SEO, and reputation management for local businesses, from the 5-Star.AI team.",
 };
 
 export const RESOURCES_META: RouteMeta = {
-  title: "Resources & Guides — ReviewMyStore.AI",
+  title: "Resources & Guides — 5-Star.AI",
   description:
-    "Step-by-step guides for collecting Google reviews with ReviewMyStore.AI: setup, QR codes, NFC tap-to-review, AI drafts, and analytics.",
+    "Step-by-step guides for collecting Google reviews with 5-Star.AI: setup, QR codes, NFC tap-to-review, AI drafts, and analytics.",
 };
 
 export const PRIVACY_META: RouteMeta = {
-  title: "Privacy Policy — ReviewMyStore.AI",
+  title: "Privacy Policy — 5-Star.AI",
   description:
-    "Learn how ReviewMyStore.AI collects, uses, and protects information for businesses and their customers.",
+    "Learn how 5-Star.AI collects, uses, and protects information for businesses and their customers.",
 };
 
 export const TERMS_META: RouteMeta = {
-  title: "Terms of Service — ReviewMyStore.AI",
+  title: "Terms of Service — 5-Star.AI",
   description:
-    "Read the Terms of Service for ReviewMyStore.AI, the AI-powered Google review platform for local businesses.",
+    "Read the Terms of Service for 5-Star.AI, the AI-powered Google review platform for local businesses.",
 };
 
 export function blogPostMeta(post: { title: string; excerpt: string }): RouteMeta {
   return {
-    title: `${post.title} — ReviewMyStore.AI Blog`,
+    title: `${post.title} — 5-Star.AI Blog`,
     description: post.excerpt,
   };
 }

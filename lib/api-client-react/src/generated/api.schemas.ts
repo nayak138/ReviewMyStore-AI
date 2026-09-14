@@ -22,7 +22,7 @@ export interface DemoRequestInput {
      */
   name: string;
   /** @maxLength 320 */
-  email: string;
+  email?: string;
   /** @maxLength 200 */
   company?: string;
   /** @maxLength 50 */
@@ -50,7 +50,8 @@ export const DemoRequestStatus = {
 export interface DemoRequest {
   id: string;
   name: string;
-  email: string;
+  /** @nullable */
+  email?: string | null;
   /** @nullable */
   company: string | null;
   /** @nullable */

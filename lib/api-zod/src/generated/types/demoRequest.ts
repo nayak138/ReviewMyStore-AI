@@ -10,7 +10,8 @@ import type { DemoRequestStatus } from './demoRequestStatus';
 export interface DemoRequest {
   id: string;
   name: string;
-  email: string;
+  /** @nullable */
+  email?: string | null;
   /** @nullable */
   company: string | null;
   /** @nullable */

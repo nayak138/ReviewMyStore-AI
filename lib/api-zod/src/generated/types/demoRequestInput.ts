@@ -13,7 +13,7 @@ export interface DemoRequestInput {
      */
   name: string;
   /** @maxLength 320 */
-  email: string;
+  email?: string;
   /** @maxLength 200 */
   company?: string;
   /** @maxLength 50 */

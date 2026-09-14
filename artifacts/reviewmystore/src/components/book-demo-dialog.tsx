@@ -3,7 +3,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { motion } from "framer-motion";
-import { CalendarCheck, CheckCircle2 } from "lucide-react";
+import { ArrowRight, CheckCircle2, PhoneCall } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -21,18 +21,14 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useCreateDemoRequest } from "@workspace/api-client-react";
 
 const demoFormSchema = z.object({
   name: z.string().trim().min(1, "Please enter your name").max(200),
-  email: z.string().trim().email("Please enter a valid email").max(320),
-  company: z.string().trim().max(200).optional(),
-  phone: z.string().trim().max(50).optional(),
-  locations: z.string().trim().max(50).optional(),
-  message: z.string().trim().max(2000).optional(),
+  shopName: z.string().trim().min(1, "Please enter your shop name").max(200),
+  phone: z.string().trim().min(7, "Please enter a valid phone number").max(50),
   // Honeypot: hidden from real users, only bots fill it in.
   website: z.string().max(200).optional(),
 });
@@ -48,11 +44,8 @@ export function BookDemoDialog({ children }: { children: ReactNode }) {
     resolver: zodResolver(demoFormSchema),
     defaultValues: {
       name: "",
-      email: "",
-      company: "",
+      shopName: "",
       phone: "",
-      locations: "",
-      message: "",
       website: "",
     },
   });
@@ -74,11 +67,8 @@ export function BookDemoDialog({ children }: { children: ReactNode }) {
     mutation.mutate({
       data: {
         name: values.name,
-        email: values.email,
-        company: values.company || undefined,
-        phone: values.phone || undefined,
-        locations: values.locations || undefined,
-        message: values.message || undefined,
+        company: values.shopName,
+        phone: values.phone,
         website: values.website || undefined,
       },
     });
@@ -110,11 +100,11 @@ export function BookDemoDialog({ children }: { children: ReactNode }) {
               <CheckCircle2 className="w-7 h-7 text-emerald-600 dark:text-emerald-400" />
             </div>
             <h3 className="text-xl font-bold text-foreground mb-2">
-              Request received!
+              Trial request received!
             </h3>
             <p className="text-muted-foreground max-w-sm mx-auto mb-6">
               Thanks for your interest — we'll reach out within one business
-              day to schedule your personalized demo.
+              day to plan your 7-day trial.
             </p>
             <Button onClick={() => handleOpenChange(false)}>Done</Button>
           </motion.div>
@@ -122,12 +112,12 @@ export function BookDemoDialog({ children }: { children: ReactNode }) {
           <>
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
-                <CalendarCheck className="w-5 h-5 text-primary" />
-                Book a Demo
+                <PhoneCall className="w-5 h-5 text-primary" />
+                Start your 7-day trial
               </DialogTitle>
               <DialogDescription>
-                Tell us a bit about your business and we'll schedule a
-                personalized walkthrough.
+                Share the basics and our team will contact you to plan the
+                right first week for your business.
               </DialogDescription>
             </DialogHeader>
             <Form {...form}>
@@ -149,7 +139,7 @@ export function BookDemoDialog({ children }: { children: ReactNode }) {
                     {...form.register("website")}
                   />
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <FormField
                     control={form.control}
                     name="name"
@@ -165,31 +155,12 @@ export function BookDemoDialog({ children }: { children: ReactNode }) {
                   />
                   <FormField
                     control={form.control}
-                    name="email"
+                    name="shopName"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Work email *</FormLabel>
+                        <FormLabel>Shop name *</FormLabel>
                         <FormControl>
-                          <Input
-                            type="email"
-                            placeholder="jane@company.com"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="company"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Company</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Acme Restaurants" {...field} />
+                          <Input placeholder="The Green Room" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -200,11 +171,11 @@ export function BookDemoDialog({ children }: { children: ReactNode }) {
                     name="phone"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Phone</FormLabel>
+                        <FormLabel>Phone number *</FormLabel>
                         <FormControl>
                           <Input
                             type="tel"
-                            placeholder="+1 (555) 000-0000"
+                            placeholder="+91 98765 43210"
                             {...field}
                           />
                         </FormControl>
@@ -213,45 +184,16 @@ export function BookDemoDialog({ children }: { children: ReactNode }) {
                     )}
                   />
                 </div>
-                <FormField
-                  control={form.control}
-                  name="locations"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Number of locations</FormLabel>
-                      <FormControl>
-                        <Input placeholder="e.g. 12" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="message"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>What would you like to see?</FormLabel>
-                      <FormControl>
-                        <Textarea
-                          rows={3}
-                          placeholder="Tell us about your goals, current review process, or any questions…"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
                 <Button
                   type="submit"
-                  className="w-full h-11 font-semibold"
+                  className="h-11 w-full font-semibold"
                   disabled={mutation.isPending}
                 >
-                  {mutation.isPending ? "Sending…" : "Request Demo"}
+                  {mutation.isPending ? "Sending…" : "Request your trial"} <ArrowRight className="ml-1.5 h-4 w-4" />
                 </Button>
-                <p className="text-xs text-muted-foreground text-center">
-                  We'll only use your details to schedule your demo — no spam.
+                <p className="text-center text-xs leading-relaxed text-muted-foreground">
+                  No marketing spam. We only use your details to contact you
+                  about your 7-day trial.
                 </p>
               </form>
             </Form>

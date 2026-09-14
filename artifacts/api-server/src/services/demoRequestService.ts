@@ -4,7 +4,7 @@ import { sendDemoRequestAlert } from "./notificationService";
 
 export async function createDemoRequest(input: {
   name: string;
-  email: string;
+  email?: string;
   company?: string;
   phone?: string;
   locations?: string;
@@ -14,7 +14,7 @@ export async function createDemoRequest(input: {
     .insert(demoRequestsTable)
     .values({
       name: input.name.trim(),
-      email: input.email.trim(),
+      email: input.email?.trim() || null,
       company: input.company?.trim() || null,
       phone: input.phone?.trim() || null,
       locations: input.locations?.trim() || null,
@@ -27,7 +27,7 @@ export async function createDemoRequest(input: {
   void sendDemoRequestAlert({
     id: row.id,
     name: input.name.trim(),
-    email: input.email.trim(),
+    email: input.email?.trim() || null,
     company: input.company?.trim() || null,
     phone: input.phone?.trim() || null,
     locations: input.locations?.trim() || null,

@@ -2,7 +2,7 @@ import { MarketingLayout } from "./layout";
 import { usePageMeta } from "./use-page-meta";
 import { ABOUT_META } from "./route-meta";
 import { Button } from "@/components/ui/button";
-import { useLocation } from "wouter";
+import { BookDemoDialog } from "@/components/book-demo-dialog";
 import { Star, Zap, ShieldCheck, HeartHandshake, QrCode, MessageSquareText, BarChart3 } from "lucide-react";
 
 const values = [
@@ -37,12 +37,11 @@ const timeline = [
   {
     year: "Today",
     title: "Scan, edit, post",
-    desc: "ReviewMyStore turns the moment of delight into a posted Google review: a QR scan or NFC tap, an AI-drafted review the customer makes their own, and one tap to publish.",
+      desc: "5-Star.AI turns the moment of delight into a posted Google review: a QR scan or NFC tap, an AI-drafted review the customer makes their own, and one tap to publish.",
   },
 ];
 
 export default function About() {
-  const [, setLocation] = useLocation();
   usePageMeta(ABOUT_META.title, ABOUT_META.description, "/about");
 
   return (
@@ -58,7 +57,7 @@ export default function About() {
               Every great business deserves to be found
             </h1>
             <p className="text-lg md:text-xl text-muted-foreground leading-relaxed">
-              ReviewMyStore.AI exists for one reason: the businesses people love most are often the
+              5-Star.AI exists for one reason: the businesses people love most are often the
               hardest to find online. We fix that by making it effortless for happy customers to say
               so on Google.
             </p>
@@ -79,7 +78,7 @@ export default function About() {
                 run reputation teams; local businesses get a laminated "Review us!" sign and hope.
               </p>
               <p className="text-muted-foreground leading-relaxed mb-4">
-                We're leveling that field. ReviewMyStore combines QR codes, NFC taps, and AI-drafted
+                We're leveling that field. 5-Star.AI combines QR codes, NFC taps, and AI-drafted
                 reviews so that collecting a Google review takes a customer seconds — and takes your
                 staff nothing more than "just tap here."
               </p>
@@ -163,13 +162,11 @@ export default function About() {
           <p className="text-muted-foreground max-w-xl mx-auto mb-8">
             Set up your first review campaign in minutes. Free during early access.
           </p>
-          <Button
-            size="lg"
-            onClick={() => setLocation("/sign-up")}
-            className="h-12 px-8 text-base shadow-sm hover:shadow transition-all"
-          >
-            Start Free
-          </Button>
+           <BookDemoDialog>
+             <Button size="lg" className="h-12 px-8 text-base shadow-sm transition-all hover:shadow">
+               Start the 7-day trial
+             </Button>
+           </BookDemoDialog>
         </div>
       </section>
     </MarketingLayout>

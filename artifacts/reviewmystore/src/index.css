@@ -70,72 +70,72 @@
 :root {
   --app-font-sans: 'DM Sans', sans-serif;
   --app-font-display: 'Fraunces', serif;
-  --radius: 0.75rem;
+  --radius: 0.7rem;
 
-  /* Warm paper, ink, and the four Google-inspired accent colors. */
-  --background: 42 36% 96%;
-  --foreground: 220 30% 17%;
-  --card: 42 42% 99%;
-  --card-foreground: 220 30% 17%;
-  --card-border: 40 21% 86%;
-  --popover: 42 42% 99%;
-  --popover-foreground: 220 30% 17%;
-  --popover-border: 40 21% 86%;
-  --primary: 217 89% 61%;
-  --primary-foreground: 42 42% 99%;
-  --secondary: 40 24% 91%;
-  --secondary-foreground: 220 30% 17%;
-  --muted: 40 24% 92%;
-  --muted-foreground: 220 12% 45%;
-  --accent: 43 86% 87%;
-  --accent-foreground: 28 63% 25%;
+  /* A warm editorial canvas with ink, clay and an electric blue signature. */
+  --background: 39 38% 96%;
+  --foreground: 222 35% 15%;
+  --card: 40 45% 99%;
+  --card-foreground: 222 35% 15%;
+  --card-border: 38 22% 85%;
+  --popover: 40 45% 99%;
+  --popover-foreground: 222 35% 15%;
+  --popover-border: 38 22% 85%;
+  --primary: 221 78% 52%;
+  --primary-foreground: 40 45% 99%;
+  --secondary: 38 29% 90%;
+  --secondary-foreground: 222 35% 15%;
+  --muted: 38 28% 91%;
+  --muted-foreground: 222 12% 47%;
+  --accent: 14 67% 62%;
+  --accent-foreground: 222 35% 15%;
   --destructive: 5 67% 47%;
-  --destructive-foreground: 42 42% 99%;
-  --success: 148 35% 34%;
-  --success-foreground: 42 42% 99%;
-  --warning: 38 79% 45%;
-  --warning-foreground: 28 63% 20%;
-  --border: 40 21% 86%;
-  --input: 40 21% 80%;
-  --ring: 217 89% 61%;
+  --destructive-foreground: 40 45% 99%;
+  --success: 157 36% 35%;
+  --success-foreground: 40 45% 99%;
+  --warning: 37 81% 48%;
+  --warning-foreground: 222 35% 15%;
+  --border: 38 22% 85%;
+  --input: 38 18% 77%;
+  --ring: 221 78% 52%;
 
-  --google-blue: 217 89% 61%;
-  --google-red: 4 82% 60%;
-  --google-yellow: 45 98% 51%;
-  --google-green: 143 54% 49%;
+  --google-blue: 221 78% 52%;
+  --google-red: 5 75% 56%;
+  --google-yellow: 39 93% 51%;
+  --google-green: 157 48% 43%;
 }
 
 .dark {
-  --background: 220 27% 11%;
-  --foreground: 42 36% 95%;
-  --card: 220 25% 15%;
-  --card-foreground: 42 36% 95%;
-  --card-border: 220 17% 25%;
-  --popover: 220 25% 15%;
-  --popover-foreground: 42 36% 95%;
-  --popover-border: 220 17% 25%;
-  --primary: 213 64% 69%;
-  --primary-foreground: 220 27% 11%;
-  --secondary: 220 20% 20%;
-  --secondary-foreground: 42 36% 95%;
-  --muted: 220 20% 20%;
-  --muted-foreground: 220 13% 69%;
-  --accent: 39 43% 25%;
-  --accent-foreground: 43 86% 87%;
+  --background: 222 31% 11%;
+  --foreground: 39 38% 95%;
+  --card: 222 28% 15%;
+  --card-foreground: 39 38% 95%;
+  --card-border: 222 18% 27%;
+  --popover: 222 28% 15%;
+  --popover-foreground: 39 38% 95%;
+  --popover-border: 222 18% 27%;
+  --primary: 216 86% 68%;
+  --primary-foreground: 222 31% 11%;
+  --secondary: 222 21% 21%;
+  --secondary-foreground: 39 38% 95%;
+  --muted: 222 21% 21%;
+  --muted-foreground: 39 13% 70%;
+  --accent: 14 43% 33%;
+  --accent-foreground: 39 86% 88%;
   --destructive: 5 70% 63%;
-  --destructive-foreground: 220 27% 11%;
-  --success: 148 36% 53%;
-  --success-foreground: 220 27% 11%;
-  --warning: 38 79% 61%;
-  --warning-foreground: 28 63% 14%;
-  --border: 220 17% 25%;
-  --input: 220 17% 31%;
-  --ring: 213 64% 69%;
+  --destructive-foreground: 222 31% 11%;
+  --success: 157 36% 53%;
+  --success-foreground: 222 31% 11%;
+  --warning: 37 81% 61%;
+  --warning-foreground: 222 31% 11%;
+  --border: 222 18% 27%;
+  --input: 222 18% 33%;
+  --ring: 216 86% 68%;
 
-  --google-blue: 217 89% 65%;
-  --google-red: 4 82% 64%;
-  --google-yellow: 45 98% 58%;
-  --google-green: 143 54% 56%;
+  --google-blue: 216 86% 68%;
+  --google-red: 5 75% 64%;
+  --google-yellow: 39 93% 60%;
+  --google-green: 157 48% 56%;
 }
 
 @layer base {
@@ -145,8 +145,8 @@
   body {
     @apply bg-background text-foreground font-sans antialiased;
     background-image:
-      radial-gradient(circle at 86% 0%, hsl(var(--google-blue) / 0.055), transparent 24rem),
-      radial-gradient(circle at 7% 14%, hsl(var(--google-yellow) / 0.04), transparent 20rem),
+      radial-gradient(circle at 88% 0%, hsl(var(--google-blue) / 0.08), transparent 26rem),
+      radial-gradient(circle at 4% 18%, hsl(var(--accent) / 0.055), transparent 22rem),
       linear-gradient(180deg, hsl(var(--background)), hsl(var(--background)));
   }
 
@@ -211,6 +211,16 @@
     background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.6'/%3E%3C/svg%3E");
     mix-blend-mode: multiply;
     z-index: 50;
+  }
+
+  .editorial-grid {
+    background-image: linear-gradient(to right, hsl(var(--foreground) / 0.055) 1px, transparent 1px),
+      linear-gradient(to bottom, hsl(var(--foreground) / 0.055) 1px, transparent 1px);
+    background-size: 4rem 4rem;
+  }
+
+  .text-balance {
+    text-wrap: balance;
   }
 }
 

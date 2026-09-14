@@ -2053,7 +2053,6 @@ components:
             empty. Submissions with a value are silently discarded.
       required:
         - name
-        - email
 
     DemoRequestStatus:
       type: string
@@ -2067,7 +2066,7 @@ components:
         name:
           type: string
         email:
-          type: string
+          type: ["string", "null"]
         company:
           type: ["string", "null"]
         phone:
@@ -2086,7 +2085,6 @@ components:
       required:
         - id
         - name
-        - email
         - company
         - phone
         - locations
