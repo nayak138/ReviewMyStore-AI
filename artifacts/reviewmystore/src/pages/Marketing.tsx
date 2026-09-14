@@ -24,11 +24,11 @@ export default function Marketing() {
   return (
     <MarketingLayout>
       <HeroSection />
+      <InteractiveReviewDemo />
       <TrustedBySection />
       <WhyBusinessesLoveUs />
       <FeaturesGrid />
       <HowItWorks />
-      <InteractiveReviewDemo />
       <DashboardShowcase />
       <TestimonialsSection />
       <PricingSection />

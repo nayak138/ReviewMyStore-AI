@@ -18,6 +18,8 @@ import { BrandIcon } from "@/components/brand-logo";
 import { LanguageSelector } from "@/components/customer-review/LanguageSelector";
 import { downloadVCard } from "@/lib/vcard";
 import { cn } from "@/lib/utils";
+import { isRtlLanguage } from "@/lib/languages";
+import { getReviewPageStrings } from "@/lib/reviewPageTranslations";
 
 const DEMO_GOOGLE_URL =
   "https://www.google.com/maps/search/?api=1&query=Taj%20Mahal%20Palace%20Mumbai";
@@ -30,13 +32,14 @@ const highlights = [
 ];
 
 const tones = [
-  { value: ReviewTone.ENTHUSIASTIC, label: "Enthusiastic" },
-  { value: ReviewTone.SHORT_DIRECT, label: "Short & direct" },
-  { value: ReviewTone.DETAILED, label: "Detailed" },
-  { value: ReviewTone.WARM, label: "Warm & grateful" },
+  { value: ReviewTone.ENTHUSIASTIC, key: "toneEnthusiastic" as const },
+  { value: ReviewTone.SHORT_DIRECT, key: "toneShort" as const },
+  { value: ReviewTone.DETAILED, key: "toneDetailed" as const },
+  { value: ReviewTone.WARM, key: "toneWarm" as const },
 ];
 
 type DemoLanguage = SupportedLanguage | string;
+const demoHeaderImage = `${import.meta.env.BASE_URL}taj-mahal-palace-mumbai.jpg`;
 
 export function InteractiveReviewDemo() {
   const [rating, setRating] = useState<number | null>(null);
@@ -54,6 +57,9 @@ export function InteractiveReviewDemo() {
   const [error, setError] = useState("");
   const [copied, setCopied] = useState(false);
   const [shared, setShared] = useState(false);
+  const [headerImageFailed, setHeaderImageFailed] = useState(false);
+  const strings = getReviewPageStrings(language);
+  const rtl = isRtlLanguage(language);
 
   const toggleHighlight = (highlight: string) => {
     setSelectedHighlights((current) =>
@@ -151,11 +157,29 @@ export function InteractiveReviewDemo() {
         </div>
 
         <div className="mx-auto w-full max-w-[920px] overflow-hidden rounded-[1.75rem] bg-[#f8faff] shadow-[0_28px_100px_-38px_rgba(28,57,125,0.35)] dark:bg-[#0a1430] dark:shadow-[0_28px_100px_-38px_rgba(0,0,0,0.8)]">
-          <header className="relative min-h-[285px] overflow-hidden bg-[radial-gradient(circle_at_74%_16%,rgba(222,181,95,0.75),transparent_20%),linear-gradient(130deg,#0c1a39_0%,#173c69_44%,#0b142b_100%)] sm:min-h-[350px]">
-            <div className="absolute inset-0 opacity-35 [background-image:linear-gradient(115deg,transparent_0%,rgba(255,255,255,0.12)_48%,transparent_49%),linear-gradient(90deg,transparent_0%,rgba(255,255,255,0.06)_50%,transparent_51%)] [background-size:100%_100%,18rem_100%]" />
+          <header className="relative min-h-[285px] overflow-hidden bg-[linear-gradient(130deg,#0c1a39_0%,#173c69_44%,#0b142b_100%)] sm:min-h-[350px]">
+            {!headerImageFailed && (
+              <img
+                src={demoHeaderImage}
+                alt="Exterior of The Taj Mahal Palace Mumbai"
+                className="absolute inset-0 h-full w-full object-cover"
+                onError={() => setHeaderImageFailed(true)}
+              />
+            )}
+            <div className="absolute inset-0 bg-gradient-to-t from-[#050713]/90 via-[#050713]/25 to-[#050713]/10" />
             <div className="absolute left-3 top-3 flex items-center gap-2 sm:left-4 sm:top-4">
               <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-[#081126]/90 px-4 py-2 text-sm font-bold text-white shadow-[0_8px_24px_rgba(0,0,0,0.25)] backdrop-blur-md">
-                <span className="font-sans text-[20px] font-black leading-none text-[#4285f4]" aria-hidden="true">G</span>
+                <span
+                  className="font-sans text-[20px] font-black leading-none"
+                  style={{
+                    backgroundImage: "conic-gradient(from -45deg, #4285f4 0 25%, #34a853 25% 45%, #fbbc05 45% 65%, #ea4335 65% 85%, #4285f4 85% 100%)",
+                    WebkitBackgroundClip: "text",
+                    WebkitTextFillColor: "transparent",
+                  }}
+                  aria-hidden="true"
+                >
+                  G
+                </span>
                 Google Verified
               </div>
             </div>
@@ -163,12 +187,15 @@ export function InteractiveReviewDemo() {
               <LanguageSelector value={language} onChange={setLanguage} />
             </div>
             <div className="absolute inset-x-4 bottom-4 text-white sm:inset-x-5 sm:bottom-5">
-              <div className="flex items-center gap-2">
-                <h3 className="font-display text-3xl font-semibold leading-tight">Taj Mahal Palace Mumbai</h3>
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center sm:h-9 sm:w-9" title="Verified business" aria-label="Verified business">
-                  <BadgeCheck className="h-8 w-8 fill-[#22c875] text-[#075b37] drop-shadow-[0_2px_5px_rgba(34,200,117,0.35)] sm:h-9 sm:w-9" aria-hidden="true" />
+              <h3 className="font-display text-3xl font-semibold leading-tight">
+                Taj Mahal Palace{" "}
+                <span className="inline-flex items-center gap-2 whitespace-nowrap">
+                  Mumbai
+                  <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center align-middle sm:h-9 sm:w-9" title="Verified business" aria-label="Verified business">
+                    <BadgeCheck className="h-8 w-8 fill-[#22c875] text-[#075b37] drop-shadow-[0_2px_5px_rgba(34,200,117,0.35)] sm:h-9 sm:w-9" aria-hidden="true" />
+                  </span>
                 </span>
-              </div>
+              </h3>
               <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-white/85">
                 <span>Luxury hotel</span>
                 <span className="inline-flex items-center gap-1"><MapPin className="h-3 w-3" aria-hidden="true" />Apollo Bandar, Mumbai</span>
@@ -202,13 +229,13 @@ export function InteractiveReviewDemo() {
             </div>
           </div>
 
-          <section className="mx-auto w-full max-w-[760px] space-y-4 px-4 pb-8 pt-5 sm:px-7">
+          <section className="mx-auto w-full max-w-[760px] space-y-4 px-4 pb-8 pt-5 sm:px-7" dir={rtl ? "rtl" : "ltr"}>
             {!reviewText ? (
               <div className="rounded-[1.5rem] border border-[#d8e2fb] bg-white p-5 dark:border-white/10 dark:bg-[#102044] sm:p-7">
                 <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.16em] text-[#2860c8] dark:text-[#82b3ff]">Step 1</p>
                 <div className="flex items-center justify-between gap-4">
                   <div>
-                    <h4 className="font-display text-2xl font-semibold tracking-tight text-foreground">How was your experience?</h4>
+                    <h4 className="font-display text-2xl font-semibold tracking-tight text-foreground">{strings.ratingQuestion}</h4>
                     <div className="mt-4 flex gap-2" role="radiogroup" aria-label="Rating">
                       {[1, 2, 3, 4, 5].map((value) => (
                         <button key={value} type="button" aria-label={`${value} star${value === 1 ? "" : "s"}`} aria-pressed={rating === value} onClick={() => setRating(value)} className="rounded-lg p-1 transition-transform hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
@@ -224,31 +251,31 @@ export function InteractiveReviewDemo() {
                   <div className="mt-6 space-y-6 border-t border-border pt-6">
                     <div>
                       <p className="mb-3 text-[11px] font-bold uppercase tracking-[0.16em] text-primary">Step 2</p>
-                      <h4 className="mb-3 font-display text-2xl font-semibold tracking-tight text-foreground">What stood out?</h4>
+                      <h4 className="mb-3 font-display text-2xl font-semibold tracking-tight text-foreground">{strings.highlightsTitle}</h4>
                       <div className="flex flex-wrap gap-2">
                         {highlights.map((highlight) => (
                           <button key={highlight} type="button" aria-pressed={selectedHighlights.includes(highlight)} onClick={() => toggleHighlight(highlight)} className={cn("rounded-full border px-3.5 py-2 text-sm font-medium transition-all", selectedHighlights.includes(highlight) ? "border-primary bg-primary text-primary-foreground shadow-sm" : "border-border bg-background/70 text-foreground hover:border-primary/50 hover:bg-accent")}>{highlight}</button>
                         ))}
                       </div>
-                      <input value={detail} onChange={(event) => setDetail(event.target.value)} maxLength={60} placeholder="Add a detail worth mentioning" className="mt-4 w-full rounded-xl border border-input bg-background/70 px-3.5 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" />
+                      <input value={detail} onChange={(event) => setDetail(event.target.value)} maxLength={60} placeholder={strings.mentionPlaceholder} className="mt-4 w-full rounded-xl border border-input bg-background/70 px-3.5 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" />
                     </div>
                     <div>
                       <p className="mb-3 text-[11px] font-bold uppercase tracking-[0.16em] text-primary">Step 3</p>
-                      <h4 className="mb-3 font-display text-2xl font-semibold tracking-tight text-foreground">Choose your tone</h4>
+                      <h4 className="mb-3 font-display text-2xl font-semibold tracking-tight text-foreground">{strings.toneTitle}</h4>
                       <div className="grid grid-cols-2 gap-2.5">
-                        {tones.map((option) => <button key={option.value} type="button" aria-pressed={tone === option.value} onClick={() => setTone(option.value)} className={cn("rounded-xl border px-3.5 py-3 text-left text-sm font-medium transition-all", tone === option.value ? "border-primary bg-primary text-primary-foreground shadow-sm" : "border-border bg-background/70 text-foreground hover:border-primary/50 hover:bg-accent")}>{option.label}</button>)}
+                        {tones.map((option) => <button key={option.value} type="button" aria-pressed={tone === option.value} onClick={() => setTone(option.value)} className={cn("rounded-xl border px-3.5 py-3 text-left text-sm font-medium transition-all", tone === option.value ? "border-primary bg-primary text-primary-foreground shadow-sm" : "border-border bg-background/70 text-foreground hover:border-primary/50 hover:bg-accent")}>{strings[option.key]}</button>)}
                       </div>
                     </div>
                     <div className="grid gap-3 sm:grid-cols-2">
-                      <input value={customerName} onChange={(event) => setCustomerName(event.target.value)} maxLength={60} placeholder="Your name (optional)" className="w-full rounded-xl border border-input bg-background/70 px-3.5 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" />
-                      <input value={occasion} onChange={(event) => setOccasion(event.target.value)} maxLength={60} placeholder="What brought you here? (optional)" className="w-full rounded-xl border border-input bg-background/70 px-3.5 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" />
+                      <input value={customerName} onChange={(event) => setCustomerName(event.target.value)} maxLength={60} placeholder={strings.namePlaceholder} className="w-full rounded-xl border border-input bg-background/70 px-3.5 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" />
+                      <input value={occasion} onChange={(event) => setOccasion(event.target.value)} maxLength={60} placeholder={strings.occasionPlaceholder} className="w-full rounded-xl border border-input bg-background/70 px-3.5 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" />
                     </div>
                   </div>
                 )}
 
                 {error && <p className="mt-5 rounded-xl bg-destructive/10 px-4 py-3 text-sm text-destructive" role="alert">{error}</p>}
                 <Button className="mt-6 h-12 w-full rounded-xl bg-gradient-to-r from-[#2d7dff] to-[#6264e8] text-sm font-semibold text-white shadow-[0_10px_24px_-10px_rgba(56,103,235,0.75)] hover:from-[#1f6ff0] hover:to-[#5556d8] disabled:!opacity-100 disabled:from-[#2f61b0] disabled:to-[#5555a1]" size="lg" disabled={!rating || isGenerating} onClick={() => void generateReview()}>
-                  {isGenerating ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Writing your review…</> : <><Sparkles className="mr-2 h-4 w-4" />Generate Instant Google Review</>}
+                  {isGenerating ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />{strings.generatingButton}</> : <><Sparkles className="mr-2 h-4 w-4" />{strings.generateButton}</>}
                 </Button>
                 <p className="mt-3 text-center text-xs text-muted-foreground">You’ll get to read and edit it before anything is posted.</p>
               </div>
@@ -258,10 +285,10 @@ export function InteractiveReviewDemo() {
                 <h4 className="font-display text-2xl font-semibold tracking-tight text-foreground">Your review is ready.</h4>
                 <textarea value={reviewText} onChange={(event) => setReviewText(event.target.value)} rows={6} aria-label="Generated Google review" className="mt-5 w-full resize-y rounded-xl border border-input bg-background/70 px-4 py-3 text-sm leading-relaxed text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" />
                 <div className="mt-4 grid gap-2 sm:grid-cols-2">
-                  <Button variant="outline" className="h-11 rounded-xl" onClick={() => void copyReview()}><Copy className="mr-2 h-4 w-4" />{copied ? "Copied" : "Copy review"}</Button>
-                  <Button className="h-11 rounded-xl bg-[#1769ff] hover:bg-[#0e59df]" onClick={() => void copyAndOpenGoogle()}><BrandIcon className="mr-2 h-4 w-4" alt="" />Copy & open Google</Button>
+                  <Button variant="outline" className="h-11 rounded-xl" onClick={() => void copyReview()}><Copy className="mr-2 h-4 w-4" />{copied ? strings.copiedLabel : "Copy review"}</Button>
+                  <Button className="h-11 rounded-xl bg-[#1769ff] hover:bg-[#0e59df]" onClick={() => void copyAndOpenGoogle()}><BrandIcon className="mr-2 h-4 w-4" alt="" />{strings.copyAndOpenButton}</Button>
                 </div>
-                <Button variant="ghost" className="mt-3 h-10 w-full text-sm text-muted-foreground" onClick={() => setReviewText("")}>Edit answers and generate again</Button>
+                <Button variant="ghost" className="mt-3 h-10 w-full text-sm text-muted-foreground" onClick={() => setReviewText("")}>{strings.regenerateButton}</Button>
               </div>
             )}
           </section>
