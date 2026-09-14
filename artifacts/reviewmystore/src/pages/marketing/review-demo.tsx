@@ -289,7 +289,7 @@ export function InteractiveReviewDemo() {
                 <div className="mt-6">
                   <Button className="h-12 w-full rounded-xl bg-[#1769ff] text-sm font-semibold shadow-[0_8px_20px_rgba(23,105,255,0.22)] hover:bg-[#0e59df]" onClick={() => void copyAndOpenGoogle()}>
                     {copied ? <Check className="mr-2 h-4 w-4" aria-hidden="true" /> : <Copy className="mr-2 h-4 w-4" aria-hidden="true" />}
-                    {copied ? strings.copiedLabel : strings.copyAndOpenButton}
+                    {copied ? strings.copiedLabel : "Copy and Review on Google"}
                   </Button>
                 </div>
                 <Button variant="ghost" className="mt-3 h-10 w-full text-sm text-muted-foreground" onClick={() => setReviewText("")}>{strings.regenerateButton}</Button>
