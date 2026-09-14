@@ -464,7 +464,7 @@ export default function CustomerReview() {
   };
 
   return (
-    <div className="review-noise min-h-[100dvh] overflow-hidden bg-[#05091d] px-0 sm:px-4">
+    <div className="review-noise min-h-[100dvh] overflow-hidden bg-background px-0 text-foreground sm:px-4">
       {showFeedbackModal && rating !== null && (
         <PrivateFeedbackModal
           businessSlug={businessSlug}
@@ -477,7 +477,7 @@ export default function CustomerReview() {
         />
       )}
 
-      <main className="mx-auto w-full max-w-[920px] overflow-hidden bg-[#0a1430] shadow-[0_28px_100px_-38px_rgba(0,0,0,0.8)] sm:my-5 sm:rounded-[1.75rem]">
+      <main className="mx-auto w-full max-w-[920px] overflow-hidden bg-background shadow-[0_28px_100px_-38px_rgba(0,0,0,0.14)] dark:shadow-[0_28px_100px_-38px_rgba(0,0,0,0.8)] sm:my-5 sm:rounded-[1.75rem]">
         <header className="relative h-[285px] overflow-hidden sm:h-[350px] lg:h-[385px]">
           <div className="absolute inset-0" style={coverStyle} />
           {headerImage && !headerImageFailed && (
@@ -532,7 +532,7 @@ export default function CustomerReview() {
           </div>
         </header>
 
-        <div className="border-b border-white/10 bg-[#0a1430] px-4 py-4 sm:px-7">
+        <div className="border-b border-border bg-card px-4 py-4 sm:px-7">
           <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center sm:justify-start">
             {business.phone && (
               <Button asChild size="sm" className="h-11 w-full min-w-0 rounded-full bg-[#1769ff] px-3 text-xs font-semibold shadow-[0_8px_18px_rgba(23,105,255,0.28)] hover:bg-[#0e59df] sm:w-auto sm:px-5 sm:text-sm">
@@ -540,14 +540,14 @@ export default function CustomerReview() {
               </Button>
             )}
             {(business.phone || business.address || business.website) && (
-              <Button variant="outline" size="sm" className="h-11 w-full min-w-0 rounded-full border-white/15 bg-[#172548] px-3 text-xs font-semibold text-slate-100 hover:bg-[#21345f] sm:w-auto sm:px-4 sm:text-sm" onClick={() => downloadVCard({ name: business.name, phone: business.phone, address: business.address, website: business.website })}>
+              <Button variant="outline" size="sm" className="h-11 w-full min-w-0 rounded-full border-border bg-secondary px-3 text-xs font-semibold text-secondary-foreground hover:bg-secondary/80 dark:border-white/15 dark:bg-[#172548] dark:text-slate-100 dark:hover:bg-[#21345f] sm:w-auto sm:px-4 sm:text-sm" onClick={() => downloadVCard({ name: business.name, phone: business.phone, address: business.address, website: business.website })}>
                 <IdCard className="mr-1.5 h-4 w-4 text-[#5b83ff]" aria-hidden="true" />Save Contact
               </Button>
             )}
           </div>
           <div className="mt-3 flex w-full items-center justify-center gap-2">
             {directionsHref && (
-              <Button asChild variant="outline" size="sm" aria-label="Directions" title="Directions" className="h-11 w-11 shrink-0 rounded-xl border-white/15 bg-[#172548] p-0 text-slate-100 hover:bg-[#21345f]">
+              <Button asChild variant="outline" size="sm" aria-label="Directions" title="Directions" className="h-11 w-11 shrink-0 rounded-xl border-border bg-secondary p-0 text-secondary-foreground hover:bg-secondary/80 dark:border-white/15 dark:bg-[#172548] dark:text-slate-100 dark:hover:bg-[#21345f]">
                 <a href={directionsHref} target="_blank" rel="noopener noreferrer">
                   <MapPin className="h-5 w-5 text-[#19d7a5]" aria-hidden="true" />
                 </a>
@@ -558,7 +558,7 @@ export default function CustomerReview() {
               size="sm"
               aria-label={shareCopied ? "Link copied" : "Share"}
               title={shareCopied ? "Link copied" : "Share"}
-              className="h-11 w-11 shrink-0 rounded-xl border-white/15 bg-[#172548] p-0 text-slate-100 hover:bg-[#21345f]"
+              className="h-11 w-11 shrink-0 rounded-xl border-border bg-secondary p-0 text-secondary-foreground hover:bg-secondary/80 dark:border-white/15 dark:bg-[#172548] dark:text-slate-100 dark:hover:bg-[#21345f]"
               onClick={() => void handleShare()}
             >
               {shareCopied ? <Check className="h-5 w-5 text-[#19d7a5]" aria-hidden="true" /> : <Share2 className="h-5 w-5 text-[#9f7aea]" aria-hidden="true" />}
@@ -571,7 +571,7 @@ export default function CustomerReview() {
                 rel="noopener noreferrer"
                 aria-label={link.label}
                 title={link.label}
-                className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-white/15 bg-[#172548] transition-transform hover:-translate-y-0.5 hover:bg-[#21345f]"
+                className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-border bg-secondary transition-transform hover:-translate-y-0.5 hover:bg-secondary/80 dark:border-white/15 dark:bg-[#172548] dark:hover:bg-[#21345f]"
               >
                 {link.kind === "image" ? <img src={link.image} alt="" className="h-full w-full object-cover" /> : <link.icon className="h-5 w-5 text-slate-200" aria-hidden="true" />}
               </a>
@@ -727,11 +727,11 @@ export default function CustomerReview() {
             </div>
           )}
         </section>
-        <footer className="flex items-center justify-center border-t border-white/10 px-4 py-5 text-xs text-slate-400">
+        <footer className="flex items-center justify-center border-t border-border px-4 py-5 text-xs text-muted-foreground">
           <a
             href={landingPageHref}
             aria-label="Visit 5-Star.AI"
-            className="inline-flex items-center gap-2 rounded-md transition-colors hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
+            className="inline-flex items-center gap-2 rounded-md transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             <BrandIcon className="h-5 w-5 object-contain opacity-80" />
             <span>Powered by 5-Star.AI</span>
