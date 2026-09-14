@@ -23,6 +23,9 @@ import { getReviewPageStrings } from "@/lib/reviewPageTranslations";
 
 const DEMO_GOOGLE_URL =
   "https://search.google.com/local/writereview?placeid=ChIJa59lxcDR5zsR4SegHgrkS6A";
+const socialAssetBase = `${import.meta.env.BASE_URL}social`;
+const GOOGLE_MAPS_ICON = `${socialAssetBase}/google-maps.png`;
+const INSTAGRAM_ICON = `${socialAssetBase}/instagram.png`;
 
 const highlights = [
   "Beautiful views",
@@ -226,8 +229,8 @@ export function InteractiveReviewDemo() {
                 {shared ? <Check className="h-5 w-5 text-[#19d7a5]" aria-hidden="true" /> : <Share2 className="h-5 w-5 text-[#9f7aea]" aria-hidden="true" />}
               </Button>
               <a href="https://www.tajhotels.com/" target="_blank" rel="noopener noreferrer" aria-label="Website" title="Website" className="flex h-11 w-11 items-center justify-center rounded-xl border border-[#b9cbf5] bg-[#e3ebff] text-[#526da6] hover:bg-[#d6e2ff]"><Globe className="h-5 w-5" aria-hidden="true" /></a>
-              <a href={DEMO_GOOGLE_URL} target="_blank" rel="noopener noreferrer" aria-label="Google Maps" title="Google Maps" className="flex h-11 w-11 items-center justify-center rounded-xl border border-[#b9cbf5] bg-white text-[#4285f4] hover:bg-[#f5f7ff]"><span className="text-lg font-bold">G</span></a>
-              <a href="https://www.instagram.com/tajhotels/" target="_blank" rel="noopener noreferrer" aria-label="Instagram" title="Instagram" className="flex h-11 w-11 items-center justify-center rounded-xl border border-[#d6def2] bg-white text-[#d94688] hover:bg-[#f5f7ff]"><span className="text-sm font-bold">◎</span></a>
+              <a href={DEMO_GOOGLE_URL} target="_blank" rel="noopener noreferrer" aria-label="Google Maps" title="Google Maps" className="flex h-11 w-11 items-center justify-center overflow-hidden rounded-xl border border-[#d6def2] bg-white hover:bg-[#f5f7ff]"><img src={GOOGLE_MAPS_ICON} alt="" className="h-7 w-7 object-contain" /></a>
+              <a href="https://www.instagram.com/tajhotels/" target="_blank" rel="noopener noreferrer" aria-label="Instagram" title="Instagram" className="flex h-11 w-11 items-center justify-center overflow-hidden rounded-xl border border-[#d6def2] bg-white hover:bg-[#f5f7ff]"><img src={INSTAGRAM_ICON} alt="" className="h-7 w-7 object-contain" /></a>
             </div>
           </div>
 
