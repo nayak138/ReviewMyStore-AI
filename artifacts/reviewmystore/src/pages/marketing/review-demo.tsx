@@ -144,15 +144,17 @@ export function InteractiveReviewDemo() {
   };
 
   return (
-    <section id="review-demo" className="border-y border-border bg-[#edf3ff] py-20 dark:bg-[#05091d] sm:py-28">
+    <section id="review-demo" className="relative overflow-hidden border-b border-border bg-[#edf3ff] py-16 dark:bg-[#05091d] sm:py-24 lg:min-h-[calc(100dvh-4.75rem)] lg:py-20">
+      <div className="editorial-grid pointer-events-none absolute inset-0 opacity-30 [mask-image:linear-gradient(to_bottom,black,transparent_78%)]" aria-hidden="true" />
+      <div className="pointer-events-none absolute -right-48 top-24 h-[32rem] w-[32rem] rounded-full bg-primary/10 blur-3xl" aria-hidden="true" />
       <div className="mx-auto max-w-[80rem] px-5 sm:px-8 lg:px-10">
         <div className="mx-auto mb-12 max-w-3xl text-center sm:mb-16">
-          <p className="mb-4 text-[11px] font-bold uppercase tracking-[0.2em] text-primary">Try the customer experience</p>
+          <p className="mb-4 text-[11px] font-bold uppercase tracking-[0.2em] text-primary">Your next five-star review starts here</p>
           <h2 className="font-display text-4xl font-semibold leading-[1.03] tracking-[-0.05em] sm:text-5xl">
-            See how easy a great review moment can feel.
+            Turn a great stay into a story worth sharing.
           </h2>
           <p className="mx-auto mt-5 max-w-2xl text-lg leading-relaxed text-muted-foreground">
-            This live preview is modeled on the customer journey. Choose what stood out, let AI draft a review, then see where a customer would post it on Google.
+            Give every happy guest a simpler path from “I loved it” to a thoughtful Google review.
           </p>
         </div>
 
@@ -284,9 +286,11 @@ export function InteractiveReviewDemo() {
                 <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.16em] text-primary">Ready when you are</p>
                 <h4 className="font-display text-2xl font-semibold tracking-tight text-foreground">Your review is ready.</h4>
                 <textarea value={reviewText} onChange={(event) => setReviewText(event.target.value)} rows={6} aria-label="Generated Google review" className="mt-5 w-full resize-y rounded-xl border border-input bg-background/70 px-4 py-3 text-sm leading-relaxed text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" />
-                <div className="mt-4 grid gap-2 sm:grid-cols-2">
-                  <Button variant="outline" className="h-11 rounded-xl" onClick={() => void copyReview()}><Copy className="mr-2 h-4 w-4" />{copied ? strings.copiedLabel : "Copy review"}</Button>
-                  <Button className="h-11 rounded-xl bg-[#1769ff] hover:bg-[#0e59df]" onClick={() => void copyAndOpenGoogle()}><BrandIcon className="mr-2 h-4 w-4" alt="" />{strings.copyAndOpenButton}</Button>
+                <div className="mt-6">
+                  <Button className="h-12 w-full rounded-xl bg-[#1769ff] text-sm font-semibold shadow-[0_8px_20px_rgba(23,105,255,0.22)] hover:bg-[#0e59df]" onClick={() => void copyAndOpenGoogle()}>
+                    {copied ? <Check className="mr-2 h-4 w-4" aria-hidden="true" /> : <Copy className="mr-2 h-4 w-4" aria-hidden="true" />}
+                    {copied ? strings.copiedLabel : strings.copyAndOpenButton}
+                  </Button>
                 </div>
                 <Button variant="ghost" className="mt-3 h-10 w-full text-sm text-muted-foreground" onClick={() => setReviewText("")}>{strings.regenerateButton}</Button>
               </div>

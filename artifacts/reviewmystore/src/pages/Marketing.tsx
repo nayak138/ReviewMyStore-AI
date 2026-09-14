@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { MarketingLayout } from "./marketing/layout";
-import { HeroSection, TrustedBySection } from "./marketing/hero";
+import { TrustedBySection } from "./marketing/hero";
 import { 
   WhyBusinessesLoveUs, 
   FeaturesGrid, 
@@ -23,7 +23,6 @@ export default function Marketing() {
 
   return (
     <MarketingLayout>
-      <HeroSection />
       <InteractiveReviewDemo />
       <TrustedBySection />
       <WhyBusinessesLoveUs />
