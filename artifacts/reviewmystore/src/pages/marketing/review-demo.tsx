@@ -72,6 +72,7 @@ export function InteractiveReviewDemo() {
   const generateReview = async () => {
     if (!rating || isGenerating) return;
 
+    const initialScrollY = window.scrollY;
     setIsGenerating(true);
     setError("");
     try {
@@ -102,7 +103,16 @@ export function InteractiveReviewDemo() {
       if (!response.ok || !result.reviewText) {
         throw new Error(result.message || "The review service is temporarily unavailable. Please try again.");
       }
+      const activeElement = document.activeElement;
+      if (activeElement instanceof HTMLElement) activeElement.blur();
       setReviewText(result.reviewText);
+      window.requestAnimationFrame(() => {
+        window.requestAnimationFrame(() => {
+          if (Math.abs(window.scrollY - initialScrollY) < 24) {
+            window.scrollTo(0, initialScrollY);
+          }
+        });
+      });
     } catch (generationError) {
       setError(generationError instanceof Error ? generationError.message : "The review could not be generated.");
     } finally {
