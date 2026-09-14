@@ -1299,8 +1299,6 @@ export const GetPublicReviewPageResponse = zod.object({
   "business": zod.object({
   "name": zod.string(),
   "category": zod.string(),
-  "logoUrl": zod.string().nullable(),
-  "coverImageUrl": zod.string().nullable(),
   "brandColor": zod.string().nullable(),
   "welcomeMessage": zod.string().nullable(),
   "address": zod.string().nullable(),

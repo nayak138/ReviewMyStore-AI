@@ -12,6 +12,7 @@ import {
 import { generateReviewText } from "./aiService";
 import { logger } from "../lib/logger";
 import { logScanEvent, type RequestMeta } from "./scanEventService";
+import { getPlaceDetails } from "./googleBusinessService";
 
 export class PublicCampaignNotFoundError extends Error {
   constructor(businessSlug: string, campaignSlug: string) {
@@ -165,6 +166,10 @@ function publicAssetPath(path: string | null): string | null {
     : path;
 }
 
+function placePhotoProxyUrl(photoName: string): string {
+  return `/api/v1/places/photo?name=${encodeURIComponent(photoName)}&maxWidthPx=1200`;
+}
+
 export async function getPublicReviewPage(
   businessSlug: string,
   campaignSlug: string,
@@ -185,12 +190,24 @@ export async function getPublicReviewPage(
     )
     .orderBy(asc(keywordsTable.sortOrder), asc(keywordsTable.createdAt));
 
+  let headerImageUrl = business.placeImageUrl ?? null;
+  if (!headerImageUrl && business.googlePlaceId) {
+    try {
+      const place = await getPlaceDetails(business.googlePlaceId);
+      if (place.photoName) headerImageUrl = placePhotoProxyUrl(place.photoName);
+    } catch (error) {
+      // A customer should still be able to review when Places is unavailable.
+      logger.warn(
+        { err: error, businessId: business.id },
+        "Could not load a live Google Places header photo",
+      );
+    }
+  }
+
   return {
     business: {
       name: business.name,
       category: business.category,
-      logoUrl: publicAssetPath(business.logoUrl),
-      coverImageUrl: publicAssetPath(business.coverImageUrl),
       brandColor: business.brandColor,
       welcomeMessage: business.welcomeMessage,
       address: business.address,
@@ -201,10 +218,9 @@ export async function getPublicReviewPage(
       whatsappNumber: business.whatsappNumber,
       googleRating: business.googleRating,
       googleReviewCount: business.googleReviewCount,
-      // Prefer the cached Google Places photo (fetched via the official API
-      // at onboarding/edit time); fall back to the owner's own cover image
-      // so the header always has something to show.
-      headerImageUrl: business.placeImageUrl ?? publicAssetPath(business.coverImageUrl),
+      // Prefer the cached Google Places photo, then use a live Places lookup
+      // for older businesses that were created before photo caching existed.
+      headerImageUrl: publicAssetPath(headerImageUrl),
       googleVerified: Boolean(business.googlePlaceId),
       defaultLanguage: business.defaultLanguage,
     },

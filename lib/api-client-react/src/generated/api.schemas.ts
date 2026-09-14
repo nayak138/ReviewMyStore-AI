@@ -674,10 +674,6 @@ export interface PublicBusinessSummary {
   name: string;
   category: string;
   /** @nullable */
-  logoUrl: string | null;
-  /** @nullable */
-  coverImageUrl: string | null;
-  /** @nullable */
   brandColor: string | null;
   /** @nullable */
   welcomeMessage: string | null;

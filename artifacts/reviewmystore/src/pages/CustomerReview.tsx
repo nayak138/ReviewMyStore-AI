@@ -1,4 +1,4 @@
-import { useMemo, useState, type CSSProperties, type KeyboardEvent } from "react";
+import { useEffect, useMemo, useState, type CSSProperties, type KeyboardEvent } from "react";
 import { useParams } from "wouter";
 import {
   AlertTriangle,
@@ -14,7 +14,6 @@ import {
   Phone,
   Plus,
   RefreshCw,
-  ShieldCheck,
   Sparkles,
   Star,
   X,
@@ -27,7 +26,6 @@ import {
   useGetPublicReviewPage,
   type SupportedLanguage,
 } from "@workspace/api-client-react";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
@@ -304,9 +302,13 @@ export default function CustomerReview() {
   const [maxGenerations, setMaxGenerations] = useState<number | null>(null);
   const [copied, setCopied] = useState(false);
   const [isEditingKeywords, setIsEditingKeywords] = useState(false);
-  const [logoFailed, setLogoFailed] = useState(false);
   const [headerImageFailed, setHeaderImageFailed] = useState(false);
   const sessionId = useMemo(() => getOrCreateSessionId(businessSlug, campaignSlug), [businessSlug, campaignSlug]);
+
+  useEffect(() => {
+    if (!data?.business.defaultLanguage || languageTouched) return;
+    setLanguage((current) => current ?? data.business.defaultLanguage);
+  }, [data?.business.defaultLanguage, languageTouched]);
 
   const effectiveLanguage = language ?? data?.business.defaultLanguage ?? "en";
   const strings = useMemo(() => getReviewPageStrings(effectiveLanguage), [effectiveLanguage]);
@@ -325,15 +327,7 @@ export default function CustomerReview() {
   if (isLoading) return <LoadingReviewPage />;
   if (isError || !data) return <UnavailableReviewPage />;
 
-  const { business, campaign, keywords, googleReviewUrl } = data;
-  // The default language only becomes known once the page has loaded, so a
-  // selector opened before that would show "en" then jump — seed it lazily
-  // instead of in useState's initializer.
-  if (!languageTouched && language === null && business.defaultLanguage !== "en") {
-    setLanguage(business.defaultLanguage);
-    setLanguageTouched(true);
-  }
-
+  const { business, keywords, googleReviewUrl } = data;
   const productKeywords = keywords.filter((keyword) => keyword.category === KeywordCategory.PRODUCT_SERVICE);
   const experienceKeywords = keywords.filter((keyword) => keyword.category === KeywordCategory.EXPERIENCE);
   const brandColor = business.brandColor || undefined;
@@ -439,7 +433,7 @@ export default function CustomerReview() {
   };
 
   return (
-    <div className="review-noise min-h-[100dvh] overflow-hidden bg-background">
+    <div className="review-noise min-h-[100dvh] overflow-hidden bg-[#eef2f7]">
       {showFeedbackModal && rating !== null && (
         <PrivateFeedbackModal
           businessSlug={businessSlug}
@@ -452,134 +446,83 @@ export default function CustomerReview() {
         />
       )}
 
-      <header className="relative mx-3 mt-3 h-56 overflow-hidden rounded-[1.75rem] sm:mx-5 sm:mt-5 sm:h-72 lg:mx-8">
-        <div className="absolute inset-0" style={coverStyle} />
-        {headerImage && !headerImageFailed && (
-          <img
-            src={headerImage}
-            alt=""
-            className="absolute inset-0 h-full w-full object-cover"
-            onError={() => setHeaderImageFailed(true)}
-          />
-        )}
-        <div className="absolute inset-0 bg-gradient-to-r from-foreground/50 via-foreground/10 to-transparent" />
-        <div className="absolute right-4 top-4 sm:right-6 sm:top-6">
-          <LanguageSelector
-            value={effectiveLanguage}
-            onChange={(code) => {
-              setLanguage(code);
-              setLanguageTouched(true);
-            }}
-          />
-        </div>
-        <div className="relative flex h-full items-end p-5 sm:p-8 lg:p-10">
-          <div className="max-w-md text-primary-foreground">
-            <div className="mb-3 flex flex-wrap items-center gap-2">
-              <div className="inline-flex items-center gap-2 rounded-full border border-primary-foreground/20 bg-foreground/20 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.16em] backdrop-blur-sm">
-                <span className="h-1.5 w-1.5 rounded-full bg-warning" />
-                A note from a local favorite
+      <main className="mx-auto w-full max-w-[460px] overflow-hidden bg-card shadow-[0_24px_80px_-38px_hsl(var(--foreground)/0.45)] sm:my-8 sm:rounded-[1.75rem]">
+        <header className="relative h-56 overflow-hidden sm:h-64">
+          <div className="absolute inset-0" style={coverStyle} />
+          {headerImage && !headerImageFailed && (
+            <img
+              src={headerImage}
+              alt={`${business.name} Google Places photo`}
+              className="absolute inset-0 h-full w-full object-cover"
+              onError={() => setHeaderImageFailed(true)}
+            />
+          )}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-black/15" />
+          <div className="absolute left-3 top-3 flex items-center gap-2 sm:left-4 sm:top-4">
+            {business.googleVerified && (
+              <div className="inline-flex items-center gap-1.5 rounded-full border border-white/30 bg-white/95 px-2.5 py-1.5 text-[10px] font-bold text-slate-800 shadow-sm">
+                <span className="font-sans text-[15px] font-black leading-none text-[#4285F4]" aria-hidden="true">G</span>
+                Google Verified
               </div>
-              {business.googleVerified && (
-                <div className="inline-flex items-center gap-1.5 rounded-full border border-primary-foreground/20 bg-foreground/20 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.1em] backdrop-blur-sm">
-                  <ShieldCheck className="h-3.5 w-3.5 text-success" aria-hidden="true" />
-                  Google Verified
-                </div>
-              )}
+            )}
+          </div>
+          <div className="absolute right-3 top-3 sm:right-4 sm:top-4">
+            <LanguageSelector
+              value={effectiveLanguage}
+              onChange={(code) => {
+                setLanguage(code);
+                setLanguageTouched(true);
+              }}
+            />
+          </div>
+          <div className="absolute inset-x-4 bottom-4 text-white sm:inset-x-5 sm:bottom-5">
+            <h1 className="font-display text-3xl font-semibold leading-tight">{business.name}</h1>
+            <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-white/85">
+              {business.category && <span>{business.category}</span>}
+              {business.address && <span className="inline-flex items-center gap-1"><MapPin className="h-3 w-3" aria-hidden="true" />{business.address}</span>}
             </div>
-            <p className="font-display text-3xl font-semibold leading-tight sm:text-4xl">
-              Your experience matters.
-            </p>
             {business.googleRating !== null && (
-              <div className="mt-2 flex items-center gap-1.5 text-sm font-medium">
-                <Star className="h-4 w-4 fill-warning text-warning" aria-hidden="true" />
+              <div className="mt-2 flex items-center gap-1.5 text-sm font-semibold">
+                <Star className="h-4 w-4 fill-[#fbbc04] text-[#fbbc04]" aria-hidden="true" />
                 {business.googleRating.toFixed(1)}
-                {business.googleReviewCount !== null && (
-                  <span className="text-primary-foreground/80">({business.googleReviewCount.toLocaleString()} reviews)</span>
-                )}
+                {business.googleReviewCount !== null && <span className="font-normal text-white/80">({business.googleReviewCount.toLocaleString()})</span>}
               </div>
             )}
           </div>
+        </header>
+
+        <div className="flex flex-wrap items-center gap-2 border-b border-border px-4 py-3 sm:px-5">
+          {business.phone && (
+            <Button asChild size="sm" className="h-9 rounded-full bg-[#1a73e8] px-4 text-xs hover:bg-[#155fc0]">
+              <a href={`tel:${business.phone}`}><Phone className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" />Call</a>
+            </Button>
+          )}
+          {(business.phone || business.address || business.website) && (
+            <Button variant="outline" size="sm" className="h-9 rounded-full px-3 text-xs" onClick={() => downloadVCard({ name: business.name, phone: business.phone, address: business.address, website: business.website })}>
+              <IdCard className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" />Save contact
+            </Button>
+          )}
+          {directionsHref && (
+            <Button asChild variant="outline" size="sm" className="h-9 rounded-full px-3 text-xs">
+              <a href={directionsHref} target="_blank" rel="noopener noreferrer"><MapPin className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" />Directions</a>
+            </Button>
+          )}
+          {socialLinks.filter((link) => !["call", "directions"].includes(link.key)).map((link) => (
+            <a
+              key={link.key}
+              href={link.href}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label={link.label}
+              title={link.label}
+              className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full border border-border bg-background transition-transform hover:-translate-y-0.5"
+            >
+              {link.kind === "image" ? <img src={link.image} alt="" className="h-full w-full object-cover" /> : <link.icon className="h-4 w-4 text-primary" aria-hidden="true" />}
+            </a>
+          ))}
         </div>
-      </header>
 
-      <main className="relative z-10 mx-auto grid max-w-6xl gap-6 px-4 pb-14 pt-5 sm:px-6 sm:pt-7 lg:grid-cols-[290px_minmax(0,650px)] lg:justify-center lg:gap-10 lg:px-8 lg:pt-0">
-        <aside className="lg:-mt-14">
-          <div className="rounded-[1.5rem] border border-border bg-card/95 p-5 shadow-[0_24px_70px_-42px_hsl(var(--foreground)/0.42)] backdrop-blur sm:p-6">
-            <div className="flex items-center gap-4 lg:block lg:text-center">
-              <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-2xl border-4 border-card bg-muted shadow-md lg:mx-auto lg:h-24 lg:w-24">
-                {business.logoUrl && !logoFailed ? (
-                  <img
-                    src={objectUrl(business.logoUrl)}
-                    alt={`${business.name} logo`}
-                    className="h-full w-full object-cover"
-                    onError={() => setLogoFailed(true)}
-                  />
-                ) : (
-                  <span className="font-display text-4xl font-semibold text-primary">{business.name.charAt(0)}</span>
-                )}
-              </div>
-              <div className="min-w-0 lg:mt-4">
-                <h1 className="font-display text-2xl font-semibold tracking-tight text-foreground">{business.name}</h1>
-                <p className="mt-1 text-sm text-muted-foreground">{business.category}</p>
-              </div>
-            </div>
-
-            {business.welcomeMessage && <p className="mt-5 border-t border-border pt-5 text-sm leading-6 text-muted-foreground lg:text-center">{business.welcomeMessage}</p>}
-
-            {(business.address || business.phone) && (
-              <div className="mt-5 space-y-2 border-t border-border pt-5 text-sm text-muted-foreground">
-                {business.address && (
-                  <p className="flex items-start gap-2">
-                    <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
-                    <span>{business.address}</span>
-                  </p>
-                )}
-                {business.phone && (
-                  <a href={`tel:${business.phone}`} className="flex items-center gap-2 font-medium text-foreground underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-                    <Phone className="h-4 w-4 text-primary" aria-hidden="true" />
-                    {business.phone}
-                  </a>
-                )}
-              </div>
-            )}
-
-            {(business.phone || business.address || business.website) && (
-              <Button
-                variant="outline"
-                size="sm"
-                className="mt-5 w-full"
-                onClick={() => downloadVCard({ name: business.name, phone: business.phone, address: business.address, website: business.website })}
-              >
-                <IdCard className="mr-2 h-4 w-4" aria-hidden="true" />
-                Save contact
-              </Button>
-            )}
-
-            {socialLinks.length > 0 && (
-              <div className="mt-5 flex items-center justify-center gap-2 border-t border-border pt-5" aria-label="Business links">
-                {socialLinks.map((link) => (
-                  <a
-                    key={link.key}
-                    href={link.href}
-                    target={link.key === "call" ? undefined : "_blank"}
-                    rel={link.key === "call" ? undefined : "noopener noreferrer"}
-                    aria-label={link.label}
-                    title={link.label}
-                    className={cn(
-                      "flex h-9 w-9 items-center justify-center overflow-hidden rounded-full transition-transform hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-                      link.kind === "image" ? "bg-transparent" : cn("text-primary-foreground", link.className),
-                    )}
-                  >
-                    {link.kind === "image" ? <img src={link.image} alt="" className="h-full w-full object-cover" /> : <link.icon className="h-4 w-4" aria-hidden="true" />}
-                  </a>
-                ))}
-              </div>
-            )}
-          </div>
-          <p className="mt-4 text-center text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">Campaign · {campaign.name}</p>
-        </aside>
-
-        <section className="space-y-4 lg:pt-7" dir={rtl ? "rtl" : "ltr"}>
+        <section className="space-y-4 px-4 pb-8 pt-5 sm:px-5" dir={rtl ? "rtl" : "ltr"}>
           {!hasGenerated ? (
             <div className="rounded-[1.5rem] border border-border bg-card p-5 shadow-[0_24px_70px_-42px_hsl(var(--foreground)/0.42)] sm:p-7">
               <div className="mb-6 flex items-start justify-between gap-4">
@@ -739,11 +682,6 @@ export default function CustomerReview() {
               {!canGenerateMore && <p className="mt-5 border-t border-border pt-4 text-center text-xs leading-5 text-muted-foreground">You've used all available rewrites. You can still edit the review above before posting.</p>}
             </div>
           )}
-          <div className="flex items-center justify-center gap-2 py-2 text-[11px] text-muted-foreground">
-            <span className="h-1.5 w-1.5 rounded-full bg-success" />
-            Your review goes directly to Google
-            <Badge variant="outline" className="ml-1 border-border px-2 py-0.5 text-[10px] font-medium text-muted-foreground">5-Star.AI</Badge>
-          </div>
         </section>
       </main>
     </div>

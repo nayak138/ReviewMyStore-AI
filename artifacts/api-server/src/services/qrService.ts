@@ -1,12 +1,5 @@
 import QRCode from "qrcode";
 import PDFDocument from "pdfkit";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
-
-// The bundled output lives at dist/index.mjs with assets copied alongside it
-// at dist/assets (see build.mjs) — both dev and prod run from dist/.
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const LOGO_ICON_PATH = path.join(__dirname, "assets", "logo-icon.png");
 
 export type QrFormat = "png" | "svg" | "pdf";
 
@@ -147,33 +140,6 @@ export async function generateQrPdf(input: QrAssetInput): Promise<Buffer> {
       width: width - 0.5 * INCH,
       align: "center",
     });
-
-  // Footer branding: small storefront mark + "Powered by 5-Star.AI".
-  // Deliberately understated and never implies Google endorsement — the
-  // review flow only ever links out to the business's own Google listing.
-  const brandingY = 5.75 * INCH;
-  const logoSize = 0.22 * INCH;
-  const brandingLabel = "Powered by 5-Star.AI";
-  doc.font("Helvetica").fontSize(8);
-  const labelWidth = doc.widthOfString(brandingLabel);
-  const groupWidth = logoSize + 0.08 * INCH + labelWidth;
-  const groupX = (width - groupWidth) / 2;
-  try {
-    doc.image(LOGO_ICON_PATH, groupX, brandingY, {
-      width: logoSize,
-      height: logoSize,
-    });
-  } catch {
-    // Logo asset missing — footer still reads fine as text-only.
-  }
-  doc
-    .fillColor("#9CA3AF")
-    .text(
-      brandingLabel,
-      groupX + logoSize + 0.08 * INCH,
-      brandingY + logoSize / 2 - 4,
-      { lineBreak: false },
-    );
 
   doc.end();
   return done;

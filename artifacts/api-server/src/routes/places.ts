@@ -72,9 +72,13 @@ router.get("/places/details/:placeId", placesRateLimit, async (req, res) => {
 
 router.get("/places/photo", placesRateLimit, async (req, res) => {
   const name = typeof req.query.name === "string" ? req.query.name : "";
+  const rawWidth = typeof req.query.maxWidthPx === "string" ? Number(req.query.maxWidthPx) : 800;
+  const maxWidthPx = Number.isFinite(rawWidth)
+    ? Math.min(1600, Math.max(96, Math.round(rawWidth)))
+    : 800;
 
   try {
-    const { contentType, data } = await fetchPlacePhoto(name);
+    const { contentType, data } = await fetchPlacePhoto(name, maxWidthPx);
     res.setHeader("Cache-Control", "public, max-age=86400");
     res.setHeader("Content-Type", contentType);
     res.send(data);

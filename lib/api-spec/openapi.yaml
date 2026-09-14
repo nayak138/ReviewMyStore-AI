@@ -3426,10 +3426,6 @@ components:
           type: string
         category:
           type: string
-        logoUrl:
-          type: ["string", "null"]
-        coverImageUrl:
-          type: ["string", "null"]
         brandColor:
           type: ["string", "null"]
         welcomeMessage:
@@ -3450,10 +3446,8 @@ components:
           type: ["number", "null"]
         googleReviewCount:
           type: ["integer", "null"]
-        # Resolved header photo: the cached Google Places photo when the
-        # business is linked to a Place, otherwise the owner's own cover
-        # image. Always a same-origin path (proxied), never a raw Google URL
-        # with an embedded API key.
+        # Resolved Google Places photo, always a same-origin path (proxied),
+        # never a raw Google URL with an embedded API key.
         headerImageUrl:
           type: ["string", "null"]
         googleVerified:
@@ -3463,8 +3457,6 @@ components:
       required:
         - name
         - category
-        - logoUrl
-        - coverImageUrl
         - brandColor
         - welcomeMessage
         - address
