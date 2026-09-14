@@ -5,10 +5,34 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { ReviewTone } from './reviewTone';
+import type { SupportedLanguage } from './supportedLanguage';
 
 export interface PublicGenerateReviewInput {
   /** @minLength 1 */
   sessionId: string;
   /** @minItems 1 */
   keywords: string[];
+  /**
+     * @minimum 1
+     * @maximum 5
+     */
+  rating: number;
+  tone: ReviewTone;
+  language?: SupportedLanguage;
+  /**
+     * @maxLength 60
+     * @nullable
+     */
+  mentionDetail?: string | null;
+  /**
+     * @maxLength 60
+     * @nullable
+     */
+  customerName?: string | null;
+  /**
+     * @maxLength 60
+     * @nullable
+     */
+  occasion?: string | null;
 }

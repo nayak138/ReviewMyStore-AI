@@ -32,7 +32,8 @@ import {
   getListBusinessesQueryKey,
   getGetPlaceDetailsQueryKey,
   Business,
-  type PlaceAutocompleteSuggestion
+  type PlaceAutocompleteSuggestion,
+  type SupportedLanguage,
 } from "@workspace/api-client-react";
 import { AppLayout } from "@/components/layout/app-layout";
 import { Button } from "@/components/ui/button";
@@ -44,9 +45,11 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
 import { FileUpload } from "@/components/ui/file-upload";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { objectUrl } from "@/lib/imageUtils";
 import { BusinessSearch } from "@/components/business-search";
 import { placePhotoUrl } from "@/lib/selected-place";
+import { LANGUAGES } from "@/lib/languages";
 import { useToast } from "@/hooks/use-toast";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -73,6 +76,7 @@ const businessSchema = z.object({
   googleRating: z.number().nullable().optional(),
   googleReviewCount: z.number().nullable().optional(),
   placeImageUrl: z.string().nullable().optional(),
+  defaultLanguage: z.string().optional(),
 });
 
 type BusinessFormValues = z.infer<typeof businessSchema>;
@@ -97,6 +101,7 @@ const EMPTY_BUSINESS_VALUES: BusinessFormValues = {
   googleRating: null,
   googleReviewCount: null,
   placeImageUrl: null,
+  defaultLanguage: "en",
 };
 
 function slugify(value: string): string {
@@ -240,6 +245,7 @@ export default function Businesses() {
       googleRating: business.googleRating,
       googleReviewCount: business.googleReviewCount,
       placeImageUrl: business.placeImageUrl,
+      defaultLanguage: business.defaultLanguage || "en",
     });
     setIsEditModalOpen(true);
   };
@@ -313,10 +319,11 @@ export default function Businesses() {
   };
 
   const onSubmit = (values: BusinessFormValues) => {
+    const payload = { ...values, defaultLanguage: values.defaultLanguage as SupportedLanguage | undefined };
     if (isEditModalOpen && editingBusiness) {
-      updateBusiness.mutate({ id: editingBusiness.id, data: values });
+      updateBusiness.mutate({ id: editingBusiness.id, data: payload });
     } else {
-      createBusiness.mutate({ data: values });
+      createBusiness.mutate({ data: payload });
     }
   };
 
@@ -747,6 +754,33 @@ export default function Businesses() {
                         <Textarea placeholder="Thank you for your visit..." className="resize-none" {...field} />
                       </FormControl>
                       <FormDescription>Shown to customers when they scan your QR code.</FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="defaultLanguage"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Default Review Language</FormLabel>
+                      <Select value={field.value || "en"} onValueChange={field.onChange}>
+                        <FormControl>
+                          <SelectTrigger className="max-w-xs">
+                            <SelectValue placeholder="English" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent className="max-h-72">
+                          {LANGUAGES.map((lang) => (
+                            <SelectItem key={lang.code} value={lang.code}>
+                              {lang.nativeName}
+                              {lang.nativeName !== lang.englishName ? ` (${lang.englishName})` : ""}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormDescription>Customers can switch languages, but this is what they'll see first.</FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}

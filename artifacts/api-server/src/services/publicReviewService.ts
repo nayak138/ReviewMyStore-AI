@@ -125,7 +125,7 @@ export async function cleanupCompletedGenerationReservations(
 /** Only ACTIVE, non-archived, non-deleted campaigns under a non-deleted
  * business are reachable — this is what keeps a DRAFT or paused campaign's
  * URL from working just because someone guesses the slugs. */
-async function findActivePublicCampaign(
+export async function findActivePublicCampaign(
   businessSlug: string,
   campaignSlug: string,
 ) {
@@ -199,6 +199,14 @@ export async function getPublicReviewPage(
       instagramUrl: business.instagramUrl,
       facebookUrl: business.facebookUrl,
       whatsappNumber: business.whatsappNumber,
+      googleRating: business.googleRating,
+      googleReviewCount: business.googleReviewCount,
+      // Prefer the cached Google Places photo (fetched via the official API
+      // at onboarding/edit time); fall back to the owner's own cover image
+      // so the header always has something to show.
+      headerImageUrl: business.placeImageUrl ?? publicAssetPath(business.coverImageUrl),
+      googleVerified: Boolean(business.googlePlaceId),
+      defaultLanguage: business.defaultLanguage,
     },
     campaign: { id: campaign.id, name: campaign.name },
     keywords: keywords.map((k) => ({
@@ -210,16 +218,27 @@ export async function getPublicReviewPage(
   };
 }
 
+export interface GeneratePublicReviewOptions {
+  rating: number;
+  tone: "ENTHUSIASTIC" | "SHORT_DIRECT" | "DETAILED" | "WARM";
+  language?: string;
+  mentionDetail?: string | null;
+  customerName?: string | null;
+  occasion?: string | null;
+}
+
 export async function generatePublicReview(
   businessSlug: string,
   campaignSlug: string,
   sessionId: string,
   keywords: string[],
+  options: GeneratePublicReviewOptions,
 ) {
   const { business, campaign } = await findActivePublicCampaign(
     businessSlug,
     campaignSlug,
   );
+  const language = options.language ?? business.defaultLanguage ?? "en";
 
   const reservationId = randomUUID();
   await db.transaction(async (tx) => {
@@ -308,6 +327,12 @@ export async function generatePublicReview(
       businessName: business.name,
       category: business.category,
       keywords,
+      rating: options.rating,
+      tone: options.tone,
+      language,
+      mentionDetail: options.mentionDetail,
+      customerName: options.customerName,
+      occasion: options.occasion,
       organizationId: business.organizationId,
       businessId: business.id,
       campaignId: campaign.id,
@@ -357,6 +382,7 @@ export async function generatePublicReview(
         MAX_GENERATIONS - finalizedGenerationCount,
       ),
       maxGenerations: MAX_GENERATIONS,
+      language,
     };
   } catch (error) {
     try {

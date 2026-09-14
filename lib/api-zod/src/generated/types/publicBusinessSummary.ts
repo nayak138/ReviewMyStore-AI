@@ -5,6 +5,7 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { SupportedLanguage } from './supportedLanguage';
 
 export interface PublicBusinessSummary {
   name: string;
@@ -29,4 +30,12 @@ export interface PublicBusinessSummary {
   facebookUrl: string | null;
   /** @nullable */
   whatsappNumber: string | null;
+  /** @nullable */
+  googleRating: number | null;
+  /** @nullable */
+  googleReviewCount: number | null;
+  /** @nullable */
+  headerImageUrl: string | null;
+  googleVerified: boolean;
+  defaultLanguage: SupportedLanguage;
 }

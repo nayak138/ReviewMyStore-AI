@@ -23,6 +23,12 @@ import { AIGenerationError } from "./aiService";
 
 const runId = randomUUID().slice(0, 8);
 const originalCreate = openrouter.chat.completions.create;
+// Rating/tone are irrelevant to these quota/session-security tests; a fixed
+// value keeps every call site focused on the behavior under test.
+const defaultGenerateOptions = {
+  rating: 5,
+  tone: "ENTHUSIASTIC" as const,
+};
 let orgId: string;
 let businessId: string;
 let activeCampaignId: string;
@@ -218,6 +224,7 @@ test("a session token cannot be reused across campaigns", async () => {
     `active-${runId}`,
     sessionId,
     ["helpful staff"],
+    defaultGenerateOptions,
   );
   await assert.rejects(
     generatePublicReview(
@@ -225,6 +232,7 @@ test("a session token cannot be reused across campaigns", async () => {
       `second-${runId}`,
       sessionId,
       ["helpful staff"],
+      defaultGenerateOptions,
     ),
     (error: unknown) => error instanceof SessionCampaignMismatchError,
   );
@@ -239,6 +247,7 @@ test("concurrent generation attempts reserve no more than three session slots", 
         `active-${runId}`,
         sessionId,
         ["quick service"],
+        defaultGenerateOptions,
       ),
     ),
   );
@@ -280,6 +289,7 @@ test("organization quota rejects generation when the atomic allowance is empty",
       `active-${runId}`,
       `quota-session-${runId}`,
       ["friendly team"],
+      defaultGenerateOptions,
     ),
     (error: unknown) => error instanceof OrganizationQuotaExhaustedError,
   );
@@ -301,6 +311,7 @@ test("provider failure restores the organization quota and session attempt", asy
       `active-${runId}`,
       sessionId,
       ["helpful staff"],
+      defaultGenerateOptions,
     ),
     (error: unknown) => error instanceof AIGenerationError,
   );
@@ -338,6 +349,7 @@ test("a transient provider failure can be retried with the same quota and sessio
       `active-${runId}`,
       sessionId,
       ["friendly team"],
+      defaultGenerateOptions,
     ),
     (error: unknown) => error instanceof AIGenerationError,
   );
@@ -346,6 +358,7 @@ test("a transient provider failure can be retried with the same quota and sessio
     `active-${runId}`,
     sessionId,
     ["friendly team"],
+    defaultGenerateOptions,
   );
 
   assert.equal(result.reviewText, "Retry succeeded.");
@@ -393,6 +406,7 @@ test("a failed request does not roll back a concurrent successful reservation", 
     `active-${runId}`,
     sessionId,
     ["helpful staff"],
+    defaultGenerateOptions,
   );
   await firstProviderStarted;
 
@@ -401,6 +415,7 @@ test("a failed request does not roll back a concurrent successful reservation", 
     `active-${runId}`,
     sessionId,
     ["helpful staff"],
+    defaultGenerateOptions,
   );
   await successfulRequest;
   releaseFailure();
@@ -435,6 +450,7 @@ test("simultaneous requests cannot drive organization quota below zero", async (
         `active-${runId}`,
         `quota-floor-session-${runId}-${index}`,
         ["quick service"],
+        defaultGenerateOptions,
       ),
     ),
   );

@@ -394,6 +394,7 @@ export const ListBusinessesResponse = zod.object({
   "googleRating": zod.number().nullable(),
   "googleReviewCount": zod.int().nullable(),
   "placeImageUrl": zod.string().nullable(),
+  "defaultLanguage": zod.enum(['en', 'hi', 'bn', 'te', 'mr', 'ta', 'ur', 'gu', 'kn', 'ml', 'pa', 'or', 'as', 'mai', 'sat', 'ks', 'ne', 'sd', 'kok', 'doi', 'mni', 'sa', 'brx']),
   "status": zod.enum(['ACTIVE', 'SUSPENDED', 'DISABLED']),
   "archivedAt": zod.coerce.date().nullable(),
   "deletedAt": zod.coerce.date().nullable(),
@@ -432,7 +433,8 @@ export const CreateBusinessBody = zod.object({
   "longitude": zod.number().nullish(),
   "googleRating": zod.number().nullish(),
   "googleReviewCount": zod.int().nullish(),
-  "placeImageUrl": zod.string().nullish()
+  "placeImageUrl": zod.string().nullish(),
+  "defaultLanguage": zod.enum(['en', 'hi', 'bn', 'te', 'mr', 'ta', 'ur', 'gu', 'kn', 'ml', 'pa', 'or', 'as', 'mai', 'sat', 'ks', 'ne', 'sd', 'kok', 'doi', 'mni', 'sa', 'brx']).optional()
 })
 
 export const CreateBusinessResponse = zod.object({
@@ -457,6 +459,7 @@ export const CreateBusinessResponse = zod.object({
   "googleRating": zod.number().nullable(),
   "googleReviewCount": zod.int().nullable(),
   "placeImageUrl": zod.string().nullable(),
+  "defaultLanguage": zod.enum(['en', 'hi', 'bn', 'te', 'mr', 'ta', 'ur', 'gu', 'kn', 'ml', 'pa', 'or', 'as', 'mai', 'sat', 'ks', 'ne', 'sd', 'kok', 'doi', 'mni', 'sa', 'brx']),
   "status": zod.enum(['ACTIVE', 'SUSPENDED', 'DISABLED']),
   "archivedAt": zod.coerce.date().nullable(),
   "deletedAt": zod.coerce.date().nullable(),
@@ -494,6 +497,7 @@ export const GetBusinessResponse = zod.object({
   "googleRating": zod.number().nullable(),
   "googleReviewCount": zod.int().nullable(),
   "placeImageUrl": zod.string().nullable(),
+  "defaultLanguage": zod.enum(['en', 'hi', 'bn', 'te', 'mr', 'ta', 'ur', 'gu', 'kn', 'ml', 'pa', 'or', 'as', 'mai', 'sat', 'ks', 'ne', 'sd', 'kok', 'doi', 'mni', 'sa', 'brx']),
   "status": zod.enum(['ACTIVE', 'SUSPENDED', 'DISABLED']),
   "archivedAt": zod.coerce.date().nullable(),
   "deletedAt": zod.coerce.date().nullable(),
@@ -535,7 +539,8 @@ export const UpdateBusinessBody = zod.object({
   "longitude": zod.number().nullish(),
   "googleRating": zod.number().nullish(),
   "googleReviewCount": zod.int().nullish(),
-  "placeImageUrl": zod.string().nullish()
+  "placeImageUrl": zod.string().nullish(),
+  "defaultLanguage": zod.enum(['en', 'hi', 'bn', 'te', 'mr', 'ta', 'ur', 'gu', 'kn', 'ml', 'pa', 'or', 'as', 'mai', 'sat', 'ks', 'ne', 'sd', 'kok', 'doi', 'mni', 'sa', 'brx']).optional()
 })
 
 export const UpdateBusinessResponse = zod.object({
@@ -560,6 +565,7 @@ export const UpdateBusinessResponse = zod.object({
   "googleRating": zod.number().nullable(),
   "googleReviewCount": zod.int().nullable(),
   "placeImageUrl": zod.string().nullable(),
+  "defaultLanguage": zod.enum(['en', 'hi', 'bn', 'te', 'mr', 'ta', 'ur', 'gu', 'kn', 'ml', 'pa', 'or', 'as', 'mai', 'sat', 'ks', 'ne', 'sd', 'kok', 'doi', 'mni', 'sa', 'brx']),
   "status": zod.enum(['ACTIVE', 'SUSPENDED', 'DISABLED']),
   "archivedAt": zod.coerce.date().nullable(),
   "deletedAt": zod.coerce.date().nullable(),
@@ -607,6 +613,7 @@ export const ArchiveBusinessResponse = zod.object({
   "googleRating": zod.number().nullable(),
   "googleReviewCount": zod.int().nullable(),
   "placeImageUrl": zod.string().nullable(),
+  "defaultLanguage": zod.enum(['en', 'hi', 'bn', 'te', 'mr', 'ta', 'ur', 'gu', 'kn', 'ml', 'pa', 'or', 'as', 'mai', 'sat', 'ks', 'ne', 'sd', 'kok', 'doi', 'mni', 'sa', 'brx']),
   "status": zod.enum(['ACTIVE', 'SUSPENDED', 'DISABLED']),
   "archivedAt": zod.coerce.date().nullable(),
   "deletedAt": zod.coerce.date().nullable(),
@@ -644,6 +651,7 @@ export const RestoreBusinessResponse = zod.object({
   "googleRating": zod.number().nullable(),
   "googleReviewCount": zod.int().nullable(),
   "placeImageUrl": zod.string().nullable(),
+  "defaultLanguage": zod.enum(['en', 'hi', 'bn', 'te', 'mr', 'ta', 'ur', 'gu', 'kn', 'ml', 'pa', 'or', 'as', 'mai', 'sat', 'ks', 'ne', 'sd', 'kok', 'doi', 'mni', 'sa', 'brx']),
   "status": zod.enum(['ACTIVE', 'SUSPENDED', 'DISABLED']),
   "archivedAt": zod.coerce.date().nullable(),
   "deletedAt": zod.coerce.date().nullable(),
@@ -685,6 +693,7 @@ export const SetBusinessStatusResponse = zod.object({
   "googleRating": zod.number().nullable(),
   "googleReviewCount": zod.int().nullable(),
   "placeImageUrl": zod.string().nullable(),
+  "defaultLanguage": zod.enum(['en', 'hi', 'bn', 'te', 'mr', 'ta', 'ur', 'gu', 'kn', 'ml', 'pa', 'or', 'as', 'mai', 'sat', 'ks', 'ne', 'sd', 'kok', 'doi', 'mni', 'sa', 'brx']),
   "status": zod.enum(['ACTIVE', 'SUSPENDED', 'DISABLED']),
   "archivedAt": zod.coerce.date().nullable(),
   "deletedAt": zod.coerce.date().nullable(),
@@ -1094,7 +1103,12 @@ export const GetPublicReviewPageResponse = zod.object({
   "website": zod.string().nullable(),
   "instagramUrl": zod.string().nullable(),
   "facebookUrl": zod.string().nullable(),
-  "whatsappNumber": zod.string().nullable()
+  "whatsappNumber": zod.string().nullable(),
+  "googleRating": zod.number().nullable(),
+  "googleReviewCount": zod.int().nullable(),
+  "headerImageUrl": zod.string().nullable(),
+  "googleVerified": zod.boolean(),
+  "defaultLanguage": zod.enum(['en', 'hi', 'bn', 'te', 'mr', 'ta', 'ur', 'gu', 'kn', 'ml', 'pa', 'or', 'as', 'mai', 'sat', 'ks', 'ne', 'sd', 'kok', 'doi', 'mni', 'sa', 'brx'])
 }),
   "campaign": zod.object({
   "id": zod.uuid(),
@@ -1120,17 +1134,120 @@ export const GeneratePublicReviewParams = zod.object({
 
 
 
+export const generatePublicReviewBodyRatingMax = 5;
+
+export const generatePublicReviewBodyMentionDetailMax = 60;
+
+export const generatePublicReviewBodyCustomerNameMax = 60;
+
+export const generatePublicReviewBodyOccasionMax = 60;
+
 
 
 export const GeneratePublicReviewBody = zod.object({
   "sessionId": zod.string().min(1),
-  "keywords": zod.array(zod.string()).min(1)
+  "keywords": zod.array(zod.string()).min(1),
+  "rating": zod.int().min(1).max(generatePublicReviewBodyRatingMax),
+  "tone": zod.enum(['ENTHUSIASTIC', 'SHORT_DIRECT', 'DETAILED', 'WARM']),
+  "language": zod.enum(['en', 'hi', 'bn', 'te', 'mr', 'ta', 'ur', 'gu', 'kn', 'ml', 'pa', 'or', 'as', 'mai', 'sat', 'ks', 'ne', 'sd', 'kok', 'doi', 'mni', 'sa', 'brx']).optional(),
+  "mentionDetail": zod.string().max(generatePublicReviewBodyMentionDetailMax).nullish(),
+  "customerName": zod.string().max(generatePublicReviewBodyCustomerNameMax).nullish(),
+  "occasion": zod.string().max(generatePublicReviewBodyOccasionMax).nullish()
 })
 
 export const GeneratePublicReviewResponse = zod.object({
   "reviewText": zod.string(),
   "remainingGenerations": zod.int(),
-  "maxGenerations": zod.int()
+  "maxGenerations": zod.int(),
+  "language": zod.enum(['en', 'hi', 'bn', 'te', 'mr', 'ta', 'ur', 'gu', 'kn', 'ml', 'pa', 'or', 'as', 'mai', 'sat', 'ks', 'ne', 'sd', 'kok', 'doi', 'mni', 'sa', 'brx'])
+})
+
+
+/**
+ * Public (unauthenticated). Shown to the customer only when they select a low star rating; never posted to Google, never shown publicly — readable only by the business's own organization in the dashboard.
+ * @summary Submit a private message to the business instead of/before posting publicly
+ */
+export const SubmitPrivateFeedbackParams = zod.object({
+  "businessSlug": zod.coerce.string(),
+  "campaignSlug": zod.coerce.string()
+})
+
+
+export const submitPrivateFeedbackBodyRatingMax = 5;
+
+export const submitPrivateFeedbackBodyMessageMax = 1000;
+
+export const submitPrivateFeedbackBodyContactMax = 200;
+
+
+
+export const SubmitPrivateFeedbackBody = zod.object({
+  "sessionId": zod.string().min(1),
+  "rating": zod.int().min(1).max(submitPrivateFeedbackBodyRatingMax),
+  "message": zod.string().min(1).max(submitPrivateFeedbackBodyMessageMax),
+  "contact": zod.string().max(submitPrivateFeedbackBodyContactMax).nullish(),
+  "language": zod.enum(['en', 'hi', 'bn', 'te', 'mr', 'ta', 'ur', 'gu', 'kn', 'ml', 'pa', 'or', 'as', 'mai', 'sat', 'ks', 'ne', 'sd', 'kok', 'doi', 'mni', 'sa', 'brx']).optional()
+})
+
+export const SubmitPrivateFeedbackResponse = zod.object({
+  "success": zod.boolean()
+})
+
+
+/**
+ * @summary List private feedback submitted across the organization's businesses
+ */
+export const listPrivateFeedbackQueryLimitMax = 200;
+
+
+
+export const ListPrivateFeedbackQueryParams = zod.object({
+  "businessId": zod.coerce.string().optional(),
+  "campaignId": zod.coerce.string().optional(),
+  "status": zod.enum(['NEW', 'VIEWED', 'RESOLVED']).optional(),
+  "limit": zod.coerce.number().int().min(1).max(listPrivateFeedbackQueryLimitMax).optional()
+})
+
+export const ListPrivateFeedbackResponse = zod.object({
+  "feedback": zod.array(zod.object({
+  "id": zod.uuid(),
+  "businessId": zod.uuid(),
+  "businessName": zod.string(),
+  "campaignId": zod.uuid(),
+  "campaignName": zod.string(),
+  "rating": zod.int(),
+  "message": zod.string(),
+  "contact": zod.string().nullable(),
+  "language": zod.enum(['en', 'hi', 'bn', 'te', 'mr', 'ta', 'ur', 'gu', 'kn', 'ml', 'pa', 'or', 'as', 'mai', 'sat', 'ks', 'ne', 'sd', 'kok', 'doi', 'mni', 'sa', 'brx']),
+  "status": zod.enum(['NEW', 'VIEWED', 'RESOLVED']),
+  "createdAt": zod.coerce.date()
+}))
+})
+
+
+/**
+ * @summary Mark a private feedback item as viewed or resolved
+ */
+export const UpdatePrivateFeedbackStatusParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const UpdatePrivateFeedbackStatusBody = zod.object({
+  "status": zod.enum(['NEW', 'VIEWED', 'RESOLVED'])
+})
+
+export const UpdatePrivateFeedbackStatusResponse = zod.object({
+  "id": zod.uuid(),
+  "businessId": zod.uuid(),
+  "businessName": zod.string(),
+  "campaignId": zod.uuid(),
+  "campaignName": zod.string(),
+  "rating": zod.int(),
+  "message": zod.string(),
+  "contact": zod.string().nullable(),
+  "language": zod.enum(['en', 'hi', 'bn', 'te', 'mr', 'ta', 'ur', 'gu', 'kn', 'ml', 'pa', 'or', 'as', 'mai', 'sat', 'ks', 'ne', 'sd', 'kok', 'doi', 'mni', 'sa', 'brx']),
+  "status": zod.enum(['NEW', 'VIEWED', 'RESOLVED']),
+  "createdAt": zod.coerce.date()
 })
 
 

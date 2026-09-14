@@ -34,6 +34,8 @@ tags:
     description: Object storage upload and serving endpoints.
   - name: review-management
     description: Authenticated Google Business review inbox and reply operations.
+  - name: feedback
+    description: Authenticated management of customer private feedback submissions
 paths:
   /v1/review-management:
     get:
@@ -1336,6 +1338,137 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  /v1/public/review/{businessSlug}/{campaignSlug}/feedback:
+    post:
+      operationId: submitPrivateFeedback
+      tags: [public-review]
+      summary: Submit a private message to the business instead of/before posting publicly
+      description: >
+        Public (unauthenticated). Shown to the customer only when they select
+        a low star rating; never posted to Google, never shown publicly —
+        readable only by the business's own organization in the dashboard.
+      parameters:
+        - name: businessSlug
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: campaignSlug
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PrivateFeedbackInput"
+      responses:
+        "201":
+          description: Feedback recorded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PrivateFeedbackResult"
+        "400":
+          description: Invalid request body
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found or not active
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "429":
+          description: Too many requests
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /v1/feedback:
+    get:
+      operationId: listPrivateFeedback
+      tags: [feedback]
+      summary: List private feedback submitted across the organization's businesses
+      security:
+        - clerkAuth: []
+      parameters:
+        - name: businessId
+          in: query
+          schema:
+            type: string
+        - name: campaignId
+          in: query
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            $ref: "#/components/schemas/PrivateFeedbackStatus"
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 200
+      responses:
+        "200":
+          description: Private feedback list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListPrivateFeedbackResult"
+        "403":
+          description: Account is not associated with an organization
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /v1/feedback/{id}:
+    patch:
+      operationId: updatePrivateFeedbackStatus
+      tags: [feedback]
+      summary: Mark a private feedback item as viewed or resolved
+      security:
+        - clerkAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdatePrivateFeedbackStatusInput"
+      responses:
+        "200":
+          description: Updated feedback item
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PrivateFeedbackItem"
+        "403":
+          description: Account is not associated with an organization
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /v1/public/demo-requests:
     post:
       operationId: createDemoRequest
@@ -2309,6 +2442,8 @@ components:
           type: ["integer", "null"]
         placeImageUrl:
           type: ["string", "null"]
+        defaultLanguage:
+          $ref: "#/components/schemas/SupportedLanguage"
         status:
           $ref: "#/components/schemas/BusinessStatus"
         archivedAt:
@@ -2342,6 +2477,7 @@ components:
         - googleRating
         - googleReviewCount
         - placeImageUrl
+        - defaultLanguage
         - status
         - archivedAt
         - deletedAt
@@ -2403,6 +2539,8 @@ components:
           type: ["integer", "null"]
         placeImageUrl:
           type: ["string", "null"]
+        defaultLanguage:
+          $ref: "#/components/schemas/SupportedLanguage"
       required:
         - name
         - category
@@ -2453,6 +2591,8 @@ components:
           type: ["integer", "null"]
         placeImageUrl:
           type: ["string", "null"]
+        defaultLanguage:
+          $ref: "#/components/schemas/SupportedLanguage"
 
     BusinessStatusInput:
       type: object
@@ -2597,6 +2737,48 @@ components:
     KeywordCategory:
       type: string
       enum: [PRODUCT_SERVICE, EXPERIENCE]
+
+    # English plus the 22 languages scheduled in the Constitution of India.
+    # Codes are ISO 639-1 where one exists, else a stable ISO 639-2/3 code.
+    # Display names (with native script) live only in the frontend/backend
+    # language-catalog constants, not here — this enum is the single source
+    # of truth for which codes are valid.
+    SupportedLanguage:
+      type: string
+      enum:
+        [
+          en,
+          hi,
+          bn,
+          te,
+          mr,
+          ta,
+          ur,
+          gu,
+          kn,
+          ml,
+          pa,
+          or,
+          as,
+          mai,
+          sat,
+          ks,
+          ne,
+          sd,
+          kok,
+          doi,
+          mni,
+          sa,
+          brx,
+        ]
+
+    ReviewTone:
+      type: string
+      enum: [ENTHUSIASTIC, SHORT_DIRECT, DETAILED, WARM]
+
+    PrivateFeedbackStatus:
+      type: string
+      enum: [NEW, VIEWED, RESOLVED]
 
     Keyword:
       type: object
@@ -2762,6 +2944,20 @@ components:
           type: ["string", "null"]
         whatsappNumber:
           type: ["string", "null"]
+        googleRating:
+          type: ["number", "null"]
+        googleReviewCount:
+          type: ["integer", "null"]
+        # Resolved header photo: the cached Google Places photo when the
+        # business is linked to a Place, otherwise the owner's own cover
+        # image. Always a same-origin path (proxied), never a raw Google URL
+        # with an embedded API key.
+        headerImageUrl:
+          type: ["string", "null"]
+        googleVerified:
+          type: boolean
+        defaultLanguage:
+          $ref: "#/components/schemas/SupportedLanguage"
       required:
         - name
         - category
@@ -2775,6 +2971,11 @@ components:
         - instagramUrl
         - facebookUrl
         - whatsappNumber
+        - googleRating
+        - googleReviewCount
+        - headerImageUrl
+        - googleVerified
+        - defaultLanguage
 
     PublicCampaignSummary:
       type: object
@@ -2833,9 +3034,31 @@ components:
           items:
             type: string
           minItems: 1
+        rating:
+          type: integer
+          minimum: 1
+          maximum: 5
+        tone:
+          $ref: "#/components/schemas/ReviewTone"
+        language:
+          $ref: "#/components/schemas/SupportedLanguage"
+        # A specific team member, dish, or item the customer wants named in
+        # the review (the reference product's "Mention a specific team
+        # member, dish, or item" field). Optional and freeform, but bounded.
+        mentionDetail:
+          type: ["string", "null"]
+          maxLength: 60
+        customerName:
+          type: ["string", "null"]
+          maxLength: 60
+        occasion:
+          type: ["string", "null"]
+          maxLength: 60
       required:
         - sessionId
         - keywords
+        - rating
+        - tone
 
     PublicGenerateReviewResult:
       type: object
@@ -2846,10 +3069,105 @@ components:
           type: integer
         maxGenerations:
           type: integer
+        language:
+          $ref: "#/components/schemas/SupportedLanguage"
       required:
         - reviewText
         - remainingGenerations
         - maxGenerations
+        - language
+
+    PrivateFeedbackInput:
+      type: object
+      properties:
+        sessionId:
+          type: string
+          minLength: 1
+        rating:
+          type: integer
+          minimum: 1
+          maximum: 5
+        message:
+          type: string
+          minLength: 1
+          maxLength: 1000
+        contact:
+          type: ["string", "null"]
+          maxLength: 200
+        language:
+          $ref: "#/components/schemas/SupportedLanguage"
+      required:
+        - sessionId
+        - rating
+        - message
+
+    PrivateFeedbackResult:
+      type: object
+      properties:
+        success:
+          type: boolean
+      required:
+        - success
+
+    PrivateFeedbackItem:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        businessId:
+          type: string
+          format: uuid
+        businessName:
+          type: string
+        campaignId:
+          type: string
+          format: uuid
+        campaignName:
+          type: string
+        rating:
+          type: integer
+        message:
+          type: string
+        contact:
+          type: ["string", "null"]
+        language:
+          $ref: "#/components/schemas/SupportedLanguage"
+        status:
+          $ref: "#/components/schemas/PrivateFeedbackStatus"
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - businessId
+        - businessName
+        - campaignId
+        - campaignName
+        - rating
+        - message
+        - contact
+        - language
+        - status
+        - createdAt
+
+    ListPrivateFeedbackResult:
+      type: object
+      properties:
+        feedback:
+          type: array
+          items:
+            $ref: "#/components/schemas/PrivateFeedbackItem"
+      required:
+        - feedback
+
+    UpdatePrivateFeedbackStatusInput:
+      type: object
+      properties:
+        status:
+          $ref: "#/components/schemas/PrivateFeedbackStatus"
+      required:
+        - status
 
     RecentActivityItem:
       type: object

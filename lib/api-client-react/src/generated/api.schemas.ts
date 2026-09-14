@@ -180,6 +180,35 @@ export const BusinessStatus = {
   DISABLED: 'DISABLED',
 } as const;
 
+export type SupportedLanguage = typeof SupportedLanguage[keyof typeof SupportedLanguage];
+
+
+export const SupportedLanguage = {
+  en: 'en',
+  hi: 'hi',
+  bn: 'bn',
+  te: 'te',
+  mr: 'mr',
+  ta: 'ta',
+  ur: 'ur',
+  gu: 'gu',
+  kn: 'kn',
+  ml: 'ml',
+  pa: 'pa',
+  or: 'or',
+  as: 'as',
+  mai: 'mai',
+  sat: 'sat',
+  ks: 'ks',
+  ne: 'ne',
+  sd: 'sd',
+  kok: 'kok',
+  doi: 'doi',
+  mni: 'mni',
+  sa: 'sa',
+  brx: 'brx',
+} as const;
+
 export interface Business {
   id: string;
   organizationId: string;
@@ -218,6 +247,7 @@ export interface Business {
   googleReviewCount: number | null;
   /** @nullable */
   placeImageUrl: string | null;
+  defaultLanguage: SupportedLanguage;
   status: BusinessStatus;
   /** @nullable */
   archivedAt: string | null;
@@ -273,6 +303,7 @@ export interface BusinessCreateInput {
   googleReviewCount?: number | null;
   /** @nullable */
   placeImageUrl?: string | null;
+  defaultLanguage?: SupportedLanguage;
 }
 
 export interface BusinessUpdateInput {
@@ -317,6 +348,7 @@ export interface BusinessUpdateInput {
   googleReviewCount?: number | null;
   /** @nullable */
   placeImageUrl?: string | null;
+  defaultLanguage?: SupportedLanguage;
 }
 
 export interface BusinessStatusInput {
@@ -396,6 +428,25 @@ export type KeywordCategory = typeof KeywordCategory[keyof typeof KeywordCategor
 export const KeywordCategory = {
   PRODUCT_SERVICE: 'PRODUCT_SERVICE',
   EXPERIENCE: 'EXPERIENCE',
+} as const;
+
+export type ReviewTone = typeof ReviewTone[keyof typeof ReviewTone];
+
+
+export const ReviewTone = {
+  ENTHUSIASTIC: 'ENTHUSIASTIC',
+  SHORT_DIRECT: 'SHORT_DIRECT',
+  DETAILED: 'DETAILED',
+  WARM: 'WARM',
+} as const;
+
+export type PrivateFeedbackStatus = typeof PrivateFeedbackStatus[keyof typeof PrivateFeedbackStatus];
+
+
+export const PrivateFeedbackStatus = {
+  NEW: 'NEW',
+  VIEWED: 'VIEWED',
+  RESOLVED: 'RESOLVED',
 } as const;
 
 export interface Keyword {
@@ -487,6 +538,14 @@ export interface PublicBusinessSummary {
   facebookUrl: string | null;
   /** @nullable */
   whatsappNumber: string | null;
+  /** @nullable */
+  googleRating: number | null;
+  /** @nullable */
+  googleReviewCount: number | null;
+  /** @nullable */
+  headerImageUrl: string | null;
+  googleVerified: boolean;
+  defaultLanguage: SupportedLanguage;
 }
 
 export interface PublicCampaignSummary {
@@ -513,12 +572,83 @@ export interface PublicGenerateReviewInput {
   sessionId: string;
   /** @minItems 1 */
   keywords: string[];
+  /**
+     * @minimum 1
+     * @maximum 5
+     */
+  rating: number;
+  tone: ReviewTone;
+  language?: SupportedLanguage;
+  /**
+     * @maxLength 60
+     * @nullable
+     */
+  mentionDetail?: string | null;
+  /**
+     * @maxLength 60
+     * @nullable
+     */
+  customerName?: string | null;
+  /**
+     * @maxLength 60
+     * @nullable
+     */
+  occasion?: string | null;
 }
 
 export interface PublicGenerateReviewResult {
   reviewText: string;
   remainingGenerations: number;
   maxGenerations: number;
+  language: SupportedLanguage;
+}
+
+export interface PrivateFeedbackInput {
+  /** @minLength 1 */
+  sessionId: string;
+  /**
+     * @minimum 1
+     * @maximum 5
+     */
+  rating: number;
+  /**
+     * @minLength 1
+     * @maxLength 1000
+     */
+  message: string;
+  /**
+     * @maxLength 200
+     * @nullable
+     */
+  contact?: string | null;
+  language?: SupportedLanguage;
+}
+
+export interface PrivateFeedbackResult {
+  success: boolean;
+}
+
+export interface PrivateFeedbackItem {
+  id: string;
+  businessId: string;
+  businessName: string;
+  campaignId: string;
+  campaignName: string;
+  rating: number;
+  message: string;
+  /** @nullable */
+  contact: string | null;
+  language: SupportedLanguage;
+  status: PrivateFeedbackStatus;
+  createdAt: string;
+}
+
+export interface ListPrivateFeedbackResult {
+  feedback: PrivateFeedbackItem[];
+}
+
+export interface UpdatePrivateFeedbackStatusInput {
+  status: PrivateFeedbackStatus;
 }
 
 export interface RecentActivityItem {
@@ -881,6 +1011,17 @@ input: string;
 
 export type GetPlacePhotoParams = {
 name: string;
+};
+
+export type ListPrivateFeedbackParams = {
+businessId?: string;
+campaignId?: string;
+status?: PrivateFeedbackStatus;
+/**
+ * @minimum 1
+ * @maximum 200
+ */
+limit?: number;
 };
 
 export type ListNfcDevicesParams = {

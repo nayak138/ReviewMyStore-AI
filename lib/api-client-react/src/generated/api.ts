@@ -52,6 +52,8 @@ import type {
   ListDemoRequestsResult,
   ListManagedReviewsParams,
   ListNfcDevicesParams,
+  ListPrivateFeedbackParams,
+  ListPrivateFeedbackResult,
   ManagedReviewListResult,
   ManagedReviewMutationResult,
   ManagedReviewReplyInput,
@@ -63,6 +65,9 @@ import type {
   NfcDeviceUpdateInput,
   PlaceAutocompleteResult,
   PlaceDetails,
+  PrivateFeedbackInput,
+  PrivateFeedbackItem,
+  PrivateFeedbackResult,
   PublicGenerateReviewInput,
   PublicGenerateReviewResult,
   PublicReviewPageResult,
@@ -73,6 +78,7 @@ import type {
   ReviewProviderLocationsResult,
   SelectReviewProviderLocationRequest,
   SessionInfo,
+  UpdatePrivateFeedbackStatusInput,
   UploadFinalizeResult,
   UploadUrlRequest,
   UploadUrlResponse
@@ -3106,6 +3112,237 @@ export const useGeneratePublicReview = <TError = ErrorType<ErrorResponse>,
         TContext
       > => {
       return useMutation(getGeneratePublicReviewMutationOptions(options));
+    }
+
+export const getSubmitPrivateFeedbackUrl = (businessSlug: string,
+    campaignSlug: string,) => {
+
+
+
+
+  return `/api/v1/public/review/${businessSlug}/${campaignSlug}/feedback`
+}
+
+/**
+ * Public (unauthenticated). Shown to the customer only when they select a low star rating; never posted to Google, never shown publicly — readable only by the business's own organization in the dashboard.
+ * @summary Submit a private message to the business instead of/before posting publicly
+ */
+export const submitPrivateFeedback = async (businessSlug: string,
+    campaignSlug: string,
+    privateFeedbackInput: PrivateFeedbackInput, options?: Parameters<typeof customFetch>[1]): Promise<PrivateFeedbackResult> => {
+
+  return customFetch<PrivateFeedbackResult>(getSubmitPrivateFeedbackUrl(businessSlug,campaignSlug),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(privateFeedbackInput)
+  }
+);}
+
+
+
+
+
+export const getSubmitPrivateFeedbackMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof submitPrivateFeedback>>, TError,{businessSlug: string;campaignSlug: string;data: BodyType<PrivateFeedbackInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof submitPrivateFeedback>>, TError,{businessSlug: string;campaignSlug: string;data: BodyType<PrivateFeedbackInput>}, TContext> => {
+
+const mutationKey = ['submitPrivateFeedback'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof submitPrivateFeedback>>, {businessSlug: string;campaignSlug: string;data: BodyType<PrivateFeedbackInput>}> = (props) => {
+          const {businessSlug,campaignSlug,data} = props ?? {};
+
+          return  submitPrivateFeedback(businessSlug,campaignSlug,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SubmitPrivateFeedbackMutationResult = NonNullable<Awaited<ReturnType<typeof submitPrivateFeedback>>>
+    export type SubmitPrivateFeedbackMutationBody = BodyType<PrivateFeedbackInput>
+    export type SubmitPrivateFeedbackMutationError = ErrorType<ErrorResponse>
+
+    /**
+ * @summary Submit a private message to the business instead of/before posting publicly
+ */
+export const useSubmitPrivateFeedback = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof submitPrivateFeedback>>, TError,{businessSlug: string;campaignSlug: string;data: BodyType<PrivateFeedbackInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof submitPrivateFeedback>>,
+        TError,
+        {businessSlug: string;campaignSlug: string;data: BodyType<PrivateFeedbackInput>},
+        TContext
+      > => {
+      return useMutation(getSubmitPrivateFeedbackMutationOptions(options));
+    }
+
+export const getListPrivateFeedbackUrl = (params?: ListPrivateFeedbackParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/feedback?${stringifiedParams}` : `/api/v1/feedback`
+}
+
+/**
+ * @summary List private feedback submitted across the organization's businesses
+ */
+export const listPrivateFeedback = async (params?: ListPrivateFeedbackParams, options?: Parameters<typeof customFetch>[1]): Promise<ListPrivateFeedbackResult> => {
+
+  return customFetch<ListPrivateFeedbackResult>(getListPrivateFeedbackUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListPrivateFeedbackQueryKey = (params?: ListPrivateFeedbackParams,) => {
+    return [
+    `/api/v1/feedback`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getListPrivateFeedbackQueryOptions = <TData = Awaited<ReturnType<typeof listPrivateFeedback>>, TError = ErrorType<ErrorResponse>>(params?: ListPrivateFeedbackParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listPrivateFeedback>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListPrivateFeedbackQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listPrivateFeedback>>> = ({ signal }) => listPrivateFeedback(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listPrivateFeedback>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListPrivateFeedbackQueryResult = NonNullable<Awaited<ReturnType<typeof listPrivateFeedback>>>
+export type ListPrivateFeedbackQueryError = ErrorType<ErrorResponse>
+
+
+/**
+ * @summary List private feedback submitted across the organization's businesses
+ */
+
+export function useListPrivateFeedback<TData = Awaited<ReturnType<typeof listPrivateFeedback>>, TError = ErrorType<ErrorResponse>>(
+ params?: ListPrivateFeedbackParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listPrivateFeedback>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListPrivateFeedbackQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getUpdatePrivateFeedbackStatusUrl = (id: string,) => {
+
+
+
+
+  return `/api/v1/feedback/${id}`
+}
+
+/**
+ * @summary Mark a private feedback item as viewed or resolved
+ */
+export const updatePrivateFeedbackStatus = async (id: string,
+    updatePrivateFeedbackStatusInput: UpdatePrivateFeedbackStatusInput, options?: Parameters<typeof customFetch>[1]): Promise<PrivateFeedbackItem> => {
+
+  return customFetch<PrivateFeedbackItem>(getUpdatePrivateFeedbackStatusUrl(id),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(updatePrivateFeedbackStatusInput)
+  }
+);}
+
+
+
+
+
+export const getUpdatePrivateFeedbackStatusMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updatePrivateFeedbackStatus>>, TError,{id: string;data: BodyType<UpdatePrivateFeedbackStatusInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updatePrivateFeedbackStatus>>, TError,{id: string;data: BodyType<UpdatePrivateFeedbackStatusInput>}, TContext> => {
+
+const mutationKey = ['updatePrivateFeedbackStatus'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updatePrivateFeedbackStatus>>, {id: string;data: BodyType<UpdatePrivateFeedbackStatusInput>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  updatePrivateFeedbackStatus(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdatePrivateFeedbackStatusMutationResult = NonNullable<Awaited<ReturnType<typeof updatePrivateFeedbackStatus>>>
+    export type UpdatePrivateFeedbackStatusMutationBody = BodyType<UpdatePrivateFeedbackStatusInput>
+    export type UpdatePrivateFeedbackStatusMutationError = ErrorType<ErrorResponse>
+
+    /**
+ * @summary Mark a private feedback item as viewed or resolved
+ */
+export const useUpdatePrivateFeedbackStatus = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updatePrivateFeedbackStatus>>, TError,{id: string;data: BodyType<UpdatePrivateFeedbackStatusInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updatePrivateFeedbackStatus>>,
+        TError,
+        {id: string;data: BodyType<UpdatePrivateFeedbackStatusInput>},
+        TContext
+      > => {
+      return useMutation(getUpdatePrivateFeedbackStatusMutationOptions(options));
     }
 
 export const getCreateDemoRequestUrl = () => {

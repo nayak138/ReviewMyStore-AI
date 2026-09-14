@@ -5,6 +5,7 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { SupportedLanguage } from './supportedLanguage';
 
 export interface BusinessCreateInput {
   /** @minLength 1 */
@@ -48,4 +49,5 @@ export interface BusinessCreateInput {
   googleReviewCount?: number | null;
   /** @nullable */
   placeImageUrl?: string | null;
+  defaultLanguage?: SupportedLanguage;
 }

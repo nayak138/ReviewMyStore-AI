@@ -104,6 +104,7 @@ export interface CreateBusinessInput {
   googleRating?: number | null;
   googleReviewCount?: number | null;
   placeImageUrl?: string | null;
+  defaultLanguage?: string;
 }
 
 export async function createBusiness(

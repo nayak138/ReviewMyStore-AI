@@ -70,6 +70,12 @@ export const businessesTable = pgTable(
     googleRating: doublePrecision("google_rating"),
     googleReviewCount: integer("google_review_count"),
     placeImageUrl: text("place_image_url"),
+    // Default language for this business's public review page and the AI
+    // review text it generates. Must stay one of the codes accepted by the
+    // `SupportedLanguage` OpenAPI enum (English + the 22 scheduled Indian
+    // languages) — see artifacts/api-server/src/services/promptService.ts
+    // for the matching display-name map used when prompting the AI.
+    defaultLanguage: text("default_language").notNull().default("en"),
     status: businessStatusEnum("status").notNull().default("ACTIVE"),
     archivedAt: timestamp("archived_at", { withTimezone: true }),
     deletedAt: timestamp("deleted_at", { withTimezone: true }),

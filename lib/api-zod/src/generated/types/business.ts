@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { BusinessStatus } from './businessStatus';
+import type { SupportedLanguage } from './supportedLanguage';
 
 export interface Business {
   id: string;
@@ -45,6 +46,7 @@ export interface Business {
   googleReviewCount: number | null;
   /** @nullable */
   placeImageUrl: string | null;
+  defaultLanguage: SupportedLanguage;
   status: BusinessStatus;
   /** @nullable */
   archivedAt: Date | null;

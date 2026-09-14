@@ -5,9 +5,11 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { SupportedLanguage } from './supportedLanguage';
 
 export interface PublicGenerateReviewResult {
   reviewText: string;
   remainingGenerations: number;
   maxGenerations: number;
+  language: SupportedLanguage;
 }

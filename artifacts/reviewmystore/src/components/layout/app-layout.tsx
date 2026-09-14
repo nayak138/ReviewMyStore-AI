@@ -8,6 +8,7 @@ import {
   QrCode, 
   SmartphoneNfc, 
   MessageSquare,
+  MessageCircleWarning,
   BarChart3, 
   ShoppingCart,
   Inbox,
@@ -30,6 +31,7 @@ const NAV_ITEMS = [
   { name: "QR Codes", icon: QrCode, href: "/qr-codes", ready: true },
   { name: "NFC Devices", icon: SmartphoneNfc, href: "/nfc-devices", ready: true },
   { name: "Reviews", icon: MessageSquare, href: "/reviews", ready: true },
+  { name: "Feedback", icon: MessageCircleWarning, href: "/feedback", ready: true },
   { name: "Analytics", icon: BarChart3, href: "/analytics", ready: false },
   { name: "Orders", icon: ShoppingCart, href: "/orders", ready: false },
 ];
