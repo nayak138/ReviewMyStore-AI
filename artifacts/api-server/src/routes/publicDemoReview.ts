@@ -28,8 +28,8 @@ router.post(
 
     try {
       const result = await generateReviewText({
-        businessName: "Taj Mahal Palace Mumbai",
-        category: "Luxury hotel",
+        businessName: "Marina Bay Sands Singapore",
+        category: "5-star hotel",
         keywords: parsed.data.keywords,
         rating: parsed.data.rating,
         tone: parsed.data.tone,

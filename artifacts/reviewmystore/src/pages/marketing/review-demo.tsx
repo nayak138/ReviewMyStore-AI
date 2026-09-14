@@ -22,7 +22,7 @@ import { isRtlLanguage } from "@/lib/languages";
 import { getReviewPageStrings } from "@/lib/reviewPageTranslations";
 
 const DEMO_GOOGLE_URL =
-  "https://search.google.com/local/writereview?placeid=ChIJa59lxcDR5zsR4SegHgrkS6A";
+  "https://www.google.com/maps/search/Marina+Bay+Sands+Singapore";
 const socialAssetBase = `${import.meta.env.BASE_URL}social`;
 const GOOGLE_MAPS_ICON = `${socialAssetBase}/google-maps.png`;
 const INSTAGRAM_ICON = `${socialAssetBase}/instagram.png`;
@@ -42,7 +42,7 @@ const tones = [
 ];
 
 type DemoLanguage = SupportedLanguage | string;
-const demoHeaderImage = `${import.meta.env.BASE_URL}taj-mahal-palace-mumbai.jpg`;
+const demoHeaderImage = `${import.meta.env.BASE_URL}marina-bay-sands-singapore.jpg`;
 
 export function InteractiveReviewDemo() {
   const [rating, setRating] = useState<number | null>(null);
@@ -120,7 +120,7 @@ export function InteractiveReviewDemo() {
 
   const shareDemo = async () => {
     const shareData = {
-      title: "Taj Mahal Palace Mumbai",
+      title: "Marina Bay Sands Singapore",
       text: "Try this interactive review experience powered by 5-Star.AI.",
       url: window.location.href,
     };
@@ -163,7 +163,7 @@ export function InteractiveReviewDemo() {
             {!headerImageFailed && (
               <img
                 src={demoHeaderImage}
-                alt="Exterior of The Taj Mahal Palace Mumbai"
+                alt="Exterior of Marina Bay Sands Singapore"
                 className="absolute inset-0 h-full w-full object-cover"
                 onError={() => setHeaderImageFailed(true)}
               />
@@ -190,21 +190,21 @@ export function InteractiveReviewDemo() {
             </div>
             <div className="absolute inset-x-4 bottom-4 text-white sm:inset-x-5 sm:bottom-5">
               <h3 className="font-display text-3xl font-semibold leading-tight">
-                Taj Mahal Palace{" "}
+                Marina Bay Sands{" "}
                 <span className="inline-flex items-center gap-2 whitespace-nowrap">
-                  Mumbai
+                  Singapore
                   <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center align-middle sm:h-9 sm:w-9" title="Verified business" aria-label="Verified business">
                     <BadgeCheck className="h-8 w-8 fill-[#22c875] text-[#075b37] drop-shadow-[0_2px_5px_rgba(34,200,117,0.35)] sm:h-9 sm:w-9" aria-hidden="true" />
                   </span>
                 </span>
               </h3>
               <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-white/85">
-                <span>Luxury hotel</span>
-                <span className="inline-flex items-center gap-1"><MapPin className="h-3 w-3" aria-hidden="true" />Apollo Bandar, Mumbai</span>
+                <span>5-star hotel</span>
+                <span className="inline-flex items-center gap-1"><MapPin className="h-3 w-3" aria-hidden="true" />10 Bayfront Avenue, Singapore</span>
               </div>
               <div className="mt-2 flex items-center gap-1.5 text-sm font-semibold">
                 <Star className="h-4 w-4 fill-[#fbbc04] text-[#fbbc04]" aria-hidden="true" />
-                4.7 <span className="font-normal text-white/80">(28,420)</span>
+                4.7 <span className="font-normal text-white/80">(61,738)</span>
               </div>
             </div>
           </header>
@@ -212,22 +212,22 @@ export function InteractiveReviewDemo() {
           <div className="border-b border-[#d8e2fb] bg-[#eef3ff] px-4 py-4 dark:border-white/10 dark:bg-[#0a1430] sm:px-7">
             <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center">
               <Button asChild size="sm" className="h-11 w-full rounded-full bg-[#1769ff] px-3 text-xs font-semibold shadow-[0_8px_18px_rgba(23,105,255,0.28)] hover:bg-[#0e59df] sm:w-auto sm:px-5 sm:text-sm">
-                <a href="tel:+912266665666"><Phone className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" />Call</a>
+                <a href="tel:+6566888888"><Phone className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" />Call</a>
               </Button>
-              <Button variant="outline" size="sm" className="h-11 w-full rounded-full border-[#cbd8f5] bg-[#e4ecff] px-3 text-xs font-semibold text-[#20345f] hover:bg-[#d8e4ff] dark:border-white/15 dark:bg-[#172548] dark:text-slate-100 sm:w-auto sm:px-4 sm:text-sm" onClick={() => downloadVCard({ name: "Taj Mahal Palace Mumbai", phone: "+91 22 6665 6666", address: "Apollo Bandar, Mumbai, Maharashtra", website: "https://tajhotels.com" })}>
+              <Button variant="outline" size="sm" className="h-11 w-full rounded-full border-[#cbd8f5] bg-[#e4ecff] px-3 text-xs font-semibold text-[#20345f] hover:bg-[#d8e4ff] dark:border-white/15 dark:bg-[#172548] dark:text-slate-100 sm:w-auto sm:px-4 sm:text-sm" onClick={() => downloadVCard({ name: "Marina Bay Sands Singapore", phone: "+65 6688 8888", address: "10 Bayfront Avenue, Singapore 018956", website: "https://www.marinabaysands.com/" })}>
                 <IdCard className="mr-1.5 h-4 w-4 text-[#5b83ff]" aria-hidden="true" />Save Contact
               </Button>
             </div>
             <div className="mt-3 flex w-full items-center justify-center gap-2">
               <Button asChild variant="outline" size="sm" aria-label="Directions" title="Directions" className="h-11 w-11 rounded-xl border-[#a8e5d1] bg-[#ddf8ef] p-0 text-[#087f6a] hover:bg-[#c9f1e4]">
-                <a href="https://www.google.com/maps/dir/?api=1&destination=Taj%20Mahal%20Palace%20Mumbai" target="_blank" rel="noopener noreferrer"><MapPin className="h-5 w-5 text-[#19b892]" aria-hidden="true" /></a>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=Marina%20Bay%20Sands%20Singapore" target="_blank" rel="noopener noreferrer"><MapPin className="h-5 w-5 text-[#19b892]" aria-hidden="true" /></a>
               </Button>
               <Button variant="outline" size="sm" aria-label={shared ? "Link copied" : "Share"} title={shared ? "Link copied" : "Share"} className="h-11 w-11 rounded-xl border-[#d7b8f5] bg-[#f0e5ff] p-0 text-[#7541a8] hover:bg-[#e7d8fa]" onClick={() => void shareDemo()}>
                 {shared ? <Check className="h-5 w-5 text-[#19d7a5]" aria-hidden="true" /> : <Share2 className="h-5 w-5 text-[#9f7aea]" aria-hidden="true" />}
               </Button>
-              <a href="https://www.tajhotels.com/" target="_blank" rel="noopener noreferrer" aria-label="Website" title="Website" className="flex h-11 w-11 items-center justify-center rounded-xl border border-[#b9cbf5] bg-[#e3ebff] text-[#526da6] hover:bg-[#d6e2ff]"><Globe className="h-5 w-5" aria-hidden="true" /></a>
+              <a href="https://www.marinabaysands.com/" target="_blank" rel="noopener noreferrer" aria-label="Website" title="Website" className="flex h-11 w-11 items-center justify-center rounded-xl border border-[#b9cbf5] bg-[#e3ebff] text-[#526da6] hover:bg-[#d6e2ff]"><Globe className="h-5 w-5" aria-hidden="true" /></a>
               <a href={DEMO_GOOGLE_URL} target="_blank" rel="noopener noreferrer" aria-label="Google Maps" title="Google Maps" className="flex h-11 w-11 items-center justify-center overflow-hidden rounded-xl border border-[#d6def2] bg-white hover:bg-[#f5f7ff]"><img src={GOOGLE_MAPS_ICON} alt="" className="h-7 w-7 object-contain" /></a>
-              <a href="https://www.instagram.com/tajhotels/" target="_blank" rel="noopener noreferrer" aria-label="Instagram" title="Instagram" className="flex h-11 w-11 items-center justify-center overflow-hidden rounded-xl border border-[#d6def2] bg-white hover:bg-[#f5f7ff]"><img src={INSTAGRAM_ICON} alt="" className="h-7 w-7 object-contain" /></a>
+              <a href="https://www.instagram.com/marinabaysands/" target="_blank" rel="noopener noreferrer" aria-label="Instagram" title="Instagram" className="flex h-11 w-11 items-center justify-center overflow-hidden rounded-xl border border-[#d6def2] bg-white hover:bg-[#f5f7ff]"><img src={INSTAGRAM_ICON} alt="" className="h-7 w-7 object-contain" /></a>
             </div>
           </div>
 
