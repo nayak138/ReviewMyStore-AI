@@ -1,6 +1,9 @@
 import type { NextFunction, Request, Response } from "express";
 import { getAuth } from "@clerk/express";
-import { getOrCreateUserForClerkId } from "../services/authService";
+import {
+  AgencyInvitationRequiredError,
+  getOrCreateUserForClerkId,
+} from "../services/authService";
 import type { User } from "@workspace/db/schema";
 
 declare global {
@@ -37,6 +40,15 @@ export async function requireAuth(
     next();
   } catch (err) {
     req.log?.error({ err }, "Failed to resolve authenticated user");
+    if (err instanceof AgencyInvitationRequiredError) {
+      res.status(403).json({
+        success: false,
+        code: "INVITATION_REQUIRED",
+        message:
+          "An active agency invitation is required before this account can access the platform.",
+      });
+      return;
+    }
     res.status(500).json({
       success: false,
       code: "AUTH_PROVISIONING_FAILED",
