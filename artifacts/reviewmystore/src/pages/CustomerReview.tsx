@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState, type CSSProperties, type KeyboardEvent } 
 import { useParams } from "wouter";
 import {
   AlertTriangle,
+  BadgeCheck,
   Check,
   Copy,
   Facebook,
@@ -517,7 +518,14 @@ export default function CustomerReview() {
             />
           </div>
           <div className="absolute inset-x-4 bottom-4 text-white sm:inset-x-5 sm:bottom-5">
-            <h1 className="font-display text-3xl font-semibold leading-tight">{business.name}</h1>
+            <div className="flex items-center gap-2">
+              <h1 className="font-display text-3xl font-semibold leading-tight">{business.name}</h1>
+              {business.googleVerified && (
+                <span title="Verified business" aria-label="Verified business">
+                  <BadgeCheck className="h-6 w-6 shrink-0 fill-[#22c875] text-[#075b37] drop-shadow-[0_2px_5px_rgba(34,200,117,0.35)]" aria-hidden="true" />
+                </span>
+              )}
+            </div>
             <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-white/85">
               {business.category && <span>{business.category}</span>}
               {business.address && <span className="inline-flex items-center gap-1"><MapPin className="h-3 w-3" aria-hidden="true" />{business.address}</span>}
