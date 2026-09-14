@@ -22,7 +22,7 @@ timeoutMs = 20000
 [userenv]
 
 [userenv.shared]
-SUPER_ADMIN_EMAILS = "nayak138@gmail.com, info@reviewmystore.ai"
+SUPER_ADMIN_EMAILS = "nayak138@gmail.com, info@reviewmystore.ai, odichatai@gmail.com"
 DEMO_ALERT_EMAILS = "nayak138@gmail.com, info@reviewmystore.ai"
 
 [objectStorage]
