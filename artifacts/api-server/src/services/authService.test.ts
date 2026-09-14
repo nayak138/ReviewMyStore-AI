@@ -21,6 +21,23 @@ import {
   getOrCreateUserForClerkId,
 } from "./authService.ts";
 
+/**
+ * Coverage for the invitation-only provisioning model: a brand-new Clerk
+ * user is only ever attached to the Organization that invited them (via an
+ * active `agency_invitations` row created by `createAgency`), never
+ * auto-provisioned into a fresh org.
+ *
+ * Two concurrent first-login requests for the same brand-new Clerk user (or
+ * several different invited users logging in at once) used to be able to
+ * race the initial existence check against the eventual insert. This is
+ * closed in two layers:
+ *  1. A Postgres advisory lock keyed on the Clerk user id serializes
+ *     concurrent provisioning attempts for the *same* user, so the loser
+ *     waits, re-reads, and reuses the row the winner just committed.
+ *  2. A retry loop catches a unique-constraint violation that slips through
+ *     anyway, instead of surfacing a raw 500 to the client.
+ */
+
 const runId = randomUUID().slice(0, 8);
 const createdOrganizationIds: string[] = [];
 const createdUserIds: string[] = [];
@@ -129,6 +146,80 @@ test("first login attaches the invited owner to the intended agency and consumes
     .where(eq(agencyInvitationsTable.id, fixture.invitation.id));
   assert.equal(invitation.status, "ACCEPTED");
   assert.equal(await getPublicAgencyInvitation(fixture.invitation.signupPath.split("/").pop()!), null);
+});
+
+test("concurrent first-login requests for the same brand-new Clerk user provision exactly one account", async () => {
+  const fixture = await createAgencyFixture(testAdminId, "race-same");
+  const clerkUserId = `user_race_same_${runId}`;
+  registerFakeClerkUser(
+    clerkUserId,
+    "Race Same Owner",
+    fixture.invitation.email,
+  );
+
+  const results = await Promise.all(
+    Array.from({ length: 5 }, () => getOrCreateUserForClerkId(clerkUserId)),
+  );
+
+  const userIds = new Set(results.map((u) => u.id));
+  assert.equal(userIds.size, 1, "all concurrent calls resolve to one user");
+  assert.equal(
+    results[0].organizationId,
+    fixture.organization.id,
+    "user was attached to the inviting organization",
+  );
+  createdUserIds.push(results[0].id);
+
+  const rows = await db
+    .select()
+    .from(usersTable)
+    .where(eq(usersTable.clerkUserId, clerkUserId));
+  assert.equal(rows.length, 1, "exactly one user row was inserted");
+
+  const [acceptedInvitation] = await db
+    .select()
+    .from(agencyInvitationsTable)
+    .where(eq(agencyInvitationsTable.id, fixture.invitation.id));
+  assert.equal(
+    acceptedInvitation.status,
+    "ACCEPTED",
+    "the invitation was accepted exactly once despite the concurrent calls",
+  );
+});
+
+test("concurrent first-logins for different invited users each join the organization that invited them", async () => {
+  const fixtures = await Promise.all(
+    [0, 1, 2].map((i) =>
+      createAgencyFixture(testAdminId, `race-collide-${i}`),
+    ),
+  );
+  const clerkUserIds = fixtures.map(
+    (_, i) => `user_race_collide_${i}_${runId}`,
+  );
+
+  fixtures.forEach((fixture, i) => {
+    registerFakeClerkUser(
+      clerkUserIds[i],
+      "Race Collide Owner",
+      fixture.invitation.email,
+    );
+  });
+
+  const results = await Promise.all(
+    clerkUserIds.map((id) => getOrCreateUserForClerkId(id)),
+  );
+  for (const user of results) createdUserIds.push(user.id);
+
+  const userIds = new Set(results.map((u) => u.id));
+  assert.equal(userIds.size, 3, "each user got its own row");
+
+  results.forEach((user, i) => {
+    assert.equal(
+      user.organizationId,
+      fixtures[i].organization.id,
+      "each user joined the organization that invited them, not a different one",
+    );
+  });
 });
 
 test("expired invitations cannot be used for public lookup or first login", async () => {
