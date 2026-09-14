@@ -20,6 +20,7 @@ function escSubject(value: string): string {
 export async function sendDemoRequestAlert(data: {
   id: string;
   name: string;
+  leadType?: "AGENCY" | "SINGLE_SHOP" | null;
   email?: string | null;
   company?: string | null;
   phone?: string | null;
@@ -49,6 +50,7 @@ export async function sendDemoRequestAlert(data: {
 
     // Only include rows that have a non-empty value
     const optionalRows: Array<[string, string]> = [];
+    if (data.leadType) optionalRows.push(["Lead type", data.leadType === "AGENCY" ? "Agency" : "Single Shop"]);
     if (data.company) optionalRows.push(["Company", data.company]);
     if (data.phone) optionalRows.push(["Phone", data.phone]);
     if (data.locations) optionalRows.push(["Locations", data.locations]);
@@ -67,7 +69,7 @@ export async function sendDemoRequestAlert(data: {
       .join("\n");
 
     const subject = escSubject(
-      `New 5-Star.AI lead from ${data.name}${data.company ? ` @ ${data.company}` : ""}`,
+      `New 5-Star.AI ${data.leadType === "AGENCY" ? "agency" : "single shop"} lead from ${data.name}${data.company ? ` @ ${data.company}` : ""}`,
     );
 
     const html = `<!DOCTYPE html>
@@ -84,7 +86,7 @@ export async function sendDemoRequestAlert(data: {
         </tr>
         <tr>
           <td style="padding:28px;">
-             <h2 style="margin:0 0 16px;font-size:20px;color:#0f172a;">New agency lead</h2>
+             <h2 style="margin:0 0 16px;font-size:20px;color:#0f172a;">New ${data.leadType === "AGENCY" ? "agency" : "single shop"} lead</h2>
              <p style="margin:0 0 20px;color:#555;font-size:14px;">A new 5-Star.AI lead just submitted the trial interest form. Reach out while it&#39;s fresh.</p>
             <table cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse;background:#f9fafb;border-radius:6px;overflow:hidden;">
               ${rowsHtml}

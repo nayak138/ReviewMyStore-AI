@@ -15,12 +15,25 @@ export interface ErrorResponse {
   message: string;
 }
 
+/**
+ * Whether the prospect represents an agency or a single shop.
+ */
+export type DemoRequestInputLeadType = typeof DemoRequestInputLeadType[keyof typeof DemoRequestInputLeadType];
+
+
+export const DemoRequestInputLeadType = {
+  AGENCY: 'AGENCY',
+  SINGLE_SHOP: 'SINGLE_SHOP',
+} as const;
+
 export interface DemoRequestInput {
   /**
      * @minLength 1
      * @maxLength 200
      */
   name: string;
+  /** Whether the prospect represents an agency or a single shop. */
+  leadType: DemoRequestInputLeadType;
   /** @maxLength 320 */
   email?: string;
   /** @maxLength 200 */
@@ -47,9 +60,22 @@ export const DemoRequestStatus = {
   CLOSED: 'CLOSED',
 } as const;
 
+/**
+ * @nullable
+ */
+export type DemoRequestLeadType = typeof DemoRequestLeadType[keyof typeof DemoRequestLeadType] | null;
+
+
+export const DemoRequestLeadType = {
+  AGENCY: 'AGENCY',
+  SINGLE_SHOP: 'SINGLE_SHOP',
+} as const;
+
 export interface DemoRequest {
   id: string;
   name: string;
+  /** @nullable */
+  leadType: DemoRequestLeadType;
   /** @nullable */
   email?: string | null;
   /** @nullable */

@@ -5,11 +5,14 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { DemoRequestLeadType } from './demoRequestLeadType';
 import type { DemoRequestStatus } from './demoRequestStatus';
 
 export interface DemoRequest {
   id: string;
   name: string;
+  /** @nullable */
+  leadType: DemoRequestLeadType;
   /** @nullable */
   email?: string | null;
   /** @nullable */

@@ -27,6 +27,9 @@ import { useCreateDemoRequest } from "@workspace/api-client-react";
 
 const demoFormSchema = z.object({
   name: z.string().trim().min(1, "Please enter your name").max(200),
+  leadType: z.enum(["AGENCY", "SINGLE_SHOP"], {
+    message: "Please choose an option",
+  }),
   shopName: z.string().trim().min(1, "Please enter your shop name").max(200),
   phone: z.string().trim().min(7, "Please enter a valid phone number").max(50),
   // Honeypot: hidden from real users, only bots fill it in.
@@ -44,6 +47,7 @@ export function BookDemoDialog({ children }: { children: ReactNode }) {
     resolver: zodResolver(demoFormSchema),
     defaultValues: {
       name: "",
+      leadType: undefined,
       shopName: "",
       phone: "",
       website: "",
@@ -68,6 +72,7 @@ export function BookDemoDialog({ children }: { children: ReactNode }) {
       data: {
         name: values.name,
         company: values.shopName,
+        leadType: values.leadType,
         phone: values.phone,
         website: values.website || undefined,
       },
@@ -139,6 +144,40 @@ export function BookDemoDialog({ children }: { children: ReactNode }) {
                     {...form.register("website")}
                   />
                 </div>
+                <FormField
+                  control={form.control}
+                  name="leadType"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>What best describes you? *</FormLabel>
+                      <FormControl>
+                        <div className="grid grid-cols-2 gap-3" role="radiogroup" aria-label="What best describes you?">
+                          {[
+                            { value: "AGENCY" as const, label: "Agency", description: "I manage multiple businesses or locations." },
+                            { value: "SINGLE_SHOP" as const, label: "Single Shop", description: "I run one business or location." },
+                          ].map((option) => (
+                            <button
+                              key={option.value}
+                              type="button"
+                              role="radio"
+                              aria-checked={field.value === option.value}
+                              onClick={() => field.onChange(option.value)}
+                              className={`rounded-xl border px-4 py-3 text-left transition-colors ${
+                                field.value === option.value
+                                  ? "border-primary bg-primary/10 text-foreground ring-2 ring-primary/20"
+                                  : "border-border bg-background text-muted-foreground hover:border-primary/50 hover:bg-accent"
+                              }`}
+                            >
+                              <span className="block text-sm font-semibold">{option.label}</span>
+                              <span className="mt-1 block text-xs leading-relaxed">{option.description}</span>
+                            </button>
+                          ))}
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <FormField
                     control={form.control}

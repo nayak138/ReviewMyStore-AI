@@ -62,7 +62,10 @@ function post(body: unknown, xff?: string) {
 
 test("valid submission is persisted and returns 201 with an id", async () => {
   const email = `lead@${MARKER}.example.com`;
-  const res = await post({ name: "Lead", email }, "203.0.113.11");
+  const res = await post(
+    { name: "Lead", leadType: "AGENCY", email },
+    "203.0.113.11",
+  );
   assert.equal(res.status, 201);
   const json = (await res.json()) as { id: string };
   assert.ok(json.id && json.id !== "ok");
@@ -74,12 +77,13 @@ test("valid submission is persisted and returns 201 with an id", async () => {
     .from(demoRequestsTable)
     .where(eq(demoRequestsTable.email, email));
   assert.equal(rows.length, 1);
+  assert.equal(rows[0]?.leadType, "AGENCY");
 });
 
 test("filled honeypot returns benign 201 but does not persist", async () => {
   const email = `bot@${MARKER}.example.com`;
   const res = await post(
-    { name: "Bot", email, website: "http://spam.example" },
+    { name: "Bot", leadType: "SINGLE_SHOP", email, website: "http://spam.example" },
     "203.0.113.12",
   );
   assert.equal(res.status, 201);

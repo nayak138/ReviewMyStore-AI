@@ -5,6 +5,7 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { DemoRequestInputLeadType } from './demoRequestInputLeadType';
 
 export interface DemoRequestInput {
   /**
@@ -12,6 +13,8 @@ export interface DemoRequestInput {
      * @maxLength 200
      */
   name: string;
+  /** Whether the prospect represents an agency or a single shop. */
+  leadType: DemoRequestInputLeadType;
   /** @maxLength 320 */
   email?: string;
   /** @maxLength 200 */

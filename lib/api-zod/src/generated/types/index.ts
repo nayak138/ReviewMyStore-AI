@@ -40,6 +40,8 @@ export * from './campaignUpdateInput';
 export * from './dashboardSummary';
 export * from './demoRequest';
 export * from './demoRequestInput';
+export * from './demoRequestInputLeadType';
+export * from './demoRequestLeadType';
 export * from './demoRequestResult';
 export * from './demoRequestStatus';
 export * from './demoRequestStatusUpdate';

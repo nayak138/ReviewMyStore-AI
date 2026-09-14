@@ -21,6 +21,7 @@ export const demoRequestsTable = pgTable("demo_requests", {
     .primaryKey()
     .default(sql`gen_random_uuid()`),
   name: text("name").notNull(),
+  leadType: text("lead_type"),
   email: text("email"),
   company: text("company"),
   phone: text("phone"),

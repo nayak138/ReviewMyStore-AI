@@ -57,6 +57,11 @@ const STATUS_META: Record<
   },
 };
 
+const LEAD_TYPE_META = {
+  AGENCY: { label: "Agency", className: "border-violet-500/20 bg-violet-500/10 text-violet-700 dark:text-violet-300" },
+  SINGLE_SHOP: { label: "Single Shop", className: "border-sky-500/20 bg-sky-500/10 text-sky-700 dark:text-sky-300" },
+} as const;
+
 function LeadCard({ lead }: { lead: DemoRequest }) {
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -96,6 +101,15 @@ function LeadCard({ lead }: { lead: DemoRequest }) {
               <h3 className="font-semibold text-foreground truncate">
                 {lead.name}
               </h3>
+              {lead.leadType ? (
+                <Badge variant="outline" className={cn("shrink-0", LEAD_TYPE_META[lead.leadType].className)}>
+                  {LEAD_TYPE_META[lead.leadType].label}
+                </Badge>
+              ) : (
+                <Badge variant="outline" className="shrink-0">
+                  Type not specified
+                </Badge>
+              )}
               <Badge variant="outline" className={cn("shrink-0", meta.className)}>
                 {meta.label}
               </Badge>

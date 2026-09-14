@@ -1513,6 +1513,7 @@ export const createDemoRequestBodyWebsiteMax = 200;
 
 export const CreateDemoRequestBody = zod.object({
   "name": zod.string().min(1).max(createDemoRequestBodyNameMax),
+  "leadType": zod.enum(['AGENCY', 'SINGLE_SHOP']).describe('Whether the prospect represents an agency or a single shop.'),
   "email": zod.email().max(createDemoRequestBodyEmailMax).optional(),
   "company": zod.string().max(createDemoRequestBodyCompanyMax).optional(),
   "phone": zod.string().max(createDemoRequestBodyPhoneMax).optional(),
@@ -1533,6 +1534,7 @@ export const ListDemoRequestsResponse = zod.object({
   "demoRequests": zod.array(zod.object({
   "id": zod.string(),
   "name": zod.string(),
+  "leadType": zod.union([zod.literal('AGENCY'),zod.literal('SINGLE_SHOP'),zod.literal(null)]).nullable(),
   "email": zod.string().nullish(),
   "company": zod.string().nullable(),
   "phone": zod.string().nullable(),
@@ -1564,6 +1566,7 @@ export const SetDemoRequestStatusBody = zod.object({
 export const SetDemoRequestStatusResponse = zod.object({
   "id": zod.string(),
   "name": zod.string(),
+  "leadType": zod.union([zod.literal('AGENCY'),zod.literal('SINGLE_SHOP'),zod.literal(null)]).nullable(),
   "email": zod.string().nullish(),
   "company": zod.string().nullable(),
   "phone": zod.string().nullable(),

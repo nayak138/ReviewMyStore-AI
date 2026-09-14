@@ -2393,6 +2393,10 @@ components:
           type: string
           minLength: 1
           maxLength: 200
+        leadType:
+          type: string
+          enum: [AGENCY, SINGLE_SHOP]
+          description: Whether the prospect represents an agency or a single shop.
         email:
           type: string
           format: email
@@ -2417,6 +2421,7 @@ components:
             empty. Submissions with a value are silently discarded.
       required:
         - name
+        - leadType
 
     DemoRequestStatus:
       type: string
@@ -2429,6 +2434,9 @@ components:
           type: string
         name:
           type: string
+        leadType:
+          type: [string, "null"]
+          enum: [AGENCY, SINGLE_SHOP, null]
         email:
           type: ["string", "null"]
         company:
@@ -2449,6 +2457,7 @@ components:
       required:
         - id
         - name
+        - leadType
         - company
         - phone
         - locations
