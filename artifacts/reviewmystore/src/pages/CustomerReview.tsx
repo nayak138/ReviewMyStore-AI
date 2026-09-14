@@ -224,7 +224,7 @@ function RatingInput({ value, onChange, labels, starsWord, question }: RatingInp
             <Star
               className={cn(
                 "h-9 w-9 transition-colors sm:h-10 sm:w-10",
-                displayed !== null && star <= displayed ? "fill-warning text-warning" : "fill-transparent text-muted-foreground/40",
+                 displayed !== null && star <= displayed ? "fill-warning text-warning" : "fill-transparent text-[#9aaed3] dark:text-[#7395ca]",
               )}
               aria-hidden="true"
             />
@@ -588,10 +588,10 @@ export default function CustomerReview() {
 
         <section className="mx-auto w-full max-w-[760px] space-y-4 px-4 pb-8 pt-5 sm:px-7" dir={rtl ? "rtl" : "ltr"}>
           {!hasGenerated ? (
-            <div className="rounded-[1.5rem] border border-[#dce5fa] bg-white p-5 shadow-[0_24px_70px_-42px_rgba(28,57,125,0.16)] dark:border-[#28395f] dark:bg-[#111f40] dark:shadow-[0_24px_70px_-42px_rgba(0,0,0,0.42)] sm:p-7">
+             <div className="review-card rounded-[1.5rem] border p-5 sm:p-7">
               <div className="mb-6 flex items-start justify-between gap-4">
                 <div>
-                  <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.16em] text-primary">Step 1</p>
+                   <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.16em] text-[#2860c8] dark:text-[#82b3ff]">Step 1</p>
                   <RatingInput
                     value={rating}
                     onChange={handleRatingChange}
@@ -672,17 +672,17 @@ export default function CustomerReview() {
               )}
 
               {generateReview.isError && <p className="mb-4 rounded-xl bg-destructive/10 px-4 py-3 text-sm text-destructive" role="alert">We couldn't write that review just now. Please try again.</p>}
-              <Button className="h-12 w-full rounded-xl text-sm font-semibold shadow-md shadow-primary/15" size="lg" disabled={!rating || generateReview.isPending} onClick={handleGenerate}>
+               <Button className="h-12 w-full rounded-xl bg-gradient-to-r from-[#2d7dff] to-[#6264e8] text-sm font-semibold text-white shadow-[0_10px_24px_-10px_rgba(56,103,235,0.75)] hover:from-[#1f6ff0] hover:to-[#5556d8] disabled:!opacity-100 disabled:from-[#2f61b0] disabled:to-[#5555a1] disabled:text-white/85" size="lg" disabled={!rating || generateReview.isPending} onClick={handleGenerate}>
                 {generateReview.isPending ? (
                   <><Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" /> {strings.generatingButton}</>
                 ) : (
                   <><Sparkles className="mr-2 h-4 w-4" aria-hidden="true" /> {strings.generateButton}</>
                 )}
               </Button>
-              <p className="mt-3 text-center text-xs text-muted-foreground">You'll get to read and edit it before anything is posted.</p>
+               <p className="mt-3 text-center text-xs text-muted-foreground dark:text-[#a8bce0]">You'll get to read and edit it before anything is posted.</p>
             </div>
           ) : (
-            <div className="rounded-[1.5rem] border border-[#dce5fa] bg-white p-5 shadow-[0_24px_70px_-42px_rgba(28,57,125,0.16)] dark:border-[#28395f] dark:bg-[#111f40] dark:shadow-[0_24px_70px_-42px_rgba(0,0,0,0.42)] sm:p-7">
+             <div className="review-card rounded-[1.5rem] border p-5 sm:p-7">
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.16em] text-primary">Ready when you are</p>

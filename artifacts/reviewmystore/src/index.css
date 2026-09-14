@@ -225,6 +225,18 @@
       radial-gradient(circle at 92% 52%, hsl(var(--accent) / 0.12), transparent 24rem);
   }
 
+  .review-card {
+    background: linear-gradient(135deg, #ffffff 0%, #f7faff 100%);
+    border-color: #d6e2fa;
+    box-shadow: 0 24px 70px -42px rgba(28, 57, 125, 0.2);
+  }
+
+  .dark .review-card {
+    background: linear-gradient(135deg, #162f60 0%, #10264f 54%, #0c1a38 100%);
+    border-color: #2f5fa8;
+    box-shadow: 0 24px 70px -42px rgba(0, 0, 0, 0.62), 0 14px 36px -28px rgba(53, 122, 255, 0.55);
+  }
+
   .editorial-grid {
     background-image: linear-gradient(to right, hsl(var(--foreground) / 0.055) 1px, transparent 1px),
       linear-gradient(to bottom, hsl(var(--foreground) / 0.055) 1px, transparent 1px);
