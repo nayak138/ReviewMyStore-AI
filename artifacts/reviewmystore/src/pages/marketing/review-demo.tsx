@@ -46,11 +46,8 @@ const demoHeaderImage = `${import.meta.env.BASE_URL}taj-mahal-palace-mumbai.jpg`
 
 export function InteractiveReviewDemo() {
   const [rating, setRating] = useState<number | null>(null);
-  const [selectedHighlights, setSelectedHighlights] = useState<string[]>([
-    "Warm hospitality",
-    "Great location",
-  ]);
-  const [tone, setTone] = useState<ReviewTone>(ReviewTone.WARM);
+  const [selectedHighlights, setSelectedHighlights] = useState<string[]>([]);
+  const [tone, setTone] = useState<ReviewTone | null>(null);
   const [language, setLanguage] = useState<DemoLanguage>(SupportedLanguage.en);
   const [detail, setDetail] = useState("");
   const [customerName, setCustomerName] = useState("");
@@ -83,9 +80,9 @@ export function InteractiveReviewDemo() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           sessionId: `landing-demo-${crypto.randomUUID()}`,
-          keywords: selectedHighlights.length > 0 ? selectedHighlights : ["a memorable stay"],
+          keywords: selectedHighlights,
           rating,
-          tone,
+          tone: tone ?? ReviewTone.WARM,
           language,
           mentionDetail: detail.trim() || null,
           customerName: customerName.trim() || null,

@@ -1336,6 +1336,7 @@ export const GeneratePublicReviewParams = zod.object({
 })
 
 
+export const generatePublicReviewBodyKeywordsMin = 0;
 
 export const generatePublicReviewBodyRatingMax = 5;
 
@@ -1349,7 +1350,7 @@ export const generatePublicReviewBodyOccasionMax = 60;
 
 export const GeneratePublicReviewBody = zod.object({
   "sessionId": zod.string().min(1),
-  "keywords": zod.array(zod.string()).min(1),
+  "keywords": zod.array(zod.string()).min(generatePublicReviewBodyKeywordsMin),
   "rating": zod.int().min(1).max(generatePublicReviewBodyRatingMax),
   "tone": zod.enum(['ENTHUSIASTIC', 'SHORT_DIRECT', 'DETAILED', 'WARM']),
   "language": zod.enum(['en', 'hi', 'bn', 'te', 'mr', 'ta', 'ur', 'gu', 'kn', 'ml', 'pa', 'or', 'as', 'mai', 'sat', 'ks', 'ne', 'sd', 'kok', 'doi', 'mni', 'sa', 'brx']).optional(),
@@ -1371,6 +1372,7 @@ export const GeneratePublicReviewResponse = zod.object({
  * @summary Generate an AI review draft for the interactive landing-page demo
  */
 
+export const generateDemoReviewBodyKeywordsMin = 0;
 
 export const generateDemoReviewBodyRatingMax = 5;
 
@@ -1384,7 +1386,7 @@ export const generateDemoReviewBodyOccasionMax = 60;
 
 export const GenerateDemoReviewBody = zod.object({
   "sessionId": zod.string().min(1),
-  "keywords": zod.array(zod.string()).min(1),
+  "keywords": zod.array(zod.string()).min(generateDemoReviewBodyKeywordsMin),
   "rating": zod.int().min(1).max(generateDemoReviewBodyRatingMax),
   "tone": zod.enum(['ENTHUSIASTIC', 'SHORT_DIRECT', 'DETAILED', 'WARM']),
   "language": zod.enum(['en', 'hi', 'bn', 'te', 'mr', 'ta', 'ur', 'gu', 'kn', 'ml', 'pa', 'or', 'as', 'mai', 'sat', 'ks', 'ne', 'sd', 'kok', 'doi', 'mni', 'sa', 'brx']).optional(),

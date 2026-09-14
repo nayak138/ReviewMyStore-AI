@@ -3562,7 +3562,7 @@ components:
           type: array
           items:
             type: string
-          minItems: 1
+          minItems: 0
         rating:
           type: integer
           minimum: 1

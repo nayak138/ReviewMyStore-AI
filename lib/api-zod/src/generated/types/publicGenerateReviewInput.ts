@@ -11,7 +11,7 @@ import type { SupportedLanguage } from './supportedLanguage';
 export interface PublicGenerateReviewInput {
   /** @minLength 1 */
   sessionId: string;
-  /** @minItems 1 */
+  /** @minItems 0 */
   keywords: string[];
   /**
      * @minimum 1

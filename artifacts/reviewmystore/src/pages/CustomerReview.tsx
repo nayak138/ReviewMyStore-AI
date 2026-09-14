@@ -311,7 +311,7 @@ export default function CustomerReview() {
   const [selectedKeywords, setSelectedKeywords] = useState<string[]>([]);
   const [customKeywordInput, setCustomKeywordInput] = useState("");
   const [mentionDetail, setMentionDetail] = useState("");
-  const [tone, setTone] = useState<(typeof ReviewTone)[keyof typeof ReviewTone]>(ReviewTone.ENTHUSIASTIC);
+  const [tone, setTone] = useState<(typeof ReviewTone)[keyof typeof ReviewTone] | null>(null);
   const [customerName, setCustomerName] = useState("");
   const [occasion, setOccasion] = useState("");
   const [language, setLanguage] = useState<string | null>(null);
@@ -401,7 +401,7 @@ export default function CustomerReview() {
           sessionId,
           keywords: selectedKeywords,
           rating,
-          tone,
+          tone: tone ?? ReviewTone.WARM,
           language: effectiveLanguage as SupportedLanguage,
           mentionDetail: mentionDetail.trim() || undefined,
           customerName: customerName.trim() || undefined,
