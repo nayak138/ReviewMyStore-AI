@@ -72,7 +72,8 @@ export function InteractiveReviewDemo() {
   const generateReview = async () => {
     if (!rating || isGenerating) return;
 
-    const initialScrollY = window.scrollY;
+    const activeElement = document.activeElement;
+    if (activeElement instanceof HTMLElement) activeElement.blur();
     setIsGenerating(true);
     setError("");
     try {
@@ -103,14 +104,11 @@ export function InteractiveReviewDemo() {
       if (!response.ok || !result.reviewText) {
         throw new Error(result.message || "The review service is temporarily unavailable. Please try again.");
       }
-      const activeElement = document.activeElement;
-      if (activeElement instanceof HTMLElement) activeElement.blur();
+      const scrollPositionBeforeResult = window.scrollY;
       setReviewText(result.reviewText);
       window.requestAnimationFrame(() => {
         window.requestAnimationFrame(() => {
-          if (Math.abs(window.scrollY - initialScrollY) < 24) {
-            window.scrollTo(0, initialScrollY);
-          }
+          window.scrollTo(0, scrollPositionBeforeResult);
         });
       });
     } catch (generationError) {
@@ -162,7 +160,7 @@ export function InteractiveReviewDemo() {
   };
 
   return (
-    <section id="review-demo" className="relative overflow-hidden border-b border-border bg-[#edf3ff] py-16 dark:bg-[#05091d] sm:py-24 lg:min-h-[calc(100dvh-4.75rem)] lg:py-20">
+    <section id="review-demo" className="relative overflow-hidden border-b border-border bg-[#edf3ff] py-16 dark:bg-[#05091d] sm:py-24 lg:min-h-[calc(100dvh-4.75rem)] lg:py-20" style={{ overflowAnchor: "none" }}>
       <div className="editorial-grid pointer-events-none absolute inset-0 opacity-30 [mask-image:linear-gradient(to_bottom,black,transparent_78%)]" aria-hidden="true" />
       <div className="pointer-events-none absolute -right-48 top-24 h-[32rem] w-[32rem] rounded-full bg-primary/10 blur-3xl" aria-hidden="true" />
       <div className="mx-auto max-w-[80rem] px-5 sm:px-8 lg:px-10">
