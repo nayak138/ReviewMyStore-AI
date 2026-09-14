@@ -521,8 +521,12 @@ export default function CustomerReview() {
             <div className="flex items-center gap-2">
               <h1 className="font-display text-3xl font-semibold leading-tight">{business.name}</h1>
               {business.googleVerified && (
-                <span title="Verified business" aria-label="Verified business">
-                  <BadgeCheck className="h-6 w-6 shrink-0 fill-[#22c875] text-[#075b37] drop-shadow-[0_2px_5px_rgba(34,200,117,0.35)]" aria-hidden="true" />
+                <span
+                  title="Verified business"
+                  aria-label="Verified business"
+                  className="flex h-8 w-8 shrink-0 items-center justify-center sm:h-9 sm:w-9"
+                >
+                  <BadgeCheck className="h-8 w-8 fill-[#22c875] text-[#075b37] drop-shadow-[0_2px_5px_rgba(34,200,117,0.35)] sm:h-9 sm:w-9" aria-hidden="true" />
                 </span>
               )}
             </div>
