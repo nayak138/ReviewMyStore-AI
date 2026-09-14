@@ -734,7 +734,7 @@ export default function CustomerReview() {
               <div className="mt-6">
                 <Button className="h-12 w-full rounded-xl bg-[#1769ff] text-sm font-semibold shadow-[0_8px_20px_rgba(23,105,255,0.22)] hover:bg-[#0e59df]" onClick={() => void handleCopyAndOpen()}>
                   {copied ? <Check className="mr-2 h-4 w-4" aria-hidden="true" /> : <Copy className="mr-2 h-4 w-4" aria-hidden="true" />}
-                  {copied ? strings.copiedLabel : strings.copyAndOpenButton}
+                  {copied ? strings.copiedLabel : "Copy and Review on Google"}
                 </Button>
               </div>
               {!googleReviewUrl && <p className="mt-3 text-center text-xs text-muted-foreground">Your review is copied. Paste it into Google to share it.</p>}
