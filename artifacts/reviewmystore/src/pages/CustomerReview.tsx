@@ -534,32 +534,35 @@ export default function CustomerReview() {
 
         <div className="border-b border-white/10 bg-[#0a1430] px-4 py-4 sm:px-7">
           <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center sm:justify-start">
-          {business.phone && (
-            <Button asChild size="sm" className="h-11 w-full min-w-0 rounded-full bg-[#1769ff] px-3 text-xs font-semibold shadow-[0_8px_18px_rgba(23,105,255,0.28)] hover:bg-[#0e59df] sm:w-auto sm:px-5 sm:text-sm">
-              <a href={`tel:${business.phone}`}><Phone className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" />Call</a>
-            </Button>
-          )}
-          {(business.phone || business.address || business.website) && (
-            <Button variant="outline" size="sm" className="h-11 w-full min-w-0 rounded-full border-white/15 bg-[#172548] px-3 text-xs font-semibold text-slate-100 hover:bg-[#21345f] sm:w-auto sm:px-4 sm:text-sm" onClick={() => downloadVCard({ name: business.name, phone: business.phone, address: business.address, website: business.website })}>
-              <IdCard className="mr-1.5 h-4 w-4 text-[#5b83ff]" aria-hidden="true" />Save Contact
-            </Button>
-          )}
-          {directionsHref && (
-            <Button asChild variant="outline" size="sm" className="h-11 w-full min-w-0 rounded-full border-white/15 bg-[#172548] px-3 text-xs font-semibold text-slate-100 hover:bg-[#21345f] sm:w-auto sm:px-4 sm:text-sm">
-              <a href={directionsHref} target="_blank" rel="noopener noreferrer"><MapPin className="mr-1.5 h-4 w-4 text-[#19d7a5]" aria-hidden="true" />Directions</a>
-            </Button>
-          )}
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-11 w-full min-w-0 rounded-full border-white/15 bg-[#172548] px-3 text-xs font-semibold text-slate-100 hover:bg-[#21345f] sm:w-auto sm:px-4 sm:text-sm"
-            onClick={() => void handleShare()}
-          >
-            {shareCopied ? <Check className="mr-1.5 h-4 w-4 text-[#19d7a5]" aria-hidden="true" /> : <Share2 className="mr-1.5 h-4 w-4 text-[#9f7aea]" aria-hidden="true" />}
-            {shareCopied ? "Link copied" : "Share"}
-          </Button>
+            {business.phone && (
+              <Button asChild size="sm" className="h-11 w-full min-w-0 rounded-full bg-[#1769ff] px-3 text-xs font-semibold shadow-[0_8px_18px_rgba(23,105,255,0.28)] hover:bg-[#0e59df] sm:w-auto sm:px-5 sm:text-sm">
+                <a href={`tel:${business.phone}`}><Phone className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" />Call</a>
+              </Button>
+            )}
+            {(business.phone || business.address || business.website) && (
+              <Button variant="outline" size="sm" className="h-11 w-full min-w-0 rounded-full border-white/15 bg-[#172548] px-3 text-xs font-semibold text-slate-100 hover:bg-[#21345f] sm:w-auto sm:px-4 sm:text-sm" onClick={() => downloadVCard({ name: business.name, phone: business.phone, address: business.address, website: business.website })}>
+                <IdCard className="mr-1.5 h-4 w-4 text-[#5b83ff]" aria-hidden="true" />Save Contact
+              </Button>
+            )}
           </div>
           <div className="mt-3 flex w-full items-center justify-center gap-2">
+            {directionsHref && (
+              <Button asChild variant="outline" size="sm" aria-label="Directions" title="Directions" className="h-11 w-11 shrink-0 rounded-xl border-white/15 bg-[#172548] p-0 text-slate-100 hover:bg-[#21345f]">
+                <a href={directionsHref} target="_blank" rel="noopener noreferrer">
+                  <MapPin className="h-5 w-5 text-[#19d7a5]" aria-hidden="true" />
+                </a>
+              </Button>
+            )}
+            <Button
+              variant="outline"
+              size="sm"
+              aria-label={shareCopied ? "Link copied" : "Share"}
+              title={shareCopied ? "Link copied" : "Share"}
+              className="h-11 w-11 shrink-0 rounded-xl border-white/15 bg-[#172548] p-0 text-slate-100 hover:bg-[#21345f]"
+              onClick={() => void handleShare()}
+            >
+              {shareCopied ? <Check className="h-5 w-5 text-[#19d7a5]" aria-hidden="true" /> : <Share2 className="h-5 w-5 text-[#9f7aea]" aria-hidden="true" />}
+            </Button>
             {socialLinks.filter((link) => !["call"].includes(link.key)).map((link) => (
               <a
                 key={link.key}
