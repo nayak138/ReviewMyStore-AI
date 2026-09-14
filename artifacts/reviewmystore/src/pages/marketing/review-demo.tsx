@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import {
   BadgeCheck,
   Check,
@@ -58,6 +58,7 @@ export function InteractiveReviewDemo() {
   const [copied, setCopied] = useState(false);
   const [shared, setShared] = useState(false);
   const [headerImageFailed, setHeaderImageFailed] = useState(false);
+  const reviewActionRef = useRef<HTMLButtonElement>(null);
   const strings = getReviewPageStrings(language);
   const rtl = isRtlLanguage(language);
 
@@ -104,11 +105,14 @@ export function InteractiveReviewDemo() {
       if (!response.ok || !result.reviewText) {
         throw new Error(result.message || "The review service is temporarily unavailable. Please try again.");
       }
-      const scrollPositionBeforeResult = window.scrollY;
       setReviewText(result.reviewText);
       window.requestAnimationFrame(() => {
         window.requestAnimationFrame(() => {
-          window.scrollTo(0, scrollPositionBeforeResult);
+          reviewActionRef.current?.scrollIntoView({
+            behavior: "smooth",
+            block: "end",
+            inline: "nearest",
+          });
         });
       });
     } catch (generationError) {
@@ -160,7 +164,7 @@ export function InteractiveReviewDemo() {
   };
 
   return (
-    <section id="review-demo" className="relative overflow-hidden border-b border-border bg-[#edf3ff] py-16 dark:bg-[#05091d] sm:py-24 lg:min-h-[calc(100dvh-4.75rem)] lg:py-20" style={{ overflowAnchor: "none" }}>
+    <section id="review-demo" className="relative overflow-hidden border-b border-border bg-[#edf3ff] py-16 dark:bg-[#05091d] sm:py-24 lg:min-h-[calc(100dvh-4.75rem)] lg:py-20">
       <div className="editorial-grid pointer-events-none absolute inset-0 opacity-30 [mask-image:linear-gradient(to_bottom,black,transparent_78%)]" aria-hidden="true" />
       <div className="pointer-events-none absolute -right-48 top-24 h-[32rem] w-[32rem] rounded-full bg-primary/10 blur-3xl" aria-hidden="true" />
       <div className="mx-auto max-w-[80rem] px-5 sm:px-8 lg:px-10">
@@ -303,7 +307,7 @@ export function InteractiveReviewDemo() {
                 <h4 className="font-display text-2xl font-semibold tracking-tight text-foreground">Your review is ready.</h4>
                 <textarea value={reviewText} onChange={(event) => setReviewText(event.target.value)} rows={6} aria-label="Generated Google review" className="mt-5 w-full resize-y rounded-xl border border-input bg-background/70 px-4 py-3 text-sm leading-relaxed text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" />
                 <div className="mt-6">
-                  <Button className="h-12 w-full rounded-xl bg-[#1769ff] text-sm font-semibold shadow-[0_8px_20px_rgba(23,105,255,0.22)] hover:bg-[#0e59df]" onClick={() => void copyAndOpenGoogle()}>
+                  <Button ref={reviewActionRef} className="scroll-mb-4 h-12 w-full rounded-xl bg-[#1769ff] text-sm font-semibold shadow-[0_8px_20px_rgba(23,105,255,0.22)] hover:bg-[#0e59df]" onClick={() => void copyAndOpenGoogle()}>
                     {copied ? <Check className="mr-2 h-4 w-4" aria-hidden="true" /> : <Copy className="mr-2 h-4 w-4" aria-hidden="true" />}
                     {copied ? strings.copiedLabel : "Copy and Review on Google"}
                   </Button>
