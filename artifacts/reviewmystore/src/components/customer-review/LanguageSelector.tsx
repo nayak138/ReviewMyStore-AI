@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Check, ChevronDown, Globe } from "lucide-react";
+import { Check, ChevronDown, Languages } from "lucide-react";
 import { LANGUAGES } from "@/lib/languages";
 import { cn } from "@/lib/utils";
 
@@ -32,11 +32,11 @@ export function LanguageSelector({ value, onChange }: LanguageSelectorProps) {
         aria-expanded={open}
         aria-haspopup="listbox"
         aria-label="Choose language"
-        className="flex items-center gap-1.5 rounded-full border border-primary-foreground/25 bg-foreground/25 px-3 py-1.5 text-xs font-semibold text-primary-foreground backdrop-blur-sm transition-colors hover:bg-foreground/35 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-foreground"
+        className="flex items-center gap-2 rounded-full border border-white/15 bg-[#081126]/90 px-4 py-2 text-sm font-semibold text-white shadow-[0_8px_24px_rgba(0,0,0,0.25)] backdrop-blur-md transition-colors hover:bg-[#101d3b] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
       >
-        <Globe className="h-3.5 w-3.5" aria-hidden="true" />
+        <Languages className="h-4 w-4 text-slate-300" aria-hidden="true" />
         {current.nativeName}
-        <ChevronDown className="h-3.5 w-3.5" aria-hidden="true" />
+        <ChevronDown className="h-4 w-4 text-slate-300" aria-hidden="true" />
       </button>
       {open && (
         <div

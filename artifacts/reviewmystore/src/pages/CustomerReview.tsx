@@ -4,7 +4,6 @@ import {
   AlertTriangle,
   Check,
   Copy,
-  ExternalLink,
   Facebook,
   Globe,
   IdCard,
@@ -35,12 +34,11 @@ import { isRtlLanguage } from "@/lib/languages";
 import { getReviewPageStrings } from "@/lib/reviewPageTranslations";
 import { LanguageSelector } from "@/components/customer-review/LanguageSelector";
 import { PrivateFeedbackModal } from "@/components/customer-review/PrivateFeedbackModal";
+import { BrandIcon } from "@/components/brand-logo";
 
 const socialAssetBase = `${import.meta.env.BASE_URL}social`;
 const WHATSAPP_ICON = `${socialAssetBase}/whatsapp.png`;
 const INSTAGRAM_ICON = `${socialAssetBase}/instagram.png`;
-const GOOGLE_MAPS_ICON = `${socialAssetBase}/google-maps.png`;
-const GOOGLE_REVIEWS_LOGO = `${socialAssetBase}/google-reviews.png`;
 
 const LOW_RATING_THRESHOLD = 3; // ratings below this trigger the private-feedback modal
 const TONE_OPTIONS = [
@@ -348,7 +346,6 @@ export default function CustomerReview() {
     business.instagramUrl && { kind: "image", key: "instagram", href: business.instagramUrl, label: "Instagram", image: INSTAGRAM_ICON },
     business.facebookUrl && { kind: "icon", key: "facebook", href: business.facebookUrl, label: "Facebook", icon: Facebook, className: "bg-primary" },
     whatsappHref && { kind: "image", key: "whatsapp", href: whatsappHref, label: "WhatsApp", image: WHATSAPP_ICON },
-    directionsHref && { kind: "image", key: "directions", href: directionsHref, label: "Get directions", image: GOOGLE_MAPS_ICON },
     business.phone && { kind: "icon", key: "call", href: `tel:${business.phone}`, label: "Call", icon: Phone, className: "bg-destructive" },
   ].filter((link): link is SocialLink => Boolean(link));
 
@@ -412,6 +409,13 @@ export default function CustomerReview() {
       setCopied(false);
     }
   };
+  const handleCopyAndOpen = async () => {
+    if (!reviewText) return;
+    if (googleReviewUrl) {
+      window.open(googleReviewUrl, "_blank", "noopener,noreferrer");
+    }
+    await handleCopy(Boolean(googleReviewUrl));
+  };
 
   const coverStyle: CSSProperties = brandColor
     ? { backgroundColor: `${brandColor}20` }
@@ -433,7 +437,7 @@ export default function CustomerReview() {
   };
 
   return (
-    <div className="review-noise min-h-[100dvh] overflow-hidden bg-[#eef2f7]">
+    <div className="review-noise min-h-[100dvh] overflow-hidden bg-[#05091d] px-0 sm:px-4">
       {showFeedbackModal && rating !== null && (
         <PrivateFeedbackModal
           businessSlug={businessSlug}
@@ -446,8 +450,8 @@ export default function CustomerReview() {
         />
       )}
 
-      <main className="mx-auto w-full max-w-[460px] overflow-hidden bg-card shadow-[0_24px_80px_-38px_hsl(var(--foreground)/0.45)] sm:my-8 sm:rounded-[1.75rem]">
-        <header className="relative h-56 overflow-hidden sm:h-64">
+      <main className="mx-auto w-full max-w-[920px] overflow-hidden bg-[#0a1430] shadow-[0_28px_100px_-38px_rgba(0,0,0,0.8)] sm:my-5 sm:rounded-[1.75rem]">
+        <header className="relative h-[285px] overflow-hidden sm:h-[350px] lg:h-[385px]">
           <div className="absolute inset-0" style={coverStyle} />
           {headerImage && !headerImageFailed && (
             <img
@@ -457,11 +461,21 @@ export default function CustomerReview() {
               onError={() => setHeaderImageFailed(true)}
             />
           )}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-black/15" />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#050713]/90 via-[#050713]/20 to-[#050713]/10" />
           <div className="absolute left-3 top-3 flex items-center gap-2 sm:left-4 sm:top-4">
             {business.googleVerified && (
-              <div className="inline-flex items-center gap-1.5 rounded-full border border-white/30 bg-white/95 px-2.5 py-1.5 text-[10px] font-bold text-slate-800 shadow-sm">
-                <span className="font-sans text-[15px] font-black leading-none text-[#4285F4]" aria-hidden="true">G</span>
+              <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-[#081126]/90 px-4 py-2 text-sm font-bold text-white shadow-[0_8px_24px_rgba(0,0,0,0.25)] backdrop-blur-md">
+                <span
+                  className="font-sans text-[20px] font-black leading-none"
+                  style={{
+                    backgroundImage: "conic-gradient(from -45deg, #4285f4 0 25%, #34a853 25% 45%, #fbbc05 45% 65%, #ea4335 65% 85%, #4285f4 85% 100%)",
+                    WebkitBackgroundClip: "text",
+                    WebkitTextFillColor: "transparent",
+                  }}
+                  aria-hidden="true"
+                >
+                  G
+                </span>
                 Google Verified
               </div>
             )}
@@ -491,38 +505,40 @@ export default function CustomerReview() {
           </div>
         </header>
 
-        <div className="flex flex-wrap items-center gap-2 border-b border-border px-4 py-3 sm:px-5">
+        <div className="flex flex-wrap items-center gap-2 border-b border-white/10 bg-[#0a1430] px-4 py-4 sm:px-7">
           {business.phone && (
-            <Button asChild size="sm" className="h-9 rounded-full bg-[#1a73e8] px-4 text-xs hover:bg-[#155fc0]">
+            <Button asChild size="sm" className="h-11 rounded-full bg-[#1769ff] px-5 text-sm font-semibold shadow-[0_8px_18px_rgba(23,105,255,0.28)] hover:bg-[#0e59df]">
               <a href={`tel:${business.phone}`}><Phone className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" />Call</a>
             </Button>
           )}
           {(business.phone || business.address || business.website) && (
-            <Button variant="outline" size="sm" className="h-9 rounded-full px-3 text-xs" onClick={() => downloadVCard({ name: business.name, phone: business.phone, address: business.address, website: business.website })}>
-              <IdCard className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" />Save contact
+            <Button variant="outline" size="sm" className="h-11 rounded-full border-white/15 bg-[#172548] px-4 text-sm font-semibold text-slate-100 hover:bg-[#21345f]" onClick={() => downloadVCard({ name: business.name, phone: business.phone, address: business.address, website: business.website })}>
+              <IdCard className="mr-1.5 h-4 w-4 text-[#5b83ff]" aria-hidden="true" />Save contact
             </Button>
           )}
           {directionsHref && (
-            <Button asChild variant="outline" size="sm" className="h-9 rounded-full px-3 text-xs">
-              <a href={directionsHref} target="_blank" rel="noopener noreferrer"><MapPin className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" />Directions</a>
+            <Button asChild variant="outline" size="sm" className="h-11 rounded-full border-white/15 bg-[#172548] px-4 text-sm font-semibold text-slate-100 hover:bg-[#21345f]">
+              <a href={directionsHref} target="_blank" rel="noopener noreferrer"><MapPin className="mr-1.5 h-4 w-4 text-[#19d7a5]" aria-hidden="true" />Directions</a>
             </Button>
           )}
-          {socialLinks.filter((link) => !["call", "directions"].includes(link.key)).map((link) => (
-            <a
-              key={link.key}
-              href={link.href}
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label={link.label}
-              title={link.label}
-              className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full border border-border bg-background transition-transform hover:-translate-y-0.5"
-            >
-              {link.kind === "image" ? <img src={link.image} alt="" className="h-full w-full object-cover" /> : <link.icon className="h-4 w-4 text-primary" aria-hidden="true" />}
-            </a>
-          ))}
+          <div className="ml-auto flex items-center gap-2">
+            {socialLinks.filter((link) => !["call"].includes(link.key)).map((link) => (
+              <a
+                key={link.key}
+                href={link.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={link.label}
+                title={link.label}
+                className="flex h-11 w-11 items-center justify-center overflow-hidden rounded-xl border border-white/15 bg-[#172548] transition-transform hover:-translate-y-0.5 hover:bg-[#21345f]"
+              >
+                {link.kind === "image" ? <img src={link.image} alt="" className="h-full w-full object-cover" /> : <link.icon className="h-5 w-5 text-slate-200" aria-hidden="true" />}
+              </a>
+            ))}
+          </div>
         </div>
 
-        <section className="space-y-4 px-4 pb-8 pt-5 sm:px-5" dir={rtl ? "rtl" : "ltr"}>
+        <section className="mx-auto w-full max-w-[760px] space-y-4 px-4 pb-8 pt-5 sm:px-7" dir={rtl ? "rtl" : "ltr"}>
           {!hasGenerated ? (
             <div className="rounded-[1.5rem] border border-border bg-card p-5 shadow-[0_24px_70px_-42px_hsl(var(--foreground)/0.42)] sm:p-7">
               <div className="mb-6 flex items-start justify-between gap-4">
@@ -637,24 +653,11 @@ export default function CustomerReview() {
               />
               <p id="review-edit-hint" className="mt-2 text-xs text-muted-foreground">Make it sound like you. A specific, honest detail is always best.</p>
 
-              <div className="mt-6 grid gap-3 sm:grid-cols-2">
-                <Button variant="outline" className="h-11 rounded-xl" onClick={() => handleCopy()}>
-                  {copied ? <Check className="mr-2 h-4 w-4 text-success" aria-hidden="true" /> : <Copy className="mr-2 h-4 w-4" aria-hidden="true" />}
+              <div className="mt-6">
+                <Button className="h-12 w-full rounded-xl bg-[#1769ff] text-sm font-semibold shadow-[0_8px_20px_rgba(23,105,255,0.22)] hover:bg-[#0e59df]" onClick={() => void handleCopyAndOpen()}>
+                  {copied ? <Check className="mr-2 h-4 w-4" aria-hidden="true" /> : <Copy className="mr-2 h-4 w-4" aria-hidden="true" />}
                   {copied ? strings.copiedLabel : strings.copyAndOpenButton}
                 </Button>
-                {googleReviewUrl ? (
-                  <Button asChild className="h-11 rounded-xl shadow-md shadow-primary/15">
-                    <a href={googleReviewUrl} target="_blank" rel="noopener noreferrer" onClick={() => void handleCopy(true)}>
-                      <img src={GOOGLE_REVIEWS_LOGO} alt="" className="mr-2 h-4 w-4 object-contain" />
-                      Post to Google <ExternalLink className="ml-2 h-4 w-4" aria-hidden="true" />
-                    </a>
-                  </Button>
-                ) : (
-                  <Button className="h-11 rounded-xl" disabled title="Copy your review and paste it into Google manually">
-                    <img src={GOOGLE_REVIEWS_LOGO} alt="" className="mr-2 h-4 w-4 object-contain" />
-                    Post to Google <ExternalLink className="ml-2 h-4 w-4" aria-hidden="true" />
-                  </Button>
-                )}
               </div>
               {!googleReviewUrl && <p className="mt-3 text-center text-xs text-muted-foreground">Your review is copied. Paste it into Google to share it.</p>}
 
@@ -683,6 +686,10 @@ export default function CustomerReview() {
             </div>
           )}
         </section>
+        <footer className="flex items-center justify-center gap-2 border-t border-white/10 px-4 py-5 text-xs text-slate-400">
+          <BrandIcon className="h-5 w-5 object-contain opacity-80" />
+          <span>Powered by 5-Star.AI</span>
+        </footer>
       </main>
     </div>
   );

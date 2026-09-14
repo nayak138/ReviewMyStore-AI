@@ -155,6 +155,25 @@ export async function getPlaceDetails(placeId: string): Promise<PlaceDetails> {
 
 const PHOTO_NAME_PATTERN = /^places\/[^/]+\/photos\/[^/]+$/;
 
+function placeIdFromPhotoName(photoName: string): string | null {
+  const match = photoName.match(/^places\/([^/]+)\/photos\/[^/]+$/);
+  return match?.[1] ?? null;
+}
+
+async function requestPlacePhoto(photoName: string, maxWidthPx: number): Promise<Response> {
+  return fetch(
+    `${PLACES_BASE}/${photoName}/media?maxWidthPx=${maxWidthPx}`,
+    {
+      headers: {
+        // Places API (New) expects the key in this header for photo media
+        // requests. Keeping it here also guarantees it never reaches the
+        // browser-facing photo URL.
+        "X-Goog-Api-Key": apiKey(),
+      },
+    },
+  );
+}
+
 export async function fetchPlacePhoto(
   photoName: string,
   maxWidthPx = 800,
@@ -163,9 +182,24 @@ export async function fetchPlacePhoto(
     throw new GoogleBusinessLookupError("Invalid photo reference", 400);
   }
 
-  const res = await fetch(
-    `${PLACES_BASE}/${photoName}/media?maxWidthPx=${maxWidthPx}&key=${apiKey()}`,
-  );
+  let res = await requestPlacePhoto(photoName, maxWidthPx);
+
+  // Photo resource names can become stale after a business changes its
+  // Places photo set. Refresh the place details once and retry with the
+  // current resource instead of leaving older review pages blank.
+  if (!res.ok && res.status === 400) {
+    const placeId = placeIdFromPhotoName(photoName);
+    if (placeId) {
+      try {
+        const freshPlace = await getPlaceDetails(placeId);
+        if (freshPlace.photoName && freshPlace.photoName !== photoName) {
+          res = await requestPlacePhoto(freshPlace.photoName, maxWidthPx);
+        }
+      } catch {
+        // Preserve the original photo error below if the refresh also fails.
+      }
+    }
+  }
 
   if (!res.ok) {
     throw new GoogleBusinessLookupError(
