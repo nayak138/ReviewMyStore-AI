@@ -541,7 +541,7 @@ export default function CustomerReview() {
           )}
           {(business.phone || business.address || business.website) && (
             <Button variant="outline" size="sm" className="h-11 w-full min-w-0 rounded-full border-white/15 bg-[#172548] px-3 text-xs font-semibold text-slate-100 hover:bg-[#21345f] sm:w-auto sm:px-4 sm:text-sm" onClick={() => downloadVCard({ name: business.name, phone: business.phone, address: business.address, website: business.website })}>
-              <IdCard className="mr-1.5 h-4 w-4 text-[#5b83ff]" aria-hidden="true" />Save contact
+              <IdCard className="mr-1.5 h-4 w-4 text-[#5b83ff]" aria-hidden="true" />Save Contact
             </Button>
           )}
           {directionsHref && (
