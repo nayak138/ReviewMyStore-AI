@@ -22,7 +22,7 @@ import { isRtlLanguage } from "@/lib/languages";
 import { getReviewPageStrings } from "@/lib/reviewPageTranslations";
 
 const DEMO_GOOGLE_URL =
-  "https://www.google.com/maps/search/Marina+Bay+Sands+Singapore";
+  "https://search.google.com/local/writereview?placeid=ChIJA5LATO4Z2jER111V-v6abAI";
 const socialAssetBase = `${import.meta.env.BASE_URL}social`;
 const GOOGLE_MAPS_ICON = `${socialAssetBase}/google-maps.png`;
 const INSTAGRAM_ICON = `${socialAssetBase}/instagram.png`;
@@ -115,7 +115,7 @@ export function InteractiveReviewDemo() {
 
   const copyAndOpenGoogle = async () => {
     await copyReview();
-    window.open(DEMO_GOOGLE_URL, "_blank", "noopener,noreferrer");
+    window.location.assign(DEMO_GOOGLE_URL);
   };
 
   const shareDemo = async () => {
