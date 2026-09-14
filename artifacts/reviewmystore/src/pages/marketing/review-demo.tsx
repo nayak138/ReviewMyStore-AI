@@ -58,7 +58,7 @@ export function InteractiveReviewDemo() {
   const [copied, setCopied] = useState(false);
   const [shared, setShared] = useState(false);
   const [headerImageFailed, setHeaderImageFailed] = useState(false);
-  const reviewActionRef = useRef<HTMLButtonElement>(null);
+  const demoFooterRef = useRef<HTMLDivElement>(null);
   const strings = getReviewPageStrings(language);
   const rtl = isRtlLanguage(language);
 
@@ -108,7 +108,7 @@ export function InteractiveReviewDemo() {
       setReviewText(result.reviewText);
       window.requestAnimationFrame(() => {
         window.requestAnimationFrame(() => {
-          reviewActionRef.current?.scrollIntoView({
+          demoFooterRef.current?.scrollIntoView({
             behavior: "smooth",
             block: "end",
             inline: "nearest",
@@ -307,7 +307,7 @@ export function InteractiveReviewDemo() {
                 <h4 className="font-display text-2xl font-semibold tracking-tight text-foreground">Your review is ready.</h4>
                 <textarea value={reviewText} onChange={(event) => setReviewText(event.target.value)} rows={6} aria-label="Generated Google review" className="mt-5 w-full resize-y rounded-xl border border-input bg-background/70 px-4 py-3 text-sm leading-relaxed text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" />
                 <div className="mt-6">
-                  <Button ref={reviewActionRef} className="scroll-mb-4 h-12 w-full rounded-xl bg-[#1769ff] text-sm font-semibold shadow-[0_8px_20px_rgba(23,105,255,0.22)] hover:bg-[#0e59df]" onClick={() => void copyAndOpenGoogle()}>
+                  <Button className="h-12 w-full rounded-xl bg-[#1769ff] text-sm font-semibold shadow-[0_8px_20px_rgba(23,105,255,0.22)] hover:bg-[#0e59df]" onClick={() => void copyAndOpenGoogle()}>
                     {copied ? <Check className="mr-2 h-4 w-4" aria-hidden="true" /> : <Copy className="mr-2 h-4 w-4" aria-hidden="true" />}
                     {copied ? strings.copiedLabel : "Copy and Review on Google"}
                   </Button>
@@ -316,7 +316,7 @@ export function InteractiveReviewDemo() {
               </div>
             )}
           </section>
-          <div className="flex items-center justify-center gap-2 border-t border-[#d8e2fb] bg-[#eef3ff] py-5 text-xs text-muted-foreground dark:border-white/10 dark:bg-[#0a1430]">
+          <div ref={demoFooterRef} className="scroll-mb-4 flex items-center justify-center gap-2 border-t border-[#d8e2fb] bg-[#eef3ff] py-5 text-xs text-muted-foreground dark:border-white/10 dark:bg-[#0a1430]">
             <BrandIcon className="h-5 w-5" alt="" /> Powered by 5-Star.AI
           </div>
         </div>
