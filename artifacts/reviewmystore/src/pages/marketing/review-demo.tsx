@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import { ReviewTone, SupportedLanguage } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
-import { BrandIcon } from "@/components/brand-logo";
+import { BrandLogo } from "@/components/brand-logo";
 import { LanguageSelector } from "@/components/customer-review/LanguageSelector";
 import { downloadVCard } from "@/lib/vcard";
 import { cn } from "@/lib/utils";
@@ -316,8 +316,9 @@ export function InteractiveReviewDemo() {
               </div>
             )}
           </section>
-          <div ref={demoFooterRef} className="scroll-mb-4 flex items-center justify-center gap-2 border-t border-[#d8e2fb] bg-[#eef3ff] py-5 text-xs text-muted-foreground dark:border-white/10 dark:bg-[#0a1430]">
-            <BrandIcon className="h-5 w-5" alt="" /> Powered by 5-Star.AI
+          <div ref={demoFooterRef} className="scroll-mb-4 flex items-center justify-center gap-3 border-t border-[#d8e2fb] bg-[#eef3ff] py-5 text-xs text-muted-foreground dark:border-white/10 dark:bg-[#0a1430]">
+            <span>Powered by</span>
+            <BrandLogo className="h-8 w-auto max-w-[11rem] opacity-90" />
           </div>
         </div>
       </div>
