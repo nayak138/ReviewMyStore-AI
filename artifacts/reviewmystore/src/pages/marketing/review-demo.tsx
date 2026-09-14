@@ -22,7 +22,7 @@ import { isRtlLanguage } from "@/lib/languages";
 import { getReviewPageStrings } from "@/lib/reviewPageTranslations";
 
 const DEMO_GOOGLE_URL =
-  "https://www.google.com/maps/search/?api=1&query=Taj%20Mahal%20Palace%20Mumbai";
+  "https://search.google.com/local/writereview?placeid=ChIJa59lxcDR5zsR4SegHgrkS6A";
 
 const highlights = [
   "Beautiful views",
