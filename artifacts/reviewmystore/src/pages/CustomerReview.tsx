@@ -573,7 +573,7 @@ export default function CustomerReview() {
                 title={link.label}
                 className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-border bg-secondary transition-transform hover:-translate-y-0.5 hover:bg-secondary/80 dark:border-white/15 dark:bg-[#172548] dark:hover:bg-[#21345f]"
               >
-                {link.kind === "image" ? <img src={link.image} alt="" className="h-full w-full object-cover" /> : <link.icon className="h-5 w-5 text-slate-200" aria-hidden="true" />}
+                {link.kind === "image" ? <img src={link.image} alt="" className="h-full w-full object-cover" /> : <link.icon className="h-5 w-5 text-secondary-foreground dark:text-slate-200" aria-hidden="true" />}
               </a>
             ))}
           </div>
