@@ -1,7 +1,7 @@
 import { ReplitConnectors } from "@replit/connectors-sdk";
 import { logger } from "../lib/logger";
 
-const LEADS_SPREADSHEET_ID = "1S1-NOGZIhNCX7HGRf0vKGRlQbfnzzGUBBpFy_EtaxVI";
+const LEADS_SPREADSHEET_ID = "1Ycdrp2n3wLFipgdJuFIWRsw87xna-LrTK39nkyuGu2g";
 const LEADS_RANGE = "Leads!A1";
 
 type LeadSheetRow = {
@@ -12,7 +12,6 @@ type LeadSheetRow = {
   company?: string | null;
   phone?: string | null;
   email?: string | null;
-  website?: string | null;
 };
 
 function displayLeadType(leadType: LeadSheetRow["leadType"]) {
@@ -44,7 +43,6 @@ export async function appendLeadToGoogleSheet(data: LeadSheetRow): Promise<void>
             data.company ?? "",
             data.phone ?? "",
             data.email ?? "",
-            data.website ?? "",
             "Website",
             "New Lead",
             "No",

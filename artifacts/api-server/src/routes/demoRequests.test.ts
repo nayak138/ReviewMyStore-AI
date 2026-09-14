@@ -69,10 +69,7 @@ function post(body: unknown, xff?: string) {
 
 test("valid submission is persisted and returns 201 with an id", async () => {
   const email = `lead@${MARKER}.example.com`;
-  const res = await post(
-    { name: "Lead", leadType: "AGENCY", email },
-    "203.0.113.11",
-  );
+  const res = await post({ name: "Lead", leadType: "AGENCY", email }, "203.0.113.11");
   assert.equal(res.status, 201);
   const json = (await res.json()) as { id: string };
   assert.ok(json.id && json.id !== "ok");

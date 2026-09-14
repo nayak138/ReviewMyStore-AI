@@ -46,7 +46,6 @@ export async function createDemoRequest(input: {
     company: input.company?.trim() || null,
     phone: input.phone?.trim() || null,
     email: input.email?.trim() || null,
-    website: null,
   });
 
   return { id: row.id };
