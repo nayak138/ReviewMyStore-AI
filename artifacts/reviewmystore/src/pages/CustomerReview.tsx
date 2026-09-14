@@ -13,6 +13,7 @@ import {
   Phone,
   Plus,
   RefreshCw,
+  Share2,
   Sparkles,
   Star,
   X,
@@ -300,6 +301,7 @@ export default function CustomerReview() {
   const [remaining, setRemaining] = useState<number | null>(null);
   const [maxGenerations, setMaxGenerations] = useState<number | null>(null);
   const [copied, setCopied] = useState(false);
+  const [shareCopied, setShareCopied] = useState(false);
   const [isEditingKeywords, setIsEditingKeywords] = useState(false);
   const [headerImageFailed, setHeaderImageFailed] = useState(false);
   const sessionId = useMemo(() => getOrCreateSessionId(businessSlug, campaignSlug), [businessSlug, campaignSlug]);
@@ -417,6 +419,30 @@ export default function CustomerReview() {
     }
     await handleCopy(Boolean(googleReviewUrl));
   };
+  const handleShare = async () => {
+    const shareData = {
+      title: business.name,
+      text: `Check out ${business.name}`,
+      url: window.location.href,
+    };
+
+    if (typeof navigator.share === "function") {
+      try {
+        await navigator.share(shareData);
+        return;
+      } catch (error) {
+        if (error instanceof DOMException && error.name === "AbortError") return;
+      }
+    }
+
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      setShareCopied(true);
+      window.setTimeout(() => setShareCopied(false), 2000);
+    } catch {
+      setShareCopied(false);
+    }
+  };
 
   const coverStyle: CSSProperties = brandColor
     ? { backgroundColor: `${brandColor}20` }
@@ -507,22 +533,31 @@ export default function CustomerReview() {
         </header>
 
         <div className="border-b border-white/10 bg-[#0a1430] px-4 py-4 sm:px-7">
-          <div className="flex flex-wrap items-center justify-center gap-2 sm:justify-start">
+          <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center sm:justify-start">
           {business.phone && (
-            <Button asChild size="sm" className="h-11 min-w-0 flex-1 rounded-full bg-[#1769ff] px-3 text-xs font-semibold shadow-[0_8px_18px_rgba(23,105,255,0.28)] hover:bg-[#0e59df] sm:flex-none sm:px-5 sm:text-sm">
+            <Button asChild size="sm" className="h-11 w-full min-w-0 rounded-full bg-[#1769ff] px-3 text-xs font-semibold shadow-[0_8px_18px_rgba(23,105,255,0.28)] hover:bg-[#0e59df] sm:w-auto sm:px-5 sm:text-sm">
               <a href={`tel:${business.phone}`}><Phone className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" />Call</a>
             </Button>
           )}
           {(business.phone || business.address || business.website) && (
-            <Button variant="outline" size="sm" className="h-11 min-w-0 flex-1 rounded-full border-white/15 bg-[#172548] px-3 text-xs font-semibold text-slate-100 hover:bg-[#21345f] sm:flex-none sm:px-4 sm:text-sm" onClick={() => downloadVCard({ name: business.name, phone: business.phone, address: business.address, website: business.website })}>
+            <Button variant="outline" size="sm" className="h-11 w-full min-w-0 rounded-full border-white/15 bg-[#172548] px-3 text-xs font-semibold text-slate-100 hover:bg-[#21345f] sm:w-auto sm:px-4 sm:text-sm" onClick={() => downloadVCard({ name: business.name, phone: business.phone, address: business.address, website: business.website })}>
               <IdCard className="mr-1.5 h-4 w-4 text-[#5b83ff]" aria-hidden="true" />Save contact
             </Button>
           )}
           {directionsHref && (
-            <Button asChild variant="outline" size="sm" className="h-11 min-w-0 flex-1 rounded-full border-white/15 bg-[#172548] px-3 text-xs font-semibold text-slate-100 hover:bg-[#21345f] sm:flex-none sm:px-4 sm:text-sm">
+            <Button asChild variant="outline" size="sm" className="h-11 w-full min-w-0 rounded-full border-white/15 bg-[#172548] px-3 text-xs font-semibold text-slate-100 hover:bg-[#21345f] sm:w-auto sm:px-4 sm:text-sm">
               <a href={directionsHref} target="_blank" rel="noopener noreferrer"><MapPin className="mr-1.5 h-4 w-4 text-[#19d7a5]" aria-hidden="true" />Directions</a>
             </Button>
           )}
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-11 w-full min-w-0 rounded-full border-white/15 bg-[#172548] px-3 text-xs font-semibold text-slate-100 hover:bg-[#21345f] sm:w-auto sm:px-4 sm:text-sm"
+            onClick={() => void handleShare()}
+          >
+            {shareCopied ? <Check className="mr-1.5 h-4 w-4 text-[#19d7a5]" aria-hidden="true" /> : <Share2 className="mr-1.5 h-4 w-4 text-[#9f7aea]" aria-hidden="true" />}
+            {shareCopied ? "Link copied" : "Share"}
+          </Button>
           </div>
           <div className="mt-3 flex w-full items-center justify-center gap-2">
             {socialLinks.filter((link) => !["call"].includes(link.key)).map((link) => (
