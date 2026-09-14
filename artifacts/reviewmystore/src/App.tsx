@@ -2,12 +2,13 @@ import { Switch, Route, Redirect, useLocation, Router as WouterRouter } from 'wo
 import { ClerkProvider, SignIn, SignUp, Show, useClerk } from '@clerk/react';
 import { publishableKeyFromHost } from '@clerk/react/internal';
 import { shadcn } from '@clerk/themes';
-import { useEffect, useRef, useState, lazy, Suspense, type ReactNode } from 'react';
+import { useEffect, useRef, useState, useMemo, lazy, Suspense, type ReactNode } from 'react';
 import { QueryClient, QueryClientProvider, useQueryClient } from "@tanstack/react-query";
+import { useTheme } from "next-themes";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/components/theme-provider";
-import { BrandIcon } from "@/components/brand-logo";
+import { BRAND_LOGO_DARK, BRAND_LOGO_LIGHT, BrandIcon, BrandLogo } from "@/components/brand-logo";
 import {
   getGetPublicAgencyInvitationQueryKey,
   useGetPublicAgencyInvitation,
@@ -71,7 +72,6 @@ const clerkAppearance = {
   options: {
     logoPlacement: "inside" as const,
     logoLinkUrl: basePath || "/",
-    logoImageUrl: `${window.location.origin}${basePath}/brand/logo-icon.png`,
   },
   variables: {
     colorPrimary: "hsl(221, 68%, 39%)",
@@ -103,7 +103,7 @@ const clerkAppearance = {
     formFieldSuccessText: "!text-emerald-600",
     alertText: "!text-foreground",
     logoBox: "mb-2",
-    logoImage: "w-8 h-8",
+    logoImage: "h-8 w-auto max-w-[11rem]",
     socialButtonsBlockButton: "border-border hover:bg-accent transition-colors",
     formButtonPrimary: "bg-primary !text-white hover:bg-primary/90 transition-colors shadow-sm",
     formFieldInput: "bg-card border-border text-foreground focus:ring-2 focus:ring-primary focus:border-transparent transition-all",
@@ -126,8 +126,7 @@ function AuthLayout({ children }: { children: ReactNode }) {
         <div className="absolute -right-24 -top-24 h-72 w-72 rounded-full border-[36px] border-primary-foreground/10" />
         <div className="absolute -bottom-28 -left-20 h-80 w-80 rounded-full border-[48px] border-primary-foreground/10" />
         <div className="relative z-10 flex items-center gap-3">
-          <BrandIcon className="h-10 w-10 rounded-xl bg-primary-foreground/10 p-1" />
-          <span className="font-display text-xl font-semibold tracking-tight">5-Star.AI</span>
+          <img src={BRAND_LOGO_DARK} alt="5-Star.AI" className="h-10 w-auto max-w-[12rem] object-contain" />
         </div>
         <div className="relative z-10 max-w-md pb-8">
           <div className="mb-8 flex gap-2" aria-label="Google rating">
@@ -150,8 +149,7 @@ function AuthLayout({ children }: { children: ReactNode }) {
       </aside>
       <main className="flex min-h-[100dvh] flex-col items-center justify-center px-4 py-10 sm:px-8">
         <div className="mb-8 flex items-center gap-2 lg:hidden">
-          <BrandIcon className="h-9 w-9 rounded-lg" />
-          <span className="font-display text-lg font-semibold tracking-tight">5-Star.AI</span>
+          <BrandLogo className="h-8 w-auto max-w-[10rem]" />
         </div>
         {children}
       </main>
@@ -329,12 +327,23 @@ function AppRouter() {
 
 function ClerkProviderWithRoutes() {
   const [, setLocation] = useLocation();
+  const { resolvedTheme } = useTheme();
+  const themeAwareClerkAppearance = useMemo(
+    () => ({
+      ...clerkAppearance,
+      options: {
+        ...clerkAppearance.options,
+        logoImageUrl: `${window.location.origin}${resolvedTheme === "dark" ? BRAND_LOGO_DARK : BRAND_LOGO_LIGHT}`,
+      },
+    }),
+    [resolvedTheme],
+  );
 
   return (
     <ClerkProvider
       publishableKey={clerkPubKey}
       proxyUrl={clerkProxyUrl}
-      appearance={clerkAppearance}
+      appearance={themeAwareClerkAppearance}
       signInUrl={`${basePath}/sign-in`}
       localization={{
         signIn: {
