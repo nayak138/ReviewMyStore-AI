@@ -90,9 +90,17 @@ export function InteractiveReviewDemo() {
         }),
       });
 
-      const result = (await response.json()) as { reviewText?: string; message?: string };
+      const responseText = await response.text();
+      let result: { reviewText?: string; message?: string } = {};
+      if (responseText.trim()) {
+        try {
+          result = JSON.parse(responseText) as { reviewText?: string; message?: string };
+        } catch {
+          throw new Error("The review service returned an invalid response. Please try again.");
+        }
+      }
       if (!response.ok || !result.reviewText) {
-        throw new Error(result.message || "The review could not be generated.");
+        throw new Error(result.message || "The review service is temporarily unavailable. Please try again.");
       }
       setReviewText(result.reviewText);
     } catch (generationError) {
