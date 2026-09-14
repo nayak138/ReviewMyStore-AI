@@ -362,6 +362,211 @@ export const GetAdminOverviewResponse = zod.object({
 
 
 /**
+ * @summary Platform agencies and businesses (Super Admin only)
+ */
+export const GetAdminPortalResponse = zod.object({
+  "overview": zod.object({
+  "totalOrganizations": zod.int(),
+  "totalOwners": zod.int(),
+  "totalSuperAdmins": zod.int(),
+  "totalSuspendedOrganizations": zod.int()
+}).and(zod.object({
+  "totalBusinesses": zod.int(),
+  "pendingInvitations": zod.int()
+})),
+  "agencies": zod.array(zod.object({
+  "id": zod.uuid(),
+  "name": zod.string(),
+  "slug": zod.string(),
+  "status": zod.enum(['ACTIVE', 'SUSPENDED']),
+  "plan": zod.enum(['STARTER', 'GROWTH', 'PRO', 'ENTERPRISE']),
+  "subscriptionStatus": zod.enum(['TRIALING', 'ACTIVE', 'PAST_DUE', 'CANCELED']),
+  "aiQuota": zod.int(),
+  "businessesLimit": zod.int(),
+  "startDate": zod.coerce.date().nullable(),
+  "renewalDate": zod.coerce.date().nullable(),
+  "expiryDate": zod.coerce.date().nullable(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date(),
+  "owner": zod.union([zod.object({
+  "name": zod.string(),
+  "email": zod.email(),
+  "status": zod.enum(['ACTIVE', 'SUSPENDED']),
+  "lastLoginAt": zod.coerce.date().nullable()
+}),zod.null()]),
+  "businessCount": zod.int(),
+  "pendingInvitation": zod.union([zod.object({
+  "id": zod.uuid(),
+  "email": zod.email(),
+  "expiresAt": zod.coerce.date(),
+  "createdAt": zod.coerce.date()
+}),zod.null()])
+})),
+  "businesses": zod.array(zod.object({
+  "id": zod.uuid(),
+  "organizationId": zod.uuid(),
+  "organizationName": zod.string(),
+  "organizationSlug": zod.string(),
+  "name": zod.string(),
+  "slug": zod.string(),
+  "category": zod.string(),
+  "status": zod.enum(['ACTIVE', 'SUSPENDED', 'DISABLED']),
+  "archivedAt": zod.coerce.date().nullable(),
+  "createdAt": zod.coerce.date()
+}))
+})
+
+
+/**
+ * @summary Create an agency and its first invitation
+ */
+export const createAdminAgencyBodyNameMin = 2;
+export const createAdminAgencyBodyNameMax = 120;
+
+export const createAdminAgencyBodyAiQuotaMin = 0;
+export const createAdminAgencyBodyAiQuotaMax = 1000000;
+
+export const createAdminAgencyBodyBusinessesLimitMax = 10000;
+
+export const createAdminAgencyBodyExpiresInDaysMax = 90;
+
+
+
+export const CreateAdminAgencyBody = zod.object({
+  "name": zod.string().min(createAdminAgencyBodyNameMin).max(createAdminAgencyBodyNameMax),
+  "email": zod.email(),
+  "plan": zod.enum(['STARTER', 'GROWTH', 'PRO', 'ENTERPRISE']),
+  "subscriptionStatus": zod.enum(['TRIALING', 'ACTIVE', 'PAST_DUE', 'CANCELED']),
+  "aiQuota": zod.int().min(createAdminAgencyBodyAiQuotaMin).max(createAdminAgencyBodyAiQuotaMax),
+  "businessesLimit": zod.int().min(1).max(createAdminAgencyBodyBusinessesLimitMax),
+  "expiresInDays": zod.int().min(1).max(createAdminAgencyBodyExpiresInDaysMax).optional()
+})
+
+export const CreateAdminAgencyResponse = zod.object({
+  "organization": zod.object({
+  "id": zod.uuid(),
+  "name": zod.string(),
+  "slug": zod.string(),
+  "status": zod.enum(['ACTIVE', 'SUSPENDED']),
+  "plan": zod.enum(['STARTER', 'GROWTH', 'PRO', 'ENTERPRISE']),
+  "subscriptionStatus": zod.enum(['TRIALING', 'ACTIVE', 'PAST_DUE', 'CANCELED']),
+  "aiQuota": zod.int(),
+  "businessesLimit": zod.int(),
+  "startDate": zod.coerce.date().nullable(),
+  "renewalDate": zod.coerce.date().nullable(),
+  "expiryDate": zod.coerce.date().nullable(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+}),
+  "invitation": zod.object({
+  "id": zod.uuid(),
+  "email": zod.email(),
+  "status": zod.enum(['PENDING', 'ACCEPTED', 'REVOKED']),
+  "expiresAt": zod.coerce.date(),
+  "createdAt": zod.coerce.date(),
+  "signupPath": zod.string()
+})
+})
+
+
+/**
+ * @summary Update an agency's status and limits
+ */
+export const UpdateAdminAgencyParams = zod.object({
+  "id": zod.uuid()
+})
+
+export const updateAdminAgencyBodyAiQuotaMin = 0;
+export const updateAdminAgencyBodyAiQuotaMax = 1000000;
+
+export const updateAdminAgencyBodyBusinessesLimitMax = 10000;
+
+
+
+export const UpdateAdminAgencyBody = zod.object({
+  "status": zod.enum(['ACTIVE', 'SUSPENDED']).optional(),
+  "plan": zod.enum(['STARTER', 'GROWTH', 'PRO', 'ENTERPRISE']).optional(),
+  "subscriptionStatus": zod.enum(['TRIALING', 'ACTIVE', 'PAST_DUE', 'CANCELED']).optional(),
+  "aiQuota": zod.int().min(updateAdminAgencyBodyAiQuotaMin).max(updateAdminAgencyBodyAiQuotaMax).optional(),
+  "businessesLimit": zod.int().min(1).max(updateAdminAgencyBodyBusinessesLimitMax).optional()
+})
+
+export const UpdateAdminAgencyResponse = zod.object({
+  "id": zod.uuid(),
+  "name": zod.string(),
+  "slug": zod.string(),
+  "status": zod.enum(['ACTIVE', 'SUSPENDED']),
+  "plan": zod.enum(['STARTER', 'GROWTH', 'PRO', 'ENTERPRISE']),
+  "subscriptionStatus": zod.enum(['TRIALING', 'ACTIVE', 'PAST_DUE', 'CANCELED']),
+  "aiQuota": zod.int(),
+  "businessesLimit": zod.int(),
+  "startDate": zod.coerce.date().nullable(),
+  "renewalDate": zod.coerce.date().nullable(),
+  "expiryDate": zod.coerce.date().nullable(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Generate a new agency signup link
+ */
+export const CreateAdminAgencyInvitationParams = zod.object({
+  "id": zod.uuid()
+})
+
+export const createAdminAgencyInvitationBodyExpiresInDaysMax = 90;
+
+
+
+export const CreateAdminAgencyInvitationBody = zod.object({
+  "email": zod.email(),
+  "expiresInDays": zod.int().min(1).max(createAdminAgencyInvitationBodyExpiresInDaysMax).optional()
+})
+
+export const CreateAdminAgencyInvitationResponse = zod.object({
+  "id": zod.uuid(),
+  "email": zod.email(),
+  "status": zod.enum(['PENDING', 'ACCEPTED', 'REVOKED']),
+  "expiresAt": zod.coerce.date(),
+  "createdAt": zod.coerce.date(),
+  "signupPath": zod.string()
+})
+
+
+/**
+ * @summary Revoke an agency signup link
+ */
+export const RevokeAdminAgencyInvitationParams = zod.object({
+  "id": zod.uuid()
+})
+
+export const RevokeAdminAgencyInvitationResponse = zod.object({
+  "id": zod.uuid(),
+  "status": zod.enum(['REVOKED'])
+})
+
+
+/**
+ * @summary Validate an agency signup link
+ */
+export const getPublicAgencyInvitationPathTokenMin = 20;
+
+
+
+export const GetPublicAgencyInvitationParams = zod.object({
+  "token": zod.coerce.string().min(getPublicAgencyInvitationPathTokenMin)
+})
+
+export const GetPublicAgencyInvitationResponse = zod.object({
+  "id": zod.uuid(),
+  "email": zod.email(),
+  "organizationName": zod.string(),
+  "expiresAt": zod.coerce.date()
+})
+
+
+/**
  * Returns non-deleted businesses belonging to the caller's Organization. Archived businesses are included with archivedAt set; use the includeArchived=false query param to exclude them.
  * @summary List businesses for the caller's organization
  */

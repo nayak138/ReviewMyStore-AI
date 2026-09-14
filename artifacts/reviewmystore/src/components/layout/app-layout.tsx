@@ -12,6 +12,7 @@ import {
   BarChart3, 
   ShoppingCart,
   Inbox,
+  ShieldCheck,
   LogOut,
   Menu,
   X
@@ -39,6 +40,7 @@ const NAV_ITEMS = [
 // Shown only to SUPER_ADMIN users, below the regular nav items.
 const ADMIN_NAV_ITEMS = [
   { name: "Demo Requests", icon: Inbox, href: "/admin/leads", ready: true },
+  { name: "Master Admin", icon: ShieldCheck, href: "/admin/portal", ready: true },
 ];
 
 interface AppLayoutProps {

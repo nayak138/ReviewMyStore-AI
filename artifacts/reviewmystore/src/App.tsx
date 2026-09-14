@@ -1,5 +1,5 @@
 import { Switch, Route, Redirect, useLocation, Router as WouterRouter } from 'wouter';
-import { ClerkProvider, SignIn, Show, useClerk } from '@clerk/react';
+import { ClerkProvider, SignIn, SignUp, Show, useClerk } from '@clerk/react';
 import { publishableKeyFromHost } from '@clerk/react/internal';
 import { shadcn } from '@clerk/themes';
 import { useEffect, useRef, useState, lazy, Suspense, type ReactNode } from 'react';
@@ -8,6 +8,10 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/components/theme-provider";
 import { BrandIcon } from "@/components/brand-logo";
+import {
+  getGetPublicAgencyInvitationQueryKey,
+  useGetPublicAgencyInvitation,
+} from "@workspace/api-client-react";
 
 // Route-level code splitting: each page loads its own chunk so first-time
 // visitors to the marketing page don't download the authenticated app.
@@ -30,6 +34,8 @@ const Reviews = lazy(() => import("./pages/Reviews"));
 const Feedback = lazy(() => import("./pages/Feedback"));
 
 const AdminLeads = lazy(() => import("./pages/AdminLeads"));
+const AdminPortal = lazy(() => import("./pages/AdminPortal"));
+const AgencyJoin = lazy(() => import("./pages/AgencyJoin"));
 const NotFound = lazy(() => import("./pages/not-found"));
 
 const queryClient = new QueryClient({
@@ -170,25 +176,51 @@ function SignInPage() {
 }
 
 function SignUpPage() {
+  const inviteToken = new URLSearchParams(window.location.search).get("invite") ?? "";
+  const { data: invitation, isLoading } = useGetPublicAgencyInvitation(inviteToken, {
+    query: {
+      enabled: !!inviteToken,
+      queryKey: getGetPublicAgencyInvitationQueryKey(inviteToken),
+    },
+  });
+
+  if (isLoading) {
+    return <PageLoader />;
+  }
+
+  if (!invitation) {
+    return (
+      <AuthLayout>
+        <div className="w-full max-w-[440px] rounded-[1.25rem] border border-red-200 bg-red-50 p-8 text-center shadow-sm dark:border-red-900/60 dark:bg-red-950/30">
+          <h1 className="font-display text-3xl font-semibold tracking-tight text-red-800 dark:text-red-200">
+            Agency access only
+          </h1>
+          <p className="mt-3 text-sm leading-relaxed text-red-700 dark:text-red-300">
+            New accounts are created from a secure invitation link. Ask the platform administrator for access.
+          </p>
+          <a href={`${basePath}/sign-in`} className="mt-6 inline-flex h-11 items-center justify-center rounded-lg bg-red-700 px-5 text-sm font-semibold text-white transition-colors hover:bg-red-800">
+            Agency login
+          </a>
+        </div>
+      </AuthLayout>
+    );
+  }
+
   return (
     <AuthLayout>
       <div className="w-full max-w-[440px] rounded-[1.25rem] border border-red-200 bg-red-50 p-8 text-center shadow-sm dark:border-red-900/60 dark:bg-red-950/30">
-        <h1 className="font-display text-3xl font-semibold tracking-tight text-red-800 dark:text-red-200">
-          Agency access only
+        <h1 className="font-display text-3xl font-semibold tracking-tight text-foreground">
+          Create your owner account
         </h1>
-        <p className="mt-3 text-sm leading-relaxed text-red-700 dark:text-red-300">
-          New accounts are created by the agency. Contact the Admin at{" "}
-          <a className="font-bold underline underline-offset-4" href="mailto:hello@5-star.ai">
-            hello@5-star.ai
-          </a>
-          .
+        <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+          Invitation for {invitation.organizationName}
         </p>
-        <a
-          href={`${basePath}/sign-in`}
-          className="mt-6 inline-flex h-11 items-center justify-center rounded-lg bg-red-700 px-5 text-sm font-semibold text-white transition-colors hover:bg-red-800"
-        >
-          Agency login
-        </a>
+        <SignUp
+          routing="path"
+          path={`${basePath}/sign-up`}
+          initialValues={{ emailAddress: invitation.email }}
+          fallbackRedirectUrl={`${basePath}/dashboard`}
+        />
       </div>
     </AuthLayout>
   );
@@ -261,6 +293,7 @@ function AppRouter() {
       <Route path="/" component={HomeRedirect} />
       <Route path="/sign-in/*?" component={SignInPage} />
       <Route path="/sign-up/*?" component={SignUpPage} />
+      <Route path="/agency/join/:token" component={AgencyJoin} />
 
       {/* Public marketing pages */}
       <Route path="/about" component={About} />
@@ -286,6 +319,7 @@ function AppRouter() {
       <Route path="/feedback" component={Feedback} />
       {/* Super Admin only */}
       <Route path="/admin/leads" component={AdminLeads} />
+      <Route path="/admin/portal" component={AdminPortal} />
       
       <Route component={NotFound} />
       </Switch>

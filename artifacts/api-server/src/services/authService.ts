@@ -1,12 +1,25 @@
-import { eq, sql } from "drizzle-orm";
+import { and, desc, eq, gt, sql } from "drizzle-orm";
 import { clerkClient } from "@clerk/express";
-import { db, organizationsTable, usersTable, type User } from "@workspace/db";
+import {
+  agencyInvitationsTable,
+  db,
+  organizationsTable,
+  usersTable,
+  type User,
+} from "@workspace/db";
 
 /** Postgres error code for a unique-constraint violation. */
 const UNIQUE_VIOLATION = "23505";
 
 /** Max attempts to regenerate an org slug when it collides with a concurrent insert. */
 const MAX_PROVISION_ATTEMPTS = 20;
+
+export class AgencyInvitationRequiredError extends Error {
+  constructor() {
+    super("An active agency invitation is required to create an account");
+    this.name = "AgencyInvitationRequiredError";
+  }
+}
 
 function isUniqueViolation(error: unknown, constraint: string): boolean {
   // drizzle-orm wraps the driver error as `DrizzleQueryError`, with the raw
@@ -70,7 +83,7 @@ function slugify(input: string): string {
 // probe can run against either.
 type QueryExecutor = Pick<typeof db, "select">;
 
-async function generateUniqueOrgSlug(
+export async function generateUniqueOrgSlug(
   base: string,
   executor: QueryExecutor = db,
 ): Promise<string> {
@@ -176,25 +189,48 @@ export async function getOrCreateUserForClerkId(
           return created;
         }
 
-        const slug = await generateUniqueOrgSlug(name || email, tx);
-        const [organization] = await tx
-          .insert(organizationsTable)
-          .values({ name: `${name}'s Organization`, slug })
-          .returning();
-
-        const [created] = await tx
-          .insert(usersTable)
-          .values({
-            organizationId: organization.id,
-            clerkUserId,
-            name,
-            email,
-            role: "OWNER",
-            status: "ACTIVE",
-            lastLoginAt: new Date(),
+        const [invitation] = await tx
+          .select({
+            id: agencyInvitationsTable.id,
+            organizationId: agencyInvitationsTable.organizationId,
           })
-          .returning();
-        return created;
+          .from(agencyInvitationsTable)
+          .innerJoin(
+            organizationsTable,
+            eq(agencyInvitationsTable.organizationId, organizationsTable.id),
+          )
+          .where(
+            and(
+              eq(agencyInvitationsTable.email, email.toLowerCase()),
+              eq(agencyInvitationsTable.status, "PENDING"),
+              gt(agencyInvitationsTable.expiresAt, new Date()),
+              eq(organizationsTable.status, "ACTIVE"),
+            ),
+          )
+          .orderBy(desc(agencyInvitationsTable.createdAt))
+          .limit(1);
+
+        if (invitation) {
+          const [created] = await tx
+            .insert(usersTable)
+            .values({
+              organizationId: invitation.organizationId,
+              clerkUserId,
+              name,
+              email,
+              role: "OWNER",
+              status: "ACTIVE",
+              lastLoginAt: new Date(),
+            })
+            .returning();
+          await tx
+            .update(agencyInvitationsTable)
+            .set({ status: "ACCEPTED", acceptedAt: new Date() })
+            .where(eq(agencyInvitationsTable.id, invitation.id));
+          return created;
+        }
+
+        throw new AgencyInvitationRequiredError();
       });
     } catch (error) {
       // A different brand-new user landed on the same org slug between our

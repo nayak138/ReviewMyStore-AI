@@ -412,6 +412,202 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  /v1/admin/portal:
+    get:
+      operationId: getAdminPortal
+      tags: [admin]
+      summary: Platform agencies and businesses (Super Admin only)
+      responses:
+        "200":
+          description: Platform administration data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminPortal"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Not authorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /v1/admin/agencies:
+    post:
+      operationId: createAdminAgency
+      tags: [admin]
+      summary: Create an agency and its first invitation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminAgencyCreateInput"
+      responses:
+        "201":
+          description: Agency and invitation created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminAgencyCreateResult"
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Not authorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: Owner account already exists
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /v1/admin/agencies/{id}:
+    patch:
+      operationId: updateAdminAgency
+      tags: [admin]
+      summary: Update an agency's status and limits
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminAgencyUpdateInput"
+      responses:
+        "200":
+          description: Updated agency
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Organization"
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Agency not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /v1/admin/agencies/{id}/invitations:
+    post:
+      operationId: createAdminAgencyInvitation
+      tags: [admin]
+      summary: Generate a new agency signup link
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminInvitationCreateInput"
+      responses:
+        "201":
+          description: Signup link created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminAgencyInvitation"
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Agency not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /v1/admin/invitations/{id}:
+    delete:
+      operationId: revokeAdminAgencyInvitation
+      tags: [admin]
+      summary: Revoke an agency signup link
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Invitation revoked
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminInvitationMutationResult"
+        "404":
+          description: Invitation not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /v1/public/agency-invitations/{token}:
+    get:
+      operationId: getPublicAgencyInvitation
+      tags: [auth]
+      summary: Validate an agency signup link
+      parameters:
+        - name: token
+          in: path
+          required: true
+          schema:
+            type: string
+            minLength: 20
+      responses:
+        "200":
+          description: Invitation details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PublicAgencyInvitation"
+        "404":
+          description: Invitation is invalid, expired, or revoked
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /v1/businesses:
     get:
       operationId: listBusinesses
@@ -2390,6 +2586,312 @@ components:
         - totalOwners
         - totalSuperAdmins
         - totalSuspendedOrganizations
+
+    AdminAgencyOwner:
+      type: object
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+        status:
+          $ref: "#/components/schemas/UserStatus"
+        lastLoginAt:
+          type: ["string", "null"]
+          format: date-time
+      required:
+        - name
+        - email
+        - status
+        - lastLoginAt
+
+    AdminPendingInvitation:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        expiresAt:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - email
+        - expiresAt
+        - createdAt
+
+    AdminAgency:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        slug:
+          type: string
+        status:
+          $ref: "#/components/schemas/OrganizationStatus"
+        plan:
+          $ref: "#/components/schemas/OrganizationPlan"
+        subscriptionStatus:
+          $ref: "#/components/schemas/SubscriptionStatus"
+        aiQuota:
+          type: integer
+        businessesLimit:
+          type: integer
+        startDate:
+          type: ["string", "null"]
+          format: date-time
+        renewalDate:
+          type: ["string", "null"]
+          format: date-time
+        expiryDate:
+          type: ["string", "null"]
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        owner:
+          oneOf:
+            - $ref: "#/components/schemas/AdminAgencyOwner"
+            - type: "null"
+        businessCount:
+          type: integer
+        pendingInvitation:
+          oneOf:
+            - $ref: "#/components/schemas/AdminPendingInvitation"
+            - type: "null"
+      required:
+        - id
+        - name
+        - slug
+        - status
+        - plan
+        - subscriptionStatus
+        - aiQuota
+        - businessesLimit
+        - startDate
+        - renewalDate
+        - expiryDate
+        - createdAt
+        - updatedAt
+        - owner
+        - businessCount
+        - pendingInvitation
+
+    AdminBusiness:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        organizationId:
+          type: string
+          format: uuid
+        organizationName:
+          type: string
+        organizationSlug:
+          type: string
+        name:
+          type: string
+        slug:
+          type: string
+        category:
+          type: string
+        status:
+          $ref: "#/components/schemas/BusinessStatus"
+        archivedAt:
+          type: ["string", "null"]
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - organizationId
+        - organizationName
+        - organizationSlug
+        - name
+        - slug
+        - category
+        - status
+        - archivedAt
+        - createdAt
+
+    AdminPortal:
+      type: object
+      properties:
+        overview:
+          allOf:
+            - $ref: "#/components/schemas/AdminOverview"
+          properties:
+            totalBusinesses:
+              type: integer
+            pendingInvitations:
+              type: integer
+          required:
+            - totalBusinesses
+            - pendingInvitations
+        agencies:
+          type: array
+          items:
+            $ref: "#/components/schemas/AdminAgency"
+        businesses:
+          type: array
+          items:
+            $ref: "#/components/schemas/AdminBusiness"
+      required:
+        - overview
+        - agencies
+        - businesses
+
+    AdminAgencyCreateInput:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 2
+          maxLength: 120
+        email:
+          type: string
+          format: email
+        plan:
+          $ref: "#/components/schemas/OrganizationPlan"
+        subscriptionStatus:
+          $ref: "#/components/schemas/SubscriptionStatus"
+        aiQuota:
+          type: integer
+          minimum: 0
+          maximum: 1000000
+        businessesLimit:
+          type: integer
+          minimum: 1
+          maximum: 10000
+        expiresInDays:
+          type: integer
+          minimum: 1
+          maximum: 90
+      required:
+        - name
+        - email
+        - plan
+        - subscriptionStatus
+        - aiQuota
+        - businessesLimit
+
+    AdminAgencyCreateResult:
+      type: object
+      properties:
+        organization:
+          $ref: "#/components/schemas/Organization"
+        invitation:
+          $ref: "#/components/schemas/AdminAgencyInvitation"
+      required:
+        - organization
+        - invitation
+
+    AdminAgencyUpdateInput:
+      type: object
+      properties:
+        status:
+          $ref: "#/components/schemas/OrganizationStatus"
+        plan:
+          $ref: "#/components/schemas/OrganizationPlan"
+        subscriptionStatus:
+          $ref: "#/components/schemas/SubscriptionStatus"
+        aiQuota:
+          type: integer
+          minimum: 0
+          maximum: 1000000
+        businessesLimit:
+          type: integer
+          minimum: 1
+          maximum: 10000
+
+    AdminInvitationCreateInput:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        expiresInDays:
+          type: integer
+          minimum: 1
+          maximum: 90
+      required:
+        - email
+
+    AdminAgencyInvitation:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        status:
+          type: string
+          enum: [PENDING, ACCEPTED, REVOKED]
+        expiresAt:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+        signupPath:
+          type: string
+      required:
+        - id
+        - email
+        - status
+        - expiresAt
+        - createdAt
+        - signupPath
+
+    AdminInvitationMutationResult:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [REVOKED]
+      required:
+        - id
+        - status
+
+    PublicAgencyInvitation:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        organizationName:
+          type: string
+        expiresAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - email
+        - organizationName
+        - expiresAt
 
     BusinessStatus:
       type: string

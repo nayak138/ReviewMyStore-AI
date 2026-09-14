@@ -171,6 +171,43 @@ export interface AdminOverview {
   totalSuspendedOrganizations: number;
 }
 
+export interface AdminAgencyOwner {
+  name: string;
+  email: string;
+  status: UserStatus;
+  /** @nullable */
+  lastLoginAt: string | null;
+}
+
+export interface AdminPendingInvitation {
+  id: string;
+  email: string;
+  expiresAt: string;
+  createdAt: string;
+}
+
+export interface AdminAgency {
+  id: string;
+  name: string;
+  slug: string;
+  status: OrganizationStatus;
+  plan: OrganizationPlan;
+  subscriptionStatus: SubscriptionStatus;
+  aiQuota: number;
+  businessesLimit: number;
+  /** @nullable */
+  startDate: string | null;
+  /** @nullable */
+  renewalDate: string | null;
+  /** @nullable */
+  expiryDate: string | null;
+  createdAt: string;
+  updatedAt: string;
+  owner: AdminAgencyOwner | null;
+  businessCount: number;
+  pendingInvitation: AdminPendingInvitation | null;
+}
+
 export type BusinessStatus = typeof BusinessStatus[keyof typeof BusinessStatus];
 
 
@@ -179,6 +216,124 @@ export const BusinessStatus = {
   SUSPENDED: 'SUSPENDED',
   DISABLED: 'DISABLED',
 } as const;
+
+export interface AdminBusiness {
+  id: string;
+  organizationId: string;
+  organizationName: string;
+  organizationSlug: string;
+  name: string;
+  slug: string;
+  category: string;
+  status: BusinessStatus;
+  /** @nullable */
+  archivedAt: string | null;
+  createdAt: string;
+}
+
+export type AdminPortalOverview = AdminOverview & {
+  totalBusinesses: number;
+  pendingInvitations: number;
+};
+
+export interface AdminPortal {
+  overview: AdminPortalOverview;
+  agencies: AdminAgency[];
+  businesses: AdminBusiness[];
+}
+
+export interface AdminAgencyCreateInput {
+  /**
+     * @minLength 2
+     * @maxLength 120
+     */
+  name: string;
+  email: string;
+  plan: OrganizationPlan;
+  subscriptionStatus: SubscriptionStatus;
+  /**
+     * @minimum 0
+     * @maximum 1000000
+     */
+  aiQuota: number;
+  /**
+     * @minimum 1
+     * @maximum 10000
+     */
+  businessesLimit: number;
+  /**
+     * @minimum 1
+     * @maximum 90
+     */
+  expiresInDays?: number;
+}
+
+export type AdminAgencyInvitationStatus = typeof AdminAgencyInvitationStatus[keyof typeof AdminAgencyInvitationStatus];
+
+
+export const AdminAgencyInvitationStatus = {
+  PENDING: 'PENDING',
+  ACCEPTED: 'ACCEPTED',
+  REVOKED: 'REVOKED',
+} as const;
+
+export interface AdminAgencyInvitation {
+  id: string;
+  email: string;
+  status: AdminAgencyInvitationStatus;
+  expiresAt: string;
+  createdAt: string;
+  signupPath: string;
+}
+
+export interface AdminAgencyCreateResult {
+  organization: Organization;
+  invitation: AdminAgencyInvitation;
+}
+
+export interface AdminAgencyUpdateInput {
+  status?: OrganizationStatus;
+  plan?: OrganizationPlan;
+  subscriptionStatus?: SubscriptionStatus;
+  /**
+     * @minimum 0
+     * @maximum 1000000
+     */
+  aiQuota?: number;
+  /**
+     * @minimum 1
+     * @maximum 10000
+     */
+  businessesLimit?: number;
+}
+
+export interface AdminInvitationCreateInput {
+  email: string;
+  /**
+     * @minimum 1
+     * @maximum 90
+     */
+  expiresInDays?: number;
+}
+
+export type AdminInvitationMutationResultStatus = typeof AdminInvitationMutationResultStatus[keyof typeof AdminInvitationMutationResultStatus];
+
+
+export const AdminInvitationMutationResultStatus = {
+  REVOKED: 'REVOKED',
+} as const;
+
+export interface AdminInvitationMutationResult {
+  id: string;
+  status: AdminInvitationMutationResultStatus;
+}
+
+export interface PublicAgencyInvitation {
+  id: string;
+  email: string;
+  organizationName: string;
+  expiresAt: string;
+}
 
 export type SupportedLanguage = typeof SupportedLanguage[keyof typeof SupportedLanguage];
 

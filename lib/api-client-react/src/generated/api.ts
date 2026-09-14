@@ -20,7 +20,14 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
+  AdminAgencyCreateInput,
+  AdminAgencyCreateResult,
+  AdminAgencyInvitation,
+  AdminAgencyUpdateInput,
+  AdminInvitationCreateInput,
+  AdminInvitationMutationResult,
   AdminOverview,
+  AdminPortal,
   AutocompletePlacesParams,
   Business,
   BusinessCreateInput,
@@ -63,11 +70,13 @@ import type {
   NfcDeviceListResult,
   NfcDeviceStatusInput,
   NfcDeviceUpdateInput,
+  Organization,
   PlaceAutocompleteResult,
   PlaceDetails,
   PrivateFeedbackInput,
   PrivateFeedbackItem,
   PrivateFeedbackResult,
+  PublicAgencyInvitation,
   PublicGenerateReviewInput,
   PublicGenerateReviewResult,
   PublicReviewPageResult,
@@ -1069,6 +1078,446 @@ export function useGetAdminOverview<TData = Awaited<ReturnType<typeof getAdminOv
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getGetAdminOverviewQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetAdminPortalUrl = () => {
+
+
+
+
+  return `/api/v1/admin/portal`
+}
+
+/**
+ * @summary Platform agencies and businesses (Super Admin only)
+ */
+export const getAdminPortal = async ( options?: Parameters<typeof customFetch>[1]): Promise<AdminPortal> => {
+
+  return customFetch<AdminPortal>(getGetAdminPortalUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetAdminPortalQueryKey = () => {
+    return [
+    `/api/v1/admin/portal`
+    ] as const;
+    }
+
+
+export const getGetAdminPortalQueryOptions = <TData = Awaited<ReturnType<typeof getAdminPortal>>, TError = ErrorType<ErrorResponse>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAdminPortal>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetAdminPortalQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getAdminPortal>>> = ({ signal }) => getAdminPortal({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getAdminPortal>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetAdminPortalQueryResult = NonNullable<Awaited<ReturnType<typeof getAdminPortal>>>
+export type GetAdminPortalQueryError = ErrorType<ErrorResponse>
+
+
+/**
+ * @summary Platform agencies and businesses (Super Admin only)
+ */
+
+export function useGetAdminPortal<TData = Awaited<ReturnType<typeof getAdminPortal>>, TError = ErrorType<ErrorResponse>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAdminPortal>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetAdminPortalQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getCreateAdminAgencyUrl = () => {
+
+
+
+
+  return `/api/v1/admin/agencies`
+}
+
+/**
+ * @summary Create an agency and its first invitation
+ */
+export const createAdminAgency = async (adminAgencyCreateInput: AdminAgencyCreateInput, options?: Parameters<typeof customFetch>[1]): Promise<AdminAgencyCreateResult> => {
+
+  return customFetch<AdminAgencyCreateResult>(getCreateAdminAgencyUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(adminAgencyCreateInput)
+  }
+);}
+
+
+
+
+
+export const getCreateAdminAgencyMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createAdminAgency>>, TError,{data: BodyType<AdminAgencyCreateInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createAdminAgency>>, TError,{data: BodyType<AdminAgencyCreateInput>}, TContext> => {
+
+const mutationKey = ['createAdminAgency'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createAdminAgency>>, {data: BodyType<AdminAgencyCreateInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createAdminAgency(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateAdminAgencyMutationResult = NonNullable<Awaited<ReturnType<typeof createAdminAgency>>>
+    export type CreateAdminAgencyMutationBody = BodyType<AdminAgencyCreateInput>
+    export type CreateAdminAgencyMutationError = ErrorType<ErrorResponse>
+
+    /**
+ * @summary Create an agency and its first invitation
+ */
+export const useCreateAdminAgency = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createAdminAgency>>, TError,{data: BodyType<AdminAgencyCreateInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createAdminAgency>>,
+        TError,
+        {data: BodyType<AdminAgencyCreateInput>},
+        TContext
+      > => {
+      return useMutation(getCreateAdminAgencyMutationOptions(options));
+    }
+
+export const getUpdateAdminAgencyUrl = (id: string,) => {
+
+
+
+
+  return `/api/v1/admin/agencies/${id}`
+}
+
+/**
+ * @summary Update an agency's status and limits
+ */
+export const updateAdminAgency = async (id: string,
+    adminAgencyUpdateInput: AdminAgencyUpdateInput, options?: Parameters<typeof customFetch>[1]): Promise<Organization> => {
+
+  return customFetch<Organization>(getUpdateAdminAgencyUrl(id),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(adminAgencyUpdateInput)
+  }
+);}
+
+
+
+
+
+export const getUpdateAdminAgencyMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateAdminAgency>>, TError,{id: string;data: BodyType<AdminAgencyUpdateInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateAdminAgency>>, TError,{id: string;data: BodyType<AdminAgencyUpdateInput>}, TContext> => {
+
+const mutationKey = ['updateAdminAgency'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateAdminAgency>>, {id: string;data: BodyType<AdminAgencyUpdateInput>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  updateAdminAgency(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateAdminAgencyMutationResult = NonNullable<Awaited<ReturnType<typeof updateAdminAgency>>>
+    export type UpdateAdminAgencyMutationBody = BodyType<AdminAgencyUpdateInput>
+    export type UpdateAdminAgencyMutationError = ErrorType<ErrorResponse>
+
+    /**
+ * @summary Update an agency's status and limits
+ */
+export const useUpdateAdminAgency = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateAdminAgency>>, TError,{id: string;data: BodyType<AdminAgencyUpdateInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateAdminAgency>>,
+        TError,
+        {id: string;data: BodyType<AdminAgencyUpdateInput>},
+        TContext
+      > => {
+      return useMutation(getUpdateAdminAgencyMutationOptions(options));
+    }
+
+export const getCreateAdminAgencyInvitationUrl = (id: string,) => {
+
+
+
+
+  return `/api/v1/admin/agencies/${id}/invitations`
+}
+
+/**
+ * @summary Generate a new agency signup link
+ */
+export const createAdminAgencyInvitation = async (id: string,
+    adminInvitationCreateInput: AdminInvitationCreateInput, options?: Parameters<typeof customFetch>[1]): Promise<AdminAgencyInvitation> => {
+
+  return customFetch<AdminAgencyInvitation>(getCreateAdminAgencyInvitationUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(adminInvitationCreateInput)
+  }
+);}
+
+
+
+
+
+export const getCreateAdminAgencyInvitationMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createAdminAgencyInvitation>>, TError,{id: string;data: BodyType<AdminInvitationCreateInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createAdminAgencyInvitation>>, TError,{id: string;data: BodyType<AdminInvitationCreateInput>}, TContext> => {
+
+const mutationKey = ['createAdminAgencyInvitation'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createAdminAgencyInvitation>>, {id: string;data: BodyType<AdminInvitationCreateInput>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  createAdminAgencyInvitation(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateAdminAgencyInvitationMutationResult = NonNullable<Awaited<ReturnType<typeof createAdminAgencyInvitation>>>
+    export type CreateAdminAgencyInvitationMutationBody = BodyType<AdminInvitationCreateInput>
+    export type CreateAdminAgencyInvitationMutationError = ErrorType<ErrorResponse>
+
+    /**
+ * @summary Generate a new agency signup link
+ */
+export const useCreateAdminAgencyInvitation = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createAdminAgencyInvitation>>, TError,{id: string;data: BodyType<AdminInvitationCreateInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createAdminAgencyInvitation>>,
+        TError,
+        {id: string;data: BodyType<AdminInvitationCreateInput>},
+        TContext
+      > => {
+      return useMutation(getCreateAdminAgencyInvitationMutationOptions(options));
+    }
+
+export const getRevokeAdminAgencyInvitationUrl = (id: string,) => {
+
+
+
+
+  return `/api/v1/admin/invitations/${id}`
+}
+
+/**
+ * @summary Revoke an agency signup link
+ */
+export const revokeAdminAgencyInvitation = async (id: string, options?: Parameters<typeof customFetch>[1]): Promise<AdminInvitationMutationResult> => {
+
+  return customFetch<AdminInvitationMutationResult>(getRevokeAdminAgencyInvitationUrl(id),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+
+export const getRevokeAdminAgencyInvitationMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof revokeAdminAgencyInvitation>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof revokeAdminAgencyInvitation>>, TError,{id: string}, TContext> => {
+
+const mutationKey = ['revokeAdminAgencyInvitation'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof revokeAdminAgencyInvitation>>, {id: string}> = (props) => {
+          const {id} = props ?? {};
+
+          return  revokeAdminAgencyInvitation(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RevokeAdminAgencyInvitationMutationResult = NonNullable<Awaited<ReturnType<typeof revokeAdminAgencyInvitation>>>
+
+    export type RevokeAdminAgencyInvitationMutationError = ErrorType<ErrorResponse>
+
+    /**
+ * @summary Revoke an agency signup link
+ */
+export const useRevokeAdminAgencyInvitation = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof revokeAdminAgencyInvitation>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof revokeAdminAgencyInvitation>>,
+        TError,
+        {id: string},
+        TContext
+      > => {
+      return useMutation(getRevokeAdminAgencyInvitationMutationOptions(options));
+    }
+
+export const getGetPublicAgencyInvitationUrl = (token: string,) => {
+
+
+
+
+  return `/api/v1/public/agency-invitations/${token}`
+}
+
+/**
+ * @summary Validate an agency signup link
+ */
+export const getPublicAgencyInvitation = async (token: string, options?: Parameters<typeof customFetch>[1]): Promise<PublicAgencyInvitation> => {
+
+  return customFetch<PublicAgencyInvitation>(getGetPublicAgencyInvitationUrl(token),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetPublicAgencyInvitationQueryKey = (token: string,) => {
+    return [
+    `/api/v1/public/agency-invitations/${token}`
+    ] as const;
+    }
+
+
+export const getGetPublicAgencyInvitationQueryOptions = <TData = Awaited<ReturnType<typeof getPublicAgencyInvitation>>, TError = ErrorType<ErrorResponse>>(token: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getPublicAgencyInvitation>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetPublicAgencyInvitationQueryKey(token);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getPublicAgencyInvitation>>> = ({ signal }) => getPublicAgencyInvitation(token, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: token !== null && token !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getPublicAgencyInvitation>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetPublicAgencyInvitationQueryResult = NonNullable<Awaited<ReturnType<typeof getPublicAgencyInvitation>>>
+export type GetPublicAgencyInvitationQueryError = ErrorType<ErrorResponse>
+
+
+/**
+ * @summary Validate an agency signup link
+ */
+
+export function useGetPublicAgencyInvitation<TData = Awaited<ReturnType<typeof getPublicAgencyInvitation>>, TError = ErrorType<ErrorResponse>>(
+ token: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getPublicAgencyInvitation>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetPublicAgencyInvitationQueryOptions(token,options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 
