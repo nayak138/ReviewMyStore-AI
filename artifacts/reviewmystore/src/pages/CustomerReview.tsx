@@ -51,6 +51,24 @@ const TONE_OPTIONS = [
   { value: ReviewTone.WARM, key: "toneWarm" as const },
 ];
 
+function publicReviewGenerationErrorMessage(error: unknown, fallback: string): string {
+  const typedError = error as {
+    status?: number;
+    data?: { code?: string; message?: string };
+  };
+
+  if (typedError.data?.code === "REGENERATION_LIMIT_REACHED") {
+    return "This review session has used all available rewrites. You can still edit any review already written above.";
+  }
+  if (typedError.data?.code === "AI_QUOTA_EXHAUSTED") {
+    return "This review service is temporarily unavailable. Please try again later.";
+  }
+  if (typedError.status === 429) {
+    return "Too many attempts in a short period. Please wait a minute and try again.";
+  }
+  return typedError.data?.message || fallback;
+}
+
 interface KeywordOption {
   id: string;
   label: string;
@@ -683,7 +701,7 @@ export default function CustomerReview() {
                 </>
               )}
 
-              {generateReview.isError && <p className="mb-4 rounded-xl bg-destructive/10 px-4 py-3 text-sm text-destructive" role="alert">We couldn't write that review just now. Please try again.</p>}
+               {generateReview.isError && <p className="mb-4 rounded-xl bg-destructive/10 px-4 py-3 text-sm text-destructive" role="alert">{publicReviewGenerationErrorMessage(generateReview.error, "We couldn't write that review just now. Please try again.")}</p>}
                <Button className="h-12 w-full rounded-xl bg-gradient-to-r from-[#2d7dff] to-[#6264e8] text-sm font-semibold text-white shadow-[0_10px_24px_-10px_rgba(56,103,235,0.75)] hover:from-[#1f6ff0] hover:to-[#5556d8] disabled:!opacity-100 disabled:from-[#2f61b0] disabled:to-[#5555a1] disabled:text-white/85" size="lg" disabled={!rating || generateReview.isPending} onClick={handleGenerate}>
                 {generateReview.isPending ? (
                   <><Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" /> {strings.generatingButton}</>
@@ -736,7 +754,7 @@ export default function CustomerReview() {
               {canGenerateMore && isEditingKeywords && (
                 <div className="mt-5 border-t border-border pt-5">
                   <KeywordPicker {...pickerProps} />
-                  {generateReview.isError && <p className="mt-4 rounded-xl bg-destructive/10 px-4 py-3 text-sm text-destructive" role="alert">We couldn't rewrite that just now. Please try again.</p>}
+                   {generateReview.isError && <p className="mt-4 rounded-xl bg-destructive/10 px-4 py-3 text-sm text-destructive" role="alert">{publicReviewGenerationErrorMessage(generateReview.error, "We couldn't rewrite that just now. Please try again.")}</p>}
                   <Button className="mt-6 h-11 w-full rounded-xl" disabled={generateReview.isPending} onClick={handleGenerate}>
                     {generateReview.isPending ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" /> {strings.generatingButton}</> : <><RefreshCw className="mr-2 h-4 w-4" aria-hidden="true" /> {strings.regenerateButton}</>}
                   </Button>
