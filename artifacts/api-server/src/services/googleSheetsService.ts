@@ -24,6 +24,8 @@ function displayLeadType(leadType: LeadSheetRow["leadType"]) {
  * The database remains the source of truth when the external write is unavailable.
  */
 export async function appendLeadToGoogleSheet(data: LeadSheetRow): Promise<void> {
+  if (process.env.GOOGLE_SHEETS_LEADS_SYNC === "false") return;
+
   try {
     const connectors = new ReplitConnectors();
     const range = encodeURIComponent(LEADS_RANGE);

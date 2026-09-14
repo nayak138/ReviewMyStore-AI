@@ -13,11 +13,13 @@ import type { Server } from "node:http";
  */
 
 const MARKER = `rl-test-${Date.now()}`;
+const previousSheetsSync = process.env.GOOGLE_SHEETS_LEADS_SYNC;
 
 let server: Server;
 let base: string;
 
 before(async () => {
+  process.env.GOOGLE_SHEETS_LEADS_SYNC = "false";
   const { default: router } = await import("./demoRequests.ts");
   const app = express();
   // Mirror production: proxy-resolved client IPs (see app.ts).
@@ -39,6 +41,11 @@ before(async () => {
 });
 
 after(async () => {
+  if (previousSheetsSync === undefined) {
+    delete process.env.GOOGLE_SHEETS_LEADS_SYNC;
+  } else {
+    process.env.GOOGLE_SHEETS_LEADS_SYNC = previousSheetsSync;
+  }
   server?.close();
   const { db, demoRequestsTable } = await import("@workspace/db");
   const { like } = await import("drizzle-orm");
