@@ -1367,6 +1367,41 @@ export const GeneratePublicReviewResponse = zod.object({
 
 
 /**
+ * Public (unauthenticated). Uses the same review-writing AI as a live campaign, but does not consume organization quota or create business analytics. Requests are rate limited by IP.
+ * @summary Generate an AI review draft for the interactive landing-page demo
+ */
+
+
+export const generateDemoReviewBodyRatingMax = 5;
+
+export const generateDemoReviewBodyMentionDetailMax = 60;
+
+export const generateDemoReviewBodyCustomerNameMax = 60;
+
+export const generateDemoReviewBodyOccasionMax = 60;
+
+
+
+export const GenerateDemoReviewBody = zod.object({
+  "sessionId": zod.string().min(1),
+  "keywords": zod.array(zod.string()).min(1),
+  "rating": zod.int().min(1).max(generateDemoReviewBodyRatingMax),
+  "tone": zod.enum(['ENTHUSIASTIC', 'SHORT_DIRECT', 'DETAILED', 'WARM']),
+  "language": zod.enum(['en', 'hi', 'bn', 'te', 'mr', 'ta', 'ur', 'gu', 'kn', 'ml', 'pa', 'or', 'as', 'mai', 'sat', 'ks', 'ne', 'sd', 'kok', 'doi', 'mni', 'sa', 'brx']).optional(),
+  "mentionDetail": zod.string().max(generateDemoReviewBodyMentionDetailMax).nullish(),
+  "customerName": zod.string().max(generateDemoReviewBodyCustomerNameMax).nullish(),
+  "occasion": zod.string().max(generateDemoReviewBodyOccasionMax).nullish()
+})
+
+export const GenerateDemoReviewResponse = zod.object({
+  "reviewText": zod.string(),
+  "remainingGenerations": zod.int(),
+  "maxGenerations": zod.int(),
+  "language": zod.enum(['en', 'hi', 'bn', 'te', 'mr', 'ta', 'ur', 'gu', 'kn', 'ml', 'pa', 'or', 'as', 'mai', 'sat', 'ks', 'ne', 'sd', 'kok', 'doi', 'mni', 'sa', 'brx'])
+})
+
+
+/**
  * Public (unauthenticated). Shown to the customer only when they select a low star rating; never posted to Google, never shown publicly — readable only by the business's own organization in the dashboard.
  * @summary Submit a private message to the business instead of/before posting publicly
  */

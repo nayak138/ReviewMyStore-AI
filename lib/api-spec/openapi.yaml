@@ -1534,6 +1534,41 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  /v1/public/demo-review/generate:
+    post:
+      operationId: generateDemoReview
+      tags: [public-review]
+      summary: Generate an AI review draft for the interactive landing-page demo
+      description: >
+        Public (unauthenticated). Uses the same review-writing AI as a live
+        campaign, but does not consume organization quota or create business
+        analytics. Requests are rate limited by IP.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PublicGenerateReviewInput"
+      responses:
+        "200":
+          description: Generated demo review text
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PublicGenerateReviewResult"
+        "400":
+          description: Invalid request body
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "502":
+          description: AI provider error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /v1/public/review/{businessSlug}/{campaignSlug}/feedback:
     post:
       operationId: submitPrivateFeedback

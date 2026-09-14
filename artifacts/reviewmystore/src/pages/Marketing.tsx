@@ -9,6 +9,7 @@ import {
   CtaBand 
 } from "./marketing/features";
 import { PricingSection, FaqSection, TestimonialsSection } from "./marketing/pricing-faq";
+import { InteractiveReviewDemo } from "./marketing/review-demo";
 
 export default function Marketing() {
   // Support deep links like /#features from other pages.
@@ -27,6 +28,7 @@ export default function Marketing() {
       <WhyBusinessesLoveUs />
       <FeaturesGrid />
       <HowItWorks />
+      <InteractiveReviewDemo />
       <DashboardShowcase />
       <TestimonialsSection />
       <PricingSection />

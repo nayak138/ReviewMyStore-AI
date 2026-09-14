@@ -3563,6 +3563,78 @@ export const useGeneratePublicReview = <TError = ErrorType<ErrorResponse>,
       return useMutation(getGeneratePublicReviewMutationOptions(options));
     }
 
+export const getGenerateDemoReviewUrl = () => {
+
+
+
+
+  return `/api/v1/public/demo-review/generate`
+}
+
+/**
+ * Public (unauthenticated). Uses the same review-writing AI as a live campaign, but does not consume organization quota or create business analytics. Requests are rate limited by IP.
+ * @summary Generate an AI review draft for the interactive landing-page demo
+ */
+export const generateDemoReview = async (publicGenerateReviewInput: PublicGenerateReviewInput, options?: Parameters<typeof customFetch>[1]): Promise<PublicGenerateReviewResult> => {
+
+  return customFetch<PublicGenerateReviewResult>(getGenerateDemoReviewUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(publicGenerateReviewInput)
+  }
+);}
+
+
+
+
+
+export const getGenerateDemoReviewMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof generateDemoReview>>, TError,{data: BodyType<PublicGenerateReviewInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof generateDemoReview>>, TError,{data: BodyType<PublicGenerateReviewInput>}, TContext> => {
+
+const mutationKey = ['generateDemoReview'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof generateDemoReview>>, {data: BodyType<PublicGenerateReviewInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  generateDemoReview(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type GenerateDemoReviewMutationResult = NonNullable<Awaited<ReturnType<typeof generateDemoReview>>>
+    export type GenerateDemoReviewMutationBody = BodyType<PublicGenerateReviewInput>
+    export type GenerateDemoReviewMutationError = ErrorType<ErrorResponse>
+
+    /**
+ * @summary Generate an AI review draft for the interactive landing-page demo
+ */
+export const useGenerateDemoReview = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof generateDemoReview>>, TError,{data: BodyType<PublicGenerateReviewInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof generateDemoReview>>,
+        TError,
+        {data: BodyType<PublicGenerateReviewInput>},
+        TContext
+      > => {
+      return useMutation(getGenerateDemoReviewMutationOptions(options));
+    }
+
 export const getSubmitPrivateFeedbackUrl = (businessSlug: string,
     campaignSlug: string,) => {
 
