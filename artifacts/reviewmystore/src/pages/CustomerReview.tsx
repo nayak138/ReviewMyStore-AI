@@ -464,7 +464,7 @@ export default function CustomerReview() {
   };
 
   return (
-    <div className="review-noise min-h-[100dvh] overflow-hidden bg-background px-0 text-foreground sm:px-4">
+    <div className="review-noise min-h-[100dvh] overflow-hidden bg-[#f1f5ff] px-0 text-foreground dark:bg-[#05091d] sm:px-4">
       {showFeedbackModal && rating !== null && (
         <PrivateFeedbackModal
           businessSlug={businessSlug}
@@ -477,7 +477,7 @@ export default function CustomerReview() {
         />
       )}
 
-      <main className="mx-auto w-full max-w-[920px] overflow-hidden bg-background shadow-[0_28px_100px_-38px_rgba(0,0,0,0.14)] dark:shadow-[0_28px_100px_-38px_rgba(0,0,0,0.8)] sm:my-5 sm:rounded-[1.75rem]">
+      <main className="mx-auto w-full max-w-[920px] overflow-hidden bg-[#f8faff] shadow-[0_28px_100px_-38px_rgba(28,57,125,0.2)] dark:bg-[#0a1430] dark:shadow-[0_28px_100px_-38px_rgba(0,0,0,0.8)] sm:my-5 sm:rounded-[1.75rem]">
         <header className="relative h-[285px] overflow-hidden sm:h-[350px] lg:h-[385px]">
           <div className="absolute inset-0" style={coverStyle} />
           {headerImage && !headerImageFailed && (
@@ -532,7 +532,7 @@ export default function CustomerReview() {
           </div>
         </header>
 
-        <div className="border-b border-border bg-card px-4 py-4 sm:px-7">
+        <div className="border-b border-[#d8e2fb] bg-[#eef3ff] px-4 py-4 sm:px-7 dark:border-white/10 dark:bg-[#0a1430]">
           <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center sm:justify-start">
             {business.phone && (
               <Button asChild size="sm" className="h-11 w-full min-w-0 rounded-full bg-[#1769ff] px-3 text-xs font-semibold shadow-[0_8px_18px_rgba(23,105,255,0.28)] hover:bg-[#0e59df] sm:w-auto sm:px-5 sm:text-sm">
@@ -540,14 +540,14 @@ export default function CustomerReview() {
               </Button>
             )}
             {(business.phone || business.address || business.website) && (
-              <Button variant="outline" size="sm" className="h-11 w-full min-w-0 rounded-full border-border bg-secondary px-3 text-xs font-semibold text-secondary-foreground hover:bg-secondary/80 dark:border-white/15 dark:bg-[#172548] dark:text-slate-100 dark:hover:bg-[#21345f] sm:w-auto sm:px-4 sm:text-sm" onClick={() => downloadVCard({ name: business.name, phone: business.phone, address: business.address, website: business.website })}>
+              <Button variant="outline" size="sm" className="h-11 w-full min-w-0 rounded-full border-[#cbd8f5] bg-[#e4ecff] px-3 text-xs font-semibold text-[#20345f] hover:bg-[#d8e4ff] dark:border-white/15 dark:bg-[#172548] dark:text-slate-100 dark:hover:bg-[#21345f] sm:w-auto sm:px-4 sm:text-sm" onClick={() => downloadVCard({ name: business.name, phone: business.phone, address: business.address, website: business.website })}>
                 <IdCard className="mr-1.5 h-4 w-4 text-[#5b83ff]" aria-hidden="true" />Save Contact
               </Button>
             )}
           </div>
           <div className="mt-3 flex w-full items-center justify-center gap-2">
             {directionsHref && (
-              <Button asChild variant="outline" size="sm" aria-label="Directions" title="Directions" className="h-11 w-11 shrink-0 rounded-xl border-border bg-secondary p-0 text-secondary-foreground hover:bg-secondary/80 dark:border-white/15 dark:bg-[#172548] dark:text-slate-100 dark:hover:bg-[#21345f]">
+              <Button asChild variant="outline" size="sm" aria-label="Directions" title="Directions" className="h-11 w-11 shrink-0 rounded-xl border-[#a8e5d1] bg-[#ddf8ef] p-0 text-[#087f6a] hover:bg-[#c9f1e4] dark:border-[#2c756e] dark:bg-[#153c43] dark:text-slate-100 dark:hover:bg-[#1c4b51]">
                 <a href={directionsHref} target="_blank" rel="noopener noreferrer">
                   <MapPin className="h-5 w-5 text-[#19d7a5]" aria-hidden="true" />
                 </a>
@@ -558,7 +558,7 @@ export default function CustomerReview() {
               size="sm"
               aria-label={shareCopied ? "Link copied" : "Share"}
               title={shareCopied ? "Link copied" : "Share"}
-              className="h-11 w-11 shrink-0 rounded-xl border-border bg-secondary p-0 text-secondary-foreground hover:bg-secondary/80 dark:border-white/15 dark:bg-[#172548] dark:text-slate-100 dark:hover:bg-[#21345f]"
+              className="h-11 w-11 shrink-0 rounded-xl border-[#d7b8f5] bg-[#f0e5ff] p-0 text-[#7541a8] hover:bg-[#e7d8fa] dark:border-[#65449a] dark:bg-[#32244e] dark:text-slate-100 dark:hover:bg-[#3e2d60]"
               onClick={() => void handleShare()}
             >
               {shareCopied ? <Check className="h-5 w-5 text-[#19d7a5]" aria-hidden="true" /> : <Share2 className="h-5 w-5 text-[#9f7aea]" aria-hidden="true" />}
@@ -571,7 +571,14 @@ export default function CustomerReview() {
                 rel="noopener noreferrer"
                 aria-label={link.label}
                 title={link.label}
-                className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-border bg-secondary transition-transform hover:-translate-y-0.5 hover:bg-secondary/80 dark:border-white/15 dark:bg-[#172548] dark:hover:bg-[#21345f]"
+                className={cn(
+                  "flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl border transition-transform hover:-translate-y-0.5",
+                  link.key === "website"
+                    ? "border-[#b9cbf5] bg-[#e3ebff] hover:bg-[#d6e2ff] dark:border-white/15 dark:bg-[#172548] dark:hover:bg-[#21345f]"
+                    : link.key === "facebook"
+                      ? "border-[#b9cbf5] bg-[#e1eaff] hover:bg-[#d5e2ff] dark:border-white/15 dark:bg-[#172548] dark:hover:bg-[#21345f]"
+                      : "border-[#d6def2] bg-white hover:bg-[#f5f7ff] dark:border-white/15 dark:bg-[#172548] dark:hover:bg-[#21345f]",
+                )}
               >
                 {link.kind === "image" ? <img src={link.image} alt="" className="h-full w-full object-cover" /> : <link.icon className="h-5 w-5 text-secondary-foreground dark:text-slate-200" aria-hidden="true" />}
               </a>
@@ -581,7 +588,7 @@ export default function CustomerReview() {
 
         <section className="mx-auto w-full max-w-[760px] space-y-4 px-4 pb-8 pt-5 sm:px-7" dir={rtl ? "rtl" : "ltr"}>
           {!hasGenerated ? (
-            <div className="rounded-[1.5rem] border border-border bg-card p-5 shadow-[0_24px_70px_-42px_hsl(var(--foreground)/0.42)] sm:p-7">
+            <div className="rounded-[1.5rem] border border-[#dce5fa] bg-white p-5 shadow-[0_24px_70px_-42px_rgba(28,57,125,0.16)] dark:border-[#28395f] dark:bg-[#111f40] dark:shadow-[0_24px_70px_-42px_rgba(0,0,0,0.42)] sm:p-7">
               <div className="mb-6 flex items-start justify-between gap-4">
                 <div>
                   <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.16em] text-primary">Step 1</p>
@@ -675,7 +682,7 @@ export default function CustomerReview() {
               <p className="mt-3 text-center text-xs text-muted-foreground">You'll get to read and edit it before anything is posted.</p>
             </div>
           ) : (
-            <div className="rounded-[1.5rem] border border-border bg-card p-5 shadow-[0_24px_70px_-42px_hsl(var(--foreground)/0.42)] sm:p-7">
+            <div className="rounded-[1.5rem] border border-[#dce5fa] bg-white p-5 shadow-[0_24px_70px_-42px_rgba(28,57,125,0.16)] dark:border-[#28395f] dark:bg-[#111f40] dark:shadow-[0_24px_70px_-42px_rgba(0,0,0,0.42)] sm:p-7">
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.16em] text-primary">Ready when you are</p>
@@ -727,7 +734,7 @@ export default function CustomerReview() {
             </div>
           )}
         </section>
-        <footer className="flex items-center justify-center border-t border-border px-4 py-5 text-xs text-muted-foreground">
+        <footer className="flex items-center justify-center border-t border-[#d8e2fb] bg-[#eef3ff] px-4 py-5 text-xs text-muted-foreground dark:border-white/10 dark:bg-[#0a1430]">
           <a
             href={landingPageHref}
             aria-label="Visit 5-Star.AI"

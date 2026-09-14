@@ -213,6 +213,18 @@
     z-index: 50;
   }
 
+  .review-noise {
+    background-image:
+      radial-gradient(circle at 8% 8%, hsl(var(--primary) / 0.11), transparent 22rem),
+      radial-gradient(circle at 92% 52%, hsl(var(--accent) / 0.1), transparent 24rem);
+  }
+
+  .dark .review-noise {
+    background-image:
+      radial-gradient(circle at 8% 8%, hsl(var(--primary) / 0.12), transparent 22rem),
+      radial-gradient(circle at 92% 52%, hsl(var(--accent) / 0.12), transparent 24rem);
+  }
+
   .editorial-grid {
     background-image: linear-gradient(to right, hsl(var(--foreground) / 0.055) 1px, transparent 1px),
       linear-gradient(to bottom, hsl(var(--foreground) / 0.055) 1px, transparent 1px);
