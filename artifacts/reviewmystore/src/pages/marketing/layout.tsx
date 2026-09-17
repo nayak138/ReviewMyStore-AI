@@ -44,7 +44,7 @@ export function MarketingLayout({ children }: { children: ReactNode }) {
   ];
 
   return (
-    <div className="min-h-[100dvh] bg-background text-foreground font-sans">
+    <div className="min-h-[100dvh] bg-slate-50 pb-24 font-sans text-zinc-900 antialiased dark:bg-slate-950 dark:text-zinc-100">
       <header className={`fixed inset-x-0 top-0 z-50 transition-all duration-300 ${isScrolled ? "border-b border-border/80 bg-background/90 backdrop-blur-xl" : "bg-background/70 backdrop-blur-sm"}`}>
         <div className="mx-auto flex h-[4.75rem] max-w-[80rem] items-center justify-between px-5 sm:px-8 lg:px-10">
           <Link href="/" data-testid="link-home" className="flex shrink-0 items-center">
@@ -74,7 +74,7 @@ export function MarketingLayout({ children }: { children: ReactNode }) {
             </BookDemoDialog>
           </div>
 
-          <Button variant="ghost" size="icon" data-testid="button-mobile-menu" onClick={() => setMobileMenuOpen((open) => !open)} className="text-foreground lg:hidden" aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}>
+          <Button variant="ghost" size="icon" data-testid="button-mobile-menu" onClick={() => setMobileMenuOpen((open) => !open)} className="min-h-[44px] min-w-[44px] text-foreground transition-all duration-150 active:scale-95 lg:hidden" aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}>
             {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </Button>
         </div>
@@ -85,12 +85,12 @@ export function MarketingLayout({ children }: { children: ReactNode }) {
           <nav className="mx-auto flex max-w-2xl flex-col px-5 py-6 sm:px-8" aria-label="Mobile navigation">
             {navLinks.map((link) =>
               link.href ? (
-                <Link key={link.label} href={link.href} className="border-b border-border py-4 text-lg font-medium">{link.label}</Link>
+                <Link key={link.label} href={link.href} className="min-h-[44px] border-b border-border py-4 text-lg font-medium">{link.label}</Link>
               ) : (
-                <a key={link.label} href={`#${link.id}`} onClick={(e) => goToSection(e, link.id!)} className="border-b border-border py-4 text-lg font-medium">{link.label}</a>
+                <a key={link.label} href={`#${link.id}`} onClick={(e) => goToSection(e, link.id!)} className="min-h-[44px] border-b border-border py-4 text-lg font-medium">{link.label}</a>
               ),
             )}
-            <Link href="/about" className="border-b border-border py-4 text-lg font-medium">About</Link>
+            <Link href="/about" className="min-h-[44px] border-b border-border py-4 text-lg font-medium">About</Link>
             <BookDemoDialog>
               <Button data-testid="button-mobile-book-demo" className="mt-7 h-12 w-full rounded-full bg-foreground text-background hover:bg-foreground/90">
                 Book a strategy call <ArrowUpRight className="ml-2 h-4 w-4" />
@@ -100,7 +100,19 @@ export function MarketingLayout({ children }: { children: ReactNode }) {
         </div>
       )}
 
-      <main className="w-full overflow-hidden pt-[4.75rem]">{children}</main>
+      <main className="w-full overflow-hidden pb-6 pt-[4.75rem]">{children}</main>
+
+      <div className="fixed inset-x-0 bottom-0 z-50 mx-auto flex max-w-md items-center justify-between gap-3 border-t border-zinc-200/80 bg-white/90 p-3 shadow-lg backdrop-blur-md dark:border-zinc-800 dark:bg-zinc-950/90">
+        <div className="flex min-w-0 flex-col">
+          <span className="text-xs font-bold text-zinc-900 dark:text-zinc-100">Start Free</span>
+          <span className="text-[10px] text-zinc-500 dark:text-zinc-400">No credit card needed</span>
+        </div>
+        <BookDemoDialog>
+          <Button data-testid="button-floating-start-free" className="min-h-[44px] max-w-[200px] flex-1 rounded-xl bg-indigo-600 px-4 text-xs font-semibold text-white shadow-md shadow-indigo-200 transition-all duration-150 hover:bg-indigo-700 active:scale-95 dark:shadow-indigo-950/50">
+            Get Started Now <ArrowUpRight className="ml-1.5 h-3.5 w-3.5" />
+          </Button>
+        </BookDemoDialog>
+      </div>
 
       <footer className="border-t border-border bg-secondary/35" id="about">
         <div className="mx-auto max-w-[80rem] px-5 py-16 sm:px-8 lg:px-10 lg:py-20">

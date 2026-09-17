@@ -30,10 +30,27 @@ export function FeaturesGrid() {
     { icon: UsersRound, index: "06", title: "Support that stays close", desc: "Your trial starts with a conversation and continues with practical help when the details get complex." },
   ];
   return (
-    <section className="bg-background py-24 lg:py-32">
-      <div className="mx-auto max-w-[80rem] px-5 sm:px-8 lg:px-10">
-        <div className="mb-14 grid gap-7 lg:grid-cols-[0.9fr_1.1fr] lg:items-end"><div><p className="mb-4 text-[11px] font-bold uppercase tracking-[0.2em] text-primary">What we take care of</p><h2 className="max-w-xl font-display text-4xl font-semibold leading-[1.03] tracking-[-0.05em] sm:text-5xl">The useful parts, connected.</h2></div><p className="max-w-md text-base leading-relaxed text-muted-foreground lg:justify-self-end">One reputation rhythm for your team, your customers and every place your name shows up.</p></div>
-        <div className="grid gap-px overflow-hidden rounded-2xl border border-border bg-border md:grid-cols-2 lg:grid-cols-3">{features.map(({ icon: Icon, index, title, desc }, i) => <motion.div key={title} initial={{ opacity: 0, y: 15 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.35 }} transition={{ delay: (i % 3) * 0.06, duration: 0.45 }} className="group bg-card p-7 transition-colors duration-300 hover:bg-secondary/35 sm:p-8"><div className="mb-12 flex items-start justify-between"><span className="font-mono text-[11px] font-bold tracking-[0.16em] text-muted-foreground">{index}</span><div className="flex h-10 w-10 items-center justify-center rounded-xl border border-border bg-background text-primary transition-transform duration-300 group-hover:-translate-y-1"><Icon className="h-5 w-5" /></div></div><h3 className="text-lg font-bold tracking-tight">{title}</h3><p className="mt-3 max-w-xs text-sm leading-relaxed text-muted-foreground">{desc}</p></motion.div>)}</div>
+    <section className="bg-slate-50 px-4 py-12 dark:bg-slate-950 sm:py-16">
+      <div className="mx-auto w-full max-w-5xl">
+        <div className="mb-8 grid gap-4 md:grid-cols-[0.9fr_1.1fr] md:items-end">
+          <div>
+            <p className="mb-3 text-xs font-bold uppercase tracking-[0.16em] text-indigo-600 dark:text-indigo-300">What we take care of</p>
+            <h2 className="max-w-xl text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100 sm:text-4xl">The useful parts, connected.</h2>
+          </div>
+          <p className="max-w-md text-sm leading-relaxed text-zinc-600 dark:text-zinc-400 md:justify-self-end">One reputation rhythm for your team, your customers and every place your name shows up.</p>
+        </div>
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {features.map(({ icon: Icon, index, title, desc }, i) => (
+            <motion.div key={title} initial={{ opacity: 0, y: 15 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.35 }} transition={{ delay: (i % 3) * 0.06, duration: 0.45 }} className="group space-y-2 rounded-2xl border border-zinc-200/80 bg-white p-5 shadow-sm transition-all duration-150 hover:-translate-y-0.5 hover:border-indigo-200 dark:border-zinc-800 dark:bg-zinc-900">
+              <div className="flex items-start justify-between">
+                <span className="font-mono text-[11px] font-bold tracking-[0.16em] text-zinc-500 dark:text-zinc-400">{index}</span>
+                <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-indigo-200 bg-indigo-50 text-indigo-600 transition-all duration-150 group-hover:-translate-y-0.5 dark:border-indigo-900 dark:bg-indigo-950/60 dark:text-indigo-300"><Icon className="h-5 w-5" /></div>
+              </div>
+              <h3 className="pt-3 text-base font-bold tracking-tight text-zinc-900 dark:text-zinc-100">{title}</h3>
+              <p className="text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">{desc}</p>
+            </motion.div>
+          ))}
+        </div>
       </div>
     </section>
   );
@@ -41,11 +58,29 @@ export function FeaturesGrid() {
 
 export function HowItWorks() {
   const steps = [
-    { number: "01", title: "We listen first", desc: "A short working session gives us the context no template can: your customer journey, your team and your goals." },
-    { number: "02", title: "We shape the moments", desc: "Together we choose where asking feels natural and build the links, cards and campaigns to support it." },
-    { number: "03", title: "You see the signal", desc: "Reviews, drafts and patterns come back in one clear view, so the next good decision is easy." },
+    { number: "1", title: "Scan QR or Tap Link", desc: "Instant customer onboarding with zero app install." },
+    { number: "2", title: "AI Drafts the Perfect Review", desc: "Based on rating and keywords selected in 5 seconds." },
+    { number: "3", title: "Direct Post to Google", desc: "One-click redirect right to your Google Maps review dialog." },
   ];
-  return <section id="how-it-works" className="border-y border-border bg-foreground py-24 text-background lg:py-28"><div className="mx-auto max-w-[80rem] px-5 sm:px-8 lg:px-10"><div className="mb-14 max-w-xl"><p className="mb-4 text-[11px] font-bold uppercase tracking-[0.2em] text-primary">A better working rhythm</p><h2 className="font-display text-4xl font-semibold leading-[1.03] tracking-[-0.05em] sm:text-5xl">Less software to learn. More reputation to keep.</h2></div><div className="grid gap-10 md:grid-cols-3 md:gap-8">{steps.map(({ number, title, desc }, index) => <motion.div key={number} initial={{ opacity: 0, y: 12 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.5 }} transition={{ delay: index * 0.1 }} className="border-t border-background/20 pt-5"><div className="mb-12 flex items-center justify-between"><span className="font-mono text-xs font-bold tracking-[0.18em] text-primary">{number}</span>{index < 2 && <ArrowRight className="hidden h-4 w-4 text-background/30 md:block" />}</div><h3 className="text-lg font-bold">{title}</h3><p className="mt-3 max-w-xs text-sm leading-relaxed text-background/60">{desc}</p></motion.div>)}</div></div></section>;
+  return (
+    <section id="how-it-works" className="bg-white px-4 py-12 dark:bg-zinc-900 sm:py-16">
+      <div className="mx-auto w-full max-w-5xl">
+        <div className="mb-8 max-w-xl">
+          <p className="mb-3 text-xs font-bold uppercase tracking-[0.16em] text-indigo-600 dark:text-indigo-300">A better working rhythm</p>
+          <h2 className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100 sm:text-4xl">Less software to learn. More reputation to keep.</h2>
+        </div>
+        <div className="relative ml-3 space-y-8 border-l-2 border-indigo-100 pl-8 dark:border-indigo-950">
+          {steps.map(({ number, title, desc }, index) => (
+            <motion.div key={number} initial={{ opacity: 0, y: 12 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.5 }} transition={{ delay: index * 0.1 }} className="relative">
+              <span className="absolute -left-[49px] top-0 flex h-8 w-8 items-center justify-center rounded-full bg-indigo-600 text-xs font-bold text-white shadow-sm">{number}</span>
+              <h3 className="mb-1 text-sm font-bold text-zinc-900 dark:text-zinc-100">{title}</h3>
+              <p className="text-xs leading-normal text-zinc-600 dark:text-zinc-400">{desc}</p>
+            </motion.div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
 }
 
 export function DashboardShowcase() {

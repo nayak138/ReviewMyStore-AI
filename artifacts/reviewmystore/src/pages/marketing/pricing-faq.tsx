@@ -10,10 +10,27 @@ export function TestimonialsSection() {
     { name: "Sofia Romero", role: "Client director, Marlow & Co.", initials: "SR", quote: "It gives our clients something tangible to feel good about. We can talk about reputation with context instead of another vanity metric." },
   ];
   return (
-    <section className="border-y border-border bg-secondary/25 py-24 lg:py-28">
-      <div className="mx-auto max-w-[80rem] px-5 sm:px-8 lg:px-10">
-        <div className="mb-14 grid gap-7 lg:grid-cols-[0.82fr_1.18fr] lg:items-end"><div><p className="mb-4 text-[11px] font-bold uppercase tracking-[0.2em] text-primary">What operators notice</p><h2 className="max-w-xl font-display text-4xl font-semibold leading-[1.03] tracking-[-0.05em] sm:text-5xl">The difference is in the details.</h2></div><p className="max-w-md leading-relaxed text-muted-foreground lg:justify-self-end">A few words from people who need reputation work to happen in the real world, between the phone calls and the next customer.</p></div>
-        <div className="grid gap-px overflow-hidden rounded-2xl border border-border bg-border lg:grid-cols-[1.18fr_0.82fr]">{testimonials.map((item, index) => <article key={item.name} className={`bg-card p-7 sm:p-9 ${index === 0 ? "lg:row-span-2" : ""}`}><div className="flex items-center justify-between"><span className="inline-flex gap-0.5 text-warning" aria-label="Five star review">{[1, 2, 3, 4, 5].map((star) => <Star key={star} className="h-3 w-3 fill-current" />)}</span><span className="font-mono text-[10px] font-bold tracking-[0.15em] text-muted-foreground">0{index + 1}</span></div><blockquote className={`mt-8 leading-relaxed text-foreground/85 ${index === 0 ? "max-w-xl text-2xl sm:text-[1.7rem]" : "text-lg"}`}>“{item.quote}”</blockquote><div className="mt-9 flex items-center gap-3"><div className="flex h-10 w-10 items-center justify-center rounded-full bg-accent/55 text-xs font-bold text-accent-foreground">{item.initials}</div><div><p className="text-sm font-bold">{item.name}</p><p className="text-xs text-muted-foreground">{item.role}</p></div></div></article>)}</div>
+    <section className="bg-slate-50 px-4 py-12 dark:bg-slate-950 sm:py-16">
+      <div className="mx-auto w-full max-w-5xl">
+        <div className="mb-8 grid gap-4 md:grid-cols-[0.82fr_1.18fr] md:items-end">
+          <div>
+            <p className="mb-3 text-xs font-bold uppercase tracking-[0.16em] text-indigo-600 dark:text-indigo-300">What operators notice</p>
+            <h2 className="max-w-xl text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100 sm:text-4xl">The difference is in the details.</h2>
+          </div>
+          <p className="max-w-md text-sm leading-relaxed text-zinc-600 dark:text-zinc-400 md:justify-self-end">A few words from people who need reputation work to happen in the real world, between the phone calls and the next customer.</p>
+        </div>
+        <div className="grid gap-4 lg:grid-cols-3">
+          {testimonials.map((item) => (
+            <article key={item.name} className="space-y-2 rounded-2xl border border-zinc-200/80 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+              <div className="flex items-center gap-0.5 text-sm text-amber-400" aria-label="Five star review">{[1, 2, 3, 4, 5].map((star) => <Star key={star} className="h-3.5 w-3.5 fill-current" />)}</div>
+              <blockquote className="pt-2 text-xs font-medium leading-relaxed text-zinc-800 dark:text-zinc-200">“{item.quote}”</blockquote>
+              <div className="flex items-center gap-3 pt-3">
+                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-indigo-50 text-xs font-bold text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300">{item.initials}</div>
+                <div><p className="text-sm font-bold text-zinc-900 dark:text-zinc-100">{item.name}</p><p className="text-xs text-zinc-500 dark:text-zinc-400">{item.role} · Verified</p></div>
+              </div>
+            </article>
+          ))}
+        </div>
       </div>
     </section>
   );

@@ -164,22 +164,26 @@ export function InteractiveReviewDemo() {
   };
 
   return (
-    <section id="review-demo" className="relative overflow-hidden border-b border-border bg-[#edf3ff] py-16 dark:bg-[#05091d] sm:py-24 lg:min-h-[calc(100dvh-4.75rem)] lg:py-20">
+    <section id="review-demo" className="relative overflow-hidden border-b border-zinc-200 bg-slate-50 px-4 py-12 dark:border-zinc-800 dark:bg-slate-950 sm:py-16">
       <div className="editorial-grid pointer-events-none absolute inset-0 opacity-30 [mask-image:linear-gradient(to_bottom,black,transparent_78%)]" aria-hidden="true" />
       <div className="pointer-events-none absolute -right-48 top-24 h-[32rem] w-[32rem] rounded-full bg-primary/10 blur-3xl" aria-hidden="true" />
-      <div className="mx-auto max-w-[80rem] px-5 sm:px-8 lg:px-10">
-        <div className="mx-auto mb-12 max-w-3xl text-center sm:mb-16">
-          <p className="mb-4 text-[11px] font-bold uppercase tracking-[0.2em] text-primary">Your next five-star review starts here</p>
-          <h2 className="font-display text-4xl font-semibold leading-[1.03] tracking-[-0.05em] sm:text-5xl">
+      <div className="mx-auto w-full max-w-md">
+        <div className="mx-auto mb-8 text-center sm:mb-10">
+          <p className="mb-3 inline-flex items-center gap-1.5 rounded-full border border-indigo-200/80 bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700 dark:border-indigo-900 dark:bg-indigo-950/60 dark:text-indigo-300">Live Customer Preview</p>
+          <h2 className="text-3xl font-bold leading-tight tracking-tight text-zinc-900 dark:text-zinc-100">
             Turn a great stay into a story worth sharing.
           </h2>
-          <p className="mx-auto mt-5 max-w-2xl text-lg leading-relaxed text-muted-foreground">
+          <p className="mx-auto mt-3 max-w-xs text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">
             Give every happy guest a simpler path from “I loved it” to a thoughtful Google review.
           </p>
         </div>
 
-        <div className="mx-auto w-full max-w-[920px] overflow-hidden rounded-[1.75rem] bg-[#f8faff] shadow-[0_28px_100px_-38px_rgba(28,57,125,0.35)] dark:bg-[#0a1430] dark:shadow-[0_28px_100px_-38px_rgba(0,0,0,0.8)]">
-          <header className="relative min-h-[285px] overflow-hidden bg-[linear-gradient(130deg,#0c1a39_0%,#173c69_44%,#0b142b_100%)] sm:min-h-[350px]">
+        <div className="space-y-4 rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+          <div className="flex items-center justify-between border-b border-zinc-100 pb-2 text-xs font-medium text-zinc-500 dark:border-zinc-800 dark:text-zinc-400">
+            <span>Interactive review demo</span>
+            <span className="inline-flex items-center"><span className="mr-1 inline-block h-2 w-2 animate-pulse rounded-full bg-emerald-500" />Interactive</span>
+          </div>
+          <header className="relative min-h-[220px] overflow-hidden rounded-xl bg-[linear-gradient(130deg,#0c1a39_0%,#173c69_44%,#0b142b_100%)] sm:min-h-[260px]">
             {!headerImageFailed && (
               <img
                 src={demoHeaderImage}
@@ -229,38 +233,38 @@ export function InteractiveReviewDemo() {
             </div>
           </header>
 
-          <div className="border-b border-[#d8e2fb] bg-[#eef3ff] px-4 py-4 dark:border-white/10 dark:bg-[#0a1430] sm:px-7">
+          <div className="rounded-xl border border-zinc-200 bg-slate-50 p-3 dark:border-zinc-800 dark:bg-zinc-950 sm:p-4">
             <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center">
-              <Button asChild size="sm" className="h-11 w-full rounded-full bg-[#1769ff] px-3 text-xs font-semibold shadow-[0_8px_18px_rgba(23,105,255,0.28)] hover:bg-[#0e59df] sm:w-auto sm:px-5 sm:text-sm">
+              <Button asChild size="sm" className="min-h-[44px] w-full rounded-xl bg-indigo-600 px-3 text-xs font-semibold text-white shadow-md shadow-indigo-200 transition-all duration-150 hover:bg-indigo-700 active:scale-95 sm:w-auto sm:px-5 sm:text-sm">
                 <a href="tel:+6566888888"><Phone className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" />Call</a>
               </Button>
-              <Button variant="outline" size="sm" className="h-11 w-full rounded-full border-[#cbd8f5] bg-[#e4ecff] px-3 text-xs font-semibold text-[#20345f] hover:bg-[#d8e4ff] dark:border-white/15 dark:bg-[#172548] dark:text-slate-100 sm:w-auto sm:px-4 sm:text-sm" onClick={() => downloadVCard({ name: "Marina Bay Sands Singapore", phone: "+65 6688 8888", address: "10 Bayfront Avenue, Singapore 018956", website: "https://www.marinabaysands.com/" })}>
+              <Button variant="outline" size="sm" className="min-h-[44px] w-full rounded-xl border-indigo-200 bg-indigo-50 px-3 text-xs font-semibold text-indigo-700 transition-all duration-150 hover:bg-indigo-100 active:scale-95 dark:border-indigo-900 dark:bg-indigo-950/60 dark:text-indigo-300 sm:w-auto sm:px-4 sm:text-sm" onClick={() => downloadVCard({ name: "Marina Bay Sands Singapore", phone: "+65 6688 8888", address: "10 Bayfront Avenue, Singapore 018956", website: "https://www.marinabaysands.com/" })}>
                 <IdCard className="mr-1.5 h-4 w-4 text-[#5b83ff]" aria-hidden="true" />Save Contact
               </Button>
             </div>
             <div className="mt-3 flex w-full items-center justify-center gap-2">
-              <Button asChild variant="outline" size="sm" aria-label="Directions" title="Directions" className="h-11 w-11 rounded-xl border-[#a8e5d1] bg-[#ddf8ef] p-0 text-[#087f6a] hover:bg-[#c9f1e4]">
+              <Button asChild variant="outline" size="sm" aria-label="Directions" title="Directions" className="min-h-[44px] min-w-[44px] rounded-xl border-emerald-200 bg-emerald-50 p-0 text-emerald-700 transition-all duration-150 hover:bg-emerald-100 active:scale-95">
                 <a href="https://www.google.com/maps/dir/?api=1&destination=Marina%20Bay%20Sands%20Singapore" target="_blank" rel="noopener noreferrer"><MapPin className="h-5 w-5 text-[#19b892]" aria-hidden="true" /></a>
               </Button>
-              <Button variant="outline" size="sm" aria-label={shared ? "Link copied" : "Share"} title={shared ? "Link copied" : "Share"} className="h-11 w-11 rounded-xl border-[#d7b8f5] bg-[#f0e5ff] p-0 text-[#7541a8] hover:bg-[#e7d8fa]" onClick={() => void shareDemo()}>
+              <Button variant="outline" size="sm" aria-label={shared ? "Link copied" : "Share"} title={shared ? "Link copied" : "Share"} className="min-h-[44px] min-w-[44px] rounded-xl border-indigo-200 bg-indigo-50 p-0 text-indigo-600 transition-all duration-150 hover:bg-indigo-100 active:scale-95" onClick={() => void shareDemo()}>
                 {shared ? <Check className="h-5 w-5 text-[#19d7a5]" aria-hidden="true" /> : <Share2 className="h-5 w-5 text-[#9f7aea]" aria-hidden="true" />}
               </Button>
-              <a href="https://www.marinabaysands.com/" target="_blank" rel="noopener noreferrer" aria-label="Website" title="Website" className="flex h-11 w-11 items-center justify-center rounded-xl border border-[#b9cbf5] bg-[#e3ebff] text-[#526da6] hover:bg-[#d6e2ff]"><Globe className="h-5 w-5" aria-hidden="true" /></a>
-              <a href={DEMO_GOOGLE_URL} target="_blank" rel="noopener noreferrer" aria-label="Google Maps" title="Google Maps" className="flex h-11 w-11 items-center justify-center overflow-hidden rounded-xl border border-[#d6def2] bg-white hover:bg-[#f5f7ff]"><img src={GOOGLE_MAPS_ICON} alt="" className="h-7 w-7 object-contain" /></a>
-              <a href="https://www.instagram.com/marinabaysands/" target="_blank" rel="noopener noreferrer" aria-label="Instagram" title="Instagram" className="flex h-11 w-11 items-center justify-center overflow-hidden rounded-xl border border-[#d6def2] bg-white hover:bg-[#f5f7ff]"><img src={INSTAGRAM_ICON} alt="" className="h-7 w-7 object-contain" /></a>
+              <a href="https://www.marinabaysands.com/" target="_blank" rel="noopener noreferrer" aria-label="Website" title="Website" className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-xl border border-indigo-200 bg-indigo-50 text-indigo-600 transition-all duration-150 hover:bg-indigo-100 active:scale-95"><Globe className="h-5 w-5" aria-hidden="true" /></a>
+              <a href={DEMO_GOOGLE_URL} target="_blank" rel="noopener noreferrer" aria-label="Google Maps" title="Google Maps" className="flex min-h-[44px] min-w-[44px] items-center justify-center overflow-hidden rounded-xl border border-zinc-200 bg-white transition-all duration-150 hover:bg-indigo-50 active:scale-95"><img src={GOOGLE_MAPS_ICON} alt="" className="h-7 w-7 object-contain" /></a>
+              <a href="https://www.instagram.com/marinabaysands/" target="_blank" rel="noopener noreferrer" aria-label="Instagram" title="Instagram" className="flex min-h-[44px] min-w-[44px] items-center justify-center overflow-hidden rounded-xl border border-zinc-200 bg-white transition-all duration-150 hover:bg-indigo-50 active:scale-95"><img src={INSTAGRAM_ICON} alt="" className="h-7 w-7 object-contain" /></a>
             </div>
           </div>
 
           <section className="mx-auto w-full max-w-[760px] space-y-4 px-4 pb-8 pt-5 sm:px-7" dir={rtl ? "rtl" : "ltr"}>
             {!reviewText ? (
-              <div className="rounded-[1.5rem] border border-[#d8e2fb] bg-white p-5 dark:border-white/10 dark:bg-[#102044] sm:p-7">
+              <div className="rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900 sm:p-5">
                 <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.16em] text-[#2860c8] dark:text-[#82b3ff]">Step 1</p>
                 <div className="flex items-center justify-between gap-4">
                   <div>
                     <h4 className="font-display text-2xl font-semibold tracking-tight text-foreground">{strings.ratingQuestion}</h4>
-                    <div className="mt-4 flex gap-2" role="radiogroup" aria-label="Rating">
+                      <div className="mt-3 flex gap-1" role="radiogroup" aria-label="Rating">
                       {[1, 2, 3, 4, 5].map((value) => (
-                        <button key={value} type="button" aria-label={`${value} star${value === 1 ? "" : "s"}`} aria-pressed={rating === value} onClick={() => setRating(value)} className="rounded-lg p-1 transition-transform hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
+                          <button key={value} type="button" aria-label={`${value} star${value === 1 ? "" : "s"}`} aria-pressed={rating === value} onClick={() => setRating(value)} className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg text-2xl transition-all duration-150 hover:scale-110 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500">
                           <Star className={cn("h-8 w-8 transition-colors", rating && value <= rating ? "fill-[#fbbc04] text-[#fbbc04]" : "text-[#9bb0d4]")} />
                         </button>
                       ))}
@@ -276,7 +280,7 @@ export function InteractiveReviewDemo() {
                       <h4 className="mb-3 font-display text-2xl font-semibold tracking-tight text-foreground">{strings.highlightsTitle}</h4>
                       <div className="flex flex-wrap gap-2">
                         {highlights.map((highlight) => (
-                          <button key={highlight} type="button" aria-pressed={selectedHighlights.includes(highlight)} onClick={() => toggleHighlight(highlight)} className={cn("rounded-full border px-3.5 py-2 text-sm font-medium transition-all", selectedHighlights.includes(highlight) ? "border-primary bg-primary text-primary-foreground shadow-sm" : "border-border bg-background/70 text-foreground hover:border-primary/50 hover:bg-accent")}>{highlight}</button>
+                           <button key={highlight} type="button" aria-pressed={selectedHighlights.includes(highlight)} onClick={() => toggleHighlight(highlight)} className={cn("rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-xs font-medium text-zinc-700 transition-all duration-150 hover:border-indigo-500 hover:bg-indigo-50/50 active:scale-95 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200", selectedHighlights.includes(highlight) && "border-indigo-600 bg-indigo-600 text-white hover:bg-indigo-700")}>{highlight}</button>
                         ))}
                       </div>
                       <input value={detail} onChange={(event) => setDetail(event.target.value)} maxLength={60} placeholder={strings.mentionPlaceholder} className="mt-4 w-full rounded-xl border border-input bg-background/70 px-3.5 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" />
@@ -296,18 +300,18 @@ export function InteractiveReviewDemo() {
                 )}
 
                 {error && <p className="mt-5 rounded-xl bg-destructive/10 px-4 py-3 text-sm text-destructive" role="alert">{error}</p>}
-                <Button className="mt-6 h-12 w-full rounded-xl bg-gradient-to-r from-[#2d7dff] to-[#6264e8] text-sm font-semibold text-white shadow-[0_10px_24px_-10px_rgba(56,103,235,0.75)] hover:from-[#1f6ff0] hover:to-[#5556d8] disabled:!opacity-100 disabled:from-[#2f61b0] disabled:to-[#5555a1]" size="lg" disabled={!rating || isGenerating} onClick={() => void generateReview()}>
+                 <Button className="mt-5 min-h-[44px] w-full rounded-xl bg-indigo-600 text-sm font-semibold text-white shadow-md shadow-indigo-200 transition-all duration-150 hover:bg-indigo-700 active:scale-95 disabled:!opacity-100 disabled:bg-indigo-300" size="lg" disabled={!rating || isGenerating} onClick={() => void generateReview()}>
                   {isGenerating ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />{strings.generatingButton}</> : <><Sparkles className="mr-2 h-4 w-4" />{strings.generateButton}</>}
                 </Button>
                 <p className="mt-3 text-center text-xs text-muted-foreground">You’ll get to read and edit it before anything is posted.</p>
               </div>
             ) : (
-              <div className="rounded-[1.5rem] border border-[#d8e2fb] bg-white p-5 dark:border-white/10 dark:bg-[#102044] sm:p-7">
+               <div className="rounded-xl border border-indigo-200 bg-indigo-50/40 p-4 text-zinc-700 dark:border-indigo-900 dark:bg-indigo-950/30 dark:text-zinc-200 sm:p-5">
                 <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.16em] text-primary">Ready when you are</p>
                 <h4 className="font-display text-2xl font-semibold tracking-tight text-foreground">Your review is ready.</h4>
-                <textarea value={reviewText} onChange={(event) => setReviewText(event.target.value)} rows={6} aria-label="Generated Google review" className="mt-5 w-full resize-y rounded-xl border border-input bg-background/70 px-4 py-3 text-sm leading-relaxed text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" />
+                 <textarea value={reviewText} onChange={(event) => setReviewText(event.target.value)} rows={6} aria-label="Generated Google review" className="mt-5 w-full resize-y rounded-xl border border-indigo-200 bg-white px-4 py-3 text-sm leading-relaxed text-zinc-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 dark:border-indigo-900 dark:bg-zinc-900 dark:text-zinc-200" />
                 <div className="mt-6">
-                  <Button className="h-12 w-full rounded-xl bg-[#1769ff] text-sm font-semibold shadow-[0_8px_20px_rgba(23,105,255,0.22)] hover:bg-[#0e59df]" onClick={() => void copyAndOpenGoogle()}>
+                   <Button className="min-h-[44px] w-full rounded-xl bg-indigo-600 text-sm font-semibold text-white shadow-md shadow-indigo-200 transition-all duration-150 hover:bg-indigo-700 active:scale-95" onClick={() => void copyAndOpenGoogle()}>
                     {copied ? <Check className="mr-2 h-4 w-4" aria-hidden="true" /> : <Copy className="mr-2 h-4 w-4" aria-hidden="true" />}
                     {copied ? strings.copiedLabel : "Copy and Review on Google"}
                   </Button>
