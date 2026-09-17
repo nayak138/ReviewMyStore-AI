@@ -91,7 +91,7 @@ export async function getDashboardSummary(organizationId: string) {
     countEvents(organizationId, ["QR_SCAN"]),
     countEvents(organizationId, ["NFC_TAP"]),
     countEvents(organizationId, ["GOOGLE_REDIRECT"]),
-    countEvents(organizationId, ["QR_SCAN", "NFC_TAP"], startOfToday),
+    countEvents(organizationId, ["QR_SCAN"], startOfToday),
     // AI reviews generated = sum of per-session generation counts across the
     // org's campaigns (each generate/regenerate call increments the count).
     db
@@ -119,7 +119,7 @@ export async function getDashboardSummary(organizationId: string) {
       .where(
         and(
           eq(scanEventsTable.organizationId, organizationId),
-          inArray(scanEventsTable.eventType, ["QR_SCAN", "NFC_TAP"]),
+          inArray(scanEventsTable.eventType, ["QR_SCAN"]),
           eq(scanEventsTable.redirectSuccess, true),
         ),
       )
@@ -152,9 +152,7 @@ export async function getDashboardSummary(organizationId: string) {
     const message =
       event.eventType === "QR_SCAN"
         ? `QR code scanned on ${campaign}`
-        : event.eventType === "NFC_TAP"
-          ? `NFC tap on ${campaign}`
-          : `Customer clicked through to Google from ${campaign}`;
+      : `Customer clicked through to Google from ${campaign}`;
     return {
       id: event.id,
       type: event.eventType.toLowerCase(),

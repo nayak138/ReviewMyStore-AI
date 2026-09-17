@@ -330,7 +330,7 @@ export default function AdminPortal() {
     return <div className="flex min-h-screen items-center justify-center bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
   }
   if (!isSignedIn) return <Redirect to="/sign-in" />;
-  if (!isSuperAdmin) return <Redirect to="/dashboard" />;
+  if (!isSuperAdmin) return <Redirect to="/businesses" />;
 
   return (
     <AppLayout title="Master Admin">

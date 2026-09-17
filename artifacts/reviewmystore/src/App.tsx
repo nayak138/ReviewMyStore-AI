@@ -23,16 +23,15 @@ import Resources from "./pages/marketing/Resources";
 import Privacy from "./pages/marketing/Privacy";
 import Terms from "./pages/marketing/Terms";
 const Marketing = lazy(() => import("./pages/Marketing"));
-const Dashboard = lazy(() => import("./pages/Dashboard"));
 const Onboarding = lazy(() => import("./pages/Onboarding"));
 const Businesses = lazy(() => import("./pages/Businesses"));
 const Campaigns = lazy(() => import("./pages/Campaigns"));
 const CustomerReview = lazy(() => import("./pages/CustomerReview"));
 const ShortRedirect = lazy(() => import("./pages/ShortRedirect"));
 const QrCodes = lazy(() => import("./pages/QrCodes"));
-const NfcDevices = lazy(() => import("./pages/NfcDevices"));
 const Reviews = lazy(() => import("./pages/Reviews"));
 const Feedback = lazy(() => import("./pages/Feedback"));
+const Analytics = lazy(() => import("./pages/Analytics"));
 
 const AdminLeads = lazy(() => import("./pages/AdminLeads"));
 const AdminPortal = lazy(() => import("./pages/AdminPortal"));
@@ -217,7 +216,7 @@ function SignUpPage() {
           routing="path"
           path={`${basePath}/sign-up`}
           initialValues={{ emailAddress: invitation.email }}
-          fallbackRedirectUrl={`${basePath}/dashboard`}
+           fallbackRedirectUrl={`${basePath}/businesses`}
         />
       </div>
     </AuthLayout>
@@ -250,7 +249,7 @@ function HomeRedirect() {
   return (
     <>
       <Show when="signed-in">
-        <Redirect to="/dashboard" />
+        <Redirect to="/businesses" />
       </Show>
       <Show when="signed-out">
         <Marketing />
@@ -307,14 +306,13 @@ function AppRouter() {
       <Route path="/r/:code" component={ShortRedirect} />
 
       {/* Protected Routes */}
-      <Route path="/dashboard" component={Dashboard} />
       <Route path="/onboarding" component={Onboarding} />
       <Route path="/businesses" component={Businesses} />
       <Route path="/campaigns" component={Campaigns} />
       <Route path="/qr-codes" component={QrCodes} />
-      <Route path="/nfc-devices" component={NfcDevices} />
-       <Route path="/reviews" component={Reviews} />
+      <Route path="/reviews" component={Reviews} />
       <Route path="/feedback" component={Feedback} />
+      <Route path="/analytics" component={Analytics} />
       {/* Super Admin only */}
       <Route path="/admin/leads" component={AdminLeads} />
       <Route path="/admin/portal" component={AdminPortal} />

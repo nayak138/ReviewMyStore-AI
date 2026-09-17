@@ -258,7 +258,7 @@ export default function AdminLeads() {
   }
 
   if (session && !isSuperAdmin) {
-    return <Redirect to="/dashboard" />;
+    return <Redirect to="/businesses" />;
   }
 
   const leads = data?.demoRequests ?? [];

@@ -184,7 +184,7 @@ export default function Onboarding() {
 
   // If they don't need onboarding, redirect to dashboard
   if (summary && !summary.needsOnboarding) {
-    return <Redirect to="/dashboard" />;
+    return <Redirect to="/businesses" />;
   }
 
   const onSubmit = async (data: OnboardingValues) => {
@@ -192,7 +192,7 @@ export default function Onboarding() {
     setSubmitError(null);
     try {
       await createBusiness.mutateAsync({ data });
-      setLocation("/dashboard");
+      setLocation("/businesses");
     } catch (err) {
       setSubmitError(err instanceof Error ? err.message : "Something went wrong. Please try again.");
       setIsSubmitting(false);

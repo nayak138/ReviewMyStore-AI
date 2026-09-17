@@ -2,21 +2,19 @@ import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { useAuth, useClerk } from "@clerk/react";
 import { 
-  LayoutDashboard, 
   Store, 
   Megaphone, 
   QrCode, 
-  SmartphoneNfc, 
   MessageSquare,
   MessageCircleWarning,
   BarChart3, 
-  ShoppingCart,
   Inbox,
   ShieldCheck,
   LogOut,
   Menu,
   X
 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import {
   useGetCurrentUser,
   getGetCurrentUserQueryKey,
@@ -26,16 +24,33 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { BrandLogo } from "@/components/brand-logo";
 
-const NAV_ITEMS = [
-  { name: "Dashboard", icon: LayoutDashboard, href: "/dashboard", ready: true },
-  { name: "Businesses", icon: Store, href: "/businesses", ready: true },
-  { name: "Campaigns", icon: Megaphone, href: "/campaigns", ready: true },
-  { name: "QR Codes", icon: QrCode, href: "/qr-codes", ready: true },
-  { name: "NFC Devices", icon: SmartphoneNfc, href: "/nfc-devices", ready: true },
-  { name: "Reviews", icon: MessageSquare, href: "/reviews", ready: true },
-  { name: "Feedback", icon: MessageCircleWarning, href: "/feedback", ready: true },
-  { name: "Analytics", icon: BarChart3, href: "/analytics", ready: false },
-  { name: "Orders", icon: ShoppingCart, href: "/orders", ready: false },
+interface NavItem {
+  name: string;
+  icon: LucideIcon;
+  href: string;
+  ready: boolean;
+  children?: NavItem[];
+}
+
+const NAV_ITEMS: NavItem[] = [
+  {
+    name: "Businesses",
+    icon: Store,
+    href: "/businesses",
+    ready: true,
+    children: [
+      {
+        name: "Campaigns",
+        icon: Megaphone,
+        href: "/campaigns",
+        ready: true,
+        children: [{ name: "QR Codes", icon: QrCode, href: "/qr-codes", ready: true }],
+      },
+      { name: "Reviews", icon: MessageSquare, href: "/reviews", ready: true },
+      { name: "Feedback", icon: MessageCircleWarning, href: "/feedback", ready: true },
+    ],
+  },
+  { name: "Analytics", icon: BarChart3, href: "/analytics", ready: true },
 ];
 
 // Shown only to SUPER_ADMIN users, below the regular nav items.
@@ -72,7 +87,7 @@ export function AppLayout({ children, title }: AppLayoutProps) {
     },
   });
   const isSuperAdmin = session?.user.role === "SUPER_ADMIN";
-  const navItems = isSuperAdmin ? [...NAV_ITEMS, ...ADMIN_NAV_ITEMS] : NAV_ITEMS;
+  const navItems: NavItem[] = isSuperAdmin ? [...NAV_ITEMS, ...ADMIN_NAV_ITEMS] : NAV_ITEMS;
 
   const handleSignOut = () => {
     signOut({ redirectUrl: "/" });
@@ -102,35 +117,9 @@ export function AppLayout({ children, title }: AppLayoutProps) {
         </div>
 
         <nav className="flex-1 overflow-y-auto p-4 space-y-1">
-          {navItems.map((item) => {
-            const isActive = location === item.href || (location.startsWith(item.href) && item.href !== "/dashboard");
-            
-            return (
-              <Link key={item.name} href={item.ready ? item.href : "#"}>
-                <div
-                  className={cn(
-                    "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors relative group",
-                    isActive
-                      ? "bg-primary/10 text-primary dark:bg-primary/20"
-                      : "text-muted-foreground hover:bg-secondary hover:text-foreground",
-                    !item.ready && "opacity-70 cursor-not-allowed"
-                  )}
-                  onClick={(e) => {
-                    if (!item.ready) e.preventDefault();
-                    else setMobileMenuOpen(false);
-                  }}
-                >
-                  <item.icon className="w-4 h-4" />
-                  {item.name}
-                  {!item.ready && (
-                    <span className="absolute right-3 opacity-0 group-hover:opacity-100 transition-opacity text-[10px] bg-secondary px-1.5 py-0.5 rounded text-secondary-foreground font-semibold">
-                      Soon
-                    </span>
-                  )}
-                </div>
-              </Link>
-            );
-          })}
+          {navItems.map((item) => (
+            <SidebarNavItem key={item.name} item={item} location={location} onNavigate={() => setMobileMenuOpen(false)} />
+          ))}
         </nav>
 
         <div className="p-4 border-t border-border">
@@ -167,6 +156,62 @@ export function AppLayout({ children, title }: AppLayoutProps) {
           {children}
         </div>
       </main>
+    </div>
+  );
+}
+
+function SidebarNavItem({
+  item,
+  location,
+  onNavigate,
+  depth = 0,
+}: {
+  item: NavItem;
+  location: string;
+  onNavigate: () => void;
+  depth?: number;
+}) {
+  const hasActiveChild = item.children?.some(
+    (child) => location === child.href || location.startsWith(`${child.href}/`) || child.children?.some((grandchild) => location === grandchild.href),
+  ) ?? false;
+  const isCurrent = location === item.href || location.startsWith(`${item.href}/`);
+
+  return (
+    <div>
+      <Link href={item.ready ? item.href : "#"}>
+        <div
+          className={cn(
+            "group relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+            depth > 0 && "ml-3 text-[13px]",
+            isCurrent
+              ? "bg-primary/10 text-primary dark:bg-primary/20"
+              : hasActiveChild
+                ? "text-primary"
+                : "text-muted-foreground hover:bg-secondary hover:text-foreground",
+            !item.ready && "cursor-not-allowed opacity-70",
+          )}
+          onClick={(event) => {
+            if (!item.ready) event.preventDefault();
+            else onNavigate();
+          }}
+          aria-current={isCurrent ? "page" : undefined}
+        >
+          <item.icon className="h-4 w-4 shrink-0" />
+          {item.name}
+          {!item.ready && (
+            <span className="absolute right-3 rounded bg-secondary px-1.5 py-0.5 text-[10px] font-semibold text-secondary-foreground opacity-0 transition-opacity group-hover:opacity-100">
+              Soon
+            </span>
+          )}
+        </div>
+      </Link>
+      {item.children && (
+        <div className="ml-4 mt-1 space-y-1 border-l border-border pl-2">
+          {item.children.map((child) => (
+            <SidebarNavItem key={child.name} item={child} location={location} onNavigate={onNavigate} depth={depth + 1} />
+          ))}
+        </div>
+      )}
     </div>
   );
 }

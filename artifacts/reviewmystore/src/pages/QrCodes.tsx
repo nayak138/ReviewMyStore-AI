@@ -37,6 +37,7 @@ import {
   FileCode2,
   FileText,
   Megaphone,
+  ShoppingBag,
 } from "lucide-react";
 
 const API_BASE = `${import.meta.env.BASE_URL.replace(/\/$/, "")}/api`;
@@ -215,21 +216,29 @@ export default function QrCodes() {
               campaign later.
             </p>
           </div>
-          <Select
-            value={selectedBusinessId}
-            onValueChange={setSelectedBusinessId}
-          >
-            <SelectTrigger className="w-full md:w-64">
-              <SelectValue placeholder="Select a business" />
-            </SelectTrigger>
-            <SelectContent>
-              {businesses.map((business) => (
-                <SelectItem key={business.id} value={business.id}>
-                  {business.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div className="flex w-full flex-col gap-2 sm:flex-row md:w-auto">
+            <Select
+              value={selectedBusinessId}
+              onValueChange={setSelectedBusinessId}
+            >
+              <SelectTrigger className="w-full md:w-64">
+                <SelectValue placeholder="Select a business" />
+              </SelectTrigger>
+              <SelectContent>
+                {businesses.map((business) => (
+                  <SelectItem key={business.id} value={business.id}>
+                    {business.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button asChild variant="outline" className="shrink-0">
+              <a href="mailto:hello@5-star.ai?subject=Order%20NFC%20Standee">
+                <ShoppingBag className="mr-2 h-4 w-4" />
+                Order NFC Standee
+              </a>
+            </Button>
+          </div>
         </div>
 
         {businessesLoading || (selectedBusinessId && campaignsLoading) ? (
