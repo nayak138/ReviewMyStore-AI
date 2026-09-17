@@ -754,7 +754,7 @@ export default function Reviews() {
   if (dashboard?.connection.status === "DISCONNECTED" || dashboard?.connection.status === "ERROR") {
     return (
         <AppLayout title="Review Inbox" businessName={workspaceBusiness?.name}>
-        <div className="p-4 md:p-8 max-w-4xl mx-auto mt-12 md:mt-24 text-center space-y-6 animate-in fade-in duration-700">
+        <div className="p-4 md:p-8 max-w-5xl mx-auto mt-12 md:mt-24 text-center space-y-6 animate-in fade-in duration-700">
            {workspaceTabs}
            <div className="w-20 h-20 bg-muted/50 rounded-3xl flex items-center justify-center mx-auto border border-border shadow-sm">
              <MessageSquare className="w-10 h-10 text-muted-foreground" />
@@ -792,7 +792,7 @@ export default function Reviews() {
   if (dashboard?.connection.status === "PENDING") {
     return (
       <AppLayout title="Review Inbox" businessName={workspaceBusiness?.name}>
-        <div className="p-4 md:p-8 max-w-4xl mx-auto mt-12 md:mt-24 text-center space-y-6 animate-in fade-in duration-700">
+        <div className="p-4 md:p-8 max-w-5xl mx-auto mt-12 md:mt-24 text-center space-y-6 animate-in fade-in duration-700">
            {workspaceTabs}
            <div className="w-20 h-20 bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-900 rounded-3xl flex items-center justify-center mx-auto shadow-sm">
              <RefreshCw className="w-10 h-10 text-blue-500 animate-spin" />

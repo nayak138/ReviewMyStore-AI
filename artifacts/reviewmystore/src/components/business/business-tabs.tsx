@@ -23,7 +23,7 @@ export function BusinessTabs({
 
   return (
     <nav
-      className="grid gap-1 rounded-xl border border-border bg-card p-1 shadow-sm sm:grid-cols-3"
+      className="mx-auto grid w-full max-w-4xl gap-1 rounded-xl border border-border bg-card p-1 shadow-sm sm:grid-cols-3"
       aria-label={`${businessName} workspace`}
     >
       {tabs.map(({ id, label, icon: Icon, href }) => (
