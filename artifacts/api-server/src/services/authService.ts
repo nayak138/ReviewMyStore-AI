@@ -1,4 +1,5 @@
 import { and, desc, eq, gt, sql } from "drizzle-orm";
+import { randomUUID } from "node:crypto";
 import { clerkClient } from "@clerk/express";
 import {
   agencyInvitationsTable,
@@ -19,6 +20,43 @@ export class AgencyInvitationRequiredError extends Error {
     super("An active agency invitation is required to create an account");
     this.name = "AgencyInvitationRequiredError";
   }
+}
+
+const ACCOUNT_EXPORT_EXCLUDED_DATA = [
+  "businesses",
+  "workspaces",
+  "teams",
+  "Google connections",
+  "campaigns",
+  "reviews and private feedback",
+] as const;
+
+export function buildAccountDataExport(user: User, requestedAt = new Date()) {
+  return {
+    exportId: randomUUID(),
+    requestedAt,
+    scope: "ACCOUNT" as const,
+    account: {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      status: user.status,
+      lastLoginAt: user.lastLoginAt,
+      createdAt: user.createdAt,
+    },
+    excludedData: [...ACCOUNT_EXPORT_EXCLUDED_DATA],
+  };
+}
+
+export function buildAccountDeactivationRequest(requestedAt = new Date()) {
+  return {
+    requestId: randomUUID(),
+    requestedAt,
+    status: "PENDING_REVIEW" as const,
+    message:
+      "Your request is pending review. Your sign-in remains active, and no business or workspace data has been changed.",
+  };
 }
 
 function isUniqueViolation(error: unknown, constraint: string): boolean {

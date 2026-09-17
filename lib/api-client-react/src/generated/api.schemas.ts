@@ -185,6 +185,57 @@ export interface UserProfile {
   createdAt: string;
 }
 
+export interface AccountExportProfile {
+  id: string;
+  name: string;
+  email: string;
+  role: UserRole;
+  status: UserStatus;
+  /** @nullable */
+  lastLoginAt: string | null;
+  createdAt: string;
+}
+
+export type AccountDataExportResponseScope = typeof AccountDataExportResponseScope[keyof typeof AccountDataExportResponseScope];
+
+
+export const AccountDataExportResponseScope = {
+  ACCOUNT: 'ACCOUNT',
+} as const;
+
+export interface AccountDataExportResponse {
+  exportId: string;
+  requestedAt: string;
+  scope: AccountDataExportResponseScope;
+  account: AccountExportProfile;
+  excludedData: string[];
+}
+
+export type AccountDeactivationRequestBodyConfirmation = typeof AccountDeactivationRequestBodyConfirmation[keyof typeof AccountDeactivationRequestBodyConfirmation];
+
+
+export const AccountDeactivationRequestBodyConfirmation = {
+  DEACTIVATE: 'DEACTIVATE',
+} as const;
+
+export interface AccountDeactivationRequestBody {
+  confirmation: AccountDeactivationRequestBodyConfirmation;
+}
+
+export type AccountDeactivationRequestResponseStatus = typeof AccountDeactivationRequestResponseStatus[keyof typeof AccountDeactivationRequestResponseStatus];
+
+
+export const AccountDeactivationRequestResponseStatus = {
+  PENDING_REVIEW: 'PENDING_REVIEW',
+} as const;
+
+export interface AccountDeactivationRequestResponse {
+  requestId: string;
+  requestedAt: string;
+  status: AccountDeactivationRequestResponseStatus;
+  message: string;
+}
+
 export interface SessionInfo {
   user: UserProfile;
   organization: Organization | null;

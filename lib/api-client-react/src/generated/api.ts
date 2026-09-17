@@ -20,6 +20,9 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
+  AccountDataExportResponse,
+  AccountDeactivationRequestBody,
+  AccountDeactivationRequestResponse,
   AdminAgencyCreateInput,
   AdminAgencyCreateResult,
   AdminAgencyInvitation,
@@ -1011,6 +1014,150 @@ export function useGetCurrentUser<TData = Awaited<ReturnType<typeof getCurrentUs
 
 
 
+
+export const getRequestAccountDataExportUrl = () => {
+
+
+
+
+  return `/api/v1/auth/data-export`
+}
+
+/**
+ * Returns a JSON export of the authenticated user's 5-Star.AI account record. Business, workspace, team, connection, campaign, and review data are intentionally excluded from this account-only export.
+ * @summary Request an account-scoped data export
+ */
+export const requestAccountDataExport = async ( options?: Parameters<typeof customFetch>[1]): Promise<AccountDataExportResponse> => {
+
+  return customFetch<AccountDataExportResponse>(getRequestAccountDataExportUrl(),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getRequestAccountDataExportMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof requestAccountDataExport>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof requestAccountDataExport>>, TError,void, TContext> => {
+
+const mutationKey = ['requestAccountDataExport'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof requestAccountDataExport>>, void> = () => {
+
+
+          return  requestAccountDataExport(requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RequestAccountDataExportMutationResult = NonNullable<Awaited<ReturnType<typeof requestAccountDataExport>>>
+
+    export type RequestAccountDataExportMutationError = ErrorType<ErrorResponse>
+
+    /**
+ * @summary Request an account-scoped data export
+ */
+export const useRequestAccountDataExport = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof requestAccountDataExport>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof requestAccountDataExport>>,
+        TError,
+        void,
+        TContext
+      > => {
+      return useMutation(getRequestAccountDataExportMutationOptions(options));
+    }
+
+export const getRequestAccountDeactivationUrl = () => {
+
+
+
+
+  return `/api/v1/auth/deactivation-request`
+}
+
+/**
+ * Creates a pending account deactivation request after explicit confirmation. This endpoint does not delete the Clerk identity or alter business/workspace data.
+ * @summary Request account deactivation
+ */
+export const requestAccountDeactivation = async (accountDeactivationRequestBody: AccountDeactivationRequestBody, options?: Parameters<typeof customFetch>[1]): Promise<AccountDeactivationRequestResponse> => {
+
+  return customFetch<AccountDeactivationRequestResponse>(getRequestAccountDeactivationUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(accountDeactivationRequestBody)
+  }
+);}
+
+
+
+
+
+export const getRequestAccountDeactivationMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof requestAccountDeactivation>>, TError,{data: BodyType<AccountDeactivationRequestBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof requestAccountDeactivation>>, TError,{data: BodyType<AccountDeactivationRequestBody>}, TContext> => {
+
+const mutationKey = ['requestAccountDeactivation'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof requestAccountDeactivation>>, {data: BodyType<AccountDeactivationRequestBody>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  requestAccountDeactivation(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RequestAccountDeactivationMutationResult = NonNullable<Awaited<ReturnType<typeof requestAccountDeactivation>>>
+    export type RequestAccountDeactivationMutationBody = BodyType<AccountDeactivationRequestBody>
+    export type RequestAccountDeactivationMutationError = ErrorType<ErrorResponse>
+
+    /**
+ * @summary Request account deactivation
+ */
+export const useRequestAccountDeactivation = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof requestAccountDeactivation>>, TError,{data: BodyType<AccountDeactivationRequestBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof requestAccountDeactivation>>,
+        TError,
+        {data: BodyType<AccountDeactivationRequestBody>},
+        TContext
+      > => {
+      return useMutation(getRequestAccountDeactivationMutationOptions(options));
+    }
 
 export const getGetAdminOverviewUrl = () => {
 

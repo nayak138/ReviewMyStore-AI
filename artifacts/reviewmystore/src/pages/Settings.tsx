@@ -1,23 +1,39 @@
 import { useAuth, useClerk, useUser } from "@clerk/react";
-import { useGetCurrentUser, getGetCurrentUserQueryKey } from "@workspace/api-client-react";
+import {
+  getGetCurrentUserQueryKey,
+  useGetCurrentUser,
+  useRequestAccountDataExport,
+  useRequestAccountDeactivation,
+} from "@workspace/api-client-react";
 import { Redirect } from "wouter";
+import { useState } from "react";
 import {
   ArrowUpRight,
   Check,
   CircleAlert,
-  Clock3,
   Database,
+  Download,
   Info,
   LockKeyhole,
   Mail,
   RefreshCcw,
   ShieldCheck,
+  TriangleAlert,
   UserRound,
 } from "lucide-react";
 import { AppLayout } from "@/components/layout/app-layout";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 
@@ -36,6 +52,33 @@ function formatDate(value: string | null | undefined) {
   return Number.isNaN(date.getTime())
     ? "Not available"
     : date.toLocaleDateString(undefined, { dateStyle: "medium" });
+}
+
+function getErrorMessage(error: unknown, fallback: string) {
+  if (error instanceof Error && error.message) return error.message;
+  if (
+    typeof error === "object" &&
+    error !== null &&
+    "message" in error &&
+    typeof error.message === "string"
+  ) {
+    return error.message;
+  }
+  return fallback;
+}
+
+function downloadAccountExport(data: unknown) {
+  const blob = new Blob([JSON.stringify(data, null, 2)], {
+    type: "application/json",
+  });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `5-star-ai-account-export-${new Date().toISOString().slice(0, 10)}.json`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
 }
 
 function SectionIcon({
@@ -89,6 +132,12 @@ export default function Settings() {
   const { isLoaded, isSignedIn } = useAuth();
   const { openUserProfile } = useClerk();
   const { user: clerkUser } = useUser();
+  const [deactivationOpen, setDeactivationOpen] = useState(false);
+  const [deactivationConfirmation, setDeactivationConfirmation] = useState("");
+  const [exportMessage, setExportMessage] = useState<string | null>(null);
+  const [deactivationMessage, setDeactivationMessage] = useState<string | null>(null);
+  const accountDataExport = useRequestAccountDataExport();
+  const accountDeactivation = useRequestAccountDeactivation();
   const { data: session, isLoading, isError, refetch } = useGetCurrentUser({
     query: {
       enabled: !!isSignedIn,
@@ -105,6 +154,44 @@ export default function Settings() {
     clerkUser?.primaryEmailAddress?.emailAddress || account?.email || "Email unavailable";
   const emailIsVerified = clerkUser?.primaryEmailAddress?.verification?.status === "verified";
   const isActive = account?.status === "ACTIVE";
+
+  const handleAccountExport = () => {
+    setExportMessage(null);
+    accountDataExport.mutate(undefined, {
+      onSuccess: (data) => {
+        downloadAccountExport(data);
+        setExportMessage("Your account-only export was downloaded.");
+      },
+      onError: (error) => {
+        setExportMessage(
+          getErrorMessage(error, "The export could not be created. Please try again."),
+        );
+      },
+    });
+  };
+
+  const handleDeactivationRequest = () => {
+    if (deactivationConfirmation !== "DEACTIVATE") return;
+    setDeactivationMessage(null);
+    accountDeactivation.mutate(
+      { data: { confirmation: "DEACTIVATE" } },
+      {
+        onSuccess: (data) => {
+          setDeactivationOpen(false);
+          setDeactivationConfirmation("");
+          setDeactivationMessage(data.message);
+        },
+        onError: (error) => {
+          setDeactivationMessage(
+            getErrorMessage(
+              error,
+              "The deactivation request could not be submitted. Please try again.",
+            ),
+          );
+        },
+      },
+    );
+  };
 
   return (
     <AppLayout title="Account settings">
@@ -353,23 +440,71 @@ export default function Settings() {
                       </div>
                     </div>
                   </CardHeader>
-                  <CardContent className="grid gap-5 sm:grid-cols-2">
+                  <CardContent className="grid gap-6 sm:grid-cols-2">
                     <DetailRow
-                      icon={Database}
-                      label="Account data requests"
+                      icon={Download}
+                      label="Download account data"
+                      value="Get a JSON copy of your 5-Star.AI account profile and access record."
                       testId="settings-privacy-data-status"
-                    >
-                      <div className="mt-2 flex items-start gap-2.5 text-sm text-muted-foreground">
-                        <Info className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
-                        <span>Export and deletion requests are not supported from this screen.</span>
-                      </div>
-                    </DetailRow>
-                    <DetailRow
-                      icon={Clock3}
-                      label="Data controls"
-                      value="No additional privacy controls are configured for this account center."
-                      testId="settings-privacy-controls-status"
                     />
+                    <div className="flex flex-col items-start justify-end gap-3">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={handleAccountExport}
+                        disabled={accountDataExport.isPending}
+                        data-testid="settings-export-button"
+                      >
+                        <Download className="mr-2 h-4 w-4" aria-hidden="true" />
+                        {accountDataExport.isPending ? "Preparing export..." : "Download export"}
+                      </Button>
+                      {exportMessage && (
+                        <p
+                          className={cn(
+                            "text-sm",
+                            accountDataExport.isError ? "text-destructive" : "text-success",
+                          )}
+                          role={accountDataExport.isError ? "alert" : "status"}
+                          data-testid="settings-export-message"
+                        >
+                          {exportMessage}
+                        </p>
+                      )}
+                    </div>
+                    <DetailRow
+                      icon={TriangleAlert}
+                      label="Request account deactivation"
+                      value="This starts a review. It does not immediately sign you out or delete business and workspace data."
+                      testId="settings-deactivation-status"
+                    />
+                    <div className="flex flex-col items-start justify-end gap-3">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                        onClick={() => {
+                          setDeactivationMessage(null);
+                          setDeactivationConfirmation("");
+                          setDeactivationOpen(true);
+                        }}
+                        disabled={accountDeactivation.isPending}
+                        data-testid="settings-deactivation-button"
+                      >
+                        Request deactivation
+                      </Button>
+                      {deactivationMessage && (
+                        <p
+                          className={cn(
+                            "text-sm",
+                            accountDeactivation.isError ? "text-destructive" : "text-success",
+                          )}
+                          role={accountDeactivation.isError ? "alert" : "status"}
+                          data-testid="settings-deactivation-message"
+                        >
+                          {deactivationMessage}
+                        </p>
+                      )}
+                    </div>
                   </CardContent>
                 </Card>
               </div>
@@ -377,6 +512,58 @@ export default function Settings() {
           )}
         </div>
       </div>
+      <Dialog
+        open={deactivationOpen}
+        onOpenChange={(open) => {
+          if (!accountDeactivation.isPending) setDeactivationOpen(open);
+        }}
+      >
+        <DialogContent data-testid="settings-deactivation-dialog">
+          <DialogHeader>
+            <DialogTitle>Request account deactivation?</DialogTitle>
+            <DialogDescription>
+              We will review this request before taking action. Your current session remains active,
+              and this request does not delete or change business, workspace, team, connection,
+              campaign, or review data.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            <label htmlFor="deactivation-confirmation" className="text-sm font-medium text-foreground">
+              Type DEACTIVATE to confirm
+            </label>
+            <Input
+              id="deactivation-confirmation"
+              value={deactivationConfirmation}
+              onChange={(event) => setDeactivationConfirmation(event.target.value)}
+              placeholder="DEACTIVATE"
+              autoComplete="off"
+              data-testid="input-deactivation-confirmation"
+            />
+          </div>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setDeactivationOpen(false)}
+              disabled={accountDeactivation.isPending}
+              data-testid="button-cancel-deactivation"
+            >
+              Keep account
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={handleDeactivationRequest}
+              disabled={
+                deactivationConfirmation !== "DEACTIVATE" || accountDeactivation.isPending
+              }
+              data-testid="button-confirm-deactivation"
+            >
+              {accountDeactivation.isPending ? "Submitting..." : "Submit request"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </AppLayout>
   );
 }

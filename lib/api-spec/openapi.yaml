@@ -384,6 +384,76 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  /v1/auth/data-export:
+    post:
+      operationId: requestAccountDataExport
+      tags: [auth]
+      summary: Request an account-scoped data export
+      description: >
+        Returns a JSON export of the authenticated user's 5-Star.AI account
+        record. Business, workspace, team, connection, campaign, and review
+        data are intentionally excluded from this account-only export.
+      responses:
+        "200":
+          description: Account data export
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccountDataExportResponse"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "429":
+          description: Export requests are temporarily rate limited
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /v1/auth/deactivation-request:
+    post:
+      operationId: requestAccountDeactivation
+      tags: [auth]
+      summary: Request account deactivation
+      description: >
+        Creates a pending account deactivation request after explicit
+        confirmation. This endpoint does not delete the Clerk identity or
+        alter business/workspace data.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AccountDeactivationRequestBody"
+      responses:
+        "202":
+          description: Deactivation request accepted for review
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccountDeactivationRequestResponse"
+        "400":
+          description: Explicit confirmation is required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "429":
+          description: Deactivation requests are temporarily rate limited
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /v1/admin/overview:
     get:
       operationId: getAdminOverview
@@ -2600,6 +2670,90 @@ components:
         - status
         - lastLoginAt
         - createdAt
+
+    AccountExportProfile:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+        role:
+          $ref: "#/components/schemas/UserRole"
+        status:
+          $ref: "#/components/schemas/UserStatus"
+        lastLoginAt:
+          type: ["string", "null"]
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - name
+        - email
+        - role
+        - status
+        - lastLoginAt
+        - createdAt
+
+    AccountDataExportResponse:
+      type: object
+      properties:
+        exportId:
+          type: string
+          format: uuid
+        requestedAt:
+          type: string
+          format: date-time
+        scope:
+          type: string
+          enum: [ACCOUNT]
+        account:
+          $ref: "#/components/schemas/AccountExportProfile"
+        excludedData:
+          type: array
+          items:
+            type: string
+      required:
+        - exportId
+        - requestedAt
+        - scope
+        - account
+        - excludedData
+
+    AccountDeactivationRequestBody:
+      type: object
+      properties:
+        confirmation:
+          type: string
+          enum: [DEACTIVATE]
+      required:
+        - confirmation
+
+    AccountDeactivationRequestResponse:
+      type: object
+      properties:
+        requestId:
+          type: string
+          format: uuid
+        requestedAt:
+          type: string
+          format: date-time
+        status:
+          type: string
+          enum: [PENDING_REVIEW]
+        message:
+          type: string
+      required:
+        - requestId
+        - requestedAt
+        - status
+        - message
 
     SessionInfo:
       type: object

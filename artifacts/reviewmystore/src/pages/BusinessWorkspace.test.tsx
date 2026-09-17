@@ -78,12 +78,24 @@ const mocks = vi.hoisted(() => {
     mutateAsync: vi.fn(() => Promise.resolve()),
     isPending: false,
   };
+  const accountDataExportMutation = {
+    mutate: vi.fn(),
+    isPending: false,
+    isError: false,
+  };
+  const accountDeactivationMutation = {
+    mutate: vi.fn(),
+    isPending: false,
+    isError: false,
+  };
 
   return {
     businesses,
     campaigns,
     keywords,
     keywordMutation,
+    accountDataExportMutation,
+    accountDeactivationMutation,
     navigate: vi.fn(),
     mutation: () => ({ mutate: vi.fn(), isPending: false }),
     qrError: null as Error | null,
@@ -141,6 +153,8 @@ vi.mock("@workspace/api-client-react", () => ({
     isError: false,
     refetch: vi.fn(),
   }),
+  useRequestAccountDataExport: () => mocks.accountDataExportMutation,
+  useRequestAccountDeactivation: () => mocks.accountDeactivationMutation,
   useListBusinesses: () => ({ data: { businesses: mocks.businesses }, isLoading: false }),
   useListCampaigns: () => ({ data: { campaigns: mocks.campaigns }, isLoading: false }),
   useListCampaignTemplates: () => ({ data: { templates: [] }, isLoading: false }),
@@ -388,5 +402,34 @@ describe("authenticated business workspace", () => {
     expect(within(sidebar).getAllByRole("link")).toHaveLength(3);
     expect(within(sidebar).queryByRole("link", { name: /Campaigns|Review Inbox|Feedback/ })).not.toBeInTheDocument();
     expect(screen.queryByText("Location workspace")).not.toBeInTheDocument();
+  });
+
+  it("keeps privacy actions account-scoped and requires explicit deactivation confirmation", async () => {
+    const user = userEvent.setup();
+    mocks.accountDataExportMutation.mutate.mockClear();
+    mocks.accountDeactivationMutation.mutate.mockClear();
+    render(<Settings />);
+
+    await user.click(screen.getByTestId("settings-export-button"));
+    expect(mocks.accountDataExportMutation.mutate).toHaveBeenCalledWith(
+      undefined,
+      expect.any(Object),
+    );
+
+    await user.click(screen.getByTestId("settings-deactivation-button"));
+    expect(screen.getByRole("dialog")).toHaveTextContent(
+      "does not delete or change business, workspace, team, connection, campaign, or review data",
+    );
+    const confirmButton = screen.getByTestId("button-confirm-deactivation");
+    expect(confirmButton).toBeDisabled();
+
+    await user.type(screen.getByTestId("input-deactivation-confirmation"), "DEACTIVATE");
+    expect(confirmButton).toBeEnabled();
+    await user.click(confirmButton);
+
+    expect(mocks.accountDeactivationMutation.mutate).toHaveBeenCalledWith(
+      { data: { confirmation: "DEACTIVATE" } },
+      expect.any(Object),
+    );
   });
 });

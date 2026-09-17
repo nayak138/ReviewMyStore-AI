@@ -350,6 +350,43 @@ export const GetCurrentUserResponse = zod.object({
 
 
 /**
+ * Returns a JSON export of the authenticated user's 5-Star.AI account record. Business, workspace, team, connection, campaign, and review data are intentionally excluded from this account-only export.
+ * @summary Request an account-scoped data export
+ */
+export const RequestAccountDataExportResponse = zod.object({
+  "exportId": zod.uuid(),
+  "requestedAt": zod.coerce.date(),
+  "scope": zod.enum(['ACCOUNT']),
+  "account": zod.object({
+  "id": zod.uuid(),
+  "name": zod.string(),
+  "email": zod.email(),
+  "role": zod.enum(['SUPER_ADMIN', 'OWNER']),
+  "status": zod.enum(['ACTIVE', 'SUSPENDED']),
+  "lastLoginAt": zod.coerce.date().nullable(),
+  "createdAt": zod.coerce.date()
+}),
+  "excludedData": zod.array(zod.string())
+})
+
+
+/**
+ * Creates a pending account deactivation request after explicit confirmation. This endpoint does not delete the Clerk identity or alter business/workspace data.
+ * @summary Request account deactivation
+ */
+export const RequestAccountDeactivationBody = zod.object({
+  "confirmation": zod.enum(['DEACTIVATE'])
+})
+
+export const RequestAccountDeactivationResponse = zod.object({
+  "requestId": zod.uuid(),
+  "requestedAt": zod.coerce.date(),
+  "status": zod.enum(['PENDING_REVIEW']),
+  "message": zod.string()
+})
+
+
+/**
  * Lightweight platform snapshot used to verify Super Admin RBAC. Only accessible to users with role SUPER_ADMIN.
  * @summary Platform-wide counts (Super Admin only)
  */

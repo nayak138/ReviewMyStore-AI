@@ -6,6 +6,13 @@
  * OpenAPI spec version: 0.1.0
  */
 
+export * from './accountDataExportResponse';
+export * from './accountDataExportResponseScope';
+export * from './accountDeactivationRequestBody';
+export * from './accountDeactivationRequestBodyConfirmation';
+export * from './accountDeactivationRequestResponse';
+export * from './accountDeactivationRequestResponseStatus';
+export * from './accountExportProfile';
 export * from './adminAgency';
 export * from './adminAgencyCreateInput';
 export * from './adminAgencyCreateResult';
