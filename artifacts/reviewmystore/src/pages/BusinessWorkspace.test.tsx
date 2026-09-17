@@ -44,10 +44,49 @@ const mocks = vi.hoisted(() => {
       archivedAt: null,
     },
   ];
+  const keywords = [
+    {
+      id: "keyword-1",
+      campaignId: "campaign-1",
+      label: "Great Selection",
+      category: "PRODUCT_SERVICE",
+      enabled: true,
+      sortOrder: 0,
+      createdAt: new Date("2026-01-01"),
+      updatedAt: new Date("2026-01-01"),
+    },
+    {
+      id: "keyword-2",
+      campaignId: "campaign-1",
+      label: "Good Prices",
+      category: "PRODUCT_SERVICE",
+      enabled: true,
+      sortOrder: 1,
+      createdAt: new Date("2026-01-02"),
+      updatedAt: new Date("2026-01-02"),
+    },
+    {
+      id: "keyword-3",
+      campaignId: "campaign-1",
+      label: "Helpful Staff",
+      category: "EXPERIENCE",
+      enabled: true,
+      sortOrder: 0,
+      createdAt: new Date("2026-01-03"),
+      updatedAt: new Date("2026-01-03"),
+    },
+  ];
+  const keywordMutation = {
+    mutate: vi.fn(),
+    mutateAsync: vi.fn(() => Promise.resolve()),
+    isPending: false,
+  };
 
   return {
     businesses,
     campaigns,
+    keywords,
+    keywordMutation,
     navigate: vi.fn(),
     mutation: () => ({ mutate: vi.fn(), isPending: false }),
     qrError: null as Error | null,
@@ -87,7 +126,7 @@ vi.mock("@workspace/api-client-react", () => ({
     error: mocks.qrError,
     refetch: mocks.qrRefetch,
   }),
-  useListKeywords: () => ({ data: { keywords: [] }, isLoading: false }),
+   useListKeywords: () => ({ data: { keywords: mocks.keywords }, isLoading: false }),
   useGetPlaceDetails: () => ({ data: undefined, isLoading: false }),
   useGetReviewDashboard: () => ({ data: mocks.reviewDashboard, isLoading: false }),
   useStartReviewProviderConnection: mocks.mutation,
@@ -114,7 +153,7 @@ vi.mock("@workspace/api-client-react", () => ({
   useRestoreCampaign: mocks.mutation,
   useSetCampaignStatus: mocks.mutation,
   useCreateKeyword: mocks.mutation,
-  useUpdateKeyword: mocks.mutation,
+  useUpdateKeyword: () => mocks.keywordMutation,
   useDeleteKeyword: mocks.mutation,
   getListBusinessesQueryKey: (params: unknown) => ["businesses", params],
   getGetPlaceDetailsQueryKey: (id: string) => ["place-details", id],
@@ -126,6 +165,7 @@ vi.mock("@workspace/api-client-react", () => ({
   getGetReviewProviderLocationsQueryKey: () => ["review-provider-locations"],
   getListManagedReviewsQueryKey: (params: unknown) => ["managed-reviews", params],
   getListPrivateFeedbackQueryKey: (params: unknown) => ["private-feedback", params],
+  KeywordCategory: { PRODUCT_SERVICE: "PRODUCT_SERVICE", EXPERIENCE: "EXPERIENCE" },
   ReviewResponseStatus: { PENDING: "PENDING", DRAFT: "DRAFT", PUBLISHED: "PUBLISHED" },
   PrivateFeedbackStatus: { NEW: "NEW", VIEWED: "VIEWED", RESOLVED: "RESOLVED" },
 }));
@@ -135,6 +175,8 @@ afterEach(() => {
   mocks.navigate.mockClear();
   mocks.qrError = null;
   mocks.qrRefetch.mockReset();
+  mocks.keywordMutation.mutate.mockReset();
+  mocks.keywordMutation.mutateAsync.mockClear();
   vi.unstubAllGlobals();
   window.history.replaceState({}, "", "/");
 });
@@ -237,6 +279,24 @@ describe("authenticated business workspace", () => {
       "href",
       expect.stringContaining("mailto:hello@5-star.ai"),
     );
+  });
+
+  it("reorders keywords within their category and persists each new position", async () => {
+    const user = userEvent.setup();
+    window.history.pushState({}, "", "/campaigns?businessId=business-1");
+    renderWithQueryClient(<Campaigns />);
+
+    expect(await screen.findByText("Summer launch")).toBeInTheDocument();
+    await user.click(screen.getAllByRole("button", { name: "Keywords" })[0]);
+
+    const dialog = await screen.findByRole("dialog", { name: "Keywords — Summer launch" });
+    await user.click(within(dialog).getByRole("button", { name: "Move Good Prices up" }));
+
+    await waitFor(() => expect(mocks.keywordMutation.mutateAsync).toHaveBeenCalledTimes(2));
+    expect(mocks.keywordMutation.mutateAsync.mock.calls.map(([input]) => input)).toEqual([
+      { id: "keyword-2", data: { sortOrder: 0 } },
+      { id: "keyword-1", data: { sortOrder: 1 } },
+    ]);
   });
 
   it("shows a QR download error and lets the owner retry inside the dialog", async () => {

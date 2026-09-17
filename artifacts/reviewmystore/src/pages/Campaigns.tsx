@@ -20,6 +20,8 @@ import {
   Sparkles,
   Loader2,
   KeyRound,
+  ArrowDown,
+  ArrowUp,
   QrCode,
   ShoppingBag,
   FileImage,
@@ -853,6 +855,8 @@ function KeywordManagerDialog({ campaign, onClose }: { campaign: Campaign; onClo
 
   const { data, isLoading } = useListKeywords(campaign.id, { query: { queryKey } });
   const keywords = data?.keywords ?? [];
+  const [orderedKeywords, setOrderedKeywords] = useState<Keyword[]>([]);
+  const [reorderingCategory, setReorderingCategory] = useState<KeywordCategory | null>(null);
 
   const [newLabel, setNewLabel] = useState<Record<KeywordCategory, string>>({
     PRODUCT_SERVICE: "",
@@ -860,6 +864,12 @@ function KeywordManagerDialog({ campaign, onClose }: { campaign: Campaign; onClo
   });
   const [editingKeyword, setEditingKeyword] = useState<Keyword | null>(null);
   const [editingLabel, setEditingLabel] = useState("");
+
+  useEffect(() => {
+    if (reorderingCategory === null) {
+      setOrderedKeywords(keywords);
+    }
+  }, [data, reorderingCategory]);
 
   const invalidate = () => queryClient.invalidateQueries({ queryKey });
 
@@ -890,20 +900,84 @@ function KeywordManagerDialog({ campaign, onClose }: { campaign: Campaign; onClo
     setNewLabel((prev) => ({ ...prev, [category]: "" }));
   };
 
+  const handleMove = async (category: KeywordCategory, index: number, direction: -1 | 1) => {
+    if (reorderingCategory !== null) return;
+
+    const categoryItems = orderedKeywords.filter((keyword) => keyword.category === category);
+    const targetIndex = index + direction;
+    if (targetIndex < 0 || targetIndex >= categoryItems.length) return;
+
+    const reorderedItems = [...categoryItems];
+    [reorderedItems[index], reorderedItems[targetIndex]] = [reorderedItems[targetIndex], reorderedItems[index]];
+    const sortOrderById = new Map(reorderedItems.map((keyword, sortOrder) => [keyword.id, sortOrder]));
+
+    setOrderedKeywords((current) =>
+      current.map((keyword) => {
+        const sortOrder = sortOrderById.get(keyword.id);
+        return sortOrder === undefined ? keyword : { ...keyword, sortOrder };
+      }),
+    );
+    setReorderingCategory(category);
+
+    try {
+      await Promise.all(
+        reorderedItems.map((keyword, sortOrder) =>
+          updateKeyword.mutateAsync({ id: keyword.id, data: { sortOrder } }),
+        ),
+      );
+      await queryClient.invalidateQueries({ queryKey });
+    } catch (error) {
+      toast({
+        title: "Could not reorder keywords",
+        description: error instanceof Error ? error.message : "Please try again.",
+        variant: "destructive",
+      });
+      await queryClient.invalidateQueries({ queryKey });
+    } finally {
+      setReorderingCategory(null);
+    }
+  };
+
   const renderGroup = (category: KeywordCategory, title: string) => {
-    const items = keywords.filter((k) => k.category === category);
+    const items = orderedKeywords.filter((keyword) => keyword.category === category);
     return (
       <div className="space-y-3">
         <h4 className="text-sm font-semibold text-foreground">{title}</h4>
         <div className="space-y-2">
           {items.length === 0 && <p className="text-xs text-muted-foreground">No keywords yet.</p>}
-          {items.map((kw) => (
+          {items.map((kw, index) => (
             <div key={kw.id} className="flex items-center gap-2 rounded-md border border-border bg-card px-3 py-2">
               <Switch
                 checked={kw.enabled}
                 onCheckedChange={(checked) => updateKeyword.mutate({ id: kw.id, data: { enabled: checked } })}
               />
               <span className={cn("text-sm flex-1 truncate", !kw.enabled && "text-muted-foreground line-through")}>{kw.label}</span>
+              <div className="flex shrink-0 items-center gap-0.5">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7"
+                  aria-label={`Move ${kw.label} up`}
+                  title="Move up"
+                  disabled={reorderingCategory !== null || index === 0}
+                  onClick={() => void handleMove(category, index, -1)}
+                >
+                  <ArrowUp className="h-3.5 w-3.5" />
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7"
+                  aria-label={`Move ${kw.label} down`}
+                  title="Move down"
+                  disabled={reorderingCategory !== null || index === items.length - 1}
+                  onClick={() => void handleMove(category, index, 1)}
+                >
+                  <ArrowDown className="h-3.5 w-3.5" />
+                </Button>
+              </div>
               <Button
                 type="button"
                 variant="ghost"
