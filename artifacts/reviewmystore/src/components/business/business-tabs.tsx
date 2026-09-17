@@ -1,6 +1,7 @@
 import { Megaphone, MessageCircleWarning, MessageSquare, Store } from "lucide-react";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export type BusinessWorkspaceTab = "campaigns" | "reviews" | "feedback";
 
@@ -19,29 +20,56 @@ export function BusinessTabs({
   businessName: string;
   active: BusinessWorkspaceTab;
 }) {
+  const [, setLocation] = useLocation();
   const query = `?businessId=${encodeURIComponent(businessId)}&businessName=${encodeURIComponent(businessName)}`;
 
   return (
-    <nav
-      className="mx-auto grid w-full max-w-4xl gap-1 rounded-xl border border-border bg-card p-1 shadow-sm sm:grid-cols-3"
-      aria-label={`${businessName} workspace`}
-    >
-      {tabs.map(({ id, label, icon: Icon, href }) => (
-        <Link
-          key={id}
-          href={`${href}${query}`}
-          className={cn(
-            "flex min-h-10 items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
-            active === id
-              ? "bg-primary text-primary-foreground shadow-sm"
-              : "text-muted-foreground hover:bg-secondary hover:text-foreground",
-          )}
-          aria-current={active === id ? "page" : undefined}
+    <>
+      <nav
+        className="mx-auto hidden w-full max-w-4xl gap-1 rounded-xl border border-border bg-card p-1 shadow-sm sm:grid sm:grid-cols-3"
+        aria-label={`${businessName} workspace`}
+      >
+        {tabs.map(({ id, label, icon: Icon, href }) => (
+          <Link
+            key={id}
+            href={`${href}${query}`}
+            className={cn(
+              "flex min-h-10 items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+              active === id
+                ? "bg-primary text-primary-foreground shadow-sm"
+                : "text-muted-foreground hover:bg-secondary hover:text-foreground",
+            )}
+            aria-current={active === id ? "page" : undefined}
+          >
+            <Icon className="h-4 w-4" />
+            {label}
+          </Link>
+        ))}
+      </nav>
+
+      <div className="mx-auto w-full max-w-4xl rounded-xl border border-border bg-card p-1 shadow-sm sm:hidden">
+        <Select
+          value={active}
+          onValueChange={(value) => {
+            const tab = tabs.find((candidate) => candidate.id === value);
+            if (tab) setLocation(`${tab.href}${query}`);
+          }}
         >
-          <Icon className="h-4 w-4" />
-          {label}
-        </Link>
-      ))}
-    </nav>
+          <SelectTrigger className="h-10 w-full border-0 bg-primary text-primary-foreground shadow-sm focus:ring-0" aria-label={`${businessName} workspace`}>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {tabs.map(({ id, label, icon: Icon }) => (
+              <SelectItem key={id} value={id}>
+                <span className="flex items-center gap-2">
+                  <Icon className="h-4 w-4" />
+                  {label}
+                </span>
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+    </>
   );
 }

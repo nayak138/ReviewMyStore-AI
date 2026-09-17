@@ -123,10 +123,14 @@ export function AppLayout({ children, title, businessName }: AppLayoutProps) {
         <header className="h-16 shrink-0 flex items-center justify-between pl-14 pr-4 md:px-8 border-b border-border bg-card/50 backdrop-blur-md sticky top-0 z-10">
           <div className="flex items-center gap-3">
             {businessName ? (
-              <>
+              <Link
+                href="/businesses"
+                aria-label={`Open ${businessName} businesses page`}
+                className="flex min-w-0 items-center gap-3 rounded-md px-1 py-1 -ml-1 transition-colors hover:bg-secondary/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
                 <Store className="h-5 w-5 text-primary" aria-hidden="true" />
-                <h1 className="text-lg font-semibold text-foreground">{businessName}</h1>
-              </>
+                <h1 className="truncate text-lg font-semibold text-foreground">{businessName}</h1>
+              </Link>
             ) : (
               <h1 className="text-lg font-semibold text-foreground">{title}</h1>
             )}

@@ -202,6 +202,7 @@ describe("authenticated business workspace", () => {
   it("keeps the selected business in every workspace tab", () => {
     render(<BusinessTabs businessId="business-1" businessName="Northstar Coffee" active="campaigns" />);
 
+    expect(screen.getByRole("combobox", { name: "Northstar Coffee workspace" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /Campaigns/ })).toHaveAttribute(
       "href",
       "/campaigns?businessId=business-1&businessName=Northstar%20Coffee",
@@ -215,6 +216,16 @@ describe("authenticated business workspace", () => {
       "/feedback?businessId=business-1&businessName=Northstar%20Coffee",
     );
     expect(screen.queryByText("Northstar Coffee")).not.toBeInTheDocument();
+  });
+
+  it("makes the selected business header open the businesses page", async () => {
+    window.history.pushState({}, "", "/campaigns?businessId=business-1");
+    renderWithQueryClient(<Campaigns />);
+
+    expect(await screen.findByRole("link", { name: "Open Northstar Coffee businesses page" })).toHaveAttribute(
+      "href",
+      "/businesses",
+    );
   });
 
   it("keeps the selected business after refreshing each tab and navigating back and forward", async () => {
