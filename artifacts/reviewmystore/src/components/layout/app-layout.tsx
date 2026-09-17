@@ -120,7 +120,7 @@ export function AppLayout({ children, title, businessName }: AppLayoutProps) {
 
       {/* Main Content */}
       <main className="flex-1 flex flex-col min-w-0 h-[100dvh] overflow-hidden bg-background">
-        <header className="h-16 shrink-0 flex items-center justify-between px-4 md:px-8 border-b border-border bg-card/50 backdrop-blur-md sticky top-0 z-10">
+        <header className="h-16 shrink-0 flex items-center justify-between pl-14 pr-4 md:px-8 border-b border-border bg-card/50 backdrop-blur-md sticky top-0 z-10">
           <div className="flex items-center gap-3">
             {businessName ? (
               <>

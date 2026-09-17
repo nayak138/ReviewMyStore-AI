@@ -904,35 +904,40 @@ export default function Reviews() {
             </div>
           )}
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-3 gap-2 md:gap-4">
           <Card className="shadow-sm border-border">
-            <CardContent className="p-6">
-              <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground mb-2">
-                <Store className="w-4 h-4" /> Total Reviews
+            <CardContent className="p-3 md:p-6">
+              <div className="flex items-center gap-1 text-[10px] font-medium text-muted-foreground mb-2 whitespace-nowrap md:gap-2 md:text-sm">
+                <Store className="w-3.5 h-3.5 shrink-0 md:w-4 md:h-4" />
+                <span className="md:hidden">Total</span>
+                <span className="hidden md:inline">Total Reviews</span>
               </div>
-              <div className="text-3xl font-bold text-foreground">{dashboard?.summary.totalReviews || 0}</div>
+              <div className="text-2xl font-bold text-foreground md:text-3xl">{dashboard?.summary.totalReviews || 0}</div>
             </CardContent>
           </Card>
           <Card className="shadow-sm border-amber-200 dark:border-amber-900/50 bg-amber-50/50 dark:bg-amber-900/10">
-            <CardContent className="p-6">
-              <div className="flex items-center gap-2 text-sm font-medium text-amber-700 dark:text-amber-500 mb-2">
-                <AlertCircle className="w-4 h-4" /> Needs Reply
+            <CardContent className="p-3 md:p-6">
+              <div className="flex items-center gap-1 text-[10px] font-medium text-amber-700 dark:text-amber-500 mb-2 whitespace-nowrap md:gap-2 md:text-sm">
+                <AlertCircle className="w-3.5 h-3.5 shrink-0 md:w-4 md:h-4" />
+                <span className="md:hidden">Pending</span>
+                <span className="hidden md:inline">Needs Reply</span>
               </div>
-              <div className="text-3xl font-bold text-amber-700 dark:text-amber-500">{dashboard?.summary.needsReply || 0}</div>
+              <div className="text-2xl font-bold text-amber-700 dark:text-amber-500 md:text-3xl">{dashboard?.summary.needsReply || 0}</div>
             </CardContent>
           </Card>
           <Card className="shadow-sm border-emerald-200 dark:border-emerald-900/50 bg-emerald-50/30 dark:bg-emerald-900/10">
-            <CardContent className="p-6">
-              <div className="flex items-center gap-2 text-sm font-medium text-emerald-700 dark:text-emerald-500 mb-2">
-                <MessageSquare className="w-4 h-4" /> Replied
+            <CardContent className="p-3 md:p-6">
+              <div className="flex items-center gap-1 text-[10px] font-medium text-emerald-700 dark:text-emerald-500 mb-2 whitespace-nowrap md:gap-2 md:text-sm">
+                <MessageSquare className="w-3.5 h-3.5 shrink-0 md:w-4 md:h-4" />
+                <span>Replied</span>
               </div>
-              <div className="text-3xl font-bold text-emerald-700 dark:text-emerald-500">{dashboard?.summary.replied || 0}</div>
+              <div className="text-2xl font-bold text-emerald-700 dark:text-emerald-500 md:text-3xl">{dashboard?.summary.replied || 0}</div>
             </CardContent>
           </Card>
         </div>
 
-        <div className="bg-card p-4 rounded-xl border border-border shadow-sm flex flex-col md:flex-row gap-3">
-          <div className="relative flex-1">
+        <div className="bg-card p-4 rounded-xl border border-border shadow-sm flex flex-col gap-3 md:flex-row">
+          <div className="relative w-full md:flex-1">
             <Search className="w-4 h-4 absolute left-3 top-3 text-muted-foreground" />
             <Input 
               placeholder="Search reviews..." 
@@ -941,30 +946,32 @@ export default function Reviews() {
               onChange={(e) => setSearch(e.target.value)}
             />
           </div>
-          <Select value={rating} onValueChange={setRating}>
-            <SelectTrigger className="w-full md:w-[140px] bg-background h-10">
-              <SelectValue placeholder="Any Rating" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Any Rating</SelectItem>
-              <SelectItem value="5">5 Stars</SelectItem>
-              <SelectItem value="4">4 Stars</SelectItem>
-              <SelectItem value="3">3 Stars</SelectItem>
-              <SelectItem value="2">2 Stars</SelectItem>
-              <SelectItem value="1">1 Star</SelectItem>
-            </SelectContent>
-          </Select>
-          <Select value={responseStatus} onValueChange={setResponseStatus}>
-            <SelectTrigger className="w-full md:w-[160px] bg-background h-10">
-              <SelectValue placeholder="Any Status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Any Status</SelectItem>
-              <SelectItem value="PENDING">Needs Reply</SelectItem>
-              <SelectItem value="DRAFT">Has Draft</SelectItem>
-              <SelectItem value="PUBLISHED">Replied</SelectItem>
-            </SelectContent>
-          </Select>
+          <div className="grid w-full grid-cols-2 gap-2 md:flex md:w-auto">
+            <Select value={rating} onValueChange={setRating}>
+              <SelectTrigger className="w-full bg-background h-10 md:w-[140px]">
+                <SelectValue placeholder="Any Rating" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Any Rating</SelectItem>
+                <SelectItem value="5">5 Stars</SelectItem>
+                <SelectItem value="4">4 Stars</SelectItem>
+                <SelectItem value="3">3 Stars</SelectItem>
+                <SelectItem value="2">2 Stars</SelectItem>
+                <SelectItem value="1">1 Star</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={responseStatus} onValueChange={setResponseStatus}>
+              <SelectTrigger className="w-full bg-background h-10 md:w-[160px]">
+                <SelectValue placeholder="Any Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Any Status</SelectItem>
+                <SelectItem value="PENDING">Needs Reply</SelectItem>
+                <SelectItem value="DRAFT">Has Draft</SelectItem>
+                <SelectItem value="PUBLISHED">Replied</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
         <div className="space-y-4">
