@@ -96,9 +96,11 @@ export default function Feedback() {
   const workspaceBusinessId = new URLSearchParams(window.location.search).get("businessId");
   const { data: businessData } = useListBusinesses(
     { includeArchived: false },
-    { query: { enabled: !!isSignedIn && !!workspaceBusinessId, queryKey: getListBusinessesQueryKey({ includeArchived: false }) } },
+    { query: { enabled: !!isSignedIn, queryKey: getListBusinessesQueryKey({ includeArchived: false }) } },
   );
-  const workspaceBusiness = businessData?.businesses.find((business) => business.id === workspaceBusinessId);
+  const workspaceBusiness =
+    businessData?.businesses.find((business) => business.id === workspaceBusinessId) ??
+    (!workspaceBusinessId && businessData?.businesses.length === 1 ? businessData.businesses[0] : undefined);
 
   const listParams = statusFilter === "all" ? {} : { status: statusFilter as PrivateFeedbackStatus };
   const { data, isLoading } = useListPrivateFeedback(listParams, {

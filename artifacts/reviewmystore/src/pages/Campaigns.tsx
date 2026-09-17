@@ -327,17 +327,15 @@ export default function Campaigns() {
   return (
     <AppLayout title="Campaigns">
       <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-6">
-        {/* Header */}
+        {workspaceBusinessId && selectedBusiness && (
+          <BusinessTabs businessId={selectedBusiness.id} businessName={selectedBusiness.name} active="campaigns" />
+        )}
+
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="w-full sm:max-w-xs">
-            {workspaceBusinessId && selectedBusiness ? (
-              <div>
-                <p className="text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground">Campaigns</p>
-                <p className="mt-1 text-lg font-semibold text-foreground">{selectedBusiness.name}</p>
-              </div>
-            ) : isLoadingBusinesses ? (
+            {!workspaceBusinessId && isLoadingBusinesses ? (
               <Skeleton className="h-9 w-full" />
-            ) : businesses.length === 0 ? null : (
+            ) : !workspaceBusinessId && businesses.length > 0 ? (
               <Select value={selectedBusinessId ?? ""} onValueChange={setSelectedBusinessId}>
                 <SelectTrigger className="bg-card shadow-sm">
                   <SelectValue placeholder="Select a business" />
@@ -350,17 +348,13 @@ export default function Campaigns() {
                   ))}
                 </SelectContent>
               </Select>
-            )}
+            ) : null}
           </div>
           <Button onClick={handleOpenCreate} disabled={!selectedBusinessId} className="shrink-0 shadow-sm">
             <Plus className="w-4 h-4 mr-2" />
             New Campaign
           </Button>
         </div>
-
-        {workspaceBusinessId && selectedBusiness && (
-          <BusinessTabs businessId={selectedBusiness.id} businessName={selectedBusiness.name} active="campaigns" />
-        )}
 
         {!isLoadingBusinesses && businesses.length === 0 && (
           <div className="py-16 flex flex-col items-center justify-center text-center border-2 border-dashed border-border rounded-xl">
