@@ -6,32 +6,32 @@ import { BrandIcon } from "@/components/brand-logo";
 
 export function HeroSection() {
   return (
-    <section className="relative overflow-hidden border-b border-border bg-background">
+    <section className="relative overflow-hidden border-b border-zinc-200 bg-slate-50 px-4 py-12 dark:border-zinc-800 dark:bg-slate-950 sm:py-16">
       <div className="editorial-grid pointer-events-none absolute inset-0 opacity-40 [mask-image:linear-gradient(to_bottom,black,transparent_72%)]" aria-hidden="true" />
       <div className="pointer-events-none absolute -right-40 top-20 h-[32rem] w-[32rem] rounded-full bg-primary/10 blur-3xl" aria-hidden="true" />
-      <div className="relative mx-auto grid min-w-0 max-w-[80rem] gap-16 px-5 pb-20 pt-16 sm:px-8 md:pt-24 lg:grid-cols-[0.93fr_1.07fr] lg:items-center lg:gap-14 lg:px-10 lg:pb-28 lg:pt-24">
+      <div className="relative mx-auto grid min-w-0 w-full max-w-5xl gap-10 md:grid-cols-[0.9fr_1.1fr] md:items-center md:gap-12">
         <div className="min-w-0 max-w-2xl">
-          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.55 }} className="mb-7 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.16em] text-primary">
+          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.55 }} className="mb-3 inline-flex items-center gap-1.5 rounded-full border border-indigo-200/80 bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700 dark:border-indigo-900 dark:bg-indigo-950/60 dark:text-indigo-300">
             <span className="h-1.5 w-1.5 rounded-full bg-primary" /> 7-day free trial · white-glove setup
           </motion.div>
-          <motion.h1 initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08, duration: 0.65 }} className="max-w-xl font-display text-[3.7rem] font-semibold leading-[0.94] tracking-[-0.06em] text-foreground sm:text-[5rem] lg:text-[5.75rem]">
+          <motion.h1 initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08, duration: 0.65 }} className="max-w-xl text-3xl font-bold leading-tight tracking-tight text-zinc-900 dark:text-zinc-100 sm:text-5xl">
             Your reputation should feel <span className="relative inline-block text-primary"><span className="relative z-10">looked after.</span><span className="absolute bottom-1 left-0 right-0 -z-0 h-3 -rotate-2 bg-accent/45" /></span>
           </motion.h1>
-          <motion.p initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.16, duration: 0.6 }} className="mt-7 max-w-lg text-lg leading-relaxed text-muted-foreground sm:text-xl">
+          <motion.p initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.16, duration: 0.6 }} className="mt-4 max-w-xs text-sm leading-relaxed text-zinc-600 dark:text-zinc-400 sm:max-w-lg sm:text-base">
             5-Star.AI is the reputation partner behind the scenes — helping local businesses and agencies turn great customer moments into stronger Google presence.
           </motion.p>
-          <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.24, duration: 0.6 }} className="mt-9 flex flex-col gap-4 sm:flex-row sm:items-center">
+          <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.24, duration: 0.6 }} className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center">
             <BookDemoDialog>
-               <Button data-testid="button-hero-book-demo" className="h-12 w-full rounded-full bg-foreground px-5 text-sm font-semibold text-background shadow-[0_14px_26px_-17px_hsl(var(--foreground)/0.75)] transition-transform hover:-translate-y-0.5 hover:bg-foreground/90 sm:w-auto sm:px-6 sm:text-base">
+               <Button data-testid="button-hero-book-demo" className="min-h-[44px] w-full rounded-xl bg-indigo-600 px-5 text-sm font-semibold text-white shadow-md shadow-indigo-200 transition-all duration-150 hover:bg-indigo-700 active:scale-95 sm:w-auto sm:px-6">
                 See what a better system looks like <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </BookDemoDialog>
-            <a href="#how-it-works" onClick={(e) => { e.preventDefault(); document.getElementById("how-it-works")?.scrollIntoView({ behavior: "smooth" }); }} className="inline-flex items-center justify-center gap-2 px-2 text-sm font-semibold text-foreground/70 transition-colors hover:text-primary">
+             <a href="#how-it-works" onClick={(e) => { e.preventDefault(); document.getElementById("how-it-works")?.scrollIntoView({ behavior: "smooth" }); }} className="inline-flex min-h-[44px] items-center justify-center gap-2 px-2 text-sm font-semibold text-zinc-600 transition-all duration-150 hover:text-indigo-600 active:scale-95 dark:text-zinc-400 dark:hover:text-indigo-300">
               How it works <span aria-hidden="true">↓</span>
             </a>
           </motion.div>
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.42, duration: 0.6 }} className="mt-8 flex flex-wrap gap-x-5 gap-y-2 text-xs font-medium text-muted-foreground">
-            {["No credit card", "Built for real teams", "Cancel anytime"].map((item) => <span key={item} className="flex items-center gap-1.5"><Check className="h-3.5 w-3.5 text-success" />{item}</span>)}
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.42, duration: 0.6 }} className="mt-6 flex flex-wrap gap-x-5 gap-y-2 text-xs font-medium text-zinc-600 dark:text-zinc-400">
+             {["No credit card", "Built for real teams", "Cancel anytime"].map((item) => <span key={item} className="flex items-center gap-1.5"><Check className="h-3.5 w-3.5 text-emerald-500" />{item}</span>)}
           </motion.div>
         </div>
         <HeroDeskVisual />
