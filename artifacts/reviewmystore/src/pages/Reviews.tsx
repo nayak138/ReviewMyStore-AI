@@ -754,11 +754,13 @@ export default function Reviews() {
   if (dashboard?.connection.status === "DISCONNECTED" || dashboard?.connection.status === "ERROR") {
     return (
         <AppLayout title="Review Inbox" businessName={workspaceBusiness?.name}>
-        <div className="p-4 md:p-8 max-w-5xl mx-auto mt-12 md:mt-24 text-center space-y-6 animate-in fade-in duration-700">
-           {workspaceTabs}
+        <div className="p-4 md:p-8 max-w-5xl mx-auto space-y-6">
+          {workspaceTabs}
+          <div className="mt-12 md:mt-24 text-center space-y-6 animate-in fade-in duration-700">
            <div className="w-20 h-20 bg-muted/50 rounded-3xl flex items-center justify-center mx-auto border border-border shadow-sm">
              <MessageSquare className="w-10 h-10 text-muted-foreground" />
-           </div>
+          </div>
+        </div>
            <h2 className="text-3xl md:text-4xl font-semibold tracking-tight text-foreground">Connect your Google Business</h2>
            <p className="text-muted-foreground max-w-lg mx-auto text-lg leading-relaxed">
              Sync your Google reviews directly to 5-Star.AI. Reply to customers, generate thoughtful AI responses, and manage your reputation safely.
@@ -792,11 +794,13 @@ export default function Reviews() {
   if (dashboard?.connection.status === "PENDING") {
     return (
       <AppLayout title="Review Inbox" businessName={workspaceBusiness?.name}>
-        <div className="p-4 md:p-8 max-w-5xl mx-auto mt-12 md:mt-24 text-center space-y-6 animate-in fade-in duration-700">
-           {workspaceTabs}
+        <div className="p-4 md:p-8 max-w-5xl mx-auto space-y-6">
+          {workspaceTabs}
+          <div className="mt-12 md:mt-24 text-center space-y-6 animate-in fade-in duration-700">
            <div className="w-20 h-20 bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-900 rounded-3xl flex items-center justify-center mx-auto shadow-sm">
              <RefreshCw className="w-10 h-10 text-blue-500 animate-spin" />
-           </div>
+          </div>
+        </div>
            <h2 className="text-3xl md:text-4xl font-semibold tracking-tight text-foreground">Connection Pending</h2>
            <p className="text-muted-foreground max-w-lg mx-auto text-lg leading-relaxed">
              If you already signed in and selected a location in the other tab, sync now to finish connecting. Otherwise, reopen the connection tab or start again.
