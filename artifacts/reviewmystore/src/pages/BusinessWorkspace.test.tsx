@@ -1,9 +1,11 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { cleanup, render, screen, within } from "@testing-library/react";
+import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import Businesses from "./Businesses";
 import Campaigns from "./Campaigns";
+import Feedback from "./Feedback";
+import Reviews from "./Reviews";
 import Settings from "./Settings";
 import { BusinessTabs } from "@/components/business/business-tabs";
 
@@ -48,6 +50,11 @@ const mocks = vi.hoisted(() => {
     campaigns,
     navigate: vi.fn(),
     mutation: () => ({ mutate: vi.fn(), isPending: false }),
+    reviewDashboard: {
+      connection: { status: "DISCONNECTED", provider: "BNDLE", lastSyncedAt: null, lastError: null },
+      locations: [],
+      summary: { totalReviews: 0, needsReply: 0, replied: 0 },
+    },
   };
 });
 
@@ -73,6 +80,18 @@ vi.mock("@workspace/api-client-react", () => ({
   useGetCampaignQr: () => ({ data: { redirectPath: "/r/summer" }, isLoading: false }),
   useListKeywords: () => ({ data: { keywords: [] }, isLoading: false }),
   useGetPlaceDetails: () => ({ data: undefined, isLoading: false }),
+  useGetReviewDashboard: () => ({ data: mocks.reviewDashboard, isLoading: false }),
+  useStartReviewProviderConnection: mocks.mutation,
+  useDisconnectReviewProvider: mocks.mutation,
+  useSyncReviewProvider: mocks.mutation,
+  useGetReviewProviderLocations: () => ({ data: undefined, isLoading: false, isError: false }),
+  useSelectReviewProviderLocation: mocks.mutation,
+  useListManagedReviews: () => ({ data: { reviews: [] }, isLoading: false }),
+  useGenerateManagedReviewDraft: mocks.mutation,
+  usePublishManagedReviewReply: mocks.mutation,
+  useDeleteManagedReviewReply: mocks.mutation,
+  useListPrivateFeedback: () => ({ data: { feedback: [] }, isLoading: false }),
+  useUpdatePrivateFeedbackStatus: mocks.mutation,
   useCreateBusiness: mocks.mutation,
   useUpdateBusiness: mocks.mutation,
   useDeleteBusiness: mocks.mutation,
@@ -94,6 +113,12 @@ vi.mock("@workspace/api-client-react", () => ({
   getListCampaignTemplatesQueryKey: () => ["campaign-templates"],
   getListKeywordsQueryKey: (id: string) => ["keywords", id],
   getGetCampaignQrQueryKey: (id: string) => ["campaign-qr", id],
+  getGetReviewDashboardQueryKey: () => ["review-dashboard"],
+  getGetReviewProviderLocationsQueryKey: () => ["review-provider-locations"],
+  getListManagedReviewsQueryKey: (params: unknown) => ["managed-reviews", params],
+  getListPrivateFeedbackQueryKey: (params: unknown) => ["private-feedback", params],
+  ReviewResponseStatus: { PENDING: "PENDING", DRAFT: "DRAFT", PUBLISHED: "PUBLISHED" },
+  PrivateFeedbackStatus: { NEW: "NEW", VIEWED: "VIEWED", RESOLVED: "RESOLVED" },
 }));
 
 afterEach(() => {
@@ -136,6 +161,38 @@ describe("authenticated business workspace", () => {
       "/feedback?businessId=business-1&businessName=Northstar%20Coffee",
     );
     expect(screen.getByText("Northstar Coffee")).toBeInTheDocument();
+  });
+
+  it("keeps the selected business after refreshing each tab and navigating back and forward", async () => {
+    const workspacePages = [
+      { path: "/campaigns?businessId=business-1", Page: Campaigns },
+      { path: "/reviews?businessId=business-1", Page: Reviews },
+      { path: "/feedback?businessId=business-1", Page: Feedback },
+    ];
+
+    for (const { path, Page } of workspacePages) {
+      window.history.replaceState({}, "", path);
+      const firstRender = renderWithQueryClient(<Page />);
+      expect(await screen.findByRole("navigation", { name: "Northstar Coffee workspace" })).toBeInTheDocument();
+      firstRender.unmount();
+
+      // A refresh remounts the page at the same URL. The workspace must still
+      // resolve to the business encoded in the query string.
+      const refreshedRender = renderWithQueryClient(<Page />);
+      expect(await screen.findByRole("navigation", { name: "Northstar Coffee workspace" })).toBeInTheDocument();
+      refreshedRender.unmount();
+    }
+
+    window.history.replaceState({}, "", "/campaigns?businessId=business-1");
+    window.history.pushState({}, "", "/reviews?businessId=business-1");
+
+    window.history.back();
+    await waitFor(() => expect(window.location.pathname).toBe("/campaigns"));
+    expect(new URLSearchParams(window.location.search).get("businessId")).toBe("business-1");
+
+    window.history.forward();
+    await waitFor(() => expect(window.location.pathname).toBe("/reviews"));
+    expect(new URLSearchParams(window.location.search).get("businessId")).toBe("business-1");
   });
 
   it("exposes campaign management and QR actions for every campaign", async () => {
