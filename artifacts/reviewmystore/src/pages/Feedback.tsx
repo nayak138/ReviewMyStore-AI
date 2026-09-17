@@ -115,7 +115,7 @@ export default function Feedback() {
   const newCount = feedback.filter((item) => item.status === "NEW").length;
 
   return (
-    <AppLayout title="Private Feedback">
+    <AppLayout title="Private Feedback" businessName={workspaceBusiness?.name}>
       <div className="mx-auto max-w-4xl space-y-6 p-4 md:p-8">
         {workspaceBusiness && (
           <BusinessTabs businessId={workspaceBusiness.id} businessName={workspaceBusiness.name} active="feedback" />

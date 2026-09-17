@@ -346,7 +346,7 @@ export default function Campaigns() {
   if (!isSignedIn) return <Redirect to="/sign-in" />;
 
   return (
-    <AppLayout title="Campaigns">
+    <AppLayout title="Campaigns" businessName={selectedBusiness?.name}>
       <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-6">
         {workspaceBusinessId && selectedBusiness && (
           <BusinessTabs businessId={selectedBusiness.id} businessName={selectedBusiness.name} active="campaigns" />

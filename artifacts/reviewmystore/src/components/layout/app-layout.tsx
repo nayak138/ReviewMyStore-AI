@@ -32,9 +32,10 @@ const NAV_ITEMS: NavItem[] = [
 interface AppLayoutProps {
   children: React.ReactNode;
   title: string;
+  businessName?: string | null;
 }
 
-export function AppLayout({ children, title }: AppLayoutProps) {
+export function AppLayout({ children, title, businessName }: AppLayoutProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
@@ -60,6 +61,21 @@ export function AppLayout({ children, title }: AppLayoutProps) {
         <div className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm md:hidden" onClick={() => setMobileMenuOpen(false)} />
       )}
 
+      {/* Keep the sidebar toggle with the sidebar when it is collapsed or off-canvas. */}
+      {(sidebarCollapsed || !mobileMenuOpen) && (
+        <button
+          type="button"
+          className={cn(
+            "fixed z-30 flex h-10 w-10 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground",
+            sidebarCollapsed ? "left-3 top-3 hidden md:flex" : "left-3 top-3 md:hidden",
+          )}
+          onClick={toggleSidebar}
+          aria-label="Open sidebar"
+        >
+          <Menu className="h-5 w-5" />
+        </button>
+      )}
+
       {/* Sidebar */}
       <aside className={cn(
         "fixed inset-y-0 left-0 z-50 w-64 border-r border-border bg-card flex flex-col transition-[transform,margin] duration-200 ease-in-out md:relative",
@@ -71,6 +87,14 @@ export function AppLayout({ children, title }: AppLayoutProps) {
           <div className="flex items-center gap-2">
             <BrandLogo className="h-8 w-auto max-w-[10rem]" />
           </div>
+          <button
+            type="button"
+            className="hidden text-muted-foreground hover:text-foreground md:inline-flex"
+            onClick={toggleSidebar}
+            aria-label="Collapse sidebar"
+          >
+            <Menu className="h-5 w-5" />
+          </button>
           <button className="md:hidden text-muted-foreground hover:text-foreground" onClick={() => setMobileMenuOpen(false)}>
             <X className="w-5 h-5" />
           </button>
@@ -98,14 +122,14 @@ export function AppLayout({ children, title }: AppLayoutProps) {
       <main className="flex-1 flex flex-col min-w-0 h-[100dvh] overflow-hidden bg-background">
         <header className="h-16 shrink-0 flex items-center justify-between px-4 md:px-8 border-b border-border bg-card/50 backdrop-blur-md sticky top-0 z-10">
           <div className="flex items-center gap-3">
-            <button
-              className="text-muted-foreground hover:text-foreground"
-              onClick={toggleSidebar}
-              aria-label="Toggle sidebar"
-            >
-              <Menu className="w-5 h-5" />
-            </button>
-            <h1 className="text-lg font-semibold text-foreground">{title}</h1>
+            {businessName ? (
+              <>
+                <Store className="h-5 w-5 text-primary" aria-hidden="true" />
+                <h1 className="text-lg font-semibold text-foreground">{businessName}</h1>
+              </>
+            ) : (
+              <h1 className="text-lg font-semibold text-foreground">{title}</h1>
+            )}
           </div>
           <div className="flex items-center gap-4">
             <ThemeToggle />

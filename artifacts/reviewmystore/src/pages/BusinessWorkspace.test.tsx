@@ -172,7 +172,7 @@ describe("authenticated business workspace", () => {
       "href",
       "/feedback?businessId=business-1&businessName=Northstar%20Coffee",
     );
-    expect(screen.getByText("Northstar Coffee")).toBeInTheDocument();
+    expect(screen.queryByText("Northstar Coffee")).not.toBeInTheDocument();
   });
 
   it("keeps the selected business after refreshing each tab and navigating back and forward", async () => {
