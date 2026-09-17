@@ -489,7 +489,12 @@ export default function Businesses() {
                             <MoreVertical className="w-4 h-4" />
                           </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-48">
+                         <DropdownMenuContent
+                           align="end"
+                           className="w-48"
+                           onPointerDown={(event) => event.stopPropagation()}
+                           onClick={(event) => event.stopPropagation()}
+                         >
                           <DropdownMenuLabel>Actions</DropdownMenuLabel>
                           <DropdownMenuItem onClick={() => handleOpenEdit(business)}>
                             <Pencil className="w-4 h-4 mr-2" /> Edit Details

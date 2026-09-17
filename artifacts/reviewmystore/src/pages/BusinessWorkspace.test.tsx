@@ -199,6 +199,18 @@ describe("authenticated business workspace", () => {
     expect(mocks.navigate).toHaveBeenCalledWith("/campaigns?businessId=business-1");
   });
 
+  it("opens the edit details dialog from a business action menu", async () => {
+    const user = userEvent.setup();
+    renderWithQueryClient(<Businesses />);
+
+    const businessCard = screen.getByRole("link", { name: "Open Northstar Coffee workspace" });
+    await user.click(within(businessCard).getByRole("button"));
+    await user.click(await screen.findByRole("menuitem", { name: /Edit Details/i }));
+
+    expect(screen.getByRole("dialog", { name: "Edit Business" })).toBeInTheDocument();
+    expect(screen.getByDisplayValue("Northstar Coffee")).toBeInTheDocument();
+  });
+
   it("keeps the selected business in every workspace tab", () => {
     render(<BusinessTabs businessId="business-1" businessName="Northstar Coffee" active="campaigns" />);
 
