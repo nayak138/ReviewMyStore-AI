@@ -169,7 +169,7 @@ export function InteractiveReviewDemo() {
       <div className="pointer-events-none absolute -right-48 top-24 h-[32rem] w-[32rem] rounded-full bg-primary/10 blur-3xl" aria-hidden="true" />
       <div className="mx-auto w-full max-w-md">
         <div className="mx-auto mb-6 text-center sm:mb-8">
-          <p className="inline-flex items-center gap-2 rounded-full border border-indigo-200/80 bg-indigo-50 px-4 py-2 text-base font-bold tracking-tight text-indigo-700 shadow-sm dark:border-indigo-900 dark:bg-indigo-950/60 dark:text-indigo-300">Live Customer Preview</p>
+          <p className="inline-flex items-center gap-2 rounded-full border border-indigo-200/80 bg-indigo-50 px-6 py-3 text-xl font-extrabold tracking-tight text-indigo-700 shadow-sm dark:border-indigo-900 dark:bg-indigo-950/60 dark:text-indigo-300">Live Customer Preview</p>
         </div>
 
         <div className="space-y-4 rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
