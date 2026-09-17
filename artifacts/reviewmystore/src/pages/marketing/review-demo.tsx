@@ -168,14 +168,8 @@ export function InteractiveReviewDemo() {
       <div className="editorial-grid pointer-events-none absolute inset-0 opacity-30 [mask-image:linear-gradient(to_bottom,black,transparent_78%)]" aria-hidden="true" />
       <div className="pointer-events-none absolute -right-48 top-24 h-[32rem] w-[32rem] rounded-full bg-primary/10 blur-3xl" aria-hidden="true" />
       <div className="mx-auto w-full max-w-md">
-        <div className="mx-auto mb-8 text-center sm:mb-10">
-          <p className="mb-3 inline-flex items-center gap-1.5 rounded-full border border-indigo-200/80 bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700 dark:border-indigo-900 dark:bg-indigo-950/60 dark:text-indigo-300">Live Customer Preview</p>
-          <h2 className="text-3xl font-bold leading-tight tracking-tight text-zinc-900 dark:text-zinc-100">
-            Turn a great stay into a story worth sharing.
-          </h2>
-          <p className="mx-auto mt-3 max-w-xs text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">
-            Give every happy guest a simpler path from “I loved it” to a thoughtful Google review.
-          </p>
+        <div className="mx-auto mb-6 text-center sm:mb-8">
+          <p className="inline-flex items-center gap-2 rounded-full border border-indigo-200/80 bg-indigo-50 px-4 py-2 text-base font-bold tracking-tight text-indigo-700 shadow-sm dark:border-indigo-900 dark:bg-indigo-950/60 dark:text-indigo-300">Live Customer Preview</p>
         </div>
 
         <div className="space-y-4 rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
