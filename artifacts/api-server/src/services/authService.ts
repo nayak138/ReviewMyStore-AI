@@ -302,3 +302,57 @@ export async function getOrganizationById(id: string) {
     .limit(1);
   return organization ?? null;
 }
+
+export async function getEmailPreferences(userId: string) {
+  const [user] = await db
+    .select({
+      productUpdates: usersTable.productUpdatesEnabled,
+      releaseAnnouncements: usersTable.releaseAnnouncementsEnabled,
+    })
+    .from(usersTable)
+    .where(eq(usersTable.id, userId))
+    .limit(1);
+
+  if (!user) return null;
+
+  return {
+    ...user,
+    securityMessages: true,
+    accountServiceMessages: true,
+  };
+}
+
+export async function updateEmailPreferences(
+  userId: string,
+  preferences: {
+    productUpdates?: boolean;
+    releaseAnnouncements?: boolean;
+  },
+) {
+  const [updated] = await db
+    .update(usersTable)
+    .set({
+      ...(preferences.productUpdates === undefined
+        ? {}
+        : { productUpdatesEnabled: preferences.productUpdates }),
+      ...(preferences.releaseAnnouncements === undefined
+        ? {}
+        : {
+            releaseAnnouncementsEnabled: preferences.releaseAnnouncements,
+          }),
+      updatedAt: new Date(),
+    })
+    .where(eq(usersTable.id, userId))
+    .returning({
+      productUpdates: usersTable.productUpdatesEnabled,
+      releaseAnnouncements: usersTable.releaseAnnouncementsEnabled,
+    });
+
+  if (!updated) return null;
+
+  return {
+    ...updated,
+    securityMessages: true,
+    accountServiceMessages: true,
+  };
+}

@@ -18,7 +18,9 @@ import {
 } from "./adminService.ts";
 import {
   AgencyInvitationRequiredError,
+  getEmailPreferences,
   getOrCreateUserForClerkId,
+  updateEmailPreferences,
 } from "./authService.ts";
 
 /**
@@ -296,4 +298,44 @@ test("uninvited first login is blocked instead of creating a new organization", 
     .from(usersTable)
     .where(eq(usersTable.clerkUserId, clerkUserId));
   assert.equal(user, undefined);
+});
+
+test("email preferences default to enabled and persist optional changes", async () => {
+  const fixture = await createAgencyFixture(testAdminId, "email-preferences");
+  const clerkUserId = `user_email_preferences_${runId}`;
+  registerFakeClerkUser(
+    clerkUserId,
+    "Email Preference Owner",
+    fixture.invitation.email,
+  );
+
+  const user = await getOrCreateUserForClerkId(clerkUserId);
+  createdUserIds.push(user.id);
+
+  assert.deepEqual(await getEmailPreferences(user.id), {
+    productUpdates: true,
+    releaseAnnouncements: true,
+    securityMessages: true,
+    accountServiceMessages: true,
+  });
+
+  assert.deepEqual(
+    await updateEmailPreferences(user.id, {
+      productUpdates: false,
+      releaseAnnouncements: false,
+    }),
+    {
+      productUpdates: false,
+      releaseAnnouncements: false,
+      securityMessages: true,
+      accountServiceMessages: true,
+    },
+  );
+
+  assert.deepEqual(await getEmailPreferences(user.id), {
+    productUpdates: false,
+    releaseAnnouncements: false,
+    securityMessages: true,
+    accountServiceMessages: true,
+  });
 });

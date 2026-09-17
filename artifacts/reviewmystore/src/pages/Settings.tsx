@@ -1,10 +1,14 @@
 import { useAuth, useClerk, useUser } from "@clerk/react";
 import {
   getGetCurrentUserQueryKey,
+  getGetEmailPreferencesQueryKey,
   useGetCurrentUser,
+  useGetEmailPreferences,
   useRequestAccountDataExport,
   useRequestAccountDeactivation,
+  useUpdateEmailPreferences,
 } from "@workspace/api-client-react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Redirect } from "wouter";
 import { useState } from "react";
 import {
@@ -36,6 +40,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+import { Switch } from "@/components/ui/switch";
 
 function initials(name: string) {
   return name
@@ -413,21 +418,7 @@ export default function Settings() {
                       </div>
                     </div>
                   </CardHeader>
-                  <CardContent>
-                    <DetailRow
-                      icon={Mail}
-                      label="Product and account email preferences"
-                      testId="settings-communications-status"
-                    >
-                      <div className="mt-2 flex items-start gap-2.5 rounded-lg bg-secondary/60 px-3 py-2.5 text-sm text-muted-foreground">
-                        <Info className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
-                        <span>Email preference controls are not available in this account center yet.</span>
-                      </div>
-                    </DetailRow>
-                    <p className="mt-5 text-xs leading-5 text-muted-foreground">
-                      Required account messages may still be sent to the email address on file.
-                    </p>
-                  </CardContent>
+                  <EmailPreferencesCard />
                 </Card>
 
                 <Card className="border-border shadow-sm lg:col-span-2" data-testid="settings-privacy-card">
@@ -565,6 +556,168 @@ export default function Settings() {
         </DialogContent>
       </Dialog>
     </AppLayout>
+  );
+}
+
+function EmailPreferencesCard() {
+  const queryClient = useQueryClient();
+  const {
+    data: preferences,
+    isLoading,
+    isError,
+    refetch,
+  } = useGetEmailPreferences({
+    query: {
+      queryKey: getGetEmailPreferencesQueryKey(),
+    },
+  });
+  const updatePreferences = useUpdateEmailPreferences({
+    mutation: {
+      onSuccess: (updated) => {
+        queryClient.setQueryData(getGetEmailPreferencesQueryKey(), updated);
+      },
+    },
+  });
+
+  const handleChange = (
+    key: "productUpdates" | "releaseAnnouncements",
+    value: boolean,
+  ) => {
+    updatePreferences.mutate({
+      data: {
+        [key]: value,
+      },
+    });
+  };
+
+  return (
+    <CardContent className="space-y-4" data-testid="settings-communications-content">
+      <p className="text-sm leading-5 text-muted-foreground">
+        Choose which optional emails you receive from 5-Star.AI. These settings apply to your account on every device.
+      </p>
+
+      {isLoading ? (
+        <div className="space-y-3" data-testid="settings-email-preferences-loading">
+          <Skeleton className="h-14 w-full rounded-xl" />
+          <Skeleton className="h-14 w-full rounded-xl" />
+          <Skeleton className="h-14 w-full rounded-xl" />
+        </div>
+      ) : isError || !preferences ? (
+        <div
+          className="flex items-start justify-between gap-3 rounded-xl border border-destructive/20 bg-destructive/5 p-3.5 text-sm"
+          data-testid="settings-email-preferences-error"
+        >
+          <div className="flex items-start gap-2.5">
+            <CircleAlert className="mt-0.5 h-4 w-4 shrink-0 text-destructive" aria-hidden="true" />
+            <div>
+              <p className="font-medium text-foreground">Email preferences could not load</p>
+              <p className="mt-1 text-muted-foreground">Refresh to try again.</p>
+            </div>
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => void refetch()}
+            data-testid="settings-email-preferences-retry"
+          >
+            Try again
+          </Button>
+        </div>
+      ) : (
+        <>
+          <div className="space-y-2" data-testid="settings-email-preferences-controls">
+            <PreferenceSwitch
+              checked={preferences.productUpdates}
+              disabled={updatePreferences.isPending}
+              label="Product updates"
+              description="Tips, improvements, and occasional updates about 5-Star.AI."
+              onCheckedChange={(value) => handleChange("productUpdates", value)}
+              testId="settings-product-updates-switch"
+            />
+            <PreferenceSwitch
+              checked={preferences.releaseAnnouncements}
+              disabled={updatePreferences.isPending}
+              label="Release announcements"
+              description="News about major features and product releases."
+              onCheckedChange={(value) => handleChange("releaseAnnouncements", value)}
+              testId="settings-release-announcements-switch"
+            />
+            <PreferenceSwitch
+              checked
+              disabled
+              label="Security and account-service messages"
+              description="Required messages about sign-in, account access, and service changes."
+              onCheckedChange={() => undefined}
+              testId="settings-required-messages-switch"
+            />
+          </div>
+          <div className="flex min-h-5 items-center gap-2 text-xs" aria-live="polite">
+            {updatePreferences.isPending ? (
+              <>
+                <RefreshCcw className="h-3.5 w-3.5 animate-spin text-primary" aria-hidden="true" />
+                <span className="text-muted-foreground" data-testid="settings-email-preferences-saving">
+                  Saving…
+                </span>
+              </>
+            ) : updatePreferences.isError ? (
+              <>
+                <CircleAlert className="h-3.5 w-3.5 text-destructive" aria-hidden="true" />
+                <span className="text-destructive" data-testid="settings-email-preferences-save-error">
+                  Could not save this preference. Try again.
+                </span>
+              </>
+            ) : updatePreferences.isSuccess ? (
+              <>
+                <Check className="h-3.5 w-3.5 text-success" aria-hidden="true" />
+                <span className="text-success" data-testid="settings-email-preferences-saved">
+                  Preferences saved.
+                </span>
+              </>
+            ) : null}
+          </div>
+        </>
+      )}
+
+      <p className="text-xs leading-5 text-muted-foreground">
+        Required security and account-service messages are always enabled.
+      </p>
+    </CardContent>
+  );
+}
+
+function PreferenceSwitch({
+  checked,
+  disabled,
+  label,
+  description,
+  onCheckedChange,
+  testId,
+}: {
+  checked: boolean;
+  disabled?: boolean;
+  label: string;
+  description: string;
+  onCheckedChange: (value: boolean) => void;
+  testId: string;
+}) {
+  return (
+    <div
+      className="flex items-center justify-between gap-4 rounded-xl border border-border/80 bg-secondary/30 px-3.5 py-3"
+      data-testid={`${testId}-row`}
+    >
+      <div className="min-w-0">
+        <p className="text-sm font-medium text-foreground">{label}</p>
+        <p className="mt-1 text-xs leading-5 text-muted-foreground">{description}</p>
+      </div>
+      <Switch
+        checked={checked}
+        disabled={disabled}
+        onCheckedChange={onCheckedChange}
+        aria-label={label}
+        data-testid={testId}
+      />
+    </div>
   );
 }
 

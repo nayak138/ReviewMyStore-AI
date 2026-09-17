@@ -1,16 +1,21 @@
 import { Router, type IRouter } from "express";
 import {
   GetCurrentUserResponse,
+  GetEmailPreferencesResponse,
   RequestAccountDataExportResponse,
   RequestAccountDeactivationBody,
   RequestAccountDeactivationResponse,
+  UpdateEmailPreferencesBody,
+  UpdateEmailPreferencesResponse,
 } from "@workspace/api-zod";
 import { requireAuth } from "../middlewares/requireAuth";
 import { rateLimit } from "../middlewares/rateLimit";
 import {
   buildAccountDataExport,
   buildAccountDeactivationRequest,
+  getEmailPreferences,
   getOrganizationById,
+  updateEmailPreferences,
 } from "../services/authService";
 
 const router: IRouter = Router();
@@ -86,5 +91,38 @@ router.post(
     res.status(202).json(data);
   },
 );
+
+router.get("/auth/email-preferences", requireAuth, async (req, res) => {
+  const preferences = await getEmailPreferences(req.appUser!.id);
+  if (!preferences) {
+    res.status(404).json({ error: "Account not found" });
+    return;
+  }
+
+  res.json(GetEmailPreferencesResponse.parse(preferences));
+});
+
+router.patch("/auth/email-preferences", requireAuth, async (req, res) => {
+  const parsed = UpdateEmailPreferencesBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.message });
+    return;
+  }
+  if (
+    parsed.data.productUpdates === undefined &&
+    parsed.data.releaseAnnouncements === undefined
+  ) {
+    res.status(400).json({ error: "At least one email preference is required" });
+    return;
+  }
+
+  const preferences = await updateEmailPreferences(req.appUser!.id, parsed.data);
+  if (!preferences) {
+    res.status(404).json({ error: "Account not found" });
+    return;
+  }
+
+  res.json(UpdateEmailPreferencesResponse.parse(preferences));
+});
 
 export default router;

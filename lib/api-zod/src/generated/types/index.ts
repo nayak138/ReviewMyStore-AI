@@ -52,6 +52,8 @@ export * from './demoRequestLeadType';
 export * from './demoRequestResult';
 export * from './demoRequestStatus';
 export * from './demoRequestStatusUpdate';
+export * from './emailPreferences';
+export * from './emailPreferencesUpdate';
 export * from './errorResponse';
 export * from './finalizeUploadRequest';
 export * from './finalizeUploadRequestVisibility';

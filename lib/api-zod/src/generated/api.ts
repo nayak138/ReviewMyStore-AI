@@ -350,6 +350,35 @@ export const GetCurrentUserResponse = zod.object({
 
 
 /**
+ * Returns the optional product email preferences for the authenticated account. Security and account-service messages are always enabled and are not configurable.
+ * @summary Get the current account's email preferences
+ */
+export const GetEmailPreferencesResponse = zod.object({
+  "productUpdates": zod.boolean().describe('Whether optional product update emails are enabled'),
+  "releaseAnnouncements": zod.boolean().describe('Whether optional release announcement emails are enabled'),
+  "securityMessages": zod.boolean().describe('Required security messages are always enabled'),
+  "accountServiceMessages": zod.boolean().describe('Required account-service messages are always enabled')
+})
+
+
+/**
+ * Updates only optional product and release emails. Security and account-service messages remain enabled and cannot be disabled.
+ * @summary Update the current account's optional email preferences
+ */
+export const UpdateEmailPreferencesBody = zod.object({
+  "productUpdates": zod.boolean().optional(),
+  "releaseAnnouncements": zod.boolean().optional()
+})
+
+export const UpdateEmailPreferencesResponse = zod.object({
+  "productUpdates": zod.boolean().describe('Whether optional product update emails are enabled'),
+  "releaseAnnouncements": zod.boolean().describe('Whether optional release announcement emails are enabled'),
+  "securityMessages": zod.boolean().describe('Required security messages are always enabled'),
+  "accountServiceMessages": zod.boolean().describe('Required account-service messages are always enabled')
+})
+
+
+/**
  * Returns a JSON export of the authenticated user's 5-Star.AI account record. Business, workspace, team, connection, campaign, and review data are intentionally excluded from this account-only export.
  * @summary Request an account-scoped data export
  */
@@ -1903,5 +1932,3 @@ export const GetPublicAssetParams = zod.object({
 })
 
 export const GetPublicAssetResponse = zod.unknown()
-
-

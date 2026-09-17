@@ -49,6 +49,8 @@ import type {
   DemoRequestInput,
   DemoRequestResult,
   DemoRequestStatusUpdate,
+  EmailPreferences,
+  EmailPreferencesUpdate,
   ErrorResponse,
   FinalizeUploadRequest,
   GetPlacePhotoParams,
@@ -193,13 +195,6 @@ export function useGetReviewDashboard<TData = Awaited<ReturnType<typeof getRevie
 
   return withQueryKey(query, queryOptions.queryKey);
 }
-
-
-
-
-
-
-
 export const getStartReviewProviderConnectionUrl = () => {
 
 
@@ -412,13 +407,6 @@ export function useGetReviewProviderLocations<TData = Awaited<ReturnType<typeof 
 
   return withQueryKey(query, queryOptions.queryKey);
 }
-
-
-
-
-
-
-
 export const getSelectReviewProviderLocationUrl = () => {
 
 
@@ -638,13 +626,6 @@ export function useListManagedReviews<TData = Awaited<ReturnType<typeof listMana
 
   return withQueryKey(query, queryOptions.queryKey);
 }
-
-
-
-
-
-
-
 export const getGenerateManagedReviewDraftUrl = (id: string,) => {
 
 
@@ -1014,6 +995,156 @@ export function useGetCurrentUser<TData = Awaited<ReturnType<typeof getCurrentUs
 
 
 
+
+export const getGetEmailPreferencesUrl = () => {
+
+
+
+
+  return `/api/v1/auth/email-preferences`
+}
+
+/**
+ * Returns the optional product email preferences for the authenticated account. Security and account-service messages are always enabled and are not configurable.
+ * @summary Get the current account's email preferences
+ */
+export const getEmailPreferences = async ( options?: Parameters<typeof customFetch>[1]): Promise<EmailPreferences> => {
+
+  return customFetch<EmailPreferences>(getGetEmailPreferencesUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetEmailPreferencesQueryKey = () => {
+    return [
+    `/api/v1/auth/email-preferences`
+    ] as const;
+    }
+
+
+export const getGetEmailPreferencesQueryOptions = <TData = Awaited<ReturnType<typeof getEmailPreferences>>, TError = ErrorType<ErrorResponse>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getEmailPreferences>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetEmailPreferencesQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getEmailPreferences>>> = ({ signal }) => getEmailPreferences({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getEmailPreferences>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetEmailPreferencesQueryResult = NonNullable<Awaited<ReturnType<typeof getEmailPreferences>>>
+export type GetEmailPreferencesQueryError = ErrorType<ErrorResponse>
+
+
+/**
+ * @summary Get the current account's email preferences
+ */
+
+export function useGetEmailPreferences<TData = Awaited<ReturnType<typeof getEmailPreferences>>, TError = ErrorType<ErrorResponse>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getEmailPreferences>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetEmailPreferencesQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getUpdateEmailPreferencesUrl = () => {
+
+
+
+
+  return `/api/v1/auth/email-preferences`
+}
+
+/**
+ * Updates only optional product and release emails. Security and account-service messages remain enabled and cannot be disabled.
+ * @summary Update the current account's optional email preferences
+ */
+export const updateEmailPreferences = async (emailPreferencesUpdate: EmailPreferencesUpdate, options?: Parameters<typeof customFetch>[1]): Promise<EmailPreferences> => {
+
+  return customFetch<EmailPreferences>(getUpdateEmailPreferencesUrl(),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(emailPreferencesUpdate)
+  }
+);}
+
+
+
+
+
+export const getUpdateEmailPreferencesMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateEmailPreferences>>, TError,{data: BodyType<EmailPreferencesUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateEmailPreferences>>, TError,{data: BodyType<EmailPreferencesUpdate>}, TContext> => {
+
+const mutationKey = ['updateEmailPreferences'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateEmailPreferences>>, {data: BodyType<EmailPreferencesUpdate>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  updateEmailPreferences(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateEmailPreferencesMutationResult = NonNullable<Awaited<ReturnType<typeof updateEmailPreferences>>>
+    export type UpdateEmailPreferencesMutationBody = BodyType<EmailPreferencesUpdate>
+    export type UpdateEmailPreferencesMutationError = ErrorType<ErrorResponse>
+
+    /**
+ * @summary Update the current account's optional email preferences
+ */
+export const useUpdateEmailPreferences = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateEmailPreferences>>, TError,{data: BodyType<EmailPreferencesUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateEmailPreferences>>,
+        TError,
+        {data: BodyType<EmailPreferencesUpdate>},
+        TContext
+      > => {
+      return useMutation(getUpdateEmailPreferencesMutationOptions(options));
+    }
 
 export const getRequestAccountDataExportUrl = () => {
 

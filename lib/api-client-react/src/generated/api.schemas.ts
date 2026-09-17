@@ -172,6 +172,22 @@ export const UserStatus = {
   SUSPENDED: 'SUSPENDED',
 } as const;
 
+export interface EmailPreferences {
+  /** Whether optional product update emails are enabled */
+  productUpdates: boolean;
+  /** Whether optional release announcement emails are enabled */
+  releaseAnnouncements: boolean;
+  /** Required security messages are always enabled */
+  securityMessages: boolean;
+  /** Required account-service messages are always enabled */
+  accountServiceMessages: boolean;
+}
+
+export interface EmailPreferencesUpdate {
+  productUpdates?: boolean;
+  releaseAnnouncements?: boolean;
+}
+
 export interface UserProfile {
   id: string;
   /** @nullable */
@@ -1228,4 +1244,3 @@ export type ListNfcDevicesParams = {
 businessId?: string;
 campaignId?: string;
 };
-

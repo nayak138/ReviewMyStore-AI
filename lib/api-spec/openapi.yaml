@@ -384,6 +384,61 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  /v1/auth/email-preferences:
+    get:
+      operationId: getEmailPreferences
+      tags: [auth]
+      summary: Get the current account's email preferences
+      description: >
+        Returns the optional product email preferences for the authenticated
+        account. Security and account-service messages are always enabled and
+        are not configurable.
+      responses:
+        "200":
+          description: Current account email preferences
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EmailPreferences"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    patch:
+      operationId: updateEmailPreferences
+      tags: [auth]
+      summary: Update the current account's optional email preferences
+      description: >
+        Updates only optional product and release emails. Security and
+        account-service messages remain enabled and cannot be disabled.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EmailPreferencesUpdate"
+      responses:
+        "200":
+          description: Updated account email preferences
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EmailPreferences"
+        "400":
+          description: Invalid email preferences
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /v1/auth/data-export:
     post:
       operationId: requestAccountDataExport
@@ -2636,6 +2691,36 @@ components:
     UserStatus:
       type: string
       enum: [ACTIVE, SUSPENDED]
+
+    EmailPreferences:
+      type: object
+      properties:
+        productUpdates:
+          type: boolean
+          description: Whether optional product update emails are enabled
+        releaseAnnouncements:
+          type: boolean
+          description: Whether optional release announcement emails are enabled
+        securityMessages:
+          type: boolean
+          description: Required security messages are always enabled
+        accountServiceMessages:
+          type: boolean
+          description: Required account-service messages are always enabled
+      required:
+        - productUpdates
+        - releaseAnnouncements
+        - securityMessages
+        - accountServiceMessages
+
+    EmailPreferencesUpdate:
+      type: object
+      properties:
+        productUpdates:
+          type: boolean
+        releaseAnnouncements:
+          type: boolean
+      minProperties: 1
 
     UserProfile:
       type: object
