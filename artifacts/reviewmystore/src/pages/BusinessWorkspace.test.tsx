@@ -125,15 +125,15 @@ describe("authenticated business workspace", () => {
 
     expect(screen.getByRole("link", { name: /Campaigns/ })).toHaveAttribute(
       "href",
-      "/campaigns?businessId=business-1",
+      "/campaigns?businessId=business-1&businessName=Northstar%20Coffee",
     );
     expect(screen.getByRole("link", { name: /Review Inbox/ })).toHaveAttribute(
       "href",
-      "/reviews?businessId=business-1",
+      "/reviews?businessId=business-1&businessName=Northstar%20Coffee",
     );
     expect(screen.getByRole("link", { name: /Feedback/ })).toHaveAttribute(
       "href",
-      "/feedback?businessId=business-1",
+      "/feedback?businessId=business-1&businessName=Northstar%20Coffee",
     );
     expect(screen.getByText("Northstar Coffee")).toBeInTheDocument();
   });
@@ -144,7 +144,7 @@ describe("authenticated business workspace", () => {
     renderWithQueryClient(<Campaigns />);
 
     expect(await screen.findByText("Summer launch")).toBeInTheDocument();
-    expect(screen.getAllByText("Northstar Coffee")).toHaveLength(2);
+    expect(screen.getAllByText("Northstar Coffee")).toHaveLength(1);
     expect(screen.getAllByRole("button", { name: "Manage Keywords" })).toHaveLength(mocks.campaigns.length);
     const qrButtons = screen.getAllByRole("button", { name: "QR Code" });
     expect(qrButtons).toHaveLength(mocks.campaigns.length);

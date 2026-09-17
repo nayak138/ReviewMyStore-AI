@@ -434,7 +434,9 @@ export default function Reviews() {
   const { isLoaded, isSignedIn } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const workspaceBusinessId = new URLSearchParams(window.location.search).get("businessId");
+  const routeParams = new URLSearchParams(window.location.search);
+  const workspaceBusinessId = routeParams.get("businessId");
+  const routeBusinessName = routeParams.get("businessName");
   const { data: businessData } = useListBusinesses(
     { includeArchived: false },
     { query: { enabled: !!isSignedIn, queryKey: getListBusinessesQueryKey({ includeArchived: false }) } },
@@ -442,7 +444,13 @@ export default function Reviews() {
   const businesses = businessData?.businesses ?? [];
   const workspaceBusiness =
     businesses.find((business) => business.id === workspaceBusinessId) ??
-    (!workspaceBusinessId && businesses.length === 1 ? businesses[0] : undefined);
+    (workspaceBusinessId && routeBusinessName
+      ? { id: workspaceBusinessId, name: routeBusinessName, address: null }
+      : undefined) ??
+    // Keep the legacy direct /reviews route inside a business workspace too.
+    // Workspace tab links always carry an explicit businessId, so this only
+    // serves as a fallback for bookmarks and older navigation paths.
+    businesses[0];
   const workspaceTabs = workspaceBusiness ? (
     <BusinessTabs businessId={workspaceBusiness.id} businessName={workspaceBusiness.name} active="reviews" />
   ) : null;
@@ -463,7 +471,9 @@ export default function Reviews() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get("bndleConnect") === "1") {
-      window.history.replaceState({}, "", window.location.pathname);
+      params.delete("bndleConnect");
+      const query = params.toString();
+      window.history.replaceState({}, "", `${window.location.pathname}${query ? `?${query}` : ""}`);
       setCallbackStage("checking");
     }
     // Runs once on mount only; the query string is only meaningful on the

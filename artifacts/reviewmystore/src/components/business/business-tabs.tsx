@@ -19,7 +19,7 @@ export function BusinessTabs({
   businessName: string;
   active: BusinessWorkspaceTab;
 }) {
-  const query = `?businessId=${encodeURIComponent(businessId)}`;
+  const query = `?businessId=${encodeURIComponent(businessId)}&businessName=${encodeURIComponent(businessName)}`;
 
   return (
     <div className="rounded-2xl border border-border bg-card p-2 shadow-sm">

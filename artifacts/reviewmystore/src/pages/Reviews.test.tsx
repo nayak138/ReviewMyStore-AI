@@ -44,7 +44,18 @@ vi.mock('@workspace/api-client-react', () => ({
     isLoading: false,
   }),
   getGetReviewDashboardQueryKey: () => ['/api/review-management'],
-  useListBusinesses: () => ({ data: { businesses: [] }, isLoading: false }),
+  useListBusinesses: () => ({
+    data: {
+      businesses: [
+        {
+          id: 'business-1',
+          name: 'Test Business',
+          address: null,
+        },
+      ],
+    },
+    isLoading: false,
+  }),
   getListBusinessesQueryKey: () => ['/api/businesses'],
   // Mimics the real mutation hook closely enough to exercise the
   // connect-flow regression below: calling `mutate()` synchronously invokes
@@ -107,11 +118,6 @@ vi.mock('@workspace/api-client-react', () => ({
     mutate: mocks.deleteMutate,
     isPending: false,
   }),
-  useListBusinesses: () => ({
-    data: { businesses: [] },
-    isLoading: false,
-  }),
-  getListBusinessesQueryKey: () => ['/api/businesses'],
   ReviewResponseStatus: {
     PENDING: 'PENDING',
     DRAFT: 'DRAFT',
@@ -299,10 +305,11 @@ describe('Reviews dashboard states', () => {
     expect(screen.getByText('Connection Pending')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /sync now/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /retry connection/i })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /review inbox/i })).toHaveAttribute('aria-current', 'page');
 
     // The full inbox (with its stat cards and review list) must not render
     // while the connection is still pending.
-    expect(screen.queryByText('Review Inbox')).not.toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Review Inbox' })).not.toBeInTheDocument();
     expect(screen.queryByText('Needs Reply')).not.toBeInTheDocument();
   });
 
@@ -310,7 +317,7 @@ describe('Reviews dashboard states', () => {
     mocks.dashboardStatus = 'CONNECTED';
     renderReviews();
 
-    expect(screen.getByText('Review Inbox')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Review Inbox' })).toBeInTheDocument();
     expect(screen.getByText('Needs Reply')).toBeInTheDocument();
     expect(screen.getByText('Total Reviews')).toBeInTheDocument();
 
