@@ -1,10 +1,17 @@
-import { and, desc, eq, isNull } from "drizzle-orm";
+import { and, desc, eq, isNull, ne } from "drizzle-orm";
 import { db, businessesTable, type Business } from "@workspace/db";
 
 export class BusinessNotFoundError extends Error {
   constructor(id: string) {
     super(`Business ${id} not found`);
     this.name = "BusinessNotFoundError";
+  }
+}
+
+export class DuplicateBusinessPlaceError extends Error {
+  constructor(placeId: string) {
+    super(`This Google Places business is already connected to another business in this workspace.`);
+    this.name = "DuplicateBusinessPlaceError";
   }
 }
 
@@ -60,6 +67,31 @@ async function findOrgBusiness(
   return business;
 }
 
+async function ensureUniqueGooglePlace(
+  organizationId: string,
+  googlePlaceId: string | null | undefined,
+  excludeBusinessId?: string,
+): Promise<void> {
+  if (!googlePlaceId) return;
+
+  const conditions = [
+    eq(businessesTable.organizationId, organizationId),
+    eq(businessesTable.googlePlaceId, googlePlaceId),
+    isNull(businessesTable.deletedAt),
+  ];
+  if (excludeBusinessId) {
+    conditions.push(ne(businessesTable.id, excludeBusinessId));
+  }
+
+  const [existing] = await db
+    .select({ id: businessesTable.id })
+    .from(businessesTable)
+    .where(and(...conditions))
+    .limit(1);
+
+  if (existing) throw new DuplicateBusinessPlaceError(googlePlaceId);
+}
+
 export async function listBusinesses(
   organizationId: string,
   includeArchived: boolean,
@@ -111,6 +143,7 @@ export async function createBusiness(
   organizationId: string,
   input: CreateBusinessInput,
 ): Promise<Business> {
+  await ensureUniqueGooglePlace(organizationId, input.googlePlaceId);
   const [business] = await db
     .insert(businessesTable)
     .values({ organizationId, ...input })
@@ -126,6 +159,7 @@ export async function updateBusiness(
   input: UpdateBusinessInput,
 ): Promise<Business> {
   await findOrgBusiness(organizationId, id);
+  await ensureUniqueGooglePlace(organizationId, input.googlePlaceId, id);
   const [updated] = await db
     .update(businessesTable)
     .set({ ...input, updatedAt: new Date() })

@@ -12,7 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { FileUpload } from "@/components/ui/file-upload";
 import { BusinessSearch } from "@/components/business-search";
 import { loadSelectedPlace, clearSelectedPlace, placePhotoUrl, type SelectedPlace } from "@/lib/selected-place";
-import { Store, Loader2, ArrowRight, MapPin, Star, PenLine, Search } from "lucide-react";
+import { Store, Loader2, ArrowRight, MapPin, Star, Search } from "lucide-react";
 
 const onboardingSchema = z.object({
   name: z.string().min(2, "Name is required"),
@@ -158,12 +158,6 @@ export default function Onboarding() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pendingDetails, pendingPlaceId]);
 
-  const handleManualEntry = () => {
-    setPrefilledFrom(null);
-    form.reset(EMPTY_VALUES);
-    setStep("form");
-  };
-
   const handleSearchAgain = () => {
     setPrefilledFrom(null);
     form.reset(EMPTY_VALUES);
@@ -212,10 +206,10 @@ export default function Onboarding() {
           </div>
 
           <h1 className="text-4xl font-bold tracking-tight text-foreground mb-6">
-            Let's set up your first location.
+            Let's set up your first business.
           </h1>
           <p className="text-lg text-muted-foreground max-w-md">
-            5-Star.AI works best when we know a little bit about your business. You can add more locations later from your dashboard.
+            5-Star.AI works best when we know a little bit about your business. Each business is linked to one verified Google Places location.
           </p>
 
           <div className="mt-16 space-y-6">
@@ -225,7 +219,7 @@ export default function Onboarding() {
               </div>
               <div>
                 <h3 className="font-semibold">1. Find Your Business</h3>
-                <p className="text-sm">Search Google, or enter details manually</p>
+                <p className="text-sm">Search Google Places to find your business</p>
               </div>
             </div>
             <div className={`flex items-center gap-4 p-4 rounded-xl border shadow-sm ${step === "form" ? "text-foreground bg-background/50 border-border/50" : "text-muted-foreground/50"}`}>
@@ -273,16 +267,6 @@ export default function Onboarding() {
                 </div>
               )}
 
-              <div className="mt-8 pt-8 border-t border-border text-center">
-                <button
-                  type="button"
-                  onClick={handleManualEntry}
-                  className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors inline-flex items-center gap-2"
-                >
-                  <PenLine className="w-4 h-4" />
-                  Can't find it? Enter details manually
-                </button>
-              </div>
             </div>
           ) : (
             <div>

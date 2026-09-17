@@ -22,3 +22,4 @@
 - [Object upload visibility boundary](object-upload-visibility.md) — generic uploads default private after server finalization; branding is public only through an ACL-gated proxy.
 - [AI generation reservation accounting](ai-generation-reservations.md) — quota/session increments are per-request pending reservations and must be finalized or compensated atomically.
 - [Video artifact promotion](video-artifact-lifecycle.md) — preserve the registered video package's canonical recording hook and manifest when transferring a composition.
+- [Generated API hook test mocks](generated-api-hook-test-mocks.md) — page-level Vitest mocks must include every generated hook the component calls.

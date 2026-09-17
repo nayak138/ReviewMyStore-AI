@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@clerk/react";
-import { Redirect, useLocation } from "wouter";
+import { Redirect } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   useGetReviewDashboard,
@@ -296,7 +296,7 @@ export function ReviewItem({ review }: { review: ManagedReview }) {
   );
 }
 
-type CallbackStage = "idle" | "checking" | "picker" | "not_connected" | "no_locations";
+type CallbackStage = "idle" | "checking" | "connecting" | "picker" | "not_connected" | "no_locations";
 
 /**
  * Rendered in the same tab Google redirects back to after OAuth. Everything
@@ -386,6 +386,18 @@ function ConnectCallbackPanel({
             </>
           )}
 
+          {stage === "connecting" && (
+            <>
+              <RefreshCw className="w-8 h-8 text-primary animate-spin mx-auto" />
+              <div>
+                <h2 className="text-xl font-semibold text-foreground">Connecting your business…</h2>
+                <p className="text-sm text-muted-foreground mt-1 leading-relaxed">
+                  We found the matching Google Business location and are importing your reviews.
+                </p>
+              </div>
+            </>
+          )}
+
           {(stage === "not_connected" || stage === "no_locations") && (
             <>
               <XCircle className="w-10 h-10 text-destructive mx-auto" />
@@ -422,17 +434,21 @@ export default function Reviews() {
   const { isLoaded, isSignedIn } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [routeLocation] = useLocation();
-  const workspaceBusinessId = new URLSearchParams(routeLocation.split("?")[1] ?? "").get("businessId");
+  const workspaceBusinessId = new URLSearchParams(window.location.search).get("businessId");
   const { data: businessData } = useListBusinesses(
     { includeArchived: false },
-    { query: { enabled: !!isSignedIn && !!workspaceBusinessId, queryKey: getListBusinessesQueryKey({ includeArchived: false }) } },
+    { query: { enabled: !!isSignedIn, queryKey: getListBusinessesQueryKey({ includeArchived: false }) } },
   );
-  const workspaceBusiness = businessData?.businesses.find((business) => business.id === workspaceBusinessId);
+  const businesses = businessData?.businesses ?? [];
+  const workspaceBusiness =
+    businesses.find((business) => business.id === workspaceBusinessId) ??
+    (!workspaceBusinessId && businesses.length === 1 ? businesses[0] : undefined);
+  const workspaceTabs = workspaceBusiness ? (
+    <BusinessTabs businessId={workspaceBusiness.id} businessName={workspaceBusiness.name} active="reviews" />
+  ) : null;
 
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 500);
-  const [locationId, setLocationId] = useState<string>("all");
   const [rating, setRating] = useState<string>("all");
   const [responseStatus, setResponseStatus] = useState<string>("all");
   const [disconnectDialogOpen, setDisconnectDialogOpen] = useState(false);
@@ -460,8 +476,19 @@ export default function Reviews() {
     query: { enabled: !!isSignedIn, queryKey: dashboardKey }
   });
 
+  const matchingReviewLocation = workspaceBusiness
+    ? dashboard?.locations.find((location) => {
+        const sameName = location.name.trim().toLowerCase() === workspaceBusiness.name.trim().toLowerCase();
+        const sameAddress =
+          Boolean(location.address && workspaceBusiness.address) &&
+          location.address!.trim().toLowerCase() === workspaceBusiness.address!.trim().toLowerCase();
+        return sameName || sameAddress;
+      })
+    : undefined;
+  const reviewLocationId = matchingReviewLocation?.id ?? (dashboard?.locations.length === 1 ? dashboard.locations[0].id : undefined);
+
   const listParams = {
-    locationId: locationId === "all" ? undefined : locationId,
+    locationId: reviewLocationId,
     rating: rating === "all" ? undefined : Number(rating),
     responseStatus: responseStatus === "all" ? undefined : (responseStatus as ReviewResponseStatus),
     search: debouncedSearch || undefined
@@ -476,14 +503,6 @@ export default function Reviews() {
   });
   const reviews = reviewsData?.reviews ?? [];
 
-  useEffect(() => {
-    if (!workspaceBusiness || !dashboard?.locations.length) return;
-    const matchingLocation = dashboard.locations.find((location) => location.name === workspaceBusiness.name);
-    if (matchingLocation && locationId !== matchingLocation.id) {
-      setLocationId(matchingLocation.id);
-    }
-  }, [dashboard?.locations, locationId, workspaceBusiness]);
-
   // Shared by both return paths into the on-brand connect screen: a fresh
   // OAuth round trip landing back on ?bndleConnect=1 (via the locations
   // query below), and the "already connected on bundle.social's side"
@@ -494,8 +513,25 @@ export default function Reviews() {
     locations: ReviewProviderLocationOption[],
   ) {
     if (stage === "NEEDS_LOCATION") {
-      setPickerLocations(locations);
-      setCallbackStage("picker");
+      const matchingLocation =
+        (workspaceBusiness &&
+          locations.find((location) => {
+            const sameName = location.name.trim().toLowerCase() === workspaceBusiness.name.trim().toLowerCase();
+            const sameAddress =
+              Boolean(location.address && workspaceBusiness.address) &&
+              location.address!.trim().toLowerCase() === workspaceBusiness.address!.trim().toLowerCase();
+            return sameName || sameAddress;
+          })) ??
+        (locations.length === 1 ? locations[0] : undefined);
+
+      if (matchingLocation) {
+        setSelectedLocationId(matchingLocation.id);
+        setCallbackStage("connecting");
+        selectLocation.mutate({ data: { locationId: matchingLocation.id } });
+      } else {
+        setPickerLocations(locations);
+        setCallbackStage("picker");
+      }
     } else if (stage === "READY") {
       setCallbackStage("idle");
       queryClient.invalidateQueries({ queryKey: dashboardKey });
@@ -603,7 +639,6 @@ export default function Reviews() {
     mutation: {
       onSuccess: () => {
         setDisconnectDialogOpen(false);
-        setLocationId("all");
         setRating("all");
         setResponseStatus("all");
         setSearch("");
@@ -684,8 +719,9 @@ export default function Reviews() {
 
   if (dashboardLoading) {
     return (
-      <AppLayout title="Reviews">
+      <AppLayout title="Review Inbox">
         <div className="p-4 md:p-8 max-w-5xl mx-auto space-y-6">
+          {workspaceTabs}
           <div className="flex justify-between">
             <Skeleton className="h-10 w-48" />
             <Skeleton className="h-10 w-32" />
@@ -707,8 +743,9 @@ export default function Reviews() {
 
   if (dashboard?.connection.status === "DISCONNECTED" || dashboard?.connection.status === "ERROR") {
     return (
-      <AppLayout title="Reviews">
+      <AppLayout title="Review Inbox">
         <div className="p-4 md:p-8 max-w-4xl mx-auto mt-12 md:mt-24 text-center space-y-6 animate-in fade-in duration-700">
+           {workspaceTabs}
            <div className="w-20 h-20 bg-muted/50 rounded-3xl flex items-center justify-center mx-auto border border-border shadow-sm">
              <MessageSquare className="w-10 h-10 text-muted-foreground" />
            </div>
@@ -744,8 +781,9 @@ export default function Reviews() {
 
   if (dashboard?.connection.status === "PENDING") {
     return (
-      <AppLayout title="Reviews">
+      <AppLayout title="Review Inbox">
         <div className="p-4 md:p-8 max-w-4xl mx-auto mt-12 md:mt-24 text-center space-y-6 animate-in fade-in duration-700">
+           {workspaceTabs}
            <div className="w-20 h-20 bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-900 rounded-3xl flex items-center justify-center mx-auto shadow-sm">
              <RefreshCw className="w-10 h-10 text-blue-500 animate-spin" />
            </div>
@@ -783,11 +821,9 @@ export default function Reviews() {
   }
 
   return (
-    <AppLayout title="Reviews">
+    <AppLayout title="Review Inbox">
       <div className="p-4 md:p-8 max-w-5xl mx-auto space-y-8 animate-in fade-in duration-500">
-        {workspaceBusiness && (
-          <BusinessTabs businessId={workspaceBusiness.id} businessName={workspaceBusiness.name} active="reviews" />
-        )}
+        {workspaceTabs}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
           <div>
             <h2 className="text-3xl font-bold tracking-tight text-foreground">Review Inbox</h2>
@@ -808,16 +844,6 @@ export default function Reviews() {
             >
               <RefreshCw className={`w-4 h-4 mr-2 ${syncProvider.isPending ? 'animate-spin' : ''}`} />
               Sync Now
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="bg-background shadow-sm"
-              onClick={() => startConnection.mutate()}
-              disabled={startConnection.isPending}
-            >
-              <Store className={`w-4 h-4 mr-2 ${startConnection.isPending ? "animate-pulse" : ""}`} />
-              {startConnection.isPending ? "Opening…" : "Change store"}
             </Button>
             <Button
               variant="ghost"
@@ -901,17 +927,6 @@ export default function Reviews() {
               onChange={(e) => setSearch(e.target.value)}
             />
           </div>
-          <Select value={locationId} onValueChange={setLocationId}>
-            <SelectTrigger className="w-full md:w-[200px] bg-background h-10">
-              <SelectValue placeholder="All Locations" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Locations</SelectItem>
-              {dashboard?.locations.map(loc => (
-                <SelectItem key={loc.id} value={loc.id}>{loc.name}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
           <Select value={rating} onValueChange={setRating}>
             <SelectTrigger className="w-full md:w-[140px] bg-background h-10">
               <SelectValue placeholder="Any Rating" />
@@ -948,7 +963,7 @@ export default function Reviews() {
                <MessageSquare className="w-12 h-12 text-muted-foreground/30 mx-auto mb-4" />
                <h3 className="text-lg font-medium text-foreground">No reviews found</h3>
                <p className="text-muted-foreground mt-1 text-sm">
-                 {search || rating !== "all" || locationId !== "all" || responseStatus !== "all" 
+                  {search || rating !== "all" || responseStatus !== "all"
                    ? "Try adjusting your filters to see more results." 
                    : "You don't have any reviews yet."}
                </p>

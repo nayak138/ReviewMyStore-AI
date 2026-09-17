@@ -44,6 +44,8 @@ vi.mock('@workspace/api-client-react', () => ({
     isLoading: false,
   }),
   getGetReviewDashboardQueryKey: () => ['/api/review-management'],
+  useListBusinesses: () => ({ data: { businesses: [] }, isLoading: false }),
+  getListBusinessesQueryKey: () => ['/api/businesses'],
   // Mimics the real mutation hook closely enough to exercise the
   // connect-flow regression below: calling `mutate()` synchronously invokes
   // the caller's `onSuccess` with a fake bundle.social portal response, just

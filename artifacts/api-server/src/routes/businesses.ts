@@ -15,6 +15,7 @@ import {
 import { requireAuth } from "../middlewares/requireAuth";
 import {
   BusinessNotFoundError,
+  DuplicateBusinessPlaceError,
   archiveBusiness,
   createBusiness,
   generateUniqueBusinessSlug,
@@ -82,12 +83,24 @@ router.post("/businesses", requireAuth, async (req, res) => {
     return;
   }
 
-  const slug = await generateUniqueBusinessSlug(parsed.data.slug);
-  const business = await createBusiness(organizationId, {
-    ...parsed.data,
-    slug,
-  });
-  res.status(201).json(CreateBusinessResponse.parse(business));
+  try {
+    const slug = await generateUniqueBusinessSlug(parsed.data.slug);
+    const business = await createBusiness(organizationId, {
+      ...parsed.data,
+      slug,
+    });
+    res.status(201).json(CreateBusinessResponse.parse(business));
+  } catch (err) {
+    if (err instanceof DuplicateBusinessPlaceError) {
+      res.status(409).json({
+        success: false,
+        code: "DUPLICATE_GOOGLE_PLACE",
+        message: err.message,
+      });
+      return;
+    }
+    throw err;
+  }
 });
 
 router.get("/businesses/:id", requireAuth, async (req, res) => {
@@ -126,6 +139,14 @@ router.patch("/businesses/:id", requireAuth, async (req, res) => {
     res.json(UpdateBusinessResponse.parse(business));
   } catch (err) {
     if (err instanceof BusinessNotFoundError) return notFound(res, err);
+    if (err instanceof DuplicateBusinessPlaceError) {
+      res.status(409).json({
+        success: false,
+        code: "DUPLICATE_GOOGLE_PLACE",
+        message: err.message,
+      });
+      return;
+    }
     throw err;
   }
 });

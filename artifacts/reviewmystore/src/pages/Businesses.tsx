@@ -17,7 +17,6 @@ import {
   CheckCircle2,
   AlertCircle,
   Loader2,
-  PenLine,
   Star
 } from "lucide-react";
 import { 
@@ -307,12 +306,6 @@ export default function Businesses() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pendingDetails, pendingPlaceId]);
 
-  const handleManualEntry = () => {
-    setPrefilledFrom(null);
-    form.reset(EMPTY_BUSINESS_VALUES);
-    setCreateStep("form");
-  };
-
   const handleSearchAgain = () => {
     setPrefilledFrom(null);
     form.reset(EMPTY_BUSINESS_VALUES);
@@ -320,6 +313,13 @@ export default function Businesses() {
   };
 
   const onSubmit = (values: BusinessFormValues) => {
+    if (isCreateModalOpen && !values.googlePlaceId) {
+      form.setError("googlePlaceId", {
+        type: "validate",
+        message: "Select this business from Google Places before saving.",
+      });
+      return;
+    }
     const payload = { ...values, defaultLanguage: values.defaultLanguage as SupportedLanguage | undefined };
     if (isEditModalOpen && editingBusiness) {
       updateBusiness.mutate({ id: editingBusiness.id, data: payload });
@@ -376,10 +376,10 @@ export default function Businesses() {
           <div>
             <p className="text-sm text-muted-foreground">
               {isLoading
-                ? "Loading your locations…"
+                ? "Loading your businesses…"
                 : businesses.length === 0
-                  ? "Add your first location to start collecting reviews."
-                  : `${businesses.length} location${businesses.length === 1 ? "" : "s"} · ${activeCount} active`}
+                  ? "Add your first business to start collecting reviews."
+                  : `${businesses.length} business${businesses.length === 1 ? "" : "es"} · ${activeCount} active`}
             </p>
           </div>
           <div className="flex flex-col sm:flex-row sm:items-center gap-3 w-full md:w-auto">
@@ -394,7 +394,7 @@ export default function Businesses() {
             </div>
             <Button onClick={handleOpenCreate} className="shrink-0 shadow-sm">
               <Plus className="w-4 h-4 mr-2" />
-              Add Location
+              Add Business
             </Button>
           </div>
         </div>
@@ -420,12 +420,12 @@ export default function Businesses() {
               </div>
               <h3 className="text-xl font-semibold text-foreground">No businesses found</h3>
               <p className="text-muted-foreground mt-2 max-w-md">
-                {searchQuery ? "Try adjusting your search terms." : "You haven't added any locations yet. Add your first business to start collecting reviews."}
+                {searchQuery ? "Try adjusting your search terms." : "You haven't added any businesses yet. Add your first business to start collecting reviews."}
               </p>
               {!searchQuery && (
                 <Button onClick={handleOpenCreate} className="mt-6">
                   <Plus className="w-4 h-4 mr-2" />
-                  Add Location
+                  Add Business
                 </Button>
               )}
             </div>
@@ -569,9 +569,9 @@ export default function Businesses() {
           {isCreateModalOpen && createStep === "search" ? (
             <>
               <DialogHeader>
-                <DialogTitle>Add New Location</DialogTitle>
+                <DialogTitle>Add Business</DialogTitle>
                 <DialogDescription>
-                  Search Google to automatically pull the name, category, address, and photo.
+                  Search Google Places to add one verified business location.
                 </DialogDescription>
               </DialogHeader>
 
@@ -584,16 +584,6 @@ export default function Businesses() {
                   </div>
                 )}
 
-                <div className="mt-8 pt-6 border-t border-border text-center">
-                  <button
-                    type="button"
-                    onClick={handleManualEntry}
-                    className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors inline-flex items-center gap-2"
-                  >
-                    <PenLine className="w-4 h-4" />
-                    Can't find it? Enter details manually
-                  </button>
-                </div>
               </div>
 
               <DialogFooter className="pt-4 border-t border-border">
@@ -606,7 +596,7 @@ export default function Businesses() {
           <>
           <DialogHeader>
             <div className="flex items-center justify-between gap-4">
-              <DialogTitle>{isEditModalOpen ? "Edit Location" : "Confirm Location Details"}</DialogTitle>
+              <DialogTitle>{isEditModalOpen ? "Edit Business" : "Confirm Business Details"}</DialogTitle>
               {isCreateModalOpen && (
                 <button
                   type="button"
@@ -618,7 +608,7 @@ export default function Businesses() {
               )}
             </div>
             <DialogDescription>
-              {isEditModalOpen ? "Update the details for this business location." : "Review and adjust anything pulled from Google, or fill it in yourself."}
+              {isEditModalOpen ? "Update the details for this business." : "Review the details pulled from Google Places before saving."}
             </DialogDescription>
           </DialogHeader>
 
@@ -697,10 +687,17 @@ export default function Businesses() {
                   name="googlePlaceId"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Google Place ID</FormLabel>
+                          <FormLabel>Google Place ID</FormLabel>
                       <FormControl>
-                        <Input placeholder="Optional — filled in automatically when you search" {...field} value={field.value || ""} />
+                            <Input
+                              placeholder="Selected from Google Places"
+                              {...field}
+                              value={field.value || ""}
+                              readOnly={isCreateModalOpen || isEditModalOpen}
+                              className="bg-muted/40"
+                            />
                       </FormControl>
+                          <FormDescription>This business is linked to one Google Places location.</FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}

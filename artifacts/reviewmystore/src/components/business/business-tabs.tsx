@@ -28,7 +28,7 @@ export function BusinessTabs({
           <Store className="h-4 w-4" />
         </div>
         <div className="min-w-0">
-          <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">Location workspace</p>
+          <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">Business workspace</p>
           <p className="truncate text-sm font-semibold text-foreground">{businessName}</p>
         </div>
       </div>
