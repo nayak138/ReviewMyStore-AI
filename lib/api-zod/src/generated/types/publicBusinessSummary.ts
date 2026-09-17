@@ -11,10 +11,6 @@ export interface PublicBusinessSummary {
   name: string;
   category: string;
   /** @nullable */
-  brandColor: string | null;
-  /** @nullable */
-  welcomeMessage: string | null;
-  /** @nullable */
   address: string | null;
   /** @nullable */
   phone: string | null;

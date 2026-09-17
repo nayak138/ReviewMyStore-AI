@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type CSSProperties, type KeyboardEvent } from "react";
+import { useEffect, useMemo, useState, type KeyboardEvent } from "react";
 import { useParams } from "wouter";
 import {
   AlertTriangle,
@@ -350,7 +350,6 @@ export default function CustomerReview() {
   const { business, keywords, googleReviewUrl } = data;
   const productKeywords = keywords.filter((keyword) => keyword.category === KeywordCategory.PRODUCT_SERVICE);
   const experienceKeywords = keywords.filter((keyword) => keyword.category === KeywordCategory.EXPERIENCE);
-  const brandColor = business.brandColor || undefined;
   const hasGenerated = reviewText !== null;
   const canGenerateMore = remaining === null || remaining > 0;
   const whatsappHref = business.whatsappNumber ? `https://wa.me/${business.whatsappNumber.replace(/[^0-9]/g, "")}` : null;
@@ -463,10 +462,6 @@ export default function CustomerReview() {
     }
   };
 
-  const coverStyle: CSSProperties = brandColor
-    ? { backgroundColor: `${brandColor}20` }
-    : { backgroundColor: "hsl(var(--primary) / 0.12)" };
-
   const pickerProps: KeywordPickerProps = {
     productKeywords,
     experienceKeywords,
@@ -498,7 +493,7 @@ export default function CustomerReview() {
 
       <main className="mx-auto w-full max-w-[920px] overflow-hidden bg-[#f8faff] shadow-[0_28px_100px_-38px_rgba(28,57,125,0.2)] dark:bg-[#0a1430] dark:shadow-[0_28px_100px_-38px_rgba(0,0,0,0.8)] sm:my-5 sm:rounded-[1.75rem]">
         <header className="relative h-[285px] overflow-hidden sm:h-[350px] lg:h-[385px]">
-          <div className="absolute inset-0" style={coverStyle} />
+          <div className="absolute inset-0 bg-primary/10" />
           {headerImage && !headerImageFailed && (
             <img
               src={headerImage}

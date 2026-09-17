@@ -208,8 +208,6 @@ export async function getPublicReviewPage(
     business: {
       name: business.name,
       category: business.category,
-      brandColor: business.brandColor,
-      welcomeMessage: business.welcomeMessage,
       address: business.address,
       phone: business.phone,
       website: business.website,

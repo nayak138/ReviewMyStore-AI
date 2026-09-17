@@ -2958,14 +2958,6 @@ components:
           type: ["string", "null"]
         slug:
           type: string
-        logoUrl:
-          type: ["string", "null"]
-        coverImageUrl:
-          type: ["string", "null"]
-        brandColor:
-          type: ["string", "null"]
-        welcomeMessage:
-          type: ["string", "null"]
         address:
           type: ["string", "null"]
         phone:
@@ -3011,10 +3003,6 @@ components:
         - category
         - googlePlaceId
         - slug
-        - logoUrl
-        - coverImageUrl
-        - brandColor
-        - welcomeMessage
         - address
         - phone
         - website
@@ -3055,14 +3043,6 @@ components:
           type: string
           minLength: 1
           pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$"
-        logoUrl:
-          type: ["string", "null"]
-        coverImageUrl:
-          type: ["string", "null"]
-        brandColor:
-          type: ["string", "null"]
-        welcomeMessage:
-          type: ["string", "null"]
         address:
           type: ["string", "null"]
         phone:
@@ -3107,14 +3087,6 @@ components:
           type: string
           minLength: 1
           pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$"
-        logoUrl:
-          type: ["string", "null"]
-        coverImageUrl:
-          type: ["string", "null"]
-        brandColor:
-          type: ["string", "null"]
-        welcomeMessage:
-          type: ["string", "null"]
         address:
           type: ["string", "null"]
         phone:
@@ -3470,10 +3442,6 @@ components:
           type: string
         category:
           type: string
-        brandColor:
-          type: ["string", "null"]
-        welcomeMessage:
-          type: ["string", "null"]
         address:
           type: ["string", "null"]
         phone:
@@ -3501,8 +3469,6 @@ components:
       required:
         - name
         - category
-        - brandColor
-        - welcomeMessage
         - address
         - phone
         - website

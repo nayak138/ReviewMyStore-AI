@@ -58,7 +58,7 @@ function publicOrigin(req: Request): string {
 async function loadQrContext(organizationId: string, campaignId: string) {
   const campaign = await getCampaign(organizationId, campaignId);
   const [business] = await db
-    .select({ name: businessesTable.name, brandColor: businessesTable.brandColor })
+    .select({ name: businessesTable.name })
     .from(businessesTable)
     .where(eq(businessesTable.id, campaign.businessId))
     .limit(1);
@@ -122,7 +122,6 @@ router.get(
         url,
         businessName: business?.name ?? "",
         campaignName: campaign.name,
-        brandColor: business?.brandColor ?? null,
       });
 
       const filename = `${slugifyFilename(campaign.name)}-qr.${asset.extension}`;

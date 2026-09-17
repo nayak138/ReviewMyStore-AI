@@ -20,14 +20,6 @@ export interface BusinessCreateInput {
      */
   slug: string;
   /** @nullable */
-  logoUrl?: string | null;
-  /** @nullable */
-  coverImageUrl?: string | null;
-  /** @nullable */
-  brandColor?: string | null;
-  /** @nullable */
-  welcomeMessage?: string | null;
-  /** @nullable */
   address?: string | null;
   /** @nullable */
   phone?: string | null;

@@ -121,10 +121,6 @@ export interface CreateBusinessInput {
   category: string;
   googlePlaceId?: string | null;
   slug: string;
-  logoUrl?: string | null;
-  coverImageUrl?: string | null;
-  brandColor?: string | null;
-  welcomeMessage?: string | null;
   address?: string | null;
   phone?: string | null;
   website?: string | null;

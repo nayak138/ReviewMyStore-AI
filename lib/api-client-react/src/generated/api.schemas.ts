@@ -399,14 +399,6 @@ export interface Business {
   googlePlaceId: string | null;
   slug: string;
   /** @nullable */
-  logoUrl: string | null;
-  /** @nullable */
-  coverImageUrl: string | null;
-  /** @nullable */
-  brandColor: string | null;
-  /** @nullable */
-  welcomeMessage: string | null;
-  /** @nullable */
   address: string | null;
   /** @nullable */
   phone: string | null;
@@ -455,14 +447,6 @@ export interface BusinessCreateInput {
      */
   slug: string;
   /** @nullable */
-  logoUrl?: string | null;
-  /** @nullable */
-  coverImageUrl?: string | null;
-  /** @nullable */
-  brandColor?: string | null;
-  /** @nullable */
-  welcomeMessage?: string | null;
-  /** @nullable */
   address?: string | null;
   /** @nullable */
   phone?: string | null;
@@ -499,14 +483,6 @@ export interface BusinessUpdateInput {
      * @pattern ^[a-z0-9]+(?:-[a-z0-9]+)*$
      */
   slug?: string;
-  /** @nullable */
-  logoUrl?: string | null;
-  /** @nullable */
-  coverImageUrl?: string | null;
-  /** @nullable */
-  brandColor?: string | null;
-  /** @nullable */
-  welcomeMessage?: string | null;
   /** @nullable */
   address?: string | null;
   /** @nullable */
@@ -699,10 +675,6 @@ export interface PlaceDetails {
 export interface PublicBusinessSummary {
   name: string;
   category: string;
-  /** @nullable */
-  brandColor: string | null;
-  /** @nullable */
-  welcomeMessage: string | null;
   /** @nullable */
   address: string | null;
   /** @nullable */

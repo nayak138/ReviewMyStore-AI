@@ -8,7 +8,6 @@ export interface QrAssetInput {
   url: string;
   businessName: string;
   campaignName: string;
-  brandColor: string | null;
 }
 
 const QR_OPTIONS = {
@@ -31,17 +30,16 @@ export async function generateQrSvg(input: QrAssetInput): Promise<Buffer> {
 
 const INCH = 72; // PDF points per inch
 
-// Google's four brand colors, used as a stripe accent echoing the
-// ReviewMyStore.AI storefront-awning mark. Kept independent of the
-// business's own brandColor, which drives the header band instead.
+// Google's four brand colors, used as a generic stripe accent echoing the
+// ReviewMyStore.AI storefront-awning mark.
 const GOOGLE_STRIPE = ["#4285F4", "#EA4335", "#FBBC05", "#34A853"];
 
-/** Print-ready 4in x 6in portrait card for standees: brand-colored header,
+/** Print-ready 4in x 6in portrait card for standees: generic header,
  * large centered QR, call-to-action, and the short URL as fallback text. */
 export async function generateQrPdf(input: QrAssetInput): Promise<Buffer> {
   const width = 4 * INCH;
   const height = 6 * INCH;
-  const brand = input.brandColor ?? "#4285F4";
+  const accent = "#4285F4";
 
   // Rasterize the QR at high resolution so the embedded image prints crisply.
   const qrPng = await QRCode.toBuffer(input.url, {
@@ -65,9 +63,9 @@ export async function generateQrPdf(input: QrAssetInput): Promise<Buffer> {
     doc.rect(i * stripeWidth, 0, stripeWidth + 1, stripeHeight).fill(color);
   });
 
-  // Header band
+  // Generic header band
   const headerHeight = 1.15 * INCH;
-  doc.rect(0, stripeHeight, width, headerHeight - stripeHeight).fill(brand);
+  doc.rect(0, stripeHeight, width, headerHeight - stripeHeight).fill(accent);
   doc
     .fillColor("#FFFFFF")
     .font("Helvetica-Bold")
@@ -86,7 +84,7 @@ export async function generateQrPdf(input: QrAssetInput): Promise<Buffer> {
       align: "center",
     });
 
-  // QR code, centered, framed with a thin brand-colored border.
+  // QR code, centered, framed with a thin generic accent border.
   const qrSize = 2.6 * INCH;
   const qrY = 1.5 * INCH;
   const framePad = 0.12 * INCH;
@@ -99,7 +97,7 @@ export async function generateQrPdf(input: QrAssetInput): Promise<Buffer> {
       12,
     )
     .lineWidth(2)
-    .stroke(brand);
+    .stroke(accent);
   doc.image(qrPng, (width - qrSize) / 2, qrY, {
     width: qrSize,
     height: qrSize,
@@ -134,7 +132,7 @@ export async function generateQrPdf(input: QrAssetInput): Promise<Buffer> {
       align: "center",
     });
   doc
-    .fillColor(brand)
+    .fillColor(accent)
     .fontSize(9)
     .text(input.url, 0.25 * INCH, 5.45 * INCH, {
       width: width - 0.5 * INCH,

@@ -16,8 +16,8 @@ import {
   canAccessObject,
   getObjectAclPolicy,
 } from '../lib/objectAcl';
-import { and, eq, gt, isNull, or } from 'drizzle-orm';
-import { businessesTable, db, objectUploadsTable } from '@workspace/db';
+import { and, eq, gt, isNull } from 'drizzle-orm';
+import { db, objectUploadsTable } from '@workspace/db';
 
 const router: IRouter = Router();
 const objectStorageService = new ObjectStorageService();
@@ -37,46 +37,6 @@ async function streamObject(
   } else {
     res.end();
   }
-}
-
-async function isLegacyPublicBrandingAsset(objectPath: string): Promise<boolean> {
-  const [business] = await db
-    .select({ id: businessesTable.id })
-    .from(businessesTable)
-    .where(
-      and(
-        or(
-          eq(businessesTable.logoUrl, objectPath),
-          eq(businessesTable.coverImageUrl, objectPath),
-        ),
-        eq(businessesTable.status, 'ACTIVE'),
-        isNull(businessesTable.deletedAt),
-        isNull(businessesTable.archivedAt),
-      ),
-    )
-    .limit(1);
-  return Boolean(business);
-}
-
-async function isLegacyOrganizationBrandingAsset(
-  objectPath: string,
-  organizationId: string | null,
-): Promise<boolean> {
-  if (!organizationId) return false;
-  const [business] = await db
-    .select({ id: businessesTable.id })
-    .from(businessesTable)
-    .where(
-      and(
-        eq(businessesTable.organizationId, organizationId),
-        or(
-          eq(businessesTable.logoUrl, objectPath),
-          eq(businessesTable.coverImageUrl, objectPath),
-        ),
-      ),
-    )
-    .limit(1);
-  return Boolean(business);
 }
 
 /**
@@ -232,7 +192,7 @@ router.get(
 );
 
 /**
- * Serve explicitly public branding assets that are stored in the private
+ * Serve explicitly public assets that are stored in the private
  * bucket. This route checks the object ACL without a user and never exposes
  * private objects merely because a path is known.
  */
@@ -245,14 +205,13 @@ router.get(
       const objectFile = await objectStorageService.getObjectEntityFile(
         `/objects/${filePath}`,
       );
-      const objectPath = `/objects/${filePath}`;
       const aclPolicy = await getObjectAclPolicy(objectFile);
       const allowed = aclPolicy
         ? await canAccessObject({
             objectFile,
             requestedPermission: ObjectPermission.READ,
           })
-        : await isLegacyPublicBrandingAsset(objectPath);
+        : false;
       if (!allowed) {
         res.status(404).json({ error: 'File not found' });
         return;
@@ -291,10 +250,7 @@ router.get('/storage/objects/*path', requireAuth, async (req: Request, res: Resp
           objectFile,
           requestedPermission: ObjectPermission.READ,
         })
-      : await isLegacyOrganizationBrandingAsset(
-          objectPath,
-          req.appUser!.organizationId,
-        );
+       : false;
     if (!canAccess) {
       res.status(403).json({ error: 'Forbidden' });
       return;

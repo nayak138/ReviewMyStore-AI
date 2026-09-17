@@ -18,9 +18,6 @@ const mocks = vi.hoisted(() => {
       slug: "northstar-coffee",
       status: "ACTIVE",
       archivedAt: null,
-      brandColor: "#2563eb",
-      logoUrl: null,
-      coverImageUrl: null,
     },
   ];
 

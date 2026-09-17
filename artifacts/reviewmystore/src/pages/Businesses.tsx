@@ -42,10 +42,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Textarea } from "@/components/ui/textarea";
-import { FileUpload } from "@/components/ui/file-upload";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { objectUrl } from "@/lib/imageUtils";
 import { BusinessSearch } from "@/components/business-search";
 import { placePhotoUrl } from "@/lib/selected-place";
 import { LANGUAGES } from "@/lib/languages";
@@ -60,10 +57,6 @@ const businessSchema = z.object({
   category: z.string().min(2, "Category is required"),
   googlePlaceId: z.string().nullable().optional(),
   slug: z.string().min(2, "Slug is required").regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "Lowercase letters, numbers, and hyphens only"),
-  logoUrl: z.string().nullable().optional(),
-  coverImageUrl: z.string().nullable().optional(),
-  brandColor: z.string().optional(),
-  welcomeMessage: z.string().optional(),
   address: z.string().nullable().optional(),
   phone: z.string().nullable().optional(),
   website: z.string().nullable().optional(),
@@ -85,10 +78,6 @@ const EMPTY_BUSINESS_VALUES: BusinessFormValues = {
   category: "",
   googlePlaceId: "",
   slug: "",
-  logoUrl: null,
-  coverImageUrl: null,
-  brandColor: "#3b82f6",
-  welcomeMessage: "Thank you for your visit! We'd love to hear your feedback.",
   address: null,
   phone: null,
   website: null,
@@ -230,10 +219,6 @@ export default function Businesses() {
       category: business.category,
       googlePlaceId: business.googlePlaceId || "",
       slug: business.slug,
-      logoUrl: business.logoUrl,
-      coverImageUrl: business.coverImageUrl,
-      brandColor: business.brandColor || "#3b82f6",
-      welcomeMessage: business.welcomeMessage || "",
       address: business.address,
       phone: business.phone,
       website: business.website,
@@ -448,14 +433,8 @@ export default function Businesses() {
                   }
                 }}
               >
-                {/* Cover Image Area */}
+                {/* Generic business header */}
                 <div className="h-24 w-full bg-secondary relative overflow-hidden shrink-0">
-                  {business.coverImageUrl ? (
-                    <img src={objectUrl(business.coverImageUrl)} alt="Cover" className="w-full h-full object-cover" />
-                  ) : business.brandColor ? (
-                    <div className="w-full h-full" style={{ backgroundColor: business.brandColor, opacity: 0.2 }} />
-                  ) : null}
-                  
                   <div className="absolute top-3 right-3">
                     {business.archivedAt ? (
                       <Badge variant="secondary" className="bg-background/80 backdrop-blur">Archived</Badge>
@@ -470,16 +449,10 @@ export default function Businesses() {
                 </div>
 
                 <div className="p-5 pt-0 flex-1 flex flex-col">
-                  {/* Logo intersecting cover — needs its own stacking context (relative + z-10),
-                      otherwise the cover's `position: relative` box paints on top of it regardless
-                      of DOM order, since positioned elements always paint after static ones. */}
+                  {/* Generic business icon intersecting the header */}
                   <div className="relative z-10 flex justify-between items-start -mt-8 mb-3">
                     <div className="w-16 h-16 rounded-xl border-4 border-card bg-background flex items-center justify-center overflow-hidden shadow-sm">
-                      {business.logoUrl ? (
-                        <img src={objectUrl(business.logoUrl)} alt={business.name} className="w-full h-full object-cover" />
-                      ) : (
-                        <Store className="w-6 h-6 text-muted-foreground" />
-                      )}
+                      <Store className="w-6 h-6 text-muted-foreground" />
                     </div>
                     
                     <div className="mt-10">
@@ -710,68 +683,7 @@ export default function Businesses() {
               </div>
 
               <div className="space-y-4 pt-4 border-t border-border">
-                <h4 className="text-sm font-medium">Branding</h4>
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="logoUrl"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Logo</FormLabel>
-                        <FormControl>
-                          <FileUpload visibility="public" className="h-28" placeholder="Upload Logo" value={field.value} onChange={field.onChange} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="coverImageUrl"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Cover Image</FormLabel>
-                        <FormControl>
-                          <FileUpload visibility="public" className="h-28" placeholder="Upload Cover" value={field.value} onChange={field.onChange} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                <FormField
-                  control={form.control}
-                  name="brandColor"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Brand Color</FormLabel>
-                      <FormControl>
-                        <div className="flex gap-2 max-w-[200px]">
-                          <Input type="color" className="w-12 h-10 p-1 cursor-pointer" {...field} />
-                          <Input type="text" className="flex-1" placeholder="#000000" {...field} />
-                        </div>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="welcomeMessage"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Welcome Message</FormLabel>
-                      <FormControl>
-                        <Textarea placeholder="Thank you for your visit..." className="resize-none" {...field} />
-                      </FormControl>
-                      <FormDescription>Shown to customers when they scan your QR code.</FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
+                <h4 className="text-sm font-medium">Review preferences</h4>
                 <FormField
                   control={form.control}
                   name="defaultLanguage"

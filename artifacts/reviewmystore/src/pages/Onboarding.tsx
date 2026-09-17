@@ -8,8 +8,6 @@ import { useCreateBusiness, useGetDashboardSummary, useGetPlaceDetails, getGetDa
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { FileUpload } from "@/components/ui/file-upload";
 import { BusinessSearch } from "@/components/business-search";
 import { loadSelectedPlace, clearSelectedPlace, placePhotoUrl, type SelectedPlace } from "@/lib/selected-place";
 import { Store, Loader2, ArrowRight, MapPin, Star, Search } from "lucide-react";
@@ -19,10 +17,6 @@ const onboardingSchema = z.object({
   category: z.string().min(2, "Category is required"),
   googlePlaceId: z.string().nullable().optional(),
   slug: z.string().min(2, "Slug is required").regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "Lowercase letters, numbers, and hyphens only"),
-  logoUrl: z.string().nullable().optional(),
-  coverImageUrl: z.string().nullable().optional(),
-  brandColor: z.string().optional(),
-  welcomeMessage: z.string().optional(),
   address: z.string().nullable().optional(),
   phone: z.string().nullable().optional(),
   website: z.string().nullable().optional(),
@@ -43,10 +37,6 @@ const EMPTY_VALUES: OnboardingValues = {
   category: "",
   googlePlaceId: "",
   slug: "",
-  logoUrl: null,
-  coverImageUrl: null,
-  brandColor: "#3b82f6",
-  welcomeMessage: "Thank you for your visit! We'd love to hear your feedback.",
   address: null,
   phone: null,
   website: null,
@@ -114,8 +104,6 @@ export default function Onboarding() {
       category: place.category || "",
       googlePlaceId: place.placeId,
       slug: slugify(place.name),
-      brandColor: EMPTY_VALUES.brandColor,
-      welcomeMessage: EMPTY_VALUES.welcomeMessage,
       address: place.formattedAddress,
       phone: place.phone,
       website: place.website,
@@ -228,7 +216,7 @@ export default function Onboarding() {
               </div>
               <div>
                 <h3 className="font-semibold">2. Confirm Details</h3>
-                <p className="text-sm">Name, category, and branding</p>
+               <p className="text-sm">Name, category, and review preferences</p>
               </div>
             </div>
             <div className="flex items-center gap-4 text-muted-foreground/50 p-4">
@@ -369,98 +357,6 @@ export default function Onboarding() {
                             <Input placeholder="Optional — filled in automatically when you search" {...field} value={field.value || ""} />
                           </FormControl>
                           <FormDescription>Find this on Google Maps, or search above.</FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-
-                  <div className="space-y-4 pt-4 border-t border-border">
-                    <h3 className="text-lg font-semibold">Branding (Optional)</h3>
-                    
-                    <div className="grid md:grid-cols-2 gap-6">
-                      <FormField
-                        control={form.control}
-                        name="logoUrl"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Logo</FormLabel>
-                            <FormControl>
-                              <FileUpload
-                                visibility="public"
-                                className="h-32" 
-                                placeholder="Upload Logo" 
-                                value={field.value} 
-                                onChange={field.onChange} 
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name="coverImageUrl"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Cover Image</FormLabel>
-                            <FormControl>
-                              <FileUpload
-                                visibility="public"
-                                className="h-32" 
-                                placeholder="Upload Cover" 
-                                value={field.value} 
-                                onChange={field.onChange} 
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-
-                    <div className="grid md:grid-cols-2 gap-6">
-                      <FormField
-                        control={form.control}
-                        name="brandColor"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Brand Color</FormLabel>
-                            <FormControl>
-                              <div className="flex gap-2">
-                                <Input 
-                                  type="color" 
-                                  className="w-12 h-10 p-1 cursor-pointer" 
-                                  {...field} 
-                                />
-                                <Input 
-                                  type="text" 
-                                  className="flex-1" 
-                                  placeholder="#000000" 
-                                  {...field} 
-                                />
-                              </div>
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-
-                    <FormField
-                      control={form.control}
-                      name="welcomeMessage"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Welcome Message</FormLabel>
-                          <FormControl>
-                            <Textarea 
-                              placeholder="Thank you for your visit..." 
-                              className="resize-none" 
-                              {...field} 
-                            />
-                          </FormControl>
-                          <FormDescription>Shown to customers when they scan your QR code.</FormDescription>
                           <FormMessage />
                         </FormItem>
                       )}

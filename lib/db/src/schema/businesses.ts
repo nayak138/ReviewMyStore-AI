@@ -49,6 +49,8 @@ export const businessesTable = pgTable(
     category: text("category").notNull(),
     googlePlaceId: text("google_place_id"),
     slug: text("slug").notNull().unique(),
+    // Legacy branding columns are retained for existing rows but are no
+    // longer exposed through the API or used by the application.
     logoUrl: text("logo_url"),
     coverImageUrl: text("cover_image_url"),
     brandColor: text("brand_color"),
