@@ -98,7 +98,17 @@ const mocks = vi.hoisted(() => {
 
 vi.mock("@clerk/react", () => ({
   useAuth: () => ({ isLoaded: true, isSignedIn: true }),
-  useClerk: () => ({ signOut: vi.fn() }),
+  useClerk: () => ({ signOut: vi.fn(), openUserProfile: vi.fn() }),
+  useUser: () => ({
+    user: {
+      fullName: "Morgan Lee",
+      imageUrl: "",
+      primaryEmailAddress: {
+        emailAddress: "morgan@example.com",
+        verification: { status: "verified" },
+      },
+    },
+  }),
 }));
 
 vi.mock("wouter", () => ({
@@ -112,6 +122,25 @@ vi.mock("wouter", () => ({
 }));
 
 vi.mock("@workspace/api-client-react", () => ({
+  getGetCurrentUserQueryKey: () => ["current-user"],
+  useGetCurrentUser: () => ({
+    data: {
+      user: {
+        id: "user-1",
+        organizationId: null,
+        name: "Morgan Lee",
+        email: "morgan@example.com",
+        role: "OWNER",
+        status: "ACTIVE",
+        lastLoginAt: "2026-01-10T10:00:00.000Z",
+        createdAt: "2025-12-01T10:00:00.000Z",
+      },
+      organization: null,
+    },
+    isLoading: false,
+    isError: false,
+    refetch: vi.fn(),
+  }),
   useListBusinesses: () => ({ data: { businesses: mocks.businesses }, isLoading: false }),
   useListCampaigns: () => ({ data: { campaigns: mocks.campaigns }, isLoading: false }),
   useListCampaignTemplates: () => ({ data: { templates: [] }, isLoading: false }),
