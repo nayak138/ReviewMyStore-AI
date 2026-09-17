@@ -20,8 +20,6 @@ import {
   Sparkles,
   Loader2,
   KeyRound,
-  ArrowDown,
-  ArrowUp,
   QrCode,
   ShoppingBag,
   FileImage,
@@ -857,6 +855,8 @@ function KeywordManagerDialog({ campaign, onClose }: { campaign: Campaign; onClo
   const keywords = data?.keywords ?? [];
   const [orderedKeywords, setOrderedKeywords] = useState<Keyword[]>([]);
   const [reorderingCategory, setReorderingCategory] = useState<KeywordCategory | null>(null);
+  const [draggedKeyword, setDraggedKeyword] = useState<{ id: string; category: KeywordCategory } | null>(null);
+  const [dragOverKeywordId, setDragOverKeywordId] = useState<string | null>(null);
 
   const [newLabel, setNewLabel] = useState<Record<KeywordCategory, string>>({
     PRODUCT_SERVICE: "",
@@ -900,15 +900,20 @@ function KeywordManagerDialog({ campaign, onClose }: { campaign: Campaign; onClo
     setNewLabel((prev) => ({ ...prev, [category]: "" }));
   };
 
-  const handleMove = async (category: KeywordCategory, index: number, direction: -1 | 1) => {
-    if (reorderingCategory !== null) return;
+  const handleDrop = async (category: KeywordCategory, targetId: string) => {
+    const dragged = draggedKeyword;
+    setDraggedKeyword(null);
+    setDragOverKeywordId(null);
+    if (reorderingCategory !== null || !dragged || dragged.category !== category || dragged.id === targetId) return;
 
     const categoryItems = orderedKeywords.filter((keyword) => keyword.category === category);
-    const targetIndex = index + direction;
-    if (targetIndex < 0 || targetIndex >= categoryItems.length) return;
+    const sourceIndex = categoryItems.findIndex((keyword) => keyword.id === dragged.id);
+    const targetIndex = categoryItems.findIndex((keyword) => keyword.id === targetId);
+    if (sourceIndex < 0 || targetIndex < 0) return;
 
     const reorderedItems = [...categoryItems];
-    [reorderedItems[index], reorderedItems[targetIndex]] = [reorderedItems[targetIndex], reorderedItems[index]];
+    const [movedItem] = reorderedItems.splice(sourceIndex, 1);
+    reorderedItems.splice(targetIndex, 0, movedItem);
     const sortOrderById = new Map(reorderedItems.map((keyword, sortOrder) => [keyword.id, sortOrder]));
 
     setOrderedKeywords((current) =>
@@ -945,39 +950,61 @@ function KeywordManagerDialog({ campaign, onClose }: { campaign: Campaign; onClo
         <h4 className="text-sm font-semibold text-foreground">{title}</h4>
         <div className="space-y-2">
           {items.length === 0 && <p className="text-xs text-muted-foreground">No keywords yet.</p>}
-          {items.map((kw, index) => (
-            <div key={kw.id} className="flex items-center gap-2 rounded-md border border-border bg-card px-3 py-2">
+          {items.map((kw) => (
+            <div
+              key={kw.id}
+              className={cn(
+                "flex items-center gap-2 rounded-md border border-border bg-card px-3 py-2 transition-colors",
+                draggedKeyword?.id === kw.id && "opacity-50",
+                dragOverKeywordId === kw.id && "border-primary bg-primary/5",
+              )}
+              onDragOver={(event) => {
+                if (
+                  !draggedKeyword ||
+                  draggedKeyword.category !== category ||
+                  draggedKeyword.id === kw.id ||
+                  reorderingCategory !== null
+                ) {
+                  return;
+                }
+                event.preventDefault();
+                event.dataTransfer.dropEffect = "move";
+                setDragOverKeywordId(kw.id);
+              }}
+              onDrop={(event) => {
+                event.preventDefault();
+                void handleDrop(category, kw.id);
+              }}
+            >
+              <div
+                role="button"
+                tabIndex={0}
+                draggable={reorderingCategory === null}
+                aria-label={`Drag ${kw.label} to reorder`}
+                title="Drag to reorder"
+                className="flex h-7 w-4 shrink-0 cursor-grab flex-col justify-center gap-1 active:cursor-grabbing"
+                onDragStart={(event) => {
+                  if (reorderingCategory !== null) {
+                    event.preventDefault();
+                    return;
+                  }
+                  event.dataTransfer.effectAllowed = "move";
+                  event.dataTransfer.setData("text/plain", kw.id);
+                  setDraggedKeyword({ id: kw.id, category });
+                }}
+                onDragEnd={() => {
+                  setDraggedKeyword(null);
+                  setDragOverKeywordId(null);
+                }}
+              >
+                <span className="h-px w-4 rounded-full bg-muted-foreground/70" />
+                <span className="h-px w-4 rounded-full bg-muted-foreground/70" />
+              </div>
               <Switch
                 checked={kw.enabled}
                 onCheckedChange={(checked) => updateKeyword.mutate({ id: kw.id, data: { enabled: checked } })}
               />
               <span className={cn("text-sm flex-1 truncate", !kw.enabled && "text-muted-foreground line-through")}>{kw.label}</span>
-              <div className="flex shrink-0 items-center gap-0.5">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="h-7 w-7"
-                  aria-label={`Move ${kw.label} up`}
-                  title="Move up"
-                  disabled={reorderingCategory !== null || index === 0}
-                  onClick={() => void handleMove(category, index, -1)}
-                >
-                  <ArrowUp className="h-3.5 w-3.5" />
-                </Button>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="h-7 w-7"
-                  aria-label={`Move ${kw.label} down`}
-                  title="Move down"
-                  disabled={reorderingCategory !== null || index === items.length - 1}
-                  onClick={() => void handleMove(category, index, 1)}
-                >
-                  <ArrowDown className="h-3.5 w-3.5" />
-                </Button>
-              </div>
               <Button
                 type="button"
                 variant="ghost"

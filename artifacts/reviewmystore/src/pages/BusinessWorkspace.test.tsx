@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import Businesses from "./Businesses";
@@ -290,7 +290,14 @@ describe("authenticated business workspace", () => {
     await user.click(screen.getAllByRole("button", { name: "Keywords" })[0]);
 
     const dialog = await screen.findByRole("dialog", { name: "Keywords — Summer launch" });
-    await user.click(within(dialog).getByRole("button", { name: "Move Good Prices up" }));
+    const dataTransfer = {
+      effectAllowed: "",
+      dropEffect: "",
+      setData: vi.fn(),
+    };
+    fireEvent.dragStart(within(dialog).getByRole("button", { name: "Drag Good Prices to reorder" }), { dataTransfer });
+    fireEvent.dragOver(within(dialog).getByRole("button", { name: "Drag Great Selection to reorder" }), { dataTransfer });
+    fireEvent.drop(within(dialog).getByRole("button", { name: "Drag Great Selection to reorder" }), { dataTransfer });
 
     await waitFor(() => expect(mocks.keywordMutation.mutateAsync).toHaveBeenCalledTimes(2));
     expect(mocks.keywordMutation.mutateAsync.mock.calls.map(([input]) => input)).toEqual([
