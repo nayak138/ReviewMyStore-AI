@@ -167,17 +167,17 @@ export function InteractiveReviewDemo() {
     <section id="review-demo" className="relative overflow-hidden border-b border-zinc-200 bg-slate-50 px-4 py-12 dark:border-zinc-800 dark:bg-slate-950 sm:py-16">
       <div className="editorial-grid pointer-events-none absolute inset-0 opacity-30 [mask-image:linear-gradient(to_bottom,black,transparent_78%)]" aria-hidden="true" />
       <div className="pointer-events-none absolute -right-48 top-24 h-[32rem] w-[32rem] rounded-full bg-primary/10 blur-3xl" aria-hidden="true" />
-      <div className="mx-auto w-full max-w-md">
+      <div className="mx-auto w-full max-w-md md:max-w-5xl">
         <div className="mx-auto mb-6 text-center sm:mb-8">
           <p className="inline-flex items-center gap-2 rounded-full border border-indigo-200/80 bg-indigo-50 px-6 py-3 text-xl font-extrabold tracking-tight text-indigo-700 shadow-sm dark:border-indigo-900 dark:bg-indigo-950/60 dark:text-indigo-300">Live Customer Preview</p>
         </div>
 
-        <div className="space-y-4 rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
-          <div className="flex items-center justify-between border-b border-zinc-100 pb-2 text-xs font-medium text-zinc-500 dark:border-zinc-800 dark:text-zinc-400">
+        <div className="grid gap-4 rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900 md:grid-cols-2 md:gap-6 md:p-6">
+          <div className="flex items-center justify-between border-b border-zinc-100 pb-2 text-xs font-medium text-zinc-500 dark:border-zinc-800 dark:text-zinc-400 md:col-span-2">
             <span>Interactive review demo</span>
             <span className="inline-flex items-center"><span className="mr-1 inline-block h-2 w-2 animate-pulse rounded-full bg-emerald-500" />Interactive</span>
           </div>
-          <header className="relative min-h-[220px] overflow-hidden rounded-xl bg-[linear-gradient(130deg,#0c1a39_0%,#173c69_44%,#0b142b_100%)] sm:min-h-[260px]">
+          <header className="relative min-h-[220px] overflow-hidden rounded-xl bg-[linear-gradient(130deg,#0c1a39_0%,#173c69_44%,#0b142b_100%)] sm:min-h-[260px] md:row-span-2 md:min-h-[440px]">
             {!headerImageFailed && (
               <img
                 src={demoHeaderImage}
@@ -227,7 +227,7 @@ export function InteractiveReviewDemo() {
             </div>
           </header>
 
-          <div className="rounded-xl border border-zinc-200 bg-slate-50 p-3 dark:border-zinc-800 dark:bg-zinc-950 sm:p-4">
+          <div className="rounded-xl border border-zinc-200 bg-slate-50 p-3 dark:border-zinc-800 dark:bg-zinc-950 sm:p-4 md:col-start-2">
             <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center">
               <Button asChild size="sm" className="min-h-[44px] w-full rounded-xl bg-indigo-600 px-3 text-xs font-semibold text-white shadow-md shadow-indigo-200 transition-all duration-150 hover:bg-indigo-700 active:scale-95 sm:w-auto sm:px-5 sm:text-sm">
                 <a href="tel:+6566888888"><Phone className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" />Call</a>
@@ -249,7 +249,7 @@ export function InteractiveReviewDemo() {
             </div>
           </div>
 
-          <section className="mx-auto w-full max-w-[760px] space-y-4 px-4 pb-8 pt-5 sm:px-7" dir={rtl ? "rtl" : "ltr"}>
+          <section className="mx-auto w-full max-w-[760px] space-y-4 px-0 pb-2 pt-1 sm:px-0 md:col-start-2 md:row-start-3" dir={rtl ? "rtl" : "ltr"}>
             {!reviewText ? (
               <div className="rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900 sm:p-5">
                 <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.16em] text-[#2860c8] dark:text-[#82b3ff]">Step 1</p>
@@ -314,7 +314,7 @@ export function InteractiveReviewDemo() {
               </div>
             )}
           </section>
-          <div ref={demoFooterRef} className="scroll-mb-4 flex items-center justify-center gap-3 border-t border-[#d8e2fb] bg-[#eef3ff] py-5 text-xs text-muted-foreground dark:border-white/10 dark:bg-[#0a1430]">
+          <div ref={demoFooterRef} className="scroll-mb-4 flex items-center justify-center gap-3 border-t border-[#d8e2fb] bg-[#eef3ff] py-5 text-xs text-muted-foreground dark:border-white/10 dark:bg-[#0a1430] md:col-span-2">
             <span>Powered by</span>
             <BrandLogo className="h-8 w-auto max-w-[11rem] opacity-90" />
           </div>
