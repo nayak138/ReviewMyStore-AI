@@ -740,8 +740,8 @@ function QrCodeManagerDialog({ campaign, onClose }: { campaign: Campaign; onClos
 
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-2xl">
-        <DialogHeader>
+      <DialogContent className="max-w-2xl min-w-0 overflow-x-hidden">
+        <DialogHeader className="min-w-0">
           <DialogTitle className="flex items-center gap-2">
             <QrCode className="h-5 w-5 text-primary" />
             QR Code — {campaign.name}
@@ -784,9 +784,9 @@ function QrCodeManagerDialog({ campaign, onClose }: { campaign: Campaign; onClos
         </div>
 
         {shortUrl && (
-          <div className="rounded-lg border border-border bg-secondary/40 px-3 py-2">
+          <div className="min-w-0 overflow-hidden rounded-lg border border-border bg-secondary/40 px-3 py-2">
             <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">Campaign link</p>
-            <code className="mt-1 block truncate text-xs text-foreground">{shortUrl}</code>
+            <code className="mt-1 block min-w-0 truncate text-xs text-foreground">{shortUrl}</code>
           </div>
         )}
 
@@ -810,10 +810,11 @@ function QrCodeManagerDialog({ campaign, onClose }: { campaign: Campaign; onClos
           </div>
         )}
 
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid min-w-0 grid-cols-3 gap-2">
           {formats.map(({ format, label, hint, icon: Icon }) => (
-            <Button key={format} asChild variant="outline" className="h-auto flex-col gap-1 py-3">
+            <Button key={format} asChild variant="outline" className="h-auto min-w-0 flex-col gap-1 py-3">
               <a
+                className="min-w-0"
                 href={qrDownloadUrl(campaign.id, format)}
                 download
                 onClick={(event) => {
@@ -834,7 +835,7 @@ function QrCodeManagerDialog({ campaign, onClose }: { campaign: Campaign; onClos
           ))}
         </div>
 
-        <Button asChild className="w-full">
+        <Button asChild className="w-full min-w-0">
           <a href={`mailto:hello@5-star.ai?subject=${encodeURIComponent(`Order NFC Standee — ${campaign.name}`)}&body=${encodeURIComponent(`Please help me order an NFC standee for the campaign "${campaign.name}".`)}`}>
             <ShoppingBag className="mr-2 h-4 w-4" />
             Order NFC Standee
