@@ -50,6 +50,8 @@ const mocks = vi.hoisted(() => {
     campaigns,
     navigate: vi.fn(),
     mutation: () => ({ mutate: vi.fn(), isPending: false }),
+    qrError: null as Error | null,
+    qrRefetch: vi.fn(),
     reviewDashboard: {
       connection: { status: "DISCONNECTED", provider: "BNDLE", lastSyncedAt: null, lastError: null },
       locations: [],
@@ -77,7 +79,14 @@ vi.mock("@workspace/api-client-react", () => ({
   useListBusinesses: () => ({ data: { businesses: mocks.businesses }, isLoading: false }),
   useListCampaigns: () => ({ data: { campaigns: mocks.campaigns }, isLoading: false }),
   useListCampaignTemplates: () => ({ data: { templates: [] }, isLoading: false }),
-  useGetCampaignQr: () => ({ data: { redirectPath: "/r/summer" }, isLoading: false }),
+  useGetCampaignQr: () => ({
+    data: mocks.qrError ? undefined : { redirectPath: "/r/summer" },
+    isLoading: false,
+    isFetching: false,
+    isError: Boolean(mocks.qrError),
+    error: mocks.qrError,
+    refetch: mocks.qrRefetch,
+  }),
   useListKeywords: () => ({ data: { keywords: [] }, isLoading: false }),
   useGetPlaceDetails: () => ({ data: undefined, isLoading: false }),
   useGetReviewDashboard: () => ({ data: mocks.reviewDashboard, isLoading: false }),
@@ -124,6 +133,9 @@ vi.mock("@workspace/api-client-react", () => ({
 afterEach(() => {
   cleanup();
   mocks.navigate.mockClear();
+  mocks.qrError = null;
+  mocks.qrRefetch.mockReset();
+  vi.unstubAllGlobals();
   window.history.replaceState({}, "", "/");
 });
 
@@ -225,6 +237,27 @@ describe("authenticated business workspace", () => {
       "href",
       expect.stringContaining("mailto:hello@5-star.ai"),
     );
+  });
+
+  it("shows a QR download error and lets the owner retry inside the dialog", async () => {
+    const user = userEvent.setup();
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: false,
+      json: async () => ({ message: "The QR file could not be generated. Please try again." }),
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    window.history.pushState({}, "", "/campaigns?businessId=business-1");
+    renderWithQueryClient(<Campaigns />);
+
+    await user.click((await screen.findAllByRole("button", { name: "QR Code" }))[0]);
+    await user.click(screen.getByRole("link", { name: /PNG/ }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "The QR file could not be generated. Please try again.",
+    );
+
+    await user.click(screen.getByRole("button", { name: "Try again" }));
+    expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
   it("keeps Settings and only the top-level three-item sidebar visible", () => {

@@ -25,6 +25,7 @@ import {
   FileImage,
   FileCode2,
   FileText,
+  RefreshCw,
 } from "lucide-react";
 import {
   useListBusinesses,
@@ -71,6 +72,26 @@ const API_BASE = `${import.meta.env.BASE_URL.replace(/\/$/, "")}/api`;
 
 function qrDownloadUrl(campaignId: string, format: "png" | "svg" | "pdf") {
   return `${API_BASE}/v1/campaigns/${campaignId}/qr/download/${format}`;
+}
+
+type QrFormat = "png" | "svg" | "pdf";
+
+function qrErrorMessage(error: unknown, fallback: string): string {
+  if (error && typeof error === "object") {
+    const data = (error as { data?: unknown }).data;
+    if (data && typeof data === "object" && typeof (data as { message?: unknown }).message === "string") {
+      return (data as { message: string }).message;
+    }
+  }
+  if (error instanceof Error && error.message && !error.message.startsWith("HTTP 5")) {
+    return error.message;
+  }
+  return fallback;
+}
+
+function filenameFromContentDisposition(header: string | null, fallback: string): string {
+  const match = header?.match(/filename="([^"]+)"/i) ?? header?.match(/filename=([^;]+)/i);
+  return match?.[1]?.trim() || fallback;
 }
 
 const STATUS_META: Record<Campaign["status"], { label: string; className: string }> = {
@@ -642,15 +663,80 @@ export default function Campaigns() {
 }
 
 function QrCodeManagerDialog({ campaign, onClose }: { campaign: Campaign; onClose: () => void }) {
-  const { data: qr, isLoading } = useGetCampaignQr(campaign.id, {
+  const {
+    data: qr,
+    error: qrError,
+    isError: isQrError,
+    isFetching,
+    isLoading,
+    refetch,
+  } = useGetCampaignQr(campaign.id, {
     query: { queryKey: getGetCampaignQrQueryKey(campaign.id) },
   });
   const shortUrl = qr ? `${window.location.origin}${qr.redirectPath}` : null;
-  const formats = [
-    { format: "png" as const, label: "PNG", hint: "High-res image", icon: FileImage },
-    { format: "svg" as const, label: "SVG", hint: "Vector file", icon: FileCode2 },
-    { format: "pdf" as const, label: "PDF", hint: '4×6" print-ready', icon: FileText },
+  const [previewError, setPreviewError] = useState<string | null>(null);
+  const [previewRetry, setPreviewRetry] = useState(0);
+  const [downloadError, setDownloadError] = useState<string | null>(null);
+  const [lastDownloadFormat, setLastDownloadFormat] = useState<QrFormat | null>(null);
+  const [downloadingFormat, setDownloadingFormat] = useState<QrFormat | null>(null);
+  const formats: Array<{ format: QrFormat; label: string; hint: string; icon: typeof FileImage }> = [
+    { format: "png", label: "PNG", hint: "High-res image", icon: FileImage },
+    { format: "svg", label: "SVG", hint: "Vector file", icon: FileCode2 },
+    { format: "pdf", label: "PDF", hint: '4×6" print-ready', icon: FileText },
   ];
+
+  const retryQr = () => {
+    setPreviewError(null);
+    setDownloadError(null);
+    setPreviewRetry((value) => value + 1);
+    void refetch();
+  };
+
+  const downloadQr = async (format: QrFormat) => {
+    setLastDownloadFormat(format);
+    setDownloadError(null);
+    setDownloadingFormat(format);
+
+    try {
+      const response = await fetch(qrDownloadUrl(campaign.id, format), {
+        credentials: "include",
+      });
+
+      if (!response.ok) {
+        let message = `The ${format.toUpperCase()} file could not be generated.`;
+        try {
+          const body = (await response.json()) as { message?: string };
+          if (body.message) message = body.message;
+        } catch {
+          // Keep the user-facing fallback when the server returned no JSON.
+        }
+        throw new Error(message);
+      }
+
+      const body = await response.blob();
+      if (!body.size) {
+        throw new Error(`The ${format.toUpperCase()} file was empty.`);
+      }
+
+      const objectUrl = URL.createObjectURL(body);
+      const anchor = document.createElement("a");
+      anchor.href = objectUrl;
+      anchor.download = filenameFromContentDisposition(
+        response.headers.get("content-disposition"),
+        `${campaign.name.toLowerCase().replace(/[^a-z0-9]+/g, "-") || "qr-code"}-qr.${format}`,
+      );
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      URL.revokeObjectURL(objectUrl);
+    } catch (error) {
+      setDownloadError(
+        qrErrorMessage(error, `We couldn't generate the ${format.toUpperCase()} file right now. Please try again.`),
+      );
+    } finally {
+      setDownloadingFormat(null);
+    }
+  };
 
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
@@ -664,10 +750,36 @@ function QrCodeManagerDialog({ campaign, onClose }: { campaign: Campaign; onClos
         </DialogHeader>
 
         <div className="flex justify-center rounded-xl border border-border bg-white p-4">
-          {isLoading ? (
+          {isLoading || isFetching ? (
             <Skeleton className="h-48 w-48" />
+          ) : isQrError || !qr ? (
+            <div className="flex min-h-48 w-full max-w-sm flex-col items-center justify-center gap-3 rounded-lg border border-destructive/30 bg-destructive/5 p-5 text-center">
+              <AlertCircle className="h-8 w-8 text-destructive" />
+              <p className="text-sm text-destructive">
+                {qrErrorMessage(qrError, "We couldn't generate this QR code right now.")}
+              </p>
+              <Button type="button" variant="outline" size="sm" onClick={retryQr} disabled={isFetching}>
+                <RefreshCw className={cn("mr-2 h-4 w-4", isFetching && "animate-spin")} />
+                Try again
+              </Button>
+            </div>
+          ) : previewError ? (
+            <div className="flex min-h-48 w-full max-w-sm flex-col items-center justify-center gap-3 rounded-lg border border-destructive/30 bg-destructive/5 p-5 text-center">
+              <AlertCircle className="h-8 w-8 text-destructive" />
+              <p className="text-sm text-destructive">{previewError}</p>
+              <Button type="button" variant="outline" size="sm" onClick={retryQr}>
+                <RefreshCw className="mr-2 h-4 w-4" />
+                Retry QR preview
+              </Button>
+            </div>
           ) : (
-            <img src={qrDownloadUrl(campaign.id, "png")} alt={`QR code for ${campaign.name}`} className="h-48 w-48" />
+            <img
+              key={previewRetry}
+              src={`${qrDownloadUrl(campaign.id, "png")}?attempt=${previewRetry}`}
+              alt={`QR code for ${campaign.name}`}
+              className="h-48 w-48"
+              onError={() => setPreviewError("We couldn't load the QR preview. Please try again.")}
+            />
           )}
         </div>
 
@@ -678,11 +790,43 @@ function QrCodeManagerDialog({ campaign, onClose }: { campaign: Campaign; onClos
           </div>
         )}
 
+        {downloadError && (
+          <div role="alert" className="flex items-start gap-3 rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">
+            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+            <div className="min-w-0 flex-1">
+              <p>{downloadError}</p>
+              {lastDownloadFormat && (
+                <Button
+                  type="button"
+                  variant="link"
+                  className="h-auto p-0 font-semibold text-destructive"
+                  onClick={() => void downloadQr(lastDownloadFormat)}
+                  disabled={downloadingFormat !== null}
+                >
+                  Try again
+                </Button>
+              )}
+            </div>
+          </div>
+        )}
+
         <div className="grid grid-cols-3 gap-2">
           {formats.map(({ format, label, hint, icon: Icon }) => (
             <Button key={format} asChild variant="outline" className="h-auto flex-col gap-1 py-3">
-              <a href={qrDownloadUrl(campaign.id, format)} download>
-                <Icon className="h-4 w-4" />
+              <a
+                href={qrDownloadUrl(campaign.id, format)}
+                download
+                onClick={(event) => {
+                  event.preventDefault();
+                  void downloadQr(format);
+                }}
+                aria-disabled={downloadingFormat !== null}
+              >
+                {downloadingFormat === format ? (
+                  <RefreshCw className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Icon className="h-4 w-4" />
+                )}
                 <span className="text-xs font-semibold">{label}</span>
                 <span className="text-[10px] font-normal text-muted-foreground">{hint}</span>
               </a>

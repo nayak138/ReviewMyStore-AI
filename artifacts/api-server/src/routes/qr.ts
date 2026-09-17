@@ -139,7 +139,13 @@ router.get(
           .json({ success: false, code: "NOT_FOUND", message: err.message });
         return;
       }
-      throw err;
+      req.log?.error({ err, campaignId: param(req, "id"), format }, "QR asset generation failed");
+      res.status(500).json({
+        success: false,
+        code: "QR_GENERATION_FAILED",
+        message: "The QR file could not be generated. Please try again.",
+      });
+      return;
     }
   },
 );
