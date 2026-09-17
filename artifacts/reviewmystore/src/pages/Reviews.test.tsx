@@ -107,6 +107,11 @@ vi.mock('@workspace/api-client-react', () => ({
     mutate: mocks.deleteMutate,
     isPending: false,
   }),
+  useListBusinesses: () => ({
+    data: { businesses: [] },
+    isLoading: false,
+  }),
+  getListBusinessesQueryKey: () => ['/api/businesses'],
   ReviewResponseStatus: {
     PENDING: 'PENDING',
     DRAFT: 'DRAFT',
