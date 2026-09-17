@@ -1,24 +1,15 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
-import { useAuth, useClerk } from "@clerk/react";
+import { useClerk } from "@clerk/react";
 import { 
   Store, 
-  Megaphone, 
-  QrCode, 
-  MessageSquare,
-  MessageCircleWarning,
   BarChart3, 
-  Inbox,
-  ShieldCheck,
+  Settings,
   LogOut,
   Menu,
   X
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-import {
-  useGetCurrentUser,
-  getGetCurrentUserQueryKey,
-} from "@workspace/api-client-react";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -33,30 +24,9 @@ interface NavItem {
 }
 
 const NAV_ITEMS: NavItem[] = [
-  {
-    name: "Businesses",
-    icon: Store,
-    href: "/businesses",
-    ready: true,
-    children: [
-      {
-        name: "Campaigns",
-        icon: Megaphone,
-        href: "/campaigns",
-        ready: true,
-        children: [{ name: "QR Codes", icon: QrCode, href: "/qr-codes", ready: true }],
-      },
-      { name: "Reviews", icon: MessageSquare, href: "/reviews", ready: true },
-      { name: "Feedback", icon: MessageCircleWarning, href: "/feedback", ready: true },
-    ],
-  },
+  { name: "Businesses", icon: Store, href: "/businesses", ready: true },
   { name: "Analytics", icon: BarChart3, href: "/analytics", ready: true },
-];
-
-// Shown only to SUPER_ADMIN users, below the regular nav items.
-const ADMIN_NAV_ITEMS = [
-  { name: "Demo Requests", icon: Inbox, href: "/admin/leads", ready: true },
-  { name: "Master Admin", icon: ShieldCheck, href: "/admin/portal", ready: true },
+  { name: "Settings", icon: Settings, href: "/settings", ready: true },
 ];
 
 interface AppLayoutProps {
@@ -78,16 +48,6 @@ export function AppLayout({ children, title }: AppLayoutProps) {
   };
   const [location, setLocation] = useLocation();
   const { signOut } = useClerk();
-  const { isSignedIn } = useAuth();
-
-  const { data: session } = useGetCurrentUser({
-    query: {
-      enabled: !!isSignedIn,
-      queryKey: getGetCurrentUserQueryKey(),
-    },
-  });
-  const isSuperAdmin = session?.user.role === "SUPER_ADMIN";
-  const navItems: NavItem[] = isSuperAdmin ? [...NAV_ITEMS, ...ADMIN_NAV_ITEMS] : NAV_ITEMS;
 
   const handleSignOut = () => {
     signOut({ redirectUrl: "/" });
@@ -117,7 +77,7 @@ export function AppLayout({ children, title }: AppLayoutProps) {
         </div>
 
         <nav className="flex-1 overflow-y-auto p-4 space-y-1">
-          {navItems.map((item) => (
+          {NAV_ITEMS.map((item) => (
             <SidebarNavItem key={item.name} item={item} location={location} onNavigate={() => setMobileMenuOpen(false)} />
           ))}
         </nav>

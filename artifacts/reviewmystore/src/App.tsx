@@ -32,6 +32,7 @@ const QrCodes = lazy(() => import("./pages/QrCodes"));
 const Reviews = lazy(() => import("./pages/Reviews"));
 const Feedback = lazy(() => import("./pages/Feedback"));
 const Analytics = lazy(() => import("./pages/Analytics"));
+const Settings = lazy(() => import("./pages/Settings"));
 
 const AdminLeads = lazy(() => import("./pages/AdminLeads"));
 const AdminPortal = lazy(() => import("./pages/AdminPortal"));
@@ -313,6 +314,7 @@ function AppRouter() {
       <Route path="/reviews" component={Reviews} />
       <Route path="/feedback" component={Feedback} />
       <Route path="/analytics" component={Analytics} />
+      <Route path="/settings" component={Settings} />
       {/* Super Admin only */}
       <Route path="/admin/leads" component={AdminLeads} />
       <Route path="/admin/portal" component={AdminPortal} />

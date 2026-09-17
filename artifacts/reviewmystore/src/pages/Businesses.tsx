@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@clerk/react";
-import { Redirect } from "wouter";
+import { Redirect, useLocation } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 import { 
   Store, 
@@ -110,6 +110,7 @@ function slugify(value: string): string {
 
 export default function Businesses() {
   const { isLoaded, isSignedIn } = useAuth();
+  const [, setLocation] = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
@@ -433,9 +434,19 @@ export default function Businesses() {
               <div 
                 key={business.id} 
                 className={cn(
-                  "group rounded-xl border bg-card p-0 shadow-sm overflow-hidden flex flex-col transition-all duration-200 hover:shadow-md",
+                  "group cursor-pointer rounded-xl border bg-card p-0 shadow-sm overflow-hidden flex flex-col transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
                   business.archivedAt ? "opacity-70 border-dashed" : "border-border hover:border-primary/30"
                 )}
+                role="link"
+                tabIndex={0}
+                aria-label={`Open ${business.name} workspace`}
+                onClick={() => setLocation(`/campaigns?businessId=${encodeURIComponent(business.id)}`)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    setLocation(`/campaigns?businessId=${encodeURIComponent(business.id)}`);
+                  }
+                }}
               >
                 {/* Cover Image Area */}
                 <div className="h-24 w-full bg-secondary relative overflow-hidden shrink-0">
@@ -474,7 +485,7 @@ export default function Businesses() {
                     <div className="mt-10">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
+                          <Button variant="ghost" size="icon" onClick={(event) => event.stopPropagation()} className="h-8 w-8 text-muted-foreground opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
                             <MoreVertical className="w-4 h-4" />
                           </Button>
                         </DropdownMenuTrigger>
@@ -538,7 +549,7 @@ export default function Businesses() {
                       <ExternalLink className="w-3 h-3 mr-1" />
                       /{business.slug}
                     </span>
-                    <span>Created {new Date(business.createdAt).toLocaleDateString()}</span>
+                    <span className="font-medium text-primary">Open workspace →</span>
                   </div>
                 </div>
               </div>

@@ -8,8 +8,11 @@ import {
   useUpdatePrivateFeedbackStatus,
   PrivateFeedbackStatus,
   type PrivateFeedbackItem,
+  useListBusinesses,
+  getListBusinessesQueryKey,
 } from "@workspace/api-client-react";
 import { AppLayout } from "@/components/layout/app-layout";
+import { BusinessTabs } from "@/components/business/business-tabs";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -90,6 +93,12 @@ function FeedbackCard({ item }: { item: PrivateFeedbackItem }) {
 export default function Feedback() {
   const { isLoaded, isSignedIn } = useAuth();
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const workspaceBusinessId = new URLSearchParams(window.location.search).get("businessId");
+  const { data: businessData } = useListBusinesses(
+    { includeArchived: false },
+    { query: { enabled: !!isSignedIn && !!workspaceBusinessId, queryKey: getListBusinessesQueryKey({ includeArchived: false }) } },
+  );
+  const workspaceBusiness = businessData?.businesses.find((business) => business.id === workspaceBusinessId);
 
   const listParams = statusFilter === "all" ? {} : { status: statusFilter as PrivateFeedbackStatus };
   const { data, isLoading } = useListPrivateFeedback(listParams, {
@@ -100,12 +109,15 @@ export default function Feedback() {
     return <Redirect to="/sign-in" />;
   }
 
-  const feedback = data?.feedback ?? [];
+  const feedback = (data?.feedback ?? []).filter((item) => !workspaceBusiness || item.businessName === workspaceBusiness.name);
   const newCount = feedback.filter((item) => item.status === "NEW").length;
 
   return (
     <AppLayout title="Private Feedback">
       <div className="mx-auto max-w-4xl space-y-6 p-4 md:p-8">
+        {workspaceBusiness && (
+          <BusinessTabs businessId={workspaceBusiness.id} businessName={workspaceBusiness.name} active="feedback" />
+        )}
         <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
           <div>
             <h2 className="text-3xl font-bold tracking-tight text-foreground">Private Feedback</h2>

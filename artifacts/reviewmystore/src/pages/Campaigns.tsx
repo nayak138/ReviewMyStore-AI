@@ -20,6 +20,11 @@ import {
   Sparkles,
   Loader2,
   Settings2,
+  QrCode,
+  ShoppingBag,
+  FileImage,
+  FileCode2,
+  FileText,
 } from "lucide-react";
 import {
   useListBusinesses,
@@ -35,10 +40,12 @@ import {
   useCreateKeyword,
   useUpdateKeyword,
   useDeleteKeyword,
+  useGetCampaignQr,
   getListBusinessesQueryKey,
   getListCampaignsQueryKey,
   getListCampaignTemplatesQueryKey,
   getListKeywordsQueryKey,
+  getGetCampaignQrQueryKey,
   Campaign,
   CampaignTemplate,
   Keyword,
@@ -58,6 +65,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import { BusinessTabs } from "@/components/business/business-tabs";
+
+const API_BASE = `${import.meta.env.BASE_URL.replace(/\/$/, "")}/api`;
+
+function qrDownloadUrl(campaignId: string, format: "png" | "svg" | "pdf") {
+  return `${API_BASE}/v1/campaigns/${campaignId}/qr/download/${format}`;
+}
 
 const STATUS_META: Record<Campaign["status"], { label: string; className: string }> = {
   DRAFT: { label: "Draft", className: "bg-secondary text-muted-foreground border-border" },
@@ -97,8 +111,9 @@ export default function Campaigns() {
   const { isLoaded, isSignedIn } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const workspaceBusinessId = new URLSearchParams(window.location.search).get("businessId");
 
-  const [selectedBusinessId, setSelectedBusinessId] = useState<string | null>(null);
+  const [selectedBusinessId, setSelectedBusinessId] = useState<string | null>(workspaceBusinessId);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [createTab, setCreateTab] = useState<"custom" | "template">("custom");
   const [customName, setCustomName] = useState("");
@@ -112,6 +127,7 @@ export default function Campaigns() {
   const [editDescription, setEditDescription] = useState("");
 
   const [keywordCampaign, setKeywordCampaign] = useState<Campaign | null>(null);
+  const [qrCampaign, setQrCampaign] = useState<Campaign | null>(null);
 
   const [confirmDialog, setConfirmDialog] = useState<{
     isOpen: boolean;
@@ -129,10 +145,14 @@ export default function Campaigns() {
   const businesses = useMemo(() => businessData?.businesses ?? [], [businessData]);
 
   useEffect(() => {
+    if (workspaceBusinessId && businesses.some((business) => business.id === workspaceBusinessId)) {
+      if (selectedBusinessId !== workspaceBusinessId) setSelectedBusinessId(workspaceBusinessId);
+      return;
+    }
     if (!selectedBusinessId && businesses.length > 0) {
       setSelectedBusinessId(businesses[0].id);
     }
-  }, [businesses, selectedBusinessId]);
+  }, [businesses, selectedBusinessId, workspaceBusinessId]);
 
   const selectedBusiness = businesses.find((b) => b.id === selectedBusinessId) ?? null;
 
@@ -310,7 +330,12 @@ export default function Campaigns() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="w-full sm:max-w-xs">
-            {isLoadingBusinesses ? (
+            {workspaceBusinessId && selectedBusiness ? (
+              <div>
+                <p className="text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground">Campaigns</p>
+                <p className="mt-1 text-lg font-semibold text-foreground">{selectedBusiness.name}</p>
+              </div>
+            ) : isLoadingBusinesses ? (
               <Skeleton className="h-9 w-full" />
             ) : businesses.length === 0 ? null : (
               <Select value={selectedBusinessId ?? ""} onValueChange={setSelectedBusinessId}>
@@ -332,6 +357,10 @@ export default function Campaigns() {
             New Campaign
           </Button>
         </div>
+
+        {workspaceBusinessId && selectedBusiness && (
+          <BusinessTabs businessId={selectedBusiness.id} businessName={selectedBusiness.name} active="campaigns" />
+        )}
 
         {!isLoadingBusinesses && businesses.length === 0 && (
           <div className="py-16 flex flex-col items-center justify-center text-center border-2 border-dashed border-border rounded-xl">
@@ -450,9 +479,14 @@ export default function Campaigns() {
                     </div>
                   )}
 
-                  <Button variant="outline" size="sm" className="w-full" onClick={() => setKeywordCampaign(campaign)}>
-                    <Settings2 className="w-3.5 h-3.5 mr-2" /> Manage Keywords
-                  </Button>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Button variant="outline" size="sm" onClick={() => setKeywordCampaign(campaign)}>
+                      <Settings2 className="mr-2 h-3.5 w-3.5" /> Manage Keywords
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={() => setQrCampaign(campaign)}>
+                      <QrCode className="mr-2 h-3.5 w-3.5" /> QR Code
+                    </Button>
+                  </div>
                 </div>
               ))
             )}
@@ -585,6 +619,10 @@ export default function Campaigns() {
         />
       )}
 
+      {qrCampaign && (
+        <QrCodeManagerDialog campaign={qrCampaign} onClose={() => setQrCampaign(null)} />
+      )}
+
       {/* Confirmation Dialog */}
       <Dialog open={confirmDialog.isOpen} onOpenChange={(open) => setConfirmDialog((prev) => ({ ...prev, isOpen: open }))}>
         <DialogContent className="max-w-md">
@@ -606,6 +644,66 @@ export default function Campaigns() {
         </DialogContent>
       </Dialog>
     </AppLayout>
+  );
+}
+
+function QrCodeManagerDialog({ campaign, onClose }: { campaign: Campaign; onClose: () => void }) {
+  const { data: qr, isLoading } = useGetCampaignQr(campaign.id, {
+    query: { queryKey: getGetCampaignQrQueryKey(campaign.id) },
+  });
+  const shortUrl = qr ? `${window.location.origin}${qr.redirectPath}` : null;
+  const formats = [
+    { format: "png" as const, label: "PNG", hint: "High-res image", icon: FileImage },
+    { format: "svg" as const, label: "SVG", hint: "Vector file", icon: FileCode2 },
+    { format: "pdf" as const, label: "PDF", hint: '4×6" print-ready', icon: FileText },
+  ];
+
+  return (
+    <Dialog open onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <QrCode className="h-5 w-5 text-primary" />
+            QR Code — {campaign.name}
+          </DialogTitle>
+          <DialogDescription>Download the QR code for this campaign or request an NFC standee for the same review link.</DialogDescription>
+        </DialogHeader>
+
+        <div className="flex justify-center rounded-xl border border-border bg-white p-4">
+          {isLoading ? (
+            <Skeleton className="h-48 w-48" />
+          ) : (
+            <img src={qrDownloadUrl(campaign.id, "png")} alt={`QR code for ${campaign.name}`} className="h-48 w-48" />
+          )}
+        </div>
+
+        {shortUrl && (
+          <div className="rounded-lg border border-border bg-secondary/40 px-3 py-2">
+            <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">Campaign link</p>
+            <code className="mt-1 block truncate text-xs text-foreground">{shortUrl}</code>
+          </div>
+        )}
+
+        <div className="grid grid-cols-3 gap-2">
+          {formats.map(({ format, label, hint, icon: Icon }) => (
+            <Button key={format} asChild variant="outline" className="h-auto flex-col gap-1 py-3">
+              <a href={qrDownloadUrl(campaign.id, format)} download>
+                <Icon className="h-4 w-4" />
+                <span className="text-xs font-semibold">{label}</span>
+                <span className="text-[10px] font-normal text-muted-foreground">{hint}</span>
+              </a>
+            </Button>
+          ))}
+        </div>
+
+        <Button asChild className="w-full">
+          <a href={`mailto:hello@5-star.ai?subject=${encodeURIComponent(`Order NFC Standee — ${campaign.name}`)}&body=${encodeURIComponent(`Please help me order an NFC standee for the campaign "${campaign.name}".`)}`}>
+            <ShoppingBag className="mr-2 h-4 w-4" />
+            Order NFC Standee
+          </a>
+        </Button>
+      </DialogContent>
+    </Dialog>
   );
 }
 

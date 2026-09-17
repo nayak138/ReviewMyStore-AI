@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@clerk/react";
-import { Redirect } from "wouter";
+import { Redirect, useLocation } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   useGetReviewDashboard,
@@ -20,8 +20,11 @@ import {
   type ReviewProviderLocationOption,
   type ReviewProviderLocationStage,
   ReviewResponseStatus,
+  useListBusinesses,
+  getListBusinessesQueryKey,
 } from "@workspace/api-client-react";
 import { AppLayout } from "@/components/layout/app-layout";
+import { BusinessTabs } from "@/components/business/business-tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
@@ -419,6 +422,13 @@ export default function Reviews() {
   const { isLoaded, isSignedIn } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [routeLocation] = useLocation();
+  const workspaceBusinessId = new URLSearchParams(routeLocation.split("?")[1] ?? "").get("businessId");
+  const { data: businessData } = useListBusinesses(
+    { includeArchived: false },
+    { query: { enabled: !!isSignedIn && !!workspaceBusinessId, queryKey: getListBusinessesQueryKey({ includeArchived: false }) } },
+  );
+  const workspaceBusiness = businessData?.businesses.find((business) => business.id === workspaceBusinessId);
 
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 500);
@@ -465,6 +475,14 @@ export default function Reviews() {
     }
   });
   const reviews = reviewsData?.reviews ?? [];
+
+  useEffect(() => {
+    if (!workspaceBusiness || !dashboard?.locations.length) return;
+    const matchingLocation = dashboard.locations.find((location) => location.name === workspaceBusiness.name);
+    if (matchingLocation && locationId !== matchingLocation.id) {
+      setLocationId(matchingLocation.id);
+    }
+  }, [dashboard?.locations, locationId, workspaceBusiness]);
 
   // Shared by both return paths into the on-brand connect screen: a fresh
   // OAuth round trip landing back on ?bndleConnect=1 (via the locations
@@ -767,6 +785,9 @@ export default function Reviews() {
   return (
     <AppLayout title="Reviews">
       <div className="p-4 md:p-8 max-w-5xl mx-auto space-y-8 animate-in fade-in duration-500">
+        {workspaceBusiness && (
+          <BusinessTabs businessId={workspaceBusiness.id} businessName={workspaceBusiness.name} active="reviews" />
+        )}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
           <div>
             <h2 className="text-3xl font-bold tracking-tight text-foreground">Review Inbox</h2>
