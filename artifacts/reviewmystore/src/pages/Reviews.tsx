@@ -753,39 +753,39 @@ export default function Reviews() {
 
   if (dashboard?.connection.status === "DISCONNECTED" || dashboard?.connection.status === "ERROR") {
     return (
-        <AppLayout title="Review Inbox" businessName={workspaceBusiness?.name}>
+      <AppLayout title="Review Inbox" businessName={workspaceBusiness?.name}>
         <div className="p-4 md:p-8 max-w-5xl mx-auto space-y-6">
           {workspaceTabs}
           <div className="mt-12 md:mt-24 text-center space-y-6 animate-in fade-in duration-700">
-           <div className="w-20 h-20 bg-muted/50 rounded-3xl flex items-center justify-center mx-auto border border-border shadow-sm">
-             <MessageSquare className="w-10 h-10 text-muted-foreground" />
+            <div className="w-20 h-20 bg-muted/50 rounded-3xl flex items-center justify-center mx-auto border border-border shadow-sm">
+              <MessageSquare className="w-10 h-10 text-muted-foreground" />
+            </div>
+            <h2 className="text-3xl md:text-4xl font-semibold tracking-tight text-foreground">Connect your Google Business</h2>
+            <p className="text-muted-foreground max-w-lg mx-auto text-lg leading-relaxed">
+              Sync your Google reviews directly to 5-Star.AI. Reply to customers, generate thoughtful AI responses, and manage your reputation safely.
+            </p>
+            <Button
+              size="lg"
+              className="mt-6 shadow-md"
+              disabled={startConnection.isPending}
+              onClick={() => startConnection.mutate()}
+            >
+              {startConnection.isPending ? (
+                <RefreshCw className="w-5 h-5 mr-2 animate-spin" />
+              ) : (
+                <Store className="w-5 h-5 mr-2" />
+              )}
+              {startConnection.isPending ? "Connecting..." : "Connect Google Business"}
+            </Button>
+            {dashboard.connection.status === "ERROR" && (
+              <div className="max-w-md mx-auto mt-6 p-4 bg-destructive/10 border border-destructive/20 rounded-lg text-destructive flex items-start gap-3 text-left">
+                <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
+                <p className="text-sm leading-relaxed">
+                  {dashboard.connection.lastError || "There was an issue connecting your account. Please try again."}
+                </p>
+              </div>
+            )}
           </div>
-        </div>
-           <h2 className="text-3xl md:text-4xl font-semibold tracking-tight text-foreground">Connect your Google Business</h2>
-           <p className="text-muted-foreground max-w-lg mx-auto text-lg leading-relaxed">
-             Sync your Google reviews directly to 5-Star.AI. Reply to customers, generate thoughtful AI responses, and manage your reputation safely.
-           </p>
-           <Button 
-             size="lg" 
-             className="mt-6 shadow-md"
-             disabled={startConnection.isPending}
-             onClick={() => startConnection.mutate()}
-           >
-             {startConnection.isPending ? (
-               <RefreshCw className="w-5 h-5 mr-2 animate-spin" />
-             ) : (
-               <Store className="w-5 h-5 mr-2" />
-             )}
-             {startConnection.isPending ? "Connecting..." : "Connect Google Business"}
-           </Button>
-           {dashboard.connection.status === "ERROR" && (
-             <div className="max-w-md mx-auto mt-6 p-4 bg-destructive/10 border border-destructive/20 rounded-lg text-destructive flex items-start gap-3 text-left">
-               <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
-               <p className="text-sm leading-relaxed">
-                 {dashboard.connection.lastError || "There was an issue connecting your account. Please try again."}
-               </p>
-             </div>
-           )}
         </div>
       </AppLayout>
     );
@@ -797,38 +797,38 @@ export default function Reviews() {
         <div className="p-4 md:p-8 max-w-5xl mx-auto space-y-6">
           {workspaceTabs}
           <div className="mt-12 md:mt-24 text-center space-y-6 animate-in fade-in duration-700">
-           <div className="w-20 h-20 bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-900 rounded-3xl flex items-center justify-center mx-auto shadow-sm">
-             <RefreshCw className="w-10 h-10 text-blue-500 animate-spin" />
+            <div className="w-20 h-20 bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-900 rounded-3xl flex items-center justify-center mx-auto shadow-sm">
+              <RefreshCw className="w-10 h-10 text-blue-500 animate-spin" />
+            </div>
+            <h2 className="text-3xl md:text-4xl font-semibold tracking-tight text-foreground">Connection Pending</h2>
+            <p className="text-muted-foreground max-w-lg mx-auto text-lg leading-relaxed">
+              If you already signed in and selected a location in the other tab, sync now to finish connecting. Otherwise, reopen the connection tab or start again.
+            </p>
+            <div className="flex items-center justify-center gap-3 mt-6">
+              <Button
+                size="lg"
+                className="shadow-sm"
+                disabled={syncProvider.isPending}
+                onClick={() => syncProvider.mutate()}
+              >
+                {syncProvider.isPending ? (
+                  <RefreshCw className="w-5 h-5 mr-2 animate-spin" />
+                ) : (
+                  <RefreshCw className="w-5 h-5 mr-2" />
+                )}
+                I've connected — Sync now
+              </Button>
+              <Button
+                variant="outline"
+                size="lg"
+                className="shadow-sm"
+                disabled={startConnection.isPending}
+                onClick={() => startConnection.mutate()}
+              >
+                Retry Connection
+              </Button>
+            </div>
           </div>
-        </div>
-           <h2 className="text-3xl md:text-4xl font-semibold tracking-tight text-foreground">Connection Pending</h2>
-           <p className="text-muted-foreground max-w-lg mx-auto text-lg leading-relaxed">
-             If you already signed in and selected a location in the other tab, sync now to finish connecting. Otherwise, reopen the connection tab or start again.
-           </p>
-           <div className="flex items-center justify-center gap-3 mt-6">
-             <Button
-               size="lg"
-               className="shadow-sm"
-               disabled={syncProvider.isPending}
-               onClick={() => syncProvider.mutate()}
-             >
-               {syncProvider.isPending ? (
-                 <RefreshCw className="w-5 h-5 mr-2 animate-spin" />
-               ) : (
-                 <RefreshCw className="w-5 h-5 mr-2" />
-               )}
-               I've connected — Sync now
-             </Button>
-             <Button
-               variant="outline"
-               size="lg"
-               className="shadow-sm"
-               disabled={startConnection.isPending}
-               onClick={() => startConnection.mutate()}
-             >
-               Retry Connection
-             </Button>
-           </div>
         </div>
       </AppLayout>
     );
