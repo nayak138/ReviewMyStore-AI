@@ -214,7 +214,7 @@ describe("authenticated business workspace", () => {
 
     expect(await screen.findByText("Summer launch")).toBeInTheDocument();
     expect(screen.getAllByText("Northstar Coffee")).toHaveLength(1);
-    expect(screen.getAllByRole("button", { name: "Manage Keywords" })).toHaveLength(mocks.campaigns.length);
+    expect(screen.getAllByRole("button", { name: "Keywords" })).toHaveLength(mocks.campaigns.length);
     const qrButtons = screen.getAllByRole("button", { name: "QR Code" });
     expect(qrButtons).toHaveLength(mocks.campaigns.length);
 

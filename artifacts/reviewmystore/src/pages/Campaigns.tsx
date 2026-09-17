@@ -19,7 +19,7 @@ import {
   Tag,
   Sparkles,
   Loader2,
-  Settings2,
+  KeyRound,
   QrCode,
   ShoppingBag,
   FileImage,
@@ -496,7 +496,7 @@ export default function Campaigns() {
 
                   <div className="grid grid-cols-2 gap-2">
                     <Button variant="outline" size="sm" onClick={() => setKeywordCampaign(campaign)}>
-                      <Settings2 className="mr-2 h-3.5 w-3.5" /> Manage Keywords
+                      <KeyRound className="mr-2 h-3.5 w-3.5" /> Keywords
                     </Button>
                     <Button variant="outline" size="sm" onClick={() => setQrCampaign(campaign)}>
                       <QrCode className="mr-2 h-3.5 w-3.5" /> QR Code
@@ -740,7 +740,7 @@ function QrCodeManagerDialog({ campaign, onClose }: { campaign: Campaign; onClos
 
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-lg">
+      <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <QrCode className="h-5 w-5 text-primary" />
