@@ -17,3 +17,5 @@ export * from "./reviewGenerationReservations";
 export * from "./privateFeedback";
 export * from "./agencyInvitations";
 export * from "./socialMediaAccounts";
+export * from "./accountDataExports";
+export * from "./accountDeactivationRequests";

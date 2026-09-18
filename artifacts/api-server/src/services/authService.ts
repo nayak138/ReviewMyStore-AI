@@ -2,6 +2,8 @@ import { and, desc, eq, gt, sql } from "drizzle-orm";
 import { randomUUID } from "node:crypto";
 import { clerkClient } from "@clerk/express";
 import {
+  accountDataExportsTable,
+  accountDeactivationRequestsTable,
   agencyInvitationsTable,
   db,
   organizationsTable,
@@ -30,11 +32,21 @@ const ACCOUNT_EXPORT_EXCLUDED_DATA = [
   "campaigns",
   "reviews and private feedback",
 ] as const;
+export const ACCOUNT_EXPORT_TTL_MS = 15 * 60 * 1000;
 
-export function buildAccountDataExport(user: User, requestedAt = new Date()) {
+const DEACTIVATION_MESSAGE =
+  "Your request is pending review. Your sign-in remains active, and no business or workspace data has been changed.";
+
+export function buildAccountDataExport(
+  user: User,
+  requestedAt = new Date(),
+  exportId = randomUUID(),
+  expiresAt = new Date(requestedAt.getTime() + ACCOUNT_EXPORT_TTL_MS),
+) {
   return {
-    exportId: randomUUID(),
+    exportId,
     requestedAt,
+    expiresAt,
     scope: "ACCOUNT" as const,
     account: {
       id: user.id,
@@ -55,7 +67,83 @@ export function buildAccountDeactivationRequest(requestedAt = new Date()) {
     requestedAt,
     status: "PENDING_REVIEW" as const,
     message:
-      "Your request is pending review. Your sign-in remains active, and no business or workspace data has been changed.",
+      DEACTIVATION_MESSAGE,
+  };
+}
+
+export async function createAccountDataExport(
+  user: User,
+  requestedAt = new Date(),
+) {
+  const expiresAt = new Date(requestedAt.getTime() + ACCOUNT_EXPORT_TTL_MS);
+  const [audit] = await db
+    .insert(accountDataExportsTable)
+    .values({
+      userId: user.id,
+      organizationId: user.organizationId,
+      requestedAt,
+      expiresAt,
+      status: "ISSUED",
+      deliveredAt: requestedAt,
+    })
+    .returning({
+      id: accountDataExportsTable.id,
+      requestedAt: accountDataExportsTable.requestedAt,
+      expiresAt: accountDataExportsTable.expiresAt,
+    });
+
+  return buildAccountDataExport(
+    user,
+    audit.requestedAt,
+    audit.id,
+    audit.expiresAt,
+  );
+}
+
+export async function createAccountDeactivationRequest(
+  user: User,
+  requestedAt = new Date(),
+) {
+  const [existing] = await db
+    .select({
+      id: accountDeactivationRequestsTable.id,
+      requestedAt: accountDeactivationRequestsTable.requestedAt,
+      status: accountDeactivationRequestsTable.status,
+    })
+    .from(accountDeactivationRequestsTable)
+    .where(
+      and(
+        eq(accountDeactivationRequestsTable.userId, user.id),
+        eq(accountDeactivationRequestsTable.status, "PENDING_REVIEW"),
+      ),
+    )
+    .orderBy(desc(accountDeactivationRequestsTable.requestedAt))
+    .limit(1);
+
+  if (existing) {
+    return {
+      requestId: existing.id,
+      requestedAt: existing.requestedAt,
+      status: existing.status,
+      message: DEACTIVATION_MESSAGE,
+    };
+  }
+
+  const [created] = await db
+    .insert(accountDeactivationRequestsTable)
+    .values({
+      userId: user.id,
+      organizationId: user.organizationId,
+      requestedAt,
+      status: "PENDING_REVIEW",
+    })
+    .returning();
+
+  return {
+    requestId: created.id,
+    requestedAt: created.requestedAt,
+    status: created.status,
+    message: DEACTIVATION_MESSAGE,
   };
 }
 

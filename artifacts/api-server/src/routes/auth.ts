@@ -12,7 +12,8 @@ import { requireAuth } from "../middlewares/requireAuth";
 import { rateLimit } from "../middlewares/rateLimit";
 import {
   buildAccountDataExport,
-  buildAccountDeactivationRequest,
+  createAccountDataExport,
+  createAccountDeactivationRequest,
   getEmailPreferences,
   getOrganizationById,
   updateEmailPreferences,
@@ -56,7 +57,7 @@ router.post(
   requireAuth,
   async (req, res) => {
     const data = RequestAccountDataExportResponse.parse(
-      buildAccountDataExport(req.appUser!),
+      await createAccountDataExport(req.appUser!),
     );
     req.log.info(
       { userId: req.appUser!.id, exportId: data.exportId },
@@ -82,7 +83,7 @@ router.post(
     }
 
     const data = RequestAccountDeactivationResponse.parse(
-      buildAccountDeactivationRequest(),
+      await createAccountDeactivationRequest(req.appUser!),
     );
     req.log.warn(
       { userId: req.appUser!.id, requestId: data.requestId },

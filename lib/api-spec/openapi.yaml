@@ -850,6 +850,81 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  /v1/admin/deactivation-requests:
+    get:
+      operationId: listAdminDeactivationRequests
+      tags: [admin]
+      summary: List account deactivation requests for review
+      responses:
+        "200":
+          description: Deactivation review queue
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminDeactivationRequestListResult"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Not authorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /v1/admin/deactivation-requests/{id}:
+    patch:
+      operationId: reviewAdminDeactivationRequest
+      tags: [admin]
+      summary: Approve or reject an account deactivation request
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminDeactivationRequestReviewInput"
+      responses:
+        "200":
+          description: Reviewed deactivation request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminDeactivationRequest"
+        "400":
+          description: Invalid review
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Not authorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Request not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /v1/admin/agencies:
     post:
       operationId: createAdminAgency
