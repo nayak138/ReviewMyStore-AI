@@ -359,17 +359,9 @@ export default function SocialMedia() {
           <BusinessTabs businessId={workspaceBusiness.id} businessName={workspaceBusiness.name} active="social-media" />
         )}
 
-        <header className="flex flex-col gap-5 rounded-3xl border border-border bg-card p-5 shadow-sm md:flex-row md:items-end md:justify-between md:p-7">
-          <div className="max-w-2xl">
-            <div className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-primary">
-              <span className="h-2 w-2 rounded-full bg-primary" />
-              Business workspace
-            </div>
-            <h1 className="font-display text-3xl font-semibold tracking-tight text-foreground md:text-4xl">Social media, in one calm queue.</h1>
-            <p className="mt-3 max-w-xl text-sm leading-relaxed text-muted-foreground md:text-base">Connect the channels for one business, publish with context, and keep public conversations from slipping through the cracks.</p>
-          </div>
-          <div className="w-full md:w-64">
-            <Label htmlFor="business-switcher" className="mb-2 block text-xs font-semibold uppercase tracking-wide text-muted-foreground">Acting for</Label>
+        <div className="flex justify-end">
+          <div className="w-full sm:w-64">
+            <Label htmlFor="business-switcher" className="mb-2 block text-xs font-semibold uppercase tracking-wide text-muted-foreground">Business</Label>
             {businessesQuery.isLoading ? <Skeleton className="h-10 w-full" /> : (
               <Select value={selectedBusinessId ?? ""} onValueChange={setSelectedBusinessId}>
                 <SelectTrigger id="business-switcher" className="bg-background" data-testid="select-business">
@@ -381,7 +373,7 @@ export default function SocialMedia() {
               </Select>
             )}
           </div>
-        </header>
+        </div>
 
         {!businessesQuery.isLoading && businesses.length === 0 && (
           <Card className="border-dashed">
