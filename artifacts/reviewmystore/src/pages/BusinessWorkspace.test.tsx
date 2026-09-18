@@ -395,7 +395,7 @@ describe("authenticated business workspace", () => {
 
     expect(screen.getByRole("heading", { name: "Settings", level: 2 })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Businesses" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Analytics" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Insights" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Settings" })).toBeInTheDocument();
 
     const sidebar = screen.getByRole("navigation");

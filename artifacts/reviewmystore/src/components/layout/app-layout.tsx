@@ -25,7 +25,7 @@ interface NavItem {
 
 const NAV_ITEMS: NavItem[] = [
   { name: "Businesses", icon: Store, href: "/businesses", ready: true },
-  { name: "Analytics", icon: BarChart3, href: "/analytics", ready: true },
+  { name: "Insights", icon: BarChart3, href: "/analytics", ready: true },
   { name: "Settings", icon: Settings, href: "/settings", ready: true },
 ];
 

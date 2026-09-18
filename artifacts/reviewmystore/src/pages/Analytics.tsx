@@ -52,7 +52,7 @@ export default function Analytics() {
     : 0;
 
   return (
-    <AppLayout title="Analytics">
+    <AppLayout title="Insights">
       <div className="mx-auto max-w-7xl space-y-8 p-4 md:p-8">
         <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-end">
           <div>
