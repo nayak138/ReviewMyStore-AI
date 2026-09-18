@@ -4503,7 +4503,6 @@ components:
       properties:
         date:
           type: string
-          format: date
         qrScans:
           type: integer
         nfcTaps:

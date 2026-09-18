@@ -72,6 +72,43 @@ router.get("/businesses", requireAuth, async (req, res) => {
   res.json(ListBusinessesResponse.parse({ businesses }));
 });
 
+router.get("/businesses/analytics", requireAuth, async (req, res) => {
+  const organizationId = requireOrganization(req, res);
+  if (!organizationId) return;
+
+  const businessId =
+    typeof req.query.businessId === "string" ? req.query.businessId : "";
+  const parsed = GetBusinessAnalyticsQueryParams.safeParse(req.query);
+  if (!parsed.success) {
+    res.status(400).json({
+      success: false,
+      code: "INVALID_QUERY",
+      message: parsed.error.message,
+    });
+    return;
+  }
+  if (!businessId) {
+    res.status(400).json({
+      success: false,
+      code: "INVALID_QUERY",
+      message: "The 'businessId' query parameter is required.",
+    });
+    return;
+  }
+
+  try {
+    const analytics = await getBusinessAnalytics(
+      organizationId,
+      businessId,
+      parsed.data.days ?? 30,
+    );
+    res.json(GetBusinessAnalyticsResponse.parse(analytics));
+  } catch (err) {
+    if (err instanceof BusinessNotFoundError) return notFound(res, err);
+    throw err;
+  }
+});
+
 router.post("/businesses", requireAuth, async (req, res) => {
   const organizationId = requireOrganization(req, res);
   if (!organizationId) return;
@@ -161,43 +198,6 @@ router.delete("/businesses/:id", requireAuth, async (req, res) => {
   try {
     await softDeleteBusiness(organizationId, idParam(req));
     res.status(204).send();
-  } catch (err) {
-    if (err instanceof BusinessNotFoundError) return notFound(res, err);
-    throw err;
-  }
-});
-
-router.get("/businesses/analytics", requireAuth, async (req, res) => {
-  const organizationId = requireOrganization(req, res);
-  if (!organizationId) return;
-
-  const businessId =
-    typeof req.query.businessId === "string" ? req.query.businessId : "";
-  const parsed = GetBusinessAnalyticsQueryParams.safeParse(req.query);
-  if (!parsed.success) {
-    res.status(400).json({
-      success: false,
-      code: "INVALID_QUERY",
-      message: parsed.error.message,
-    });
-    return;
-  }
-  if (!businessId) {
-    res.status(400).json({
-      success: false,
-      code: "INVALID_QUERY",
-      message: "The 'businessId' query parameter is required.",
-    });
-    return;
-  }
-
-  try {
-    const analytics = await getBusinessAnalytics(
-      organizationId,
-      businessId,
-      parsed.data.days ?? 30,
-    );
-    res.json(GetBusinessAnalyticsResponse.parse(analytics));
   } catch (err) {
     if (err instanceof BusinessNotFoundError) return notFound(res, err);
     throw err;

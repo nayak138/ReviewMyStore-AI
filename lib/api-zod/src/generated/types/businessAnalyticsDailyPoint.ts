@@ -7,7 +7,7 @@
  */
 
 export interface BusinessAnalyticsDailyPoint {
-  date: Date;
+  date: string;
   qrScans: number;
   nfcTaps: number;
   googleRedirects: number;

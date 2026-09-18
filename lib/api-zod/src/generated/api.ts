@@ -1118,7 +1118,7 @@ export const GetBusinessAnalyticsResponse = zod.object({
   "scanToGoogleRate": zod.number()
 }),
   "dailyTrend": zod.array(zod.object({
-  "date": zod.coerce.date(),
+  "date": zod.string(),
   "qrScans": zod.int(),
   "nfcTaps": zod.int(),
   "googleRedirects": zod.int(),
