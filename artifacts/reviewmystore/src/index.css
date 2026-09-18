@@ -18,10 +18,6 @@
   color: #0f172a !important;
 }
 
-.cl-formFieldHintText {
-  display: none !important;
-}
-
 .cl-main,
 .cl-form,
 .cl-socialButtons,
@@ -33,20 +29,52 @@
 }
 
 .cl-formFieldInput::placeholder {
-  color: #64748b !important;
+  color: #94a3b8 !important;
   opacity: 1 !important;
 }
 
 .cl-formFieldInput:focus,
 .cl-otpCodeFieldInput:focus {
-  border-color: #1d4ed8 !important;
-  box-shadow: 0 0 0 3px rgb(37 99 235 / 0.2) !important;
+  border-color: #2563eb !important;
+  box-shadow: 0 0 0 4px rgb(219 234 254 / 0.95) !important;
   outline: none !important;
 }
 
+.cl-formFieldLabelRow {
+  align-items: center !important;
+  display: flex !important;
+  justify-content: space-between !important;
+}
+
+.cl-formFieldLabel {
+  color: #334155 !important;
+  font-size: 0.75rem !important;
+  font-weight: 600 !important;
+}
+
+.cl-formFieldHintText {
+  color: #94a3b8 !important;
+  font-size: 0.75rem !important;
+}
+
 .cl-otpCodeFieldInput {
+  background-color: rgb(248 250 252 / 0.5) !important;
+  border-color: #e2e8f0 !important;
+  border-radius: 0.75rem !important;
+  border-width: 2px !important;
+  font-size: 1.25rem !important;
   font-weight: 700 !important;
+  height: 3.25rem !important;
   text-align: center !important;
+  transition:
+    background-color 150ms ease,
+    border-color 150ms ease,
+    box-shadow 150ms ease !important;
+  width: 3rem !important;
+}
+
+.cl-otpCodeFieldInput:focus {
+  background-color: #ffffff !important;
 }
 
 .cl-otpCodeField {
@@ -54,8 +82,21 @@
 }
 
 .cl-formFieldInput {
-  height: 2.75rem !important;
-  border-radius: 0.5rem !important;
+  background-color: #ffffff !important;
+  border-color: #cbd5e1 !important;
+  border-radius: 0.75rem !important;
+  border-width: 1px !important;
+  box-shadow: 0 1px 2px rgb(15 23 42 / 0.04) !important;
+  font-size: 0.875rem !important;
+  height: 3rem !important;
+  padding: 0.75rem 1rem !important;
+  transition:
+    border-color 150ms ease,
+    box-shadow 150ms ease !important;
+}
+
+.cl-formFieldInput:hover {
+  border-color: #94a3b8 !important;
 }
 
 .cl-formButtonPrimary {
@@ -78,11 +119,21 @@
 .cl-socialButtonsBlockButton {
   background-color: #ffffff !important;
   border-color: #cbd5e1 !important;
+  border-radius: 0.75rem !important;
   color: #0f172a !important;
+  font-size: 0.875rem !important;
+  font-weight: 500 !important;
+  min-height: 2.75rem !important;
+  padding: 0.625rem 1rem !important;
+  box-shadow: 0 1px 2px rgb(15 23 42 / 0.04) !important;
+  transition:
+    background-color 150ms ease,
+    border-color 150ms ease !important;
 }
 
 .cl-socialButtonsBlockButton:hover {
-  background-color: #f8fafc !important;
+  background-color: rgb(248 250 252 / 0.75) !important;
+  border-color: #cbd5e1 !important;
 }
 
 .cl-formFieldLabel,

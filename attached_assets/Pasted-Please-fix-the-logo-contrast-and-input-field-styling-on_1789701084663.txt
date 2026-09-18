@@ -1,0 +1,23 @@
+Please fix the logo contrast and input field styling on the Sign-In page (/sign-in):
+
+### 1. Fix Logo Contrast (Top-Left Hero Panel)
+* The "AI" portion of "5-STAR.AI" and the sparkle icon are currently dark blue, making them invisible against the blue background.
+* Make the text "5-STAR." crisp solid white (`text-white font-bold`).
+* Change ".AI" and the accompanying sparkle icon to bright white or an accent that pops cleanly against royal blue (e.g., `text-white` with a vibrant amber/gold sparkle `#FBBF24` matching the Google star, or an ultra-bright cyan `#38BDF8`).
+* Alternatively, if it is an SVG/image file, add a white color filter or pass `text-white` / `fill-white` so the entire mark is 100% legible.
+
+### 2. Redesign the Email Input Box
+* The current email field has almost invisible borders and feels like floating placeholder text.
+* Give the input a crisp, modern border: `border border-slate-300 bg-white rounded-xl px-4 py-3 text-slate-900 placeholder:text-slate-400 text-sm shadow-sm`.
+* Add explicit hover and focus states:
+  - Hover: `hover:border-slate-400`
+  - Focus: `focus:border-blue-600 focus:ring-4 focus:ring-blue-100 focus:outline-none transition-all duration-150`
+* Align the label row: Ensure "Email address" and "Last used" have clear hierarchy (`text-xs font-semibold text-slate-700` for the label, `text-xs text-slate-400` for "Last used").
+
+### 3. Polish the "Continue with Google" Button
+* Add a defined border and clean hover state to separate it from the card background:
+  - `border border-slate-200 hover:border-slate-300 hover:bg-slate-50/75 rounded-xl py-2.5 px-4 font-medium text-slate-700 text-sm flex items-center justify-center gap-3 transition-colors shadow-sm`
+
+### 4. Step 2 (OTP Verification Inputs)
+* Ensure all 6 OTP digit boxes share this same tactile quality:
+  - `w-12 h-13 border-2 border-slate-200 rounded-xl text-center text-xl font-bold text-slate-900 bg-slate-50/50 focus:bg-white focus:border-blue-600 focus:ring-4 focus:ring-blue-100 focus:outline-none transition-all`
