@@ -6,9 +6,14 @@
  */
 
 const PLACES_BASE = "https://places.googleapis.com/v1";
+export const GOOGLE_PLACES_REQUEST_TIMEOUT_MS = 10_000;
+const MAX_PLACE_PHOTO_BYTES = 10 * 1024 * 1024;
 
 export class GoogleBusinessLookupError extends Error {
-  constructor(message: string, readonly status = 502) {
+  constructor(
+    message: string,
+    readonly status = 502,
+  ) {
     super(message);
     this.name = "GoogleBusinessLookupError";
   }
@@ -17,11 +22,47 @@ export class GoogleBusinessLookupError extends Error {
 function apiKey(): string {
   const key = process.env.GOOGLE_MAPS_API_KEY;
   if (!key) {
-    throw new Error(
-      "GOOGLE_MAPS_API_KEY must be set. Did you forget to provision the Google Maps secret?",
+    throw new GoogleBusinessLookupError(
+      "Google Places is not configured for this environment.",
+      503,
     );
   }
   return key;
+}
+
+function isTimeoutError(error: unknown): boolean {
+  return Boolean(
+    error &&
+    typeof error === "object" &&
+    ["AbortError", "TimeoutError"].includes(
+      (error as { name?: unknown }).name as string,
+    ),
+  );
+}
+
+async function googlePlacesRequest(
+  target: string,
+  init: RequestInit,
+): Promise<Response> {
+  const timeoutSignal = AbortSignal.timeout(GOOGLE_PLACES_REQUEST_TIMEOUT_MS);
+  const signal = init.signal
+    ? AbortSignal.any([init.signal, timeoutSignal])
+    : timeoutSignal;
+
+  try {
+    return await fetch(target, { ...init, signal });
+  } catch (error) {
+    if (isTimeoutError(error)) {
+      throw new GoogleBusinessLookupError(
+        "Google Places did not respond in time. Please try again.",
+        504,
+      );
+    }
+    throw new GoogleBusinessLookupError(
+      "Google Places is temporarily unavailable. Please try again.",
+      502,
+    );
+  }
 }
 
 export interface PlaceAutocompleteSuggestion {
@@ -37,7 +78,7 @@ export async function autocompletePlaces(
   const trimmed = input.trim();
   if (!trimmed) return [];
 
-  const res = await fetch(`${PLACES_BASE}/places:autocomplete`, {
+  const res = await googlePlacesRequest(`${PLACES_BASE}/places:autocomplete`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -47,9 +88,9 @@ export async function autocompletePlaces(
   });
 
   if (!res.ok) {
-    const body = await res.text().catch(() => "");
     throw new GoogleBusinessLookupError(
-      `Google Places autocomplete failed (${res.status}): ${body}`,
+      "Google Places autocomplete is temporarily unavailable. Please try again.",
+      res.status === 429 ? 429 : 502,
     );
   }
 
@@ -107,7 +148,7 @@ const DETAILS_FIELD_MASK = [
 ].join(",");
 
 export async function getPlaceDetails(placeId: string): Promise<PlaceDetails> {
-  const res = await fetch(
+  const res = await googlePlacesRequest(
     `${PLACES_BASE}/places/${encodeURIComponent(placeId)}`,
     {
       headers: {
@@ -118,9 +159,9 @@ export async function getPlaceDetails(placeId: string): Promise<PlaceDetails> {
   );
 
   if (!res.ok) {
-    const body = await res.text().catch(() => "");
     throw new GoogleBusinessLookupError(
-      `Google place details lookup failed (${res.status}): ${body}`,
+      "Google Places details are temporarily unavailable. Please try again.",
+      res.status === 429 ? 429 : 502,
     );
   }
 
@@ -160,8 +201,11 @@ function placeIdFromPhotoName(photoName: string): string | null {
   return match?.[1] ?? null;
 }
 
-async function requestPlacePhoto(photoName: string, maxWidthPx: number): Promise<Response> {
-  return fetch(
+async function requestPlacePhoto(
+  photoName: string,
+  maxWidthPx: number,
+): Promise<Response> {
+  return googlePlacesRequest(
     `${PLACES_BASE}/${photoName}/media?maxWidthPx=${maxWidthPx}`,
     {
       headers: {
@@ -203,11 +247,31 @@ export async function fetchPlacePhoto(
 
   if (!res.ok) {
     throw new GoogleBusinessLookupError(
-      `Failed to fetch place photo (${res.status})`,
+      "Google Places photo is temporarily unavailable. Please try again.",
+      res.status === 429 ? 429 : 502,
     );
   }
 
-  const contentType = res.headers.get("content-type") ?? "image/jpeg";
+  const contentType = res.headers.get("content-type")?.split(";")[0] ?? "";
+  if (!contentType.startsWith("image/")) {
+    throw new GoogleBusinessLookupError(
+      "Google Places returned an unexpected photo format.",
+      502,
+    );
+  }
+  const declaredSize = Number(res.headers.get("content-length") ?? 0);
+  if (Number.isFinite(declaredSize) && declaredSize > MAX_PLACE_PHOTO_BYTES) {
+    throw new GoogleBusinessLookupError(
+      "Google Places returned a photo that is too large.",
+      502,
+    );
+  }
   const data = Buffer.from(await res.arrayBuffer());
+  if (data.length > MAX_PLACE_PHOTO_BYTES) {
+    throw new GoogleBusinessLookupError(
+      "Google Places returned a photo that is too large.",
+      502,
+    );
+  }
   return { contentType, data };
 }

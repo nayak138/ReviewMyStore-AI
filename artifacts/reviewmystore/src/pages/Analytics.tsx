@@ -2,6 +2,7 @@ import { useAuth } from "@clerk/react";
 import { Redirect } from "wouter";
 import {
   Activity,
+  AlertCircle,
   BarChart3,
   CheckCircle2,
   ExternalLink,
@@ -11,6 +12,7 @@ import {
   Sparkles,
   Store,
   TrendingUp,
+  RefreshCw,
 } from "lucide-react";
 import {
   getGetDashboardSummaryQueryKey,
@@ -20,6 +22,7 @@ import { AppLayout } from "@/components/layout/app-layout";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
 
 const metricCards = [
   { key: "locations", label: "Locations", icon: Store, color: "text-primary", background: "bg-primary/10" },
@@ -30,7 +33,7 @@ const metricCards = [
 
 export default function Analytics() {
   const { isLoaded, isSignedIn } = useAuth();
-  const { data: summary, isLoading } = useGetDashboardSummary({
+  const { data: summary, isLoading, isError, isFetching, refetch } = useGetDashboardSummary({
     query: {
       enabled: !!isSignedIn,
       queryKey: getGetDashboardSummaryQueryKey(),
@@ -40,6 +43,37 @@ export default function Analytics() {
   if (!isLoaded) return null;
   if (!isSignedIn) return <Redirect to="/sign-in" />;
   if (summary?.needsOnboarding) return <Redirect to="/onboarding" />;
+
+  if (isError) {
+    return (
+      <AppLayout title="Insights">
+        <div className="mx-auto flex min-h-[60vh] max-w-xl items-center justify-center p-4 md:p-8">
+          <div
+            className="w-full rounded-2xl border border-destructive/30 bg-destructive/5 p-6 text-center"
+            role="alert"
+            data-testid="status-insights-error"
+          >
+            <AlertCircle className="mx-auto h-8 w-8 text-destructive" aria-hidden="true" />
+            <h2 className="mt-4 text-lg font-semibold text-foreground">Insights could not be loaded</h2>
+            <p className="mt-2 text-sm text-muted-foreground">
+              We couldn&apos;t load the latest agency activity. Please try again.
+            </p>
+            <Button
+              type="button"
+              variant="outline"
+              className="mt-5 gap-2"
+              onClick={() => void refetch()}
+              disabled={isFetching}
+              data-testid="button-retry-insights"
+            >
+              <RefreshCw className={`h-4 w-4 ${isFetching ? "animate-spin" : ""}`} aria-hidden="true" />
+              {isFetching ? "Retrying…" : "Try again"}
+            </Button>
+          </div>
+        </div>
+      </AppLayout>
+    );
+  }
 
   const values: Record<(typeof metricCards)[number]["key"], number> = {
     locations: summary?.totalBusinesses ?? 0,

@@ -9,4 +9,4 @@ Client-side meta updates (document.title / og tags via a hook) are NOT enough fo
 
 **Why:** the site is a client-rendered SPA; social bots and many crawlers only see the static shell.
 
-**How to apply:** when adding a marketing route or blog post, ensure it's covered by the shared route-meta map (blog posts are picked up automatically from blog-data). Canonical site URL lives in one constant, overridable via `VITE_SITE_URL`; verify it matches the production domain after publishing.
+**How to apply:** when adding a marketing route or blog post, ensure it's covered by the shared route-meta map (blog posts are picked up automatically from blog-data). Validate `VITE_SITE_URL` through the shared URL resolver; Vite must load it inside its mode callback so `.env.production` also controls prerendered output. Verify it matches the production domain after publishing.

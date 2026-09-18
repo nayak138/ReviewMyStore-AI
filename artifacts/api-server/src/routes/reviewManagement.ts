@@ -27,6 +27,7 @@ import {
   ManagedReviewNotFoundError,
   publishManagedReviewReply,
   ReviewProviderError,
+  ReviewProviderOperationInProgressError,
   selectReviewProviderLocation,
   startReviewProviderConnection,
   syncReviewProvider,
@@ -64,15 +65,27 @@ function sendServiceError(res: Response, error: unknown) {
     });
     return;
   }
+  if (error instanceof ReviewProviderOperationInProgressError) {
+    res.status(error.status).json({
+      success: false,
+      code: error.code,
+      message: error.message,
+    });
+    return;
+  }
   throw error;
 }
 
-router.get("/review-management", requireAuth, async (req, res): Promise<void> => {
-  const organizationId = requireOrganization(req, res);
-  if (!organizationId) return;
-  const dashboard = await getReviewDashboard(organizationId);
-  res.json(GetReviewDashboardResponse.parse(dashboard));
-});
+router.get(
+  "/review-management",
+  requireAuth,
+  async (req, res): Promise<void> => {
+    const organizationId = requireOrganization(req, res);
+    if (!organizationId) return;
+    const dashboard = await getReviewDashboard(organizationId);
+    res.json(GetReviewDashboardResponse.parse(dashboard));
+  },
+);
 
 router.post(
   "/review-management/connection",
@@ -84,7 +97,10 @@ router.post(
       const result = await startReviewProviderConnection(organizationId);
       res.json(StartReviewProviderConnectionResponse.parse(result));
     } catch (error) {
-      req.log.warn({ err: error }, "Unable to start review provider connection");
+      req.log.warn(
+        { err: error },
+        "Unable to start review provider connection",
+      );
       sendServiceError(res, error);
     }
   },
@@ -100,7 +116,10 @@ router.get(
       const result = await getReviewProviderConnectionLocations(organizationId);
       res.json(GetReviewProviderLocationsResponse.parse(result));
     } catch (error) {
-      req.log.warn({ err: error }, "Unable to check review provider connection");
+      req.log.warn(
+        { err: error },
+        "Unable to check review provider connection",
+      );
       sendServiceError(res, error);
     }
   },
@@ -229,7 +248,7 @@ router.post(
         code: "INVALID_REQUEST",
         message: !params.success
           ? params.error.message
-          : body.error?.message ?? "Invalid request body.",
+          : (body.error?.message ?? "Invalid request body."),
       });
       return;
     }

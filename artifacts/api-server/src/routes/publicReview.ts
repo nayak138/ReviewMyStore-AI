@@ -130,7 +130,7 @@ router.post(
         return;
       }
       if (err instanceof AIGenerationError) {
-        res.status(502).json({
+        res.status(err.status).json({
           success: false,
           code: "AI_GENERATION_FAILED",
           message: err.message,
@@ -162,7 +162,9 @@ router.post(
         slugParam(req, "campaignSlug"),
         parsed.data,
       );
-      res.status(201).json(SubmitPrivateFeedbackResponse.parse({ success: true }));
+      res
+        .status(201)
+        .json(SubmitPrivateFeedbackResponse.parse({ success: true }));
     } catch (err) {
       if (err instanceof PublicCampaignNotFoundError) {
         res.status(404).json({

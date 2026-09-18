@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { BusinessSearch } from "@/components/business-search";
 import { loadSelectedPlace, clearSelectedPlace, placePhotoUrl, type SelectedPlace } from "@/lib/selected-place";
 import { Store, Loader2, ArrowRight, MapPin, Star, Search } from "lucide-react";
+import { facebookUrlSchema, instagramUrlSchema, websiteUrlSchema } from "@/lib/urlValidation";
 
 const onboardingSchema = z.object({
   name: z.string().min(2, "Name is required"),
@@ -19,9 +20,9 @@ const onboardingSchema = z.object({
   slug: z.string().min(2, "Slug is required").regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "Lowercase letters, numbers, and hyphens only"),
   address: z.string().nullable().optional(),
   phone: z.string().nullable().optional(),
-  website: z.string().nullable().optional(),
-  instagramUrl: z.string().nullable().optional(),
-  facebookUrl: z.string().nullable().optional(),
+  website: websiteUrlSchema,
+  instagramUrl: instagramUrlSchema,
+  facebookUrl: facebookUrlSchema,
   whatsappNumber: z.string().nullable().optional(),
   latitude: z.number().nullable().optional(),
   longitude: z.number().nullable().optional(),

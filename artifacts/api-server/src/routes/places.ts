@@ -39,7 +39,7 @@ router.get("/places/autocomplete", placesRateLimit, async (req, res) => {
     res.json(AutocompletePlacesResponse.parse({ suggestions }));
   } catch (err) {
     if (err instanceof GoogleBusinessLookupError) {
-      res.status(502).json({
+      res.status(err.status).json({
         success: false,
         code: "GOOGLE_PLACES_ERROR",
         message: err.message,
@@ -59,7 +59,7 @@ router.get("/places/details/:placeId", placesRateLimit, async (req, res) => {
     res.json(GetPlaceDetailsResponse.parse(details));
   } catch (err) {
     if (err instanceof GoogleBusinessLookupError) {
-      res.status(502).json({
+      res.status(err.status).json({
         success: false,
         code: "GOOGLE_PLACES_ERROR",
         message: err.message,
@@ -72,7 +72,10 @@ router.get("/places/details/:placeId", placesRateLimit, async (req, res) => {
 
 router.get("/places/photo", placesRateLimit, async (req, res) => {
   const name = typeof req.query.name === "string" ? req.query.name : "";
-  const rawWidth = typeof req.query.maxWidthPx === "string" ? Number(req.query.maxWidthPx) : 800;
+  const rawWidth =
+    typeof req.query.maxWidthPx === "string"
+      ? Number(req.query.maxWidthPx)
+      : 800;
   const maxWidthPx = Number.isFinite(rawWidth)
     ? Math.min(1600, Math.max(96, Math.round(rawWidth)))
     : 800;

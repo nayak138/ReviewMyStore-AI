@@ -1,6 +1,9 @@
 import { openrouter } from "@workspace/integrations-openrouter-ai";
 import { logger } from "../lib/logger";
-import { buildReviewGenerationPrompt, type ReviewPromptInput } from "./promptService";
+import {
+  buildReviewGenerationPrompt,
+  type ReviewPromptInput,
+} from "./promptService";
 
 /**
  * Single default model for MVP. Swapping providers/models later should only
@@ -8,12 +11,29 @@ import { buildReviewGenerationPrompt, type ReviewPromptInput } from "./promptSer
  * setting) — never touching call sites in routes or other services.
  */
 const REVIEW_MODEL = "openai/gpt-5.4-mini";
+/** Keep provider calls bounded so a stalled upstream cannot exhaust request
+ * workers or leave a quota reservation pending indefinitely. */
+export const AI_REQUEST_TIMEOUT_MS = 45_000;
 
 export class AIGenerationError extends Error {
-  constructor(message: string, readonly cause?: unknown) {
+  constructor(
+    message: string,
+    readonly status = 502,
+    readonly cause?: unknown,
+  ) {
     super(message);
     this.name = "AIGenerationError";
   }
+}
+
+function isTimeoutError(error: unknown): boolean {
+  return Boolean(
+    error &&
+    typeof error === "object" &&
+    ["AbortError", "TimeoutError", "APIConnectionTimeoutError"].includes(
+      (error as { name?: unknown }).name as string,
+    ),
+  );
 }
 
 /**
@@ -39,15 +59,21 @@ export async function generateReviewText(
   };
 
   try {
-    const completion = await openrouter.chat.completions.create({
-      model: REVIEW_MODEL,
-      max_tokens: 8192,
-      temperature: 0.9,
-      messages: [
-        { role: "system", content: system },
-        { role: "user", content: user },
-      ],
-    });
+    const completion = await openrouter.chat.completions.create(
+      {
+        model: REVIEW_MODEL,
+        max_tokens: 8192,
+        temperature: 0.9,
+        messages: [
+          { role: "system", content: system },
+          { role: "user", content: user },
+        ],
+      },
+      {
+        timeout: AI_REQUEST_TIMEOUT_MS,
+        maxRetries: 0,
+      },
+    );
 
     const text = completion.choices[0]?.message?.content?.trim();
     if (!text) {
@@ -65,7 +91,14 @@ export async function generateReviewText(
       "AI review generation failed",
     );
     if (err instanceof AIGenerationError) throw err;
-    throw new AIGenerationError("Failed to generate review text", err);
+    const timedOut = isTimeoutError(err);
+    throw new AIGenerationError(
+      timedOut
+        ? "AI generation timed out. Please try again."
+        : "AI generation is temporarily unavailable. Please try again.",
+      timedOut ? 504 : 502,
+      err,
+    );
   }
 }
 
@@ -88,41 +121,49 @@ export async function generateReviewReplyDraft(
     organizationId: input.organizationId,
     rating: input.rating,
   };
-  const reviewText = input.reviewText.trim() || "(The customer left no written comment.)";
+  const reviewText =
+    input.reviewText.trim() || "(The customer left no written comment.)";
   const tone =
     input.rating <= 2
       ? "empathetic, calm, and focused on taking the conversation offline"
       : "warm, specific, and appreciative";
 
   try {
-    const completion = await openrouter.chat.completions.create({
-      model: REVIEW_MODEL,
-      max_tokens: 350,
-      temperature: 0.45,
-      messages: [
-        {
-          role: "system",
-          content:
-            "You draft concise, professional Google Business review replies. " +
-            "Return only the reply text, with no title, quote marks, markdown, or sign-off template. " +
-            "Never claim facts not in the review, admit legal liability, offer compensation, request private data, or mention AI. " +
-            "This is a human-reviewed draft and must be safe to edit before publishing.",
-        },
-        {
-          role: "user",
-          content: [
-            `Business: ${input.businessName}`,
-            `Reviewer: ${input.reviewerName}`,
-            `Rating: ${input.rating}/5`,
-            `Desired tone: ${tone}`,
-            `Review: ${reviewText}`,
-            "Write a single reply of 40-90 words.",
-          ].join("\n"),
-        },
-      ],
-    });
+    const completion = await openrouter.chat.completions.create(
+      {
+        model: REVIEW_MODEL,
+        max_tokens: 350,
+        temperature: 0.45,
+        messages: [
+          {
+            role: "system",
+            content:
+              "You draft concise, professional Google Business review replies. " +
+              "Return only the reply text, with no title, quote marks, markdown, or sign-off template. " +
+              "Never claim facts not in the review, admit legal liability, offer compensation, request private data, or mention AI. " +
+              "This is a human-reviewed draft and must be safe to edit before publishing.",
+          },
+          {
+            role: "user",
+            content: [
+              `Business: ${input.businessName}`,
+              `Reviewer: ${input.reviewerName}`,
+              `Rating: ${input.rating}/5`,
+              `Desired tone: ${tone}`,
+              `Review: ${reviewText}`,
+              "Write a single reply of 40-90 words.",
+            ].join("\n"),
+          },
+        ],
+      },
+      {
+        timeout: AI_REQUEST_TIMEOUT_MS,
+        maxRetries: 0,
+      },
+    );
     const text = completion.choices[0]?.message?.content?.trim();
-    if (!text) throw new AIGenerationError("AI provider returned an empty reply draft");
+    if (!text)
+      throw new AIGenerationError("AI provider returned an empty reply draft");
     logger.info(
       { ...context, latencyMs: Date.now() - startedAt, success: true },
       "AI review reply draft generation succeeded",
@@ -134,6 +175,13 @@ export async function generateReviewReplyDraft(
       "AI review reply draft generation failed",
     );
     if (err instanceof AIGenerationError) throw err;
-    throw new AIGenerationError("Failed to generate review reply draft", err);
+    const timedOut = isTimeoutError(err);
+    throw new AIGenerationError(
+      timedOut
+        ? "AI reply drafting timed out. Please try again."
+        : "AI reply drafting is temporarily unavailable. Please try again.",
+      timedOut ? 504 : 502,
+      err,
+    );
   }
 }

@@ -13,6 +13,7 @@ export * from "./managedReviews";
 export * from "./reviewAuditEvents";
 export * from "./objectUploads";
 export * from "./reviewGenerationReservations";
+export * from "./reviewProviderOperationLeases";
 export * from "./privateFeedback";
 export * from "./agencyInvitations";
 export * from "./socialMediaAccounts";

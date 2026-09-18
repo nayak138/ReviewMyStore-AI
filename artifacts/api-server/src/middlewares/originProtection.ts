@@ -14,34 +14,36 @@ function normalizeOrigin(origin: string): string | null {
 
 export function getConfiguredOrigins(
   value = process.env.CORS_ALLOWED_ORIGINS,
+  replitDomains = process.env.REPLIT_DOMAINS,
+  replitDevDomain = process.env.REPLIT_DEV_DOMAIN,
 ): Set<string> {
+  const replitOrigins = [...(replitDomains ?? "").split(","), replitDevDomain]
+    .map((domain) => domain?.trim() ?? "")
+    .filter(Boolean)
+    .map((domain) =>
+      normalizeOrigin(
+        domain.startsWith("http://") || domain.startsWith("https://")
+          ? domain
+          : `https://${domain}`,
+      ),
+    );
+
   return new Set(
-    (value ?? "")
-      .split(",")
-      .map((origin) => normalizeOrigin(origin.trim()))
-      .filter((origin): origin is string => Boolean(origin)),
+    [
+      ...(value ?? "")
+        .split(",")
+        .map((origin) => normalizeOrigin(origin.trim())),
+      ...replitOrigins,
+    ].filter((origin): origin is string => Boolean(origin)),
   );
 }
 
-function requestOrigin(req: Request): string {
-  const forwardedHost = req.get("x-forwarded-host")?.split(",")[0]?.trim();
-  const host = forwardedHost || req.get("host") || "";
-  const forwardedProto = req.get("x-forwarded-proto")?.split(",")[0]?.trim();
-  const protocol = forwardedProto || req.protocol;
-  return `${protocol}://${host}`;
-}
-
 export function isTrustedOrigin(
-  req: Request,
   origin: string,
   configuredOrigins = getConfiguredOrigins(),
 ): boolean {
   const normalizedOrigin = normalizeOrigin(origin);
-  if (!normalizedOrigin) return false;
-  return (
-    normalizedOrigin === requestOrigin(req) ||
-    configuredOrigins.has(normalizedOrigin)
-  );
+  return Boolean(normalizedOrigin && configuredOrigins.has(normalizedOrigin));
 }
 
 function rejectOrigin(res: Response): void {
@@ -54,8 +56,11 @@ function rejectOrigin(res: Response): void {
 
 /**
  * Reject browser preflights and state-changing requests from origins that are
- * not the current host or explicitly configured in CORS_ALLOWED_ORIGINS.
- * Requests without Origin are retained for non-browser/bearer clients.
+ * not explicitly configured. Origins are derived from deployment-controlled
+ * environment values rather than forwarded request headers, which a caller
+ * can otherwise forge.
+ *
+ * Requests without Origin remain available to non-browser/bearer clients.
  */
 export function originProtection(
   req: Request,
@@ -70,7 +75,7 @@ export function originProtection(
 
   if (
     (req.method === "OPTIONS" || STATE_CHANGING_METHODS.has(req.method)) &&
-    !isTrustedOrigin(req, origin)
+    !isTrustedOrigin(origin)
   ) {
     rejectOrigin(res);
     return;

@@ -51,6 +51,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { cn } from "@/lib/utils";
+import { facebookUrlSchema, instagramUrlSchema, websiteUrlSchema } from "@/lib/urlValidation";
 
 const businessSchema = z.object({
   name: z.string().min(2, "Name is required"),
@@ -59,9 +60,9 @@ const businessSchema = z.object({
   slug: z.string().min(2, "Slug is required").regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "Lowercase letters, numbers, and hyphens only"),
   address: z.string().nullable().optional(),
   phone: z.string().nullable().optional(),
-  website: z.string().nullable().optional(),
-  instagramUrl: z.string().nullable().optional(),
-  facebookUrl: z.string().nullable().optional(),
+  website: websiteUrlSchema,
+  instagramUrl: instagramUrlSchema,
+  facebookUrl: facebookUrlSchema,
   whatsappNumber: z.string().nullable().optional(),
   latitude: z.number().nullable().optional(),
   longitude: z.number().nullable().optional(),

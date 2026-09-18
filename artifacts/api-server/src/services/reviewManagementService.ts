@@ -1,20 +1,14 @@
-import {
-  and,
-  count,
-  desc,
-  eq,
-  ilike,
-  or,
-  sql,
-} from "drizzle-orm";
+import { and, count, desc, eq, ilike, lte, ne, or, sql } from "drizzle-orm";
 import {
   db,
   managedReviewsTable,
   providerConnectionsTable,
   reviewAuditEventsTable,
   reviewLocationsTable,
+  reviewProviderOperationLeasesTable,
   type ProviderConnection,
 } from "@workspace/db";
+import { randomUUID } from "node:crypto";
 import { generateReviewReplyDraft } from "./aiService";
 import { logger } from "../lib/logger";
 
@@ -29,6 +23,9 @@ const IMPORT_POLL_TIMEOUT_MS = 30_000;
 const IMPORT_BATCH_COUNT = 50;
 const REVIEW_PAGE_SIZE = 100;
 const MAX_SYNCED_REVIEWS = 1_000;
+export const BNDLE_REQUEST_TIMEOUT_MS = 15_000;
+const PROVIDER_OPERATION_LEASE_MS = 8 * 60_000;
+const PROVIDER_OPERATION_LEASE_RENEWAL_MS = 2 * 60_000;
 
 type JsonRecord = Record<string, unknown>;
 
@@ -50,9 +47,26 @@ export class ReviewProviderError extends Error {
   }
 }
 
+/** A second connection/sync request for the same tenant must wait until the
+ * existing provider operation finishes rather than corrupting connection
+ * status or starting a duplicate OAuth flow. */
+export class ReviewProviderOperationInProgressError extends Error {
+  readonly status = 409;
+  readonly code = "REVIEW_PROVIDER_OPERATION_IN_PROGRESS";
+
+  constructor() {
+    super(
+      "A review provider operation is already in progress. Please try again shortly.",
+    );
+    this.name = "ReviewProviderOperationInProgressError";
+  }
+}
+
 export class ManagedReviewNotFoundError extends Error {
   constructor() {
-    super("This review is unavailable or no longer belongs to your organization.");
+    super(
+      "This review is unavailable or no longer belongs to your organization.",
+    );
     this.name = "ManagedReviewNotFoundError";
   }
 }
@@ -107,7 +121,10 @@ function starRatingToNumber(value: unknown): number {
   return (raw && STAR_RATINGS[raw.toUpperCase()]) || 0;
 }
 
-function url(path: string, query?: Record<string, string | number | undefined>) {
+function url(
+  path: string,
+  query?: Record<string, string | number | undefined>,
+) {
   const target = new URL(`${BNDLE_API_BASE}/api/v1/${path.replace(/^\//, "")}`);
   for (const [key, value] of Object.entries(query ?? {})) {
     if (value !== undefined) target.searchParams.set(key, String(value));
@@ -115,21 +132,56 @@ function url(path: string, query?: Record<string, string | number | undefined>) 
   return target;
 }
 
+function isTimeoutError(error: unknown): boolean {
+  return Boolean(
+    error &&
+    typeof error === "object" &&
+    ["AbortError", "TimeoutError"].includes(
+      (error as { name?: unknown }).name as string,
+    ),
+  );
+}
+
 export async function bndleRequest<T extends JsonRecord = JsonRecord>(
   path: string,
   init: RequestInit = {},
   query?: Record<string, string | number | undefined>,
 ): Promise<T> {
-  const response = await fetch(url(path, query), {
-    ...init,
-    headers: {
-      "x-api-key": providerApiKey(),
-      ...(init.body ? { "Content-Type": "application/json" } : {}),
-      ...init.headers,
-    },
-  });
+  const timeoutSignal = AbortSignal.timeout(BNDLE_REQUEST_TIMEOUT_MS);
+  const signal = init.signal
+    ? AbortSignal.any([init.signal, timeoutSignal])
+    : timeoutSignal;
+  let response: Response;
+  let bodyText: string;
+  try {
+    response = await fetch(url(path, query), {
+      ...init,
+      signal,
+      headers: {
+        "x-api-key": providerApiKey(),
+        ...(init.body ? { "Content-Type": "application/json" } : {}),
+        ...init.headers,
+      },
+    });
+    bodyText = await response.text();
+  } catch (error) {
+    if (error instanceof ReviewProviderError) {
+      throw error;
+    }
+    const timedOut = isTimeoutError(error);
+    logger.warn(
+      { err: error, path: path.split("?")[0], timedOut },
+      "bundle.social review provider request did not complete",
+    );
+    throw new ReviewProviderError(
+      timedOut
+        ? "The review provider did not respond in time. Please try again."
+        : "The review provider is temporarily unavailable. Please try again.",
+      timedOut ? 504 : 502,
+      timedOut ? "REVIEW_PROVIDER_TIMEOUT" : "REVIEW_PROVIDER_ERROR",
+    );
+  }
 
-  const bodyText = await response.text();
   let payload: JsonRecord = {};
   try {
     payload = asRecord(bodyText ? JSON.parse(bodyText) : {});
@@ -156,12 +208,11 @@ export async function bndleRequest<T extends JsonRecord = JsonRecord>(
     // 403 is also always about OUR account with the provider (never the end
     // user's Google connection), but bundle.social overloads it for several
     // distinct reasons — an invalid key, but also plan/quota limits (e.g.
-    // "Social sets limit reached") — so surface its own message instead of
-    // guessing "invalid key" every time.
+    // "Social sets limit reached"). Retain the provider's raw text for
+    // internal quota retry logic only; never return it to the browser.
     if (response.status === 403) {
       throw new ReviewProviderError(
-        valueString(payload.message) ??
-          "The review provider rejected this request for our account. Ask an administrator to check the bundle.social plan and credentials.",
+        "The review provider rejected this request for our account. Ask an administrator to check the bundle.social plan and credentials.",
         503,
         "REVIEW_PROVIDER_NOT_CONFIGURED",
         response.status,
@@ -232,7 +283,7 @@ async function getConnection(
 
 async function getRequiredConnection(organizationId: string) {
   const connection = await getConnection(organizationId);
-  if (!connection) {
+  if (!connection || connection.status === "DISCONNECTED") {
     throw new ReviewProviderError(
       "Connect your Google Business Profile before syncing reviews.",
       409,
@@ -252,9 +303,137 @@ function connectionResult(connection: ProviderConnection | null) {
   };
 }
 
+/**
+ * Claims a durable organization-scoped lease without holding a database
+ * connection during slow provider calls. An expired lease can be atomically
+ * reclaimed after a process crash.
+ */
+async function claimProviderOperationLease(
+  organizationId: string,
+): Promise<string | null> {
+  const leaseToken = randomUUID();
+  const now = new Date();
+  const [lease] = await db
+    .insert(reviewProviderOperationLeasesTable)
+    .values({
+      organizationId,
+      leaseToken,
+      acquiredAt: now,
+      expiresAt: new Date(now.getTime() + PROVIDER_OPERATION_LEASE_MS),
+      updatedAt: now,
+    })
+    .onConflictDoUpdate({
+      target: reviewProviderOperationLeasesTable.organizationId,
+      set: {
+        leaseToken,
+        acquiredAt: now,
+        expiresAt: new Date(now.getTime() + PROVIDER_OPERATION_LEASE_MS),
+        updatedAt: now,
+      },
+      setWhere: lte(reviewProviderOperationLeasesTable.expiresAt, now),
+    })
+    .returning({
+      organizationId: reviewProviderOperationLeasesTable.organizationId,
+      leaseToken: reviewProviderOperationLeasesTable.leaseToken,
+    });
+  return lease?.leaseToken === leaseToken ? leaseToken : null;
+}
+
+async function renewProviderOperationLease(
+  organizationId: string,
+  leaseToken: string,
+): Promise<boolean> {
+  const now = new Date();
+  const [renewed] = await db
+    .update(reviewProviderOperationLeasesTable)
+    .set({
+      expiresAt: new Date(now.getTime() + PROVIDER_OPERATION_LEASE_MS),
+      updatedAt: now,
+    })
+    .where(
+      and(
+        eq(reviewProviderOperationLeasesTable.organizationId, organizationId),
+        eq(reviewProviderOperationLeasesTable.leaseToken, leaseToken),
+      ),
+    )
+    .returning({
+      organizationId: reviewProviderOperationLeasesTable.organizationId,
+    });
+  return Boolean(renewed);
+}
+
+async function releaseProviderOperationLease(
+  organizationId: string,
+  leaseToken: string,
+) {
+  await db
+    .delete(reviewProviderOperationLeasesTable)
+    .where(
+      and(
+        eq(reviewProviderOperationLeasesTable.organizationId, organizationId),
+        eq(reviewProviderOperationLeasesTable.leaseToken, leaseToken),
+      ),
+    );
+}
+
+/**
+ * Coordinates mutations to one provider connection across server instances.
+ * The lease has a conservative duration beyond the maximum bounded provider
+ * work and is renewed while an operation remains active.
+ */
+export async function withProviderOperationLock<T>(
+  organizationId: string,
+  operation: () => Promise<T>,
+): Promise<T> {
+  const leaseToken = await claimProviderOperationLease(organizationId);
+  if (!leaseToken) {
+    throw new ReviewProviderOperationInProgressError();
+  }
+
+  let renewalInFlight = false;
+  const renewalTimer = setInterval(() => {
+    if (renewalInFlight) return;
+    renewalInFlight = true;
+    void renewProviderOperationLease(organizationId, leaseToken)
+      .then((renewed) => {
+        if (!renewed) {
+          logger.error(
+            { organizationId },
+            "Review provider operation lease was replaced before completion",
+          );
+        }
+      })
+      .catch((error) => {
+        logger.error(
+          { err: error, organizationId },
+          "Failed to renew review provider operation lease",
+        );
+      })
+      .finally(() => {
+        renewalInFlight = false;
+      });
+  }, PROVIDER_OPERATION_LEASE_RENEWAL_MS);
+  renewalTimer.unref();
+
+  try {
+    return await operation();
+  } finally {
+    clearInterval(renewalTimer);
+    try {
+      await releaseProviderOperationLease(organizationId, leaseToken);
+    } catch (error) {
+      logger.error(
+        { err: error, organizationId },
+        "Failed to release review provider operation lease",
+      );
+    }
+  }
+}
+
 function reviewSensitivity(rating: number, comment: string): string | null {
   if (rating <= 2) return "Low-rating review — approval required";
-  const sensitive = /\b(lawyer|legal|lawsuit|sue|refund|chargeback|police|threat|harass|discriminat|injur|fraud|scam)\b/i;
+  const sensitive =
+    /\b(lawyer|legal|lawsuit|sue|refund|chargeback|police|threat|harass|discriminat|injur|fraud|scam)\b/i;
   return sensitive.test(comment)
     ? "Sensitive language detected — approval required"
     : null;
@@ -336,6 +515,12 @@ function getConnectCallbackUrl(): string | null {
 }
 
 export async function startReviewProviderConnection(organizationId: string) {
+  return withProviderOperationLock(organizationId, () =>
+    startReviewProviderConnectionUnlocked(organizationId),
+  );
+}
+
+async function startReviewProviderConnectionUnlocked(organizationId: string) {
   const teamId = await getOrCreateProviderTeam(organizationId);
   const [connection] = await db
     .insert(providerConnectionsTable)
@@ -459,11 +644,13 @@ function resolveLocationStage(account: JsonRecord | null) {
   }
   return {
     stage: "NEEDS_LOCATION" as const,
-    locations: channels.map((channel) => ({
-      id: valueString(channel.id) ?? "",
-      name: valueString(channel.name) ?? "Untitled location",
-      address: valueString(channel.address),
-    })).filter((location) => location.id),
+    locations: channels
+      .map((channel) => ({
+        id: valueString(channel.id) ?? "",
+        name: valueString(channel.name) ?? "Untitled location",
+        address: valueString(channel.address),
+      }))
+      .filter((location) => location.id),
   };
 }
 
@@ -490,6 +677,15 @@ export async function selectReviewProviderLocation(
   organizationId: string,
   locationId: string,
 ) {
+  return withProviderOperationLock(organizationId, () =>
+    selectReviewProviderLocationUnlocked(organizationId, locationId),
+  );
+}
+
+async function selectReviewProviderLocationUnlocked(
+  organizationId: string,
+  locationId: string,
+) {
   const connection = await getRequiredConnection(organizationId);
   await bndleRequest("social-account/set-channel", {
     method: "POST",
@@ -499,7 +695,7 @@ export async function selectReviewProviderLocation(
       channelId: locationId,
     }),
   });
-  return syncReviewProvider(organizationId);
+  return syncReviewProviderUnlocked(organizationId);
 }
 
 /**
@@ -509,6 +705,12 @@ export async function selectReviewProviderLocation(
  * are not used again while the local connection is DISCONNECTED.
  */
 export async function disconnectReviewProvider(organizationId: string) {
+  return withProviderOperationLock(organizationId, () =>
+    disconnectReviewProviderUnlocked(organizationId),
+  );
+}
+
+async function disconnectReviewProviderUnlocked(organizationId: string) {
   const connection = await getConnection(organizationId);
   if (connection) {
     await db
@@ -670,7 +872,9 @@ async function waitForReviewImport(teamId: string): Promise<string | null> {
     if (status === "RATE_LIMITED") {
       return "Google is rate limiting review imports; the import will resume automatically. Showing reviews imported so far.";
     }
-    await new Promise((resolve) => setTimeout(resolve, IMPORT_POLL_INTERVAL_MS));
+    await new Promise((resolve) =>
+      setTimeout(resolve, IMPORT_POLL_INTERVAL_MS),
+    );
   }
   return "The review import is still running. Sync again in a minute to pick up the newest reviews.";
 }
@@ -753,8 +957,15 @@ async function upsertManagedReview(
 }
 
 export async function syncReviewProvider(organizationId: string) {
+  return withProviderOperationLock(organizationId, () =>
+    syncReviewProviderUnlocked(organizationId),
+  );
+}
+
+async function syncReviewProviderUnlocked(organizationId: string) {
   const connection = await getRequiredConnection(organizationId);
   const teamId = connection.externalProfileId;
+  const syncStartedAt = new Date();
 
   try {
     const team = await bndleRequest(`team/${encodeURIComponent(teamId)}`);
@@ -763,10 +974,23 @@ export async function syncReviewProvider(organizationId: string) {
     );
 
     if (googleAccounts.length === 0) {
-      await db
+      const [updatedConnection] = await db
         .update(providerConnectionsTable)
         .set({ status: "PENDING", lastError: null, updatedAt: new Date() })
-        .where(eq(providerConnectionsTable.id, connection.id));
+        .where(
+          and(
+            eq(providerConnectionsTable.id, connection.id),
+            ne(providerConnectionsTable.status, "DISCONNECTED"),
+            lte(providerConnectionsTable.updatedAt, syncStartedAt),
+          ),
+        )
+        .returning({ id: providerConnectionsTable.id });
+      if (!updatedConnection) {
+        logger.info(
+          { organizationId, connectionId: connection.id },
+          "Skipped stale review provider sync status update",
+        );
+      }
       return getReviewDashboard(organizationId);
     }
 
@@ -797,7 +1021,7 @@ export async function syncReviewProvider(organizationId: string) {
       await upsertManagedReview(organizationId, location.id, raw);
     }
 
-    await db
+    const [updatedConnection] = await db
       .update(providerConnectionsTable)
       .set({
         status: "CONNECTED",
@@ -806,7 +1030,20 @@ export async function syncReviewProvider(organizationId: string) {
         remainingImportCapacity: remainingCapacity,
         updatedAt: new Date(),
       })
-      .where(eq(providerConnectionsTable.id, connection.id));
+      .where(
+        and(
+          eq(providerConnectionsTable.id, connection.id),
+          ne(providerConnectionsTable.status, "DISCONNECTED"),
+          lte(providerConnectionsTable.updatedAt, syncStartedAt),
+        ),
+      )
+      .returning({ id: providerConnectionsTable.id });
+    if (!updatedConnection) {
+      logger.info(
+        { organizationId, connectionId: connection.id },
+        "Skipped stale review provider sync completion update",
+      );
+    }
   } catch (error) {
     if (
       error instanceof ReviewProviderError &&
@@ -820,10 +1057,34 @@ export async function syncReviewProvider(organizationId: string) {
       error instanceof ReviewProviderError
         ? error.message
         : "Review synchronization failed. Please try again.";
-    await db
-      .update(providerConnectionsTable)
-      .set({ status: "ERROR", lastError: message, updatedAt: new Date() })
-      .where(eq(providerConnectionsTable.id, connection.id));
+    try {
+      const [updatedConnection] = await db
+        .update(providerConnectionsTable)
+        .set({ status: "ERROR", lastError: message, updatedAt: new Date() })
+        .where(
+          and(
+            eq(providerConnectionsTable.id, connection.id),
+            ne(providerConnectionsTable.status, "DISCONNECTED"),
+            lte(providerConnectionsTable.updatedAt, syncStartedAt),
+          ),
+        )
+        .returning({ id: providerConnectionsTable.id });
+      if (!updatedConnection) {
+        logger.info(
+          { organizationId, connectionId: connection.id },
+          "Skipped stale review provider sync failure update",
+        );
+      }
+    } catch (connectionUpdateError) {
+      logger.error(
+        {
+          err: connectionUpdateError,
+          organizationId,
+          connectionId: connection.id,
+        },
+        "Could not record review provider sync failure",
+      );
+    }
     throw error;
   }
 
@@ -883,9 +1144,12 @@ export async function listManagedReviews(
 ) {
   const conditions = [eq(managedReviewsTable.organizationId, organizationId)];
   if (filters.locationId) {
-    conditions.push(eq(managedReviewsTable.reviewLocationId, filters.locationId));
+    conditions.push(
+      eq(managedReviewsTable.reviewLocationId, filters.locationId),
+    );
   }
-  if (filters.rating) conditions.push(eq(managedReviewsTable.rating, filters.rating));
+  if (filters.rating)
+    conditions.push(eq(managedReviewsTable.rating, filters.rating));
   if (filters.responseStatus) {
     conditions.push(
       eq(managedReviewsTable.responseStatus, filters.responseStatus),
@@ -901,14 +1165,20 @@ export async function listManagedReviews(
     );
   }
   const rows = await db
-    .select({ review: managedReviewsTable, locationName: reviewLocationsTable.name })
+    .select({
+      review: managedReviewsTable,
+      locationName: reviewLocationsTable.name,
+    })
     .from(managedReviewsTable)
     .innerJoin(
       reviewLocationsTable,
       eq(managedReviewsTable.reviewLocationId, reviewLocationsTable.id),
     )
     .where(and(...conditions))
-    .orderBy(desc(managedReviewsTable.reviewUpdatedAt), desc(managedReviewsTable.createdAt));
+    .orderBy(
+      desc(managedReviewsTable.reviewUpdatedAt),
+      desc(managedReviewsTable.createdAt),
+    );
   return {
     reviews: rows.map(({ review, locationName }) =>
       toReviewPayload(review, locationName),
@@ -943,7 +1213,10 @@ export async function generateManagedReviewDraft(
   actorUserId: string,
   managedReviewId: string,
 ) {
-  const { review, location } = await findReview(organizationId, managedReviewId);
+  const { review, location } = await findReview(
+    organizationId,
+    managedReviewId,
+  );
   const draftReplyText = await generateReviewReplyDraft({
     businessName: location.name,
     reviewerName: review.reviewerName,
@@ -977,11 +1250,18 @@ export async function publishManagedReviewReply(
   managedReviewId: string,
   comment: string,
 ) {
-  const { review, location } = await findReview(organizationId, managedReviewId);
+  const { review, location } = await findReview(
+    organizationId,
+    managedReviewId,
+  );
   const connection = await getRequiredConnection(organizationId);
   const trimmed = comment.trim();
   if (!trimmed) {
-    throw new ReviewProviderError("A reply cannot be empty.", 400, "INVALID_REPLY");
+    throw new ReviewProviderError(
+      "A reply cannot be empty.",
+      400,
+      "INVALID_REPLY",
+    );
   }
   if (trimmed.length > 4096) {
     throw new ReviewProviderError(
@@ -1032,7 +1312,10 @@ export async function deleteManagedReviewReply(
   actorUserId: string,
   managedReviewId: string,
 ) {
-  const { review, location } = await findReview(organizationId, managedReviewId);
+  const { review, location } = await findReview(
+    organizationId,
+    managedReviewId,
+  );
   if (review.replyText) {
     const connection = await getRequiredConnection(organizationId);
     await bndleRequest(

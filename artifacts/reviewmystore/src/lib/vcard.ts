@@ -1,3 +1,5 @@
+import { safeHttpUrl } from "./urlValidation";
+
 /** Builds a minimal vCard 3.0 file for a business and triggers a browser download. */
 export interface VCardBusiness {
   name: string;
@@ -24,8 +26,9 @@ export function buildVCard(business: VCardBusiness): string {
     // single formatted string, so put it all in the "street" field.
     lines.push(`ADR;TYPE=WORK:;;${escapeVCard(business.address)};;;;`);
   }
-  if (business.website) {
-    lines.push(`URL:${escapeVCard(business.website)}`);
+  const website = safeHttpUrl(business.website);
+  if (website) {
+    lines.push(`URL:${escapeVCard(website)}`);
   }
   lines.push("END:VCARD");
   return lines.join("\r\n");

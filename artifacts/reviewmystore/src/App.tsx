@@ -16,12 +16,12 @@ import {
 
 // Route-level code splitting: each page loads its own chunk so first-time
 // visitors to the marketing page don't download the authenticated app.
-import About from "./pages/marketing/About";
-import Blog from "./pages/marketing/Blog";
-import BlogPost from "./pages/marketing/BlogPost";
-import Resources from "./pages/marketing/Resources";
-import Privacy from "./pages/marketing/Privacy";
-import Terms from "./pages/marketing/Terms";
+const About = lazy(() => import("./pages/marketing/About"));
+const Blog = lazy(() => import("./pages/marketing/Blog"));
+const BlogPost = lazy(() => import("./pages/marketing/BlogPost"));
+const Resources = lazy(() => import("./pages/marketing/Resources"));
+const Privacy = lazy(() => import("./pages/marketing/Privacy"));
+const Terms = lazy(() => import("./pages/marketing/Terms"));
 const Marketing = lazy(() => import("./pages/Marketing"));
 const Onboarding = lazy(() => import("./pages/Onboarding"));
 const Businesses = lazy(() => import("./pages/Businesses"));
@@ -41,10 +41,23 @@ const AdminPortal = lazy(() => import("./pages/AdminPortal"));
 const AgencyJoin = lazy(() => import("./pages/AgencyJoin"));
 const NotFound = lazy(() => import("./pages/not-found"));
 
+function shouldRetryQuery(failureCount: number, error: unknown): boolean {
+  const status =
+    typeof error === "object" && error !== null
+      ? Number(
+          (error as { status?: unknown; response?: { status?: unknown } }).status ??
+            (error as { response?: { status?: unknown } }).response?.status,
+        )
+      : undefined;
+  return status !== 401 && status !== 403 && failureCount < 2;
+}
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      retry: false,
+      retry: shouldRetryQuery,
+      staleTime: 30_000,
+      gcTime: 5 * 60_000,
       refetchOnWindowFocus: false,
     },
   },
@@ -317,7 +330,7 @@ function AppRouter() {
       <Route path="/feedback" component={Feedback} />
       <Route path="/social-media" component={SocialMedia} />
       <Route path="/business-analytics" component={BusinessAnalytics} />
-      <Route path="/analytics" component={Analytics} />
+      <Route path="/insigts" component={Analytics} />
       <Route path="/settings" component={Settings} />
       {/* Super Admin only */}
       <Route path="/admin/leads" component={AdminLeads} />

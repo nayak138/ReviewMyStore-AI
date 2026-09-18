@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { and, asc, eq, isNull, sql } from "drizzle-orm";
+import { and, asc, eq, isNull, lt, sql } from "drizzle-orm";
 import {
   db,
   businessesTable,
@@ -10,6 +10,10 @@ import {
   reviewSessionsTable,
 } from "@workspace/db";
 import { generateReviewText } from "./aiService";
+import {
+  safePublicHttpUrl,
+  safePublicSocialUrl,
+} from "./businessUrlValidation";
 import { logger } from "../lib/logger";
 import { logScanEvent, type RequestMeta } from "./scanEventService";
 import { getPlaceDetails } from "./googleBusinessService";
@@ -52,6 +56,13 @@ const FAILED_RESERVATION = "FAILED" as const;
  * eligible for retention cleanup. */
 export const COMPLETED_RESERVATION_RETENTION_DAYS = 30;
 export const COMPLETED_RESERVATION_CLEANUP_BATCH_SIZE = 500;
+/**
+ * The provider request is bounded well below this threshold. A PENDING row
+ * older than this can only be left by a process interruption or failed
+ * handoff, so its reserved quota and generation slot can be released safely.
+ */
+export const PENDING_RESERVATION_RECOVERY_AGE_MS = 15 * 60 * 1000;
+export const PENDING_RESERVATION_RECOVERY_BATCH_SIZE = 100;
 const MILLISECONDS_PER_DAY = 24 * 60 * 60 * 1000;
 
 export async function countStaleCompletedGenerationReservations(
@@ -121,6 +132,54 @@ export async function cleanupCompletedGenerationReservations(
   `);
 
   return deleted.rows.length;
+}
+
+/**
+ * Recover quota reservations that predate the maximum bounded AI request
+ * lifetime. `releaseGenerationReservation` changes status conditionally, so
+ * multiple server instances can scan the same rows without double-crediting
+ * quota or a session generation slot.
+ */
+export async function recoverStalePendingGenerationReservations(
+  options: {
+    now?: Date;
+    batchSize?: number;
+  } = {},
+): Promise<number> {
+  const {
+    now = new Date(),
+    batchSize = PENDING_RESERVATION_RECOVERY_BATCH_SIZE,
+  } = options;
+  if (!Number.isInteger(batchSize) || batchSize <= 0) {
+    throw new RangeError(
+      "Pending reservation recovery batch size must be a positive integer",
+    );
+  }
+
+  const cutoff = new Date(now.getTime() - PENDING_RESERVATION_RECOVERY_AGE_MS);
+  const boundedBatchSize = Math.min(
+    batchSize,
+    PENDING_RESERVATION_RECOVERY_BATCH_SIZE,
+  );
+  const staleReservations = await db
+    .select({ id: reviewGenerationReservationsTable.id })
+    .from(reviewGenerationReservationsTable)
+    .where(
+      and(
+        eq(reviewGenerationReservationsTable.status, PENDING_RESERVATION),
+        lt(reviewGenerationReservationsTable.createdAt, cutoff),
+      ),
+    )
+    .orderBy(asc(reviewGenerationReservationsTable.createdAt))
+    .limit(boundedBatchSize);
+
+  let recoveredCount = 0;
+  for (const reservation of staleReservations) {
+    if (await releaseGenerationReservation(reservation.id)) {
+      recoveredCount += 1;
+    }
+  }
+  return recoveredCount;
 }
 
 /** Only ACTIVE, non-archived, non-deleted campaigns under a non-deleted
@@ -210,9 +269,9 @@ export async function getPublicReviewPage(
       category: business.category,
       address: business.address,
       phone: business.phone,
-      website: business.website,
-      instagramUrl: business.instagramUrl,
-      facebookUrl: business.facebookUrl,
+      website: safePublicHttpUrl(business.website),
+      instagramUrl: safePublicSocialUrl(business.instagramUrl, "instagram"),
+      facebookUrl: safePublicSocialUrl(business.facebookUrl, "facebook"),
       whatsappNumber: business.whatsappNumber,
       googleRating: business.googleRating,
       googleReviewCount: business.googleReviewCount,
@@ -409,7 +468,11 @@ export async function generatePublicReview(
       });
     } catch (analyticsError) {
       logger.error(
-        { err: analyticsError, businessId: business.id, campaignId: campaign.id },
+        {
+          err: analyticsError,
+          businessId: business.id,
+          campaignId: campaign.id,
+        },
         "Failed to record generated review analytics",
       );
     }
@@ -438,8 +501,8 @@ export async function generatePublicReview(
 
 async function releaseGenerationReservation(
   reservationId: string,
-): Promise<void> {
-  await db.transaction(async (tx) => {
+): Promise<boolean> {
+  return db.transaction(async (tx) => {
     const [reservation] = await tx
       .update(reviewGenerationReservationsTable)
       .set({
@@ -458,7 +521,7 @@ async function releaseGenerationReservation(
         campaignId: reviewGenerationReservationsTable.campaignId,
       });
 
-    if (!reservation) return;
+    if (!reservation) return false;
 
     await tx
       .update(reviewSessionsTable)
@@ -481,6 +544,8 @@ async function releaseGenerationReservation(
         updatedAt: new Date(),
       })
       .where(eq(organizationsTable.id, reservation.organizationId));
+
+    return true;
   });
 }
 

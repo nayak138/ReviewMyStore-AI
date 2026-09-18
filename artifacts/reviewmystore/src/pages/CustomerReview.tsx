@@ -31,6 +31,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { downloadVCard } from "@/lib/vcard";
+import { safeHttpUrl, safeSocialUrl } from "@/lib/urlValidation";
 import { objectUrl } from "@/lib/imageUtils";
 import { isRtlLanguage } from "@/lib/languages";
 import { getReviewPageStrings } from "@/lib/reviewPageTranslations";
@@ -356,6 +357,12 @@ export default function CustomerReview() {
   const directionsHref = business.address
     ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(business.address)}`
     : null;
+  const websiteHref = safeHttpUrl(business.website);
+  const instagramHref = safeSocialUrl(business.instagramUrl, "instagram");
+  const facebookHref = safeSocialUrl(business.facebookUrl, "facebook");
+  const phoneHref = business.phone?.trim()
+    ? `tel:${business.phone.replace(/[^0-9+*#;,.()-]/g, "")}`
+    : null;
   const headerImage = objectUrl(business.headerImageUrl);
 
   type SocialLink =
@@ -363,11 +370,11 @@ export default function CustomerReview() {
     | { kind: "image"; key: string; href: string; label: string; image: string };
 
   const socialLinks: SocialLink[] = [
-    business.website && { kind: "icon", key: "website", href: business.website, label: "Website", icon: Globe, className: "bg-primary" },
-    business.instagramUrl && { kind: "image", key: "instagram", href: business.instagramUrl, label: "Instagram", image: INSTAGRAM_ICON },
-    business.facebookUrl && { kind: "icon", key: "facebook", href: business.facebookUrl, label: "Facebook", icon: Facebook, className: "bg-primary" },
+    websiteHref && { kind: "icon", key: "website", href: websiteHref, label: "Website", icon: Globe, className: "bg-primary" },
+    instagramHref && { kind: "image", key: "instagram", href: instagramHref, label: "Instagram", image: INSTAGRAM_ICON },
+    facebookHref && { kind: "icon", key: "facebook", href: facebookHref, label: "Facebook", icon: Facebook, className: "bg-primary" },
     whatsappHref && { kind: "image", key: "whatsapp", href: whatsappHref, label: "WhatsApp", image: WHATSAPP_ICON },
-    business.phone && { kind: "icon", key: "call", href: `tel:${business.phone}`, label: "Call", icon: Phone, className: "bg-destructive" },
+    phoneHref && { kind: "icon", key: "call", href: phoneHref, label: "Call", icon: Phone, className: "bg-destructive" },
   ].filter((link): link is SocialLink => Boolean(link));
 
   const toggleKeyword = (label: string) => {
@@ -570,13 +577,13 @@ export default function CustomerReview() {
 
         <div className="border-b border-[#d8e2fb] bg-[#eef3ff] px-4 py-4 sm:px-7 dark:border-white/10 dark:bg-[#0a1430]">
           <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center sm:justify-start">
-            {business.phone && (
+            {phoneHref && (
               <Button asChild size="sm" className="h-11 w-full min-w-0 rounded-full bg-[#1769ff] px-3 text-xs font-semibold shadow-[0_8px_18px_rgba(23,105,255,0.28)] hover:bg-[#0e59df] sm:w-auto sm:px-5 sm:text-sm">
-                <a href={`tel:${business.phone}`} onClick={() => trackCustomerAction("CALL_CLICK")}><Phone className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" />Call</a>
+                <a href={phoneHref} onClick={() => trackCustomerAction("CALL_CLICK")}><Phone className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" />Call</a>
               </Button>
             )}
-            {(business.phone || business.address || business.website) && (
-              <Button variant="outline" size="sm" className="h-11 w-full min-w-0 rounded-full border-[#cbd8f5] bg-[#e4ecff] px-3 text-xs font-semibold text-[#20345f] hover:bg-[#d8e4ff] dark:border-white/15 dark:bg-[#172548] dark:text-slate-100 dark:hover:bg-[#21345f] sm:w-auto sm:px-4 sm:text-sm" onClick={() => { trackCustomerAction("CONTACT_SAVED"); downloadVCard({ name: business.name, phone: business.phone, address: business.address, website: business.website }); }}>
+            {(phoneHref || business.address || websiteHref) && (
+              <Button variant="outline" size="sm" className="h-11 w-full min-w-0 rounded-full border-[#cbd8f5] bg-[#e4ecff] px-3 text-xs font-semibold text-[#20345f] hover:bg-[#d8e4ff] dark:border-white/15 dark:bg-[#172548] dark:text-slate-100 dark:hover:bg-[#21345f] sm:w-auto sm:px-4 sm:text-sm" onClick={() => { trackCustomerAction("CONTACT_SAVED"); downloadVCard({ name: business.name, phone: business.phone, address: business.address, website: websiteHref }); }}>
                 <IdCard className="mr-1.5 h-4 w-4 text-[#5b83ff]" aria-hidden="true" />Save Contact
               </Button>
             )}

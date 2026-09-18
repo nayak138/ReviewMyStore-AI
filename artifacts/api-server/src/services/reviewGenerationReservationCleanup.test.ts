@@ -15,6 +15,8 @@ import {
   cleanupCompletedGenerationReservations,
   countStaleCompletedGenerationReservations,
   COMPLETED_RESERVATION_RETENTION_DAYS,
+  PENDING_RESERVATION_RECOVERY_AGE_MS,
+  recoverStalePendingGenerationReservations,
 } from "./publicReviewService";
 
 const runId = randomUUID().slice(0, 8);
@@ -229,4 +231,88 @@ test("removes old completed rows in bounded batches without touching accounting"
   assert.equal(organizationAfter.aiQuota, organizationBefore.aiQuota);
   assert.equal(sessionAfter.generationCount, sessionBefore.generationCount);
   assert.equal(await countStaleCompletedGenerationReservations({ now }), 0);
+
+  // This row is deliberately an accounting-free fixture for the retention
+  // test above. Remove it so the recovery test below only evaluates rows that
+  // actually represent a held quota and generation slot.
+  await db
+    .delete(reviewGenerationReservationsTable)
+    .where(eq(reviewGenerationReservationsTable.id, reservationIds.pending));
+});
+
+test("releases only pending reservations older than the bounded provider lifetime", async () => {
+  const now = new Date("2026-08-28T12:00:00.000Z");
+  const staleAt = new Date(
+    now.getTime() - PENDING_RESERVATION_RECOVERY_AGE_MS - 1,
+  );
+  const freshAt = new Date(
+    now.getTime() - PENDING_RESERVATION_RECOVERY_AGE_MS + 1,
+  );
+  const staleReservationId = randomUUID();
+  const freshReservationId = randomUUID();
+
+  await db
+    .update(organizationsTable)
+    .set({ aiQuota: 15, updatedAt: now })
+    .where(eq(organizationsTable.id, organizationId));
+  await db
+    .update(reviewSessionsTable)
+    .set({ generationCount: 4, updatedAt: now })
+    .where(eq(reviewSessionsTable.id, sessionId));
+  await db.insert(reviewGenerationReservationsTable).values([
+    {
+      id: staleReservationId,
+      sessionId,
+      campaignId,
+      organizationId,
+      status: "PENDING",
+      createdAt: staleAt,
+      updatedAt: staleAt,
+    },
+    {
+      id: freshReservationId,
+      sessionId,
+      campaignId,
+      organizationId,
+      status: "PENDING",
+      createdAt: freshAt,
+      updatedAt: freshAt,
+    },
+  ]);
+
+  assert.equal(
+    await recoverStalePendingGenerationReservations({ now, batchSize: 10 }),
+    1,
+  );
+
+  const reservations = await db
+    .select({
+      id: reviewGenerationReservationsTable.id,
+      status: reviewGenerationReservationsTable.status,
+    })
+    .from(reviewGenerationReservationsTable)
+    .where(
+      inArray(reviewGenerationReservationsTable.id, [
+        staleReservationId,
+        freshReservationId,
+      ]),
+    );
+  assert.deepEqual(
+    Object.fromEntries(reservations.map(({ id, status }) => [id, status])),
+    {
+      [staleReservationId]: "FAILED",
+      [freshReservationId]: "PENDING",
+    },
+  );
+
+  const [organization] = await db
+    .select({ aiQuota: organizationsTable.aiQuota })
+    .from(organizationsTable)
+    .where(eq(organizationsTable.id, organizationId));
+  const [session] = await db
+    .select({ generationCount: reviewSessionsTable.generationCount })
+    .from(reviewSessionsTable)
+    .where(eq(reviewSessionsTable.id, sessionId));
+  assert.equal(organization.aiQuota, 16);
+  assert.equal(session.generationCount, 3);
 });

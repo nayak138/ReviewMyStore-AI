@@ -1,5 +1,6 @@
 import { and, desc, eq, isNull, ne } from "drizzle-orm";
 import { db, businessesTable, type Business } from "@workspace/db";
+import { normalizeBusinessUrls } from "./businessUrlValidation";
 
 export class BusinessNotFoundError extends Error {
   constructor(id: string) {
@@ -139,10 +140,11 @@ export async function createBusiness(
   organizationId: string,
   input: CreateBusinessInput,
 ): Promise<Business> {
-  await ensureUniqueGooglePlace(organizationId, input.googlePlaceId);
+  const normalizedInput = normalizeBusinessUrls(input);
+  await ensureUniqueGooglePlace(organizationId, normalizedInput.googlePlaceId);
   const [business] = await db
     .insert(businessesTable)
-    .values({ organizationId, ...input })
+    .values({ organizationId, ...normalizedInput })
     .returning();
   return business;
 }
@@ -154,11 +156,16 @@ export async function updateBusiness(
   id: string,
   input: UpdateBusinessInput,
 ): Promise<Business> {
+  const normalizedInput = normalizeBusinessUrls(input);
   await findOrgBusiness(organizationId, id);
-  await ensureUniqueGooglePlace(organizationId, input.googlePlaceId, id);
+  await ensureUniqueGooglePlace(
+    organizationId,
+    normalizedInput.googlePlaceId,
+    id,
+  );
   const [updated] = await db
     .update(businessesTable)
-    .set({ ...input, updatedAt: new Date() })
+    .set({ ...normalizedInput, updatedAt: new Date() })
     .where(eq(businessesTable.id, id))
     .returning();
   return updated;
