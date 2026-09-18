@@ -12,7 +12,6 @@ import {
   useEffect,
   useRef,
   useState,
-  useMemo,
   lazy,
   Suspense,
   type ReactNode,
@@ -22,12 +21,10 @@ import {
   QueryClientProvider,
   useQueryClient,
 } from "@tanstack/react-query";
-import { useTheme } from "next-themes";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/components/theme-provider";
 import {
-  BRAND_LOGO_DARK,
   BRAND_LOGO_LIGHT,
   BrandIcon,
   BrandLogo,
@@ -209,9 +206,15 @@ function AuthLayout({ children }: { children: ReactNode }) {
                 Google
               </span>
             </div>
-            <div className="mt-4 flex items-center gap-1" aria-label="5 out of 5 stars">
+            <div
+              className="mt-4 flex items-center gap-1"
+              aria-label="5 out of 5 stars"
+            >
               {Array.from({ length: 5 }, (_, index) => (
-                <span key={index} className="text-lg leading-none text-amber-300">
+                <span
+                  key={index}
+                  className="text-lg leading-none text-amber-300"
+                >
                   ★
                 </span>
               ))}
@@ -428,22 +431,12 @@ function AppRouter() {
 
 function ClerkProviderWithRoutes() {
   const [, setLocation] = useLocation();
-  const { resolvedTheme } = useTheme();
-  const themeAwareClerkAppearance = useMemo(
-    () => ({
-      ...clerkAppearance,
-      options: {
-        ...clerkAppearance.options,
-      },
-    }),
-    [resolvedTheme],
-  );
 
   return (
     <ClerkProvider
       publishableKey={clerkPubKey}
       proxyUrl={clerkProxyUrl}
-      appearance={themeAwareClerkAppearance}
+      appearance={clerkAppearance}
       signInUrl={`${basePath}/sign-in`}
       localization={{
         signIn: {

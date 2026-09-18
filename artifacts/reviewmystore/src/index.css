@@ -22,6 +22,16 @@
   display: none !important;
 }
 
+.cl-main,
+.cl-form,
+.cl-socialButtons,
+.cl-formFieldRow,
+.cl-formField,
+.cl-dividerRow {
+  width: 100% !important;
+  max-width: none !important;
+}
+
 .cl-formFieldInput::placeholder {
   color: #64748b !important;
   opacity: 1 !important;
@@ -109,7 +119,10 @@
 }
 
 .auth-hero-dots {
-  background-image: radial-gradient(rgb(255 255 255 / 0.2) 1px, transparent 1px);
+  background-image: radial-gradient(
+    rgb(255 255 255 / 0.2) 1px,
+    transparent 1px
+  );
   background-size: 24px 24px;
   mask-image: linear-gradient(to bottom, black, transparent 82%);
   opacity: 0.3;
