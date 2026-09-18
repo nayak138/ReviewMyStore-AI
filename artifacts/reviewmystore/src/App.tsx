@@ -1,14 +1,37 @@
-import { Switch, Route, Redirect, useLocation, Router as WouterRouter } from 'wouter';
-import { ClerkProvider, SignIn, SignUp, Show, useClerk } from '@clerk/react';
-import { publishableKeyFromHost } from '@clerk/react/internal';
-import { shadcn } from '@clerk/themes';
-import { useEffect, useRef, useState, useMemo, lazy, Suspense, type ReactNode } from 'react';
-import { QueryClient, QueryClientProvider, useQueryClient } from "@tanstack/react-query";
+import {
+  Switch,
+  Route,
+  Redirect,
+  useLocation,
+  Router as WouterRouter,
+} from "wouter";
+import { ClerkProvider, SignIn, SignUp, Show, useClerk } from "@clerk/react";
+import { publishableKeyFromHost } from "@clerk/react/internal";
+import { shadcn } from "@clerk/themes";
+import {
+  useEffect,
+  useRef,
+  useState,
+  useMemo,
+  lazy,
+  Suspense,
+  type ReactNode,
+} from "react";
+import {
+  QueryClient,
+  QueryClientProvider,
+  useQueryClient,
+} from "@tanstack/react-query";
 import { useTheme } from "next-themes";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/components/theme-provider";
-import { BRAND_LOGO_DARK, BRAND_LOGO_LIGHT, BrandIcon, BrandLogo } from "@/components/brand-logo";
+import {
+  BRAND_LOGO_DARK,
+  BRAND_LOGO_LIGHT,
+  BrandIcon,
+  BrandLogo,
+} from "@/components/brand-logo";
 import {
   getGetPublicAgencyInvitationQueryKey,
   useGetPublicAgencyInvitation,
@@ -45,7 +68,8 @@ function shouldRetryQuery(failureCount: number, error: unknown): boolean {
   const status =
     typeof error === "object" && error !== null
       ? Number(
-          (error as { status?: unknown; response?: { status?: unknown } }).status ??
+          (error as { status?: unknown; response?: { status?: unknown } })
+            .status ??
             (error as { response?: { status?: unknown } }).response?.status,
         )
       : undefined;
@@ -79,7 +103,7 @@ function stripBase(path: string): string {
 }
 
 if (!clerkPubKey) {
-  throw new Error('Missing VITE_CLERK_PUBLISHABLE_KEY in .env file');
+  throw new Error("Missing VITE_CLERK_PUBLISHABLE_KEY in .env file");
 }
 
 const clerkAppearance = {
@@ -146,13 +170,23 @@ function AuthLayout({ children }: { children: ReactNode }) {
         <div className="absolute -right-24 -top-24 h-72 w-72 rounded-full border-[36px] border-primary-foreground/10" />
         <div className="absolute -bottom-28 -left-20 h-80 w-80 rounded-full border-[48px] border-primary-foreground/10" />
         <div className="relative z-10 flex items-center gap-3">
-          <img src={BRAND_LOGO_LIGHT} alt="5-Star.AI" className="h-20 w-auto max-w-[20rem] object-contain" />
+          <img
+            src={BRAND_LOGO_LIGHT}
+            alt="5-Star.AI"
+            className="h-20 w-auto max-w-[20rem] object-contain"
+          />
         </div>
         <div className="relative z-10 max-w-md pb-8">
           <div className="mb-8 flex gap-2" aria-label="Google rating">
-            {["#4285F4", "#EA4335", "#FBBC05", "#34A853", "#4285F4"].map((color, index) => (
-              <span key={`${color}-${index}`} className="h-2.5 w-10 rounded-full" style={{ backgroundColor: color }} />
-            ))}
+            {["#4285F4", "#EA4335", "#FBBC05", "#34A853", "#4285F4"].map(
+              (color, index) => (
+                <span
+                  key={`${color}-${index}`}
+                  className="h-2.5 w-10 rounded-full"
+                  style={{ backgroundColor: color }}
+                />
+              ),
+            )}
           </div>
           <h1 className="font-display text-5xl font-semibold leading-[1.02] tracking-tight text-primary-foreground">
             Make the good
@@ -160,7 +194,8 @@ function AuthLayout({ children }: { children: ReactNode }) {
             moments visible.
           </h1>
           <p className="mt-6 max-w-sm text-base leading-relaxed text-primary-foreground/75">
-            A calmer way to turn real customer experiences into reviews your next guest can trust.
+            A calmer way to turn real customer experiences into reviews your
+            next guest can trust.
           </p>
         </div>
         <p className="relative z-10 text-xs uppercase tracking-[0.18em] text-primary-foreground/50">
@@ -194,13 +229,17 @@ function SignInPage() {
 }
 
 function SignUpPage() {
-  const inviteToken = new URLSearchParams(window.location.search).get("invite") ?? "";
-  const { data: invitation, isLoading } = useGetPublicAgencyInvitation(inviteToken, {
-    query: {
-      enabled: !!inviteToken,
-      queryKey: getGetPublicAgencyInvitationQueryKey(inviteToken),
+  const inviteToken =
+    new URLSearchParams(window.location.search).get("invite") ?? "";
+  const { data: invitation, isLoading } = useGetPublicAgencyInvitation(
+    inviteToken,
+    {
+      query: {
+        enabled: !!inviteToken,
+        queryKey: getGetPublicAgencyInvitationQueryKey(inviteToken),
+      },
     },
-  });
+  );
 
   if (isLoading) {
     return <PageLoader />;
@@ -214,9 +253,13 @@ function SignUpPage() {
             Agency access only
           </h1>
           <p className="mt-3 text-sm leading-relaxed text-red-700 dark:text-red-300">
-            New accounts are created from a secure invitation link. Ask the platform administrator for access.
+            New accounts are created from a secure invitation link. Ask the
+            platform administrator for access.
           </p>
-          <a href={`${basePath}/sign-in`} className="mt-6 inline-flex h-11 items-center justify-center rounded-lg bg-red-700 px-5 text-sm font-semibold text-white transition-colors hover:bg-red-800">
+          <a
+            href={`${basePath}/sign-in`}
+            className="mt-6 inline-flex h-11 items-center justify-center rounded-lg bg-red-700 px-5 text-sm font-semibold text-white transition-colors hover:bg-red-800"
+          >
             Agency login
           </a>
         </div>
@@ -237,7 +280,7 @@ function SignUpPage() {
           routing="path"
           path={`${basePath}/sign-up`}
           initialValues={{ emailAddress: invitation.email }}
-           fallbackRedirectUrl={`${basePath}/businesses`}
+          fallbackRedirectUrl={`${basePath}/businesses`}
         />
       </div>
     </AuthLayout>
@@ -293,7 +336,11 @@ function PageLoader() {
   if (!visible) return null;
 
   return (
-    <div className="flex min-h-[100dvh] items-center justify-center bg-background" role="status" aria-label="Loading page">
+    <div
+      className="flex min-h-[100dvh] items-center justify-center bg-background"
+      role="status"
+      aria-label="Loading page"
+    >
       <div className="flex flex-col items-center gap-4">
         <BrandIcon className="w-10 h-10 animate-pulse" />
         <div className="h-1 w-24 overflow-hidden rounded-full bg-muted">
@@ -308,40 +355,43 @@ function AppRouter() {
   return (
     <Suspense fallback={<PageLoader />}>
       <Switch>
-      <Route path="/" component={HomeRedirect} />
-      <Route path="/sign-in/*?" component={SignInPage} />
-      <Route path="/sign-up/*?" component={SignUpPage} />
-      <Route path="/agency/join/:token" component={AgencyJoin} />
+        <Route path="/" component={HomeRedirect} />
+        <Route path="/sign-in/*?" component={SignInPage} />
+        <Route path="/sign-up/*?" component={SignUpPage} />
+        <Route path="/agency/join/:token" component={AgencyJoin} />
 
-      {/* Public marketing pages */}
-      <Route path="/about" component={About} />
-      <Route path="/blog" component={Blog} />
-      <Route path="/blog/:slug" component={BlogPost} />
-      <Route path="/resources" component={Resources} />
-      <Route path="/privacy" component={Privacy} />
-      <Route path="/terms" component={Terms} />
+        {/* Public marketing pages */}
+        <Route path="/about" component={About} />
+        <Route path="/blog" component={Blog} />
+        <Route path="/blog/:slug" component={BlogPost} />
+        <Route path="/resources" component={Resources} />
+        <Route path="/privacy" component={Privacy} />
+        <Route path="/terms" component={Terms} />
 
-      {/* Public customer-facing review page */}
-      <Route path="/review/:businessSlug/:campaignSlug" component={CustomerReview} />
-      {/* Public QR short-link redirect */}
-      <Route path="/r/:code" component={ShortRedirect} />
+        {/* Public customer-facing review page */}
+        <Route
+          path="/review/:businessSlug/:campaignSlug"
+          component={CustomerReview}
+        />
+        {/* Public QR short-link redirect */}
+        <Route path="/r/:code" component={ShortRedirect} />
 
-      {/* Protected Routes */}
-      <Route path="/onboarding" component={Onboarding} />
-      <Route path="/businesses" component={Businesses} />
-      <Route path="/campaigns" component={Campaigns} />
-      <Route path="/qr-codes" component={QrCodes} />
-      <Route path="/reviews" component={Reviews} />
-      <Route path="/feedback" component={Feedback} />
-      <Route path="/social-media" component={SocialMedia} />
-      <Route path="/business-analytics" component={BusinessAnalytics} />
-      <Route path="/insigts" component={Analytics} />
-      <Route path="/settings" component={Settings} />
-      {/* Super Admin only */}
-      <Route path="/admin/leads" component={AdminLeads} />
-      <Route path="/admin/portal" component={AdminPortal} />
-      
-      <Route component={NotFound} />
+        {/* Protected Routes */}
+        <Route path="/onboarding" component={Onboarding} />
+        <Route path="/businesses" component={Businesses} />
+        <Route path="/campaigns" component={Campaigns} />
+        <Route path="/qr-codes" component={QrCodes} />
+        <Route path="/reviews" component={Reviews} />
+        <Route path="/feedback" component={Feedback} />
+        <Route path="/social-media" component={SocialMedia} />
+        <Route path="/business-analytics" component={BusinessAnalytics} />
+        <Route path="/insigts" component={Analytics} />
+        <Route path="/settings" component={Settings} />
+        {/* Super Admin only */}
+        <Route path="/admin/leads" component={AdminLeads} />
+        <Route path="/admin/portal" component={AdminPortal} />
+
+        <Route component={NotFound} />
       </Switch>
     </Suspense>
   );

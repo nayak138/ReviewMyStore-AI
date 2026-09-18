@@ -1,7 +1,7 @@
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,600;9..144,700&display=swap');
-@import 'tailwindcss';
-@import 'tw-animate-css';
-@import '@clerk/themes/shadcn.css';
+@import url("https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,600;9..144,700&display=swap");
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "@clerk/themes/shadcn.css";
 @plugin "@tailwindcss/typography";
 
 @custom-variant dark (&:is(.dark *));
@@ -142,8 +142,8 @@
 }
 
 :root {
-  --app-font-sans: 'DM Sans', sans-serif;
-  --app-font-display: 'Fraunces', serif;
+  --app-font-sans: "DM Sans", sans-serif;
+  --app-font-display: "Fraunces", serif;
   --radius: 0.7rem;
 
   /* A warm editorial canvas with ink, clay and an electric blue signature. */
@@ -219,8 +219,16 @@
   body {
     @apply bg-background text-foreground font-sans antialiased;
     background-image:
-      radial-gradient(circle at 88% 0%, hsl(var(--google-blue) / 0.08), transparent 26rem),
-      radial-gradient(circle at 4% 18%, hsl(var(--accent) / 0.055), transparent 22rem),
+      radial-gradient(
+        circle at 88% 0%,
+        hsl(var(--google-blue) / 0.08),
+        transparent 26rem
+      ),
+      radial-gradient(
+        circle at 4% 18%,
+        hsl(var(--accent) / 0.055),
+        transparent 22rem
+      ),
       linear-gradient(180deg, hsl(var(--background)), hsl(var(--background)));
   }
 
@@ -289,14 +297,30 @@
 
   .review-noise {
     background-image:
-      radial-gradient(circle at 8% 8%, hsl(var(--primary) / 0.11), transparent 22rem),
-      radial-gradient(circle at 92% 52%, hsl(var(--accent) / 0.1), transparent 24rem);
+      radial-gradient(
+        circle at 8% 8%,
+        hsl(var(--primary) / 0.11),
+        transparent 22rem
+      ),
+      radial-gradient(
+        circle at 92% 52%,
+        hsl(var(--accent) / 0.1),
+        transparent 24rem
+      );
   }
 
   .dark .review-noise {
     background-image:
-      radial-gradient(circle at 8% 8%, hsl(var(--primary) / 0.12), transparent 22rem),
-      radial-gradient(circle at 92% 52%, hsl(var(--accent) / 0.12), transparent 24rem);
+      radial-gradient(
+        circle at 8% 8%,
+        hsl(var(--primary) / 0.12),
+        transparent 22rem
+      ),
+      radial-gradient(
+        circle at 92% 52%,
+        hsl(var(--accent) / 0.12),
+        transparent 24rem
+      );
   }
 
   .review-card {
@@ -308,12 +332,23 @@
   .dark .review-card {
     background: linear-gradient(135deg, #162f60 0%, #10264f 54%, #0c1a38 100%);
     border-color: #2f5fa8;
-    box-shadow: 0 24px 70px -42px rgba(0, 0, 0, 0.62), 0 14px 36px -28px rgba(53, 122, 255, 0.55);
+    box-shadow:
+      0 24px 70px -42px rgba(0, 0, 0, 0.62),
+      0 14px 36px -28px rgba(53, 122, 255, 0.55);
   }
 
   .editorial-grid {
-    background-image: linear-gradient(to right, hsl(var(--foreground) / 0.055) 1px, transparent 1px),
-      linear-gradient(to bottom, hsl(var(--foreground) / 0.055) 1px, transparent 1px);
+    background-image:
+      linear-gradient(
+        to right,
+        hsl(var(--foreground) / 0.055) 1px,
+        transparent 1px
+      ),
+      linear-gradient(
+        to bottom,
+        hsl(var(--foreground) / 0.055) 1px,
+        transparent 1px
+      );
     background-size: 4rem 4rem;
   }
 
