@@ -359,22 +359,6 @@ export default function SocialMedia() {
           <BusinessTabs businessId={workspaceBusiness.id} businessName={workspaceBusiness.name} active="social-media" />
         )}
 
-        <div className="flex justify-end">
-          <div className="w-full sm:w-64">
-            <Label htmlFor="business-switcher" className="mb-2 block text-xs font-semibold uppercase tracking-wide text-muted-foreground">Business</Label>
-            {businessesQuery.isLoading ? <Skeleton className="h-10 w-full" /> : (
-              <Select value={selectedBusinessId ?? ""} onValueChange={setSelectedBusinessId}>
-                <SelectTrigger id="business-switcher" className="bg-background" data-testid="select-business">
-                  <SelectValue placeholder="Select a business" />
-                </SelectTrigger>
-                <SelectContent>
-                  {businesses.map((business) => <SelectItem key={business.id} value={business.id} data-testid={`option-business-${business.id}`}>{business.name}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            )}
-          </div>
-        </div>
-
         {!businessesQuery.isLoading && businesses.length === 0 && (
           <Card className="border-dashed">
             <CardContent className="flex flex-col items-center justify-center px-6 py-16 text-center">
