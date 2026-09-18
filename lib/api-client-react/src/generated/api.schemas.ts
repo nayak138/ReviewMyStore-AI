@@ -922,6 +922,80 @@ export interface RecentActivityItem {
   createdAt: string;
 }
 
+export interface BusinessAnalyticsSummary {
+  qrScans: number;
+  nfcTaps: number;
+  googleRedirects: number;
+  totalActions: number;
+  activeCampaigns: number;
+  totalCampaigns: number;
+  privateFeedback: number;
+  averageFeedbackRating: number;
+  newFeedback: number;
+  resolvedFeedback: number;
+  aiReviewsGenerated: number;
+  scanToGoogleRate: number;
+}
+
+export interface BusinessAnalyticsDailyPoint {
+  date: string;
+  qrScans: number;
+  nfcTaps: number;
+  googleRedirects: number;
+  privateFeedback: number;
+}
+
+export type BusinessAnalyticsCampaignStatus = typeof BusinessAnalyticsCampaignStatus[keyof typeof BusinessAnalyticsCampaignStatus];
+
+
+export const BusinessAnalyticsCampaignStatus = {
+  DRAFT: 'DRAFT',
+  ACTIVE: 'ACTIVE',
+  ARCHIVED: 'ARCHIVED',
+  DISABLED: 'DISABLED',
+} as const;
+
+export interface BusinessAnalyticsCampaign {
+  campaignId: string;
+  campaignName: string;
+  status: BusinessAnalyticsCampaignStatus;
+  qrScans: number;
+  nfcTaps: number;
+  googleRedirects: number;
+  totalActions: number;
+}
+
+export interface BusinessAnalyticsFeedbackRating {
+  rating: number;
+  count: number;
+}
+
+export type BusinessAnalyticsFeedbackStatusStatus = typeof BusinessAnalyticsFeedbackStatusStatus[keyof typeof BusinessAnalyticsFeedbackStatusStatus];
+
+
+export const BusinessAnalyticsFeedbackStatusStatus = {
+  NEW: 'NEW',
+  VIEWED: 'VIEWED',
+  RESOLVED: 'RESOLVED',
+} as const;
+
+export interface BusinessAnalyticsFeedbackStatus {
+  status: BusinessAnalyticsFeedbackStatusStatus;
+  count: number;
+}
+
+export interface BusinessAnalytics {
+  businessId: string;
+  businessName: string;
+  periodStart: string;
+  periodEnd: string;
+  summary: BusinessAnalyticsSummary;
+  dailyTrend: BusinessAnalyticsDailyPoint[];
+  campaignPerformance: BusinessAnalyticsCampaign[];
+  feedbackByRating: BusinessAnalyticsFeedbackRating[];
+  feedbackByStatus: BusinessAnalyticsFeedbackStatus[];
+}
+
 export interface TopCampaignItem {
   /** @nullable */
   campaignId: string | null;
@@ -1417,6 +1491,15 @@ postId?: string;
 
 export type ListBusinessesParams = {
 includeArchived?: boolean;
+};
+
+export type GetBusinessAnalyticsParams = {
+businessId: string;
+/**
+ * @minimum 7
+ * @maximum 90
+ */
+days?: number;
 };
 
 export type ListCampaignsParams = {

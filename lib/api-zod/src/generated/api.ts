@@ -1084,6 +1084,67 @@ export const DeleteBusinessResponse = zod.void()
 
 
 /**
+ * Returns tenant-scoped business metrics for the requested trailing period. The requested business must belong to the caller's organization.
+ * @summary Analytics for one business
+ */
+export const getBusinessAnalyticsQueryDaysDefault = 30;
+export const getBusinessAnalyticsQueryDaysMin = 7;
+export const getBusinessAnalyticsQueryDaysMax = 90;
+
+
+
+export const GetBusinessAnalyticsQueryParams = zod.object({
+  "businessId": zod.uuid(),
+  "days": zod.coerce.number().int().min(getBusinessAnalyticsQueryDaysMin).max(getBusinessAnalyticsQueryDaysMax).default(getBusinessAnalyticsQueryDaysDefault)
+})
+
+export const GetBusinessAnalyticsResponse = zod.object({
+  "businessId": zod.string(),
+  "businessName": zod.string(),
+  "periodStart": zod.coerce.date(),
+  "periodEnd": zod.coerce.date(),
+  "summary": zod.object({
+  "qrScans": zod.int(),
+  "nfcTaps": zod.int(),
+  "googleRedirects": zod.int(),
+  "totalActions": zod.int(),
+  "activeCampaigns": zod.int(),
+  "totalCampaigns": zod.int(),
+  "privateFeedback": zod.int(),
+  "averageFeedbackRating": zod.number(),
+  "newFeedback": zod.int(),
+  "resolvedFeedback": zod.int(),
+  "aiReviewsGenerated": zod.int(),
+  "scanToGoogleRate": zod.number()
+}),
+  "dailyTrend": zod.array(zod.object({
+  "date": zod.coerce.date(),
+  "qrScans": zod.int(),
+  "nfcTaps": zod.int(),
+  "googleRedirects": zod.int(),
+  "privateFeedback": zod.int()
+})),
+  "campaignPerformance": zod.array(zod.object({
+  "campaignId": zod.string(),
+  "campaignName": zod.string(),
+  "status": zod.enum(['DRAFT', 'ACTIVE', 'ARCHIVED', 'DISABLED']),
+  "qrScans": zod.int(),
+  "nfcTaps": zod.int(),
+  "googleRedirects": zod.int(),
+  "totalActions": zod.int()
+})),
+  "feedbackByRating": zod.array(zod.object({
+  "rating": zod.int(),
+  "count": zod.int()
+})),
+  "feedbackByStatus": zod.array(zod.object({
+  "status": zod.enum(['NEW', 'VIEWED', 'RESOLVED']),
+  "count": zod.int()
+}))
+})
+
+
+/**
  * @summary Archive a business
  */
 export const ArchiveBusinessParams = zod.object({

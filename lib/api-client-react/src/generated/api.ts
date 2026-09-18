@@ -36,6 +36,7 @@ import type {
   AdminPortal,
   AutocompletePlacesParams,
   Business,
+  BusinessAnalytics,
   BusinessCreateInput,
   BusinessListResult,
   BusinessStatusInput,
@@ -56,6 +57,7 @@ import type {
   EmailPreferencesUpdate,
   ErrorResponse,
   FinalizeUploadRequest,
+  GetBusinessAnalyticsParams,
   GetPlacePhotoParams,
   GetSocialMediaDashboardParams,
   HealthStatus,
@@ -3051,6 +3053,91 @@ export const useDeleteBusiness = <TError = ErrorType<ErrorResponse>,
       > => {
       return useMutation(getDeleteBusinessMutationOptions(options));
     }
+
+export const getGetBusinessAnalyticsUrl = (params: GetBusinessAnalyticsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/businesses/analytics?${stringifiedParams}` : `/api/v1/businesses/analytics`
+}
+
+/**
+ * Returns tenant-scoped business metrics for the requested trailing period. The requested business must belong to the caller's organization.
+ * @summary Analytics for one business
+ */
+export const getBusinessAnalytics = async (params: GetBusinessAnalyticsParams, options?: Parameters<typeof customFetch>[1]): Promise<BusinessAnalytics> => {
+
+  return customFetch<BusinessAnalytics>(getGetBusinessAnalyticsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetBusinessAnalyticsQueryKey = (params?: GetBusinessAnalyticsParams,) => {
+    return [
+    `/api/v1/businesses/analytics`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetBusinessAnalyticsQueryOptions = <TData = Awaited<ReturnType<typeof getBusinessAnalytics>>, TError = ErrorType<ErrorResponse>>(params: GetBusinessAnalyticsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getBusinessAnalytics>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetBusinessAnalyticsQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getBusinessAnalytics>>> = ({ signal }) => getBusinessAnalytics(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getBusinessAnalytics>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetBusinessAnalyticsQueryResult = NonNullable<Awaited<ReturnType<typeof getBusinessAnalytics>>>
+export type GetBusinessAnalyticsQueryError = ErrorType<ErrorResponse>
+
+
+/**
+ * @summary Analytics for one business
+ */
+
+export function useGetBusinessAnalytics<TData = Awaited<ReturnType<typeof getBusinessAnalytics>>, TError = ErrorType<ErrorResponse>>(
+ params: GetBusinessAnalyticsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getBusinessAnalytics>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetBusinessAnalyticsQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
 
 export const getArchiveBusinessUrl = (id: string,) => {
 

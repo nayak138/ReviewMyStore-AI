@@ -1255,6 +1255,50 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  /v1/businesses/analytics:
+    get:
+      operationId: getBusinessAnalytics
+      tags: [businesses]
+      summary: Analytics for one business
+      description: >
+        Returns tenant-scoped business metrics for the requested trailing
+        period. The requested business must belong to the caller's
+        organization.
+      parameters:
+        - name: businessId
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: days
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 7
+            maximum: 90
+            default: 30
+      responses:
+        "200":
+          description: Business analytics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BusinessAnalytics"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Business not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /v1/businesses/{id}/archive:
     post:
       operationId: archiveBusiness
@@ -4370,6 +4414,151 @@ components:
         - type
         - message
         - createdAt
+
+    BusinessAnalytics:
+      type: object
+      properties:
+        businessId:
+          type: string
+        businessName:
+          type: string
+        periodStart:
+          type: string
+          format: date-time
+        periodEnd:
+          type: string
+          format: date-time
+        summary:
+          $ref: "#/components/schemas/BusinessAnalyticsSummary"
+        dailyTrend:
+          type: array
+          items:
+            $ref: "#/components/schemas/BusinessAnalyticsDailyPoint"
+        campaignPerformance:
+          type: array
+          items:
+            $ref: "#/components/schemas/BusinessAnalyticsCampaign"
+        feedbackByRating:
+          type: array
+          items:
+            $ref: "#/components/schemas/BusinessAnalyticsFeedbackRating"
+        feedbackByStatus:
+          type: array
+          items:
+            $ref: "#/components/schemas/BusinessAnalyticsFeedbackStatus"
+      required:
+        - businessId
+        - businessName
+        - periodStart
+        - periodEnd
+        - summary
+        - dailyTrend
+        - campaignPerformance
+        - feedbackByRating
+        - feedbackByStatus
+
+    BusinessAnalyticsSummary:
+      type: object
+      properties:
+        qrScans:
+          type: integer
+        nfcTaps:
+          type: integer
+        googleRedirects:
+          type: integer
+        totalActions:
+          type: integer
+        activeCampaigns:
+          type: integer
+        totalCampaigns:
+          type: integer
+        privateFeedback:
+          type: integer
+        averageFeedbackRating:
+          type: number
+        newFeedback:
+          type: integer
+        resolvedFeedback:
+          type: integer
+        aiReviewsGenerated:
+          type: integer
+        scanToGoogleRate:
+          type: number
+      required:
+        - qrScans
+        - nfcTaps
+        - googleRedirects
+        - totalActions
+        - activeCampaigns
+        - totalCampaigns
+        - privateFeedback
+        - averageFeedbackRating
+        - newFeedback
+        - resolvedFeedback
+        - aiReviewsGenerated
+        - scanToGoogleRate
+
+    BusinessAnalyticsDailyPoint:
+      type: object
+      properties:
+        date:
+          type: string
+          format: date
+        qrScans:
+          type: integer
+        nfcTaps:
+          type: integer
+        googleRedirects:
+          type: integer
+        privateFeedback:
+          type: integer
+      required: [date, qrScans, nfcTaps, googleRedirects, privateFeedback]
+
+    BusinessAnalyticsCampaign:
+      type: object
+      properties:
+        campaignId:
+          type: string
+        campaignName:
+          type: string
+        status:
+          type: string
+          enum: [DRAFT, ACTIVE, ARCHIVED, DISABLED]
+        qrScans:
+          type: integer
+        nfcTaps:
+          type: integer
+        googleRedirects:
+          type: integer
+        totalActions:
+          type: integer
+      required:
+        - campaignId
+        - campaignName
+        - status
+        - qrScans
+        - nfcTaps
+        - googleRedirects
+        - totalActions
+
+    BusinessAnalyticsFeedbackRating:
+      type: object
+      properties:
+        rating:
+          type: integer
+        count:
+          type: integer
+      required: [rating, count]
+
+    BusinessAnalyticsFeedbackStatus:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [NEW, VIEWED, RESOLVED]
+        count:
+          type: integer
+      required: [status, count]
 
     DashboardSummary:
       type: object
