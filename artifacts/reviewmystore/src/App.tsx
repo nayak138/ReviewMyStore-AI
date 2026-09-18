@@ -129,32 +129,34 @@ const clerkAppearance = {
   elements: {
     rootBox: "w-full flex justify-center !text-slate-950",
     cardBox:
-      "!bg-white rounded-[1.25rem] w-[440px] max-w-full overflow-hidden !border-slate-200 !text-slate-950 shadow-[0_20px_70px_-28px_rgba(15,23,42,0.24)]",
-    card: "!shadow-none !border-0 !bg-transparent !rounded-none",
-    footer: "!shadow-none !border-0 !bg-transparent !rounded-none",
+      "!w-full !max-w-none !bg-transparent !border-0 !shadow-none !rounded-none !p-0 !text-slate-950",
+    card: "!shadow-none !border-0 !bg-transparent !rounded-none !p-0",
+    footer: "!shadow-none !border-0 !bg-transparent !rounded-none !p-0",
     headerTitle: "!hidden",
     headerSubtitle: "!hidden",
     socialButtonsBlockButtonText: "!text-slate-900 font-medium",
     formFieldLabel: "!text-slate-800 font-medium",
-    footerActionLink: "!text-blue-700 hover:!text-blue-900 font-medium",
-    footerActionText: "!text-slate-600",
+    footerActionLink:
+      "!text-sm !text-slate-500 hover:!text-slate-800 hover:!underline font-medium",
+    footerActionText: "!text-sm !text-slate-500",
     dividerText: "!text-slate-500",
-    identityPreviewEditButton: "!text-blue-700 hover:!text-blue-900",
+    identityPreviewEditButton:
+      "!text-sm !text-slate-600 hover:!text-slate-900 hover:!underline",
     formFieldSuccessText: "!text-emerald-600",
     alertText: "!text-amber-950",
-    logoBox: "mb-2",
-    logoImage: "!h-16 !w-auto !max-w-[20rem]",
+    logoBox: "!hidden",
+    logoImage: "!hidden",
     socialButtonsBlockButton:
-      "!border-slate-300 !bg-white !text-slate-900 hover:!bg-slate-50 transition-colors",
+      "!h-11 !rounded-lg !border-slate-300 !bg-white !text-slate-900 hover:!bg-slate-50 transition-colors",
     formButtonPrimary:
-      "!bg-slate-950 !text-white hover:!bg-slate-800 transition-colors shadow-sm",
+      "!h-11 !w-full !rounded-lg !bg-slate-950 !text-white hover:!bg-slate-800 transition-all shadow-sm",
     formFieldInput:
-      "!bg-white !border-slate-300 !text-slate-950 placeholder:!text-slate-500 focus:!border-blue-700 focus:!ring-2 focus:!ring-blue-700 transition-all",
-    footerAction: "mt-4",
+      "!h-11 !rounded-lg !bg-white !border-slate-300 !text-slate-950 placeholder:!text-slate-500 focus:!border-blue-700 focus:!ring-2 focus:!ring-blue-100 transition-all",
+    footerAction: "mt-5",
     dividerLine: "!bg-slate-200",
     alert: "!border-amber-200 !bg-amber-50",
     otpCodeFieldInput:
-      "!border-slate-300 !bg-white !text-slate-950 !shadow-sm focus:!border-blue-700 focus:!ring-2 focus:!ring-blue-700",
+      "!h-14 !w-12 !rounded-lg !border-slate-300 !bg-white !p-0 !text-center !text-xl !font-semibold !text-slate-950 !shadow-sm focus:!border-blue-700 focus:!ring-2 focus:!ring-blue-100",
     formFieldRow: "mb-4",
     main: "w-full",
   },
@@ -166,39 +168,61 @@ const clerkAppearance = {
 function AuthLayout({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-[100dvh] bg-slate-50 lg:grid lg:grid-cols-[minmax(360px,0.92fr)_1.08fr]">
-      <aside className="relative hidden overflow-hidden bg-primary px-12 py-14 text-primary-foreground lg:flex lg:flex-col lg:justify-between">
-        <div className="absolute -right-24 -top-24 h-72 w-72 rounded-full border-[36px] border-primary-foreground/10" />
-        <div className="absolute -bottom-28 -left-20 h-80 w-80 rounded-full border-[48px] border-primary-foreground/10" />
+      <aside className="relative hidden overflow-hidden bg-[#235de2] px-12 py-12 text-white lg:flex lg:flex-col lg:justify-between">
+        <div className="auth-hero-mesh pointer-events-none absolute inset-0" />
+        <div className="auth-hero-dots pointer-events-none absolute inset-0" />
         <div className="relative z-10 flex items-center gap-3">
           <img
             src={BRAND_LOGO_LIGHT}
             alt="5-Star.AI"
-            className="h-20 w-auto max-w-[20rem] object-contain"
+            className="h-16 w-auto max-w-[18rem] object-contain"
           />
         </div>
-        <div className="relative z-10 max-w-md pb-8">
-          <div className="mb-8 flex gap-2" aria-label="Google rating">
-            {["#4285F4", "#EA4335", "#FBBC05", "#34A853", "#4285F4"].map(
-              (color, index) => (
-                <span
-                  key={`${color}-${index}`}
-                  className="h-2.5 w-10 rounded-full"
-                  style={{ backgroundColor: color }}
-                />
-              ),
-            )}
-          </div>
-          <h1 className="font-display text-5xl font-semibold leading-[1.02] tracking-tight text-primary-foreground">
+        <div className="relative z-10 max-w-lg pb-4">
+          <p className="mb-5 text-xs font-semibold uppercase tracking-[0.2em] text-white/60">
+            Reputation, made practical
+          </p>
+          <h1 className="font-sans text-5xl font-semibold leading-[1.02] tracking-tight text-white">
             Make the good
             <br />
             moments visible.
           </h1>
-          <p className="mt-6 max-w-sm text-base leading-relaxed text-primary-foreground/75">
+          <p className="mt-5 max-w-sm text-base leading-relaxed text-white/75">
             A calmer way to turn real customer experiences into reviews your
             next guest can trust.
           </p>
+          <div className="mt-8 max-w-sm rounded-2xl border border-white/20 bg-white/10 p-4 shadow-2xl shadow-blue-950/20 backdrop-blur-md">
+            <div className="flex items-center gap-3">
+              <div
+                className="flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-sm font-bold text-slate-700"
+                aria-hidden="true"
+              >
+                AM
+              </div>
+              <div className="min-w-0">
+                <p className="truncate text-sm font-semibold text-white">
+                  Aarav Mehta
+                </p>
+                <p className="text-xs text-white/60">Verified customer</p>
+              </div>
+              <span className="ml-auto rounded-full bg-emerald-400/20 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-emerald-100">
+                Google
+              </span>
+            </div>
+            <div className="mt-4 flex items-center gap-1" aria-label="5 out of 5 stars">
+              {Array.from({ length: 5 }, (_, index) => (
+                <span key={index} className="text-lg leading-none text-amber-300">
+                  ★
+                </span>
+              ))}
+            </div>
+            <p className="mt-2 text-sm leading-relaxed text-white/80">
+              “The team made our stay feel effortless. I’ll happily recommend
+              them to anyone visiting the city.”
+            </p>
+          </div>
         </div>
-        <p className="relative z-10 text-xs uppercase tracking-[0.18em] text-primary-foreground/50">
+        <p className="relative z-10 text-xs uppercase tracking-[0.18em] text-white/60">
           Built for thoughtful local businesses
         </p>
       </aside>
@@ -215,12 +239,17 @@ function AuthLayout({ children }: { children: ReactNode }) {
 function SignInPage() {
   return (
     <AuthLayout>
-      <div className="w-full max-w-[440px]">
-        <h1 className="mb-4 text-center font-display text-2xl font-semibold tracking-tight text-slate-950">
-          Sign in to 5-Star.AI
-        </h1>
-        <p className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-center text-sm font-semibold leading-relaxed text-amber-950">
-          Agency Login only — contact the Admin at hello@5-star.ai
+      <div className="w-full max-w-[480px] rounded-2xl border border-slate-200/80 bg-white p-6 shadow-xl shadow-slate-200/50 sm:p-8">
+        <div className="mb-6">
+          <p className="mb-2 text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+            Agency workspace
+          </p>
+          <h1 className="font-sans text-2xl font-semibold tracking-tight text-slate-950">
+            Sign in to 5-Star.AI
+          </h1>
+        </div>
+        <p className="mb-6 inline-flex max-w-full rounded-full border border-amber-500/20 bg-amber-500/10 px-3 py-1 text-xs font-medium leading-relaxed text-amber-800">
+          Agency access only — contact the Admin at hello@5-star.ai
         </p>
         <SignIn routing="path" path={`${basePath}/sign-in`} />
       </div>
@@ -405,7 +434,6 @@ function ClerkProviderWithRoutes() {
       ...clerkAppearance,
       options: {
         ...clerkAppearance.options,
-        logoImageUrl: `${window.location.origin}${resolvedTheme === "dark" ? BRAND_LOGO_DARK : BRAND_LOGO_LIGHT}`,
       },
     }),
     [resolvedTheme],

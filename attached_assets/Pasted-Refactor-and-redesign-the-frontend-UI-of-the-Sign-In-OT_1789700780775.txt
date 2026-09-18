@@ -1,0 +1,32 @@
+Refactor and redesign the frontend UI of the Sign-In / OTP Verification page (/sign-in) to give it a sleek, modern, enterprise Micro-SaaS aesthetic (similar to Linear, Supabase, or Stripe). Keep all backend auth logic, routing, and state handling intact; update only the layout, styling, and Tailwind/CSS classes.
+
+### 1. Visual Hierarchy & Typography
+* **Typography:** Remove the serif font from the auth header ("Sign in to 5-Star.AI"). Standardize on a clean, modern sans-serif font family (Inter, Plus Jakarta Sans, or Geist) across both panels.
+* **Remove Duplicate Elements:** 
+  - Delete the floating tooltip/badge ("Example format: name@example.com") awkwardly hovering over the left panel.
+  - Remove the duplicate logo inside the white auth card. The main branding belongs either exclusively at the top left of the layout or neatly centered above the form inputs.
+
+### 2. Left Hero Panel (Branding & Trust)
+* **Background:** Replace the basic circular watermark with a modern subtle mesh/radial gradient (deep cobalt to vibrant royal blue) or a faint dot-grid pattern.
+* **Content Flow:** 
+  - Keep the primary logo top-left with crisp padding.
+  - Add visual delight beneath the headline: include a sleek glassmorphic mock review card (e.g., a mini 5-star Google review card with an avatar, 5 gold stars, and a short customer quote) to visually reinforce the product's value proposition.
+  - Keep "BUILT FOR THOUGHTFUL LOCAL BUSINESSES" pinned to the bottom with subtle opacity (`text-white/60 text-xs tracking-wider uppercase`).
+
+### 3. Right Form Container & Auth Card
+* **Card Integration:** Merge the floating "Sign in" header, the agency banner, and the form inside a single, unified auth container rather than having three disconnected floating blocks.
+* **Agency Notice:** Redesign the yellow banner into a clean, modern info pill:
+  - Use a subtle slate/neutral background with a soft border (`bg-amber-500/10 text-amber-800 border border-amber-500/20 rounded-full px-3 py-1 text-xs font-medium`).
+* **Card Styling:** 
+  - Border: 1px solid `border-slate-200/80` with a soft, diffused shadow (`shadow-xl shadow-slate-200/50 rounded-2xl p-8 bg-white`).
+  - Inputs: Height `h-11`, rounded-lg borders (`border-slate-300 focus:border-blue-600 focus:ring-2 focus:ring-blue-100 transition-all`).
+
+### 4. Step 2: OTP Verification Polish
+* **OTP Input Boxes:** 
+  - Center-align 6 discrete digit inputs with generous spacing (`gap-2.5`).
+  - Size: `w-12 h-14` with bold, centered digits (`text-xl font-semibold`).
+  - Active/focus state: Crisp blue border with a subtle outer glow.
+* **Email & Edit Link:** Display the recipient email neatly with an inline edit icon button (`text-slate-600 hover:text-slate-900 text-sm font-medium`).
+* **Actions:** 
+  - Primary button: Full width, `h-11`, solid dark slate/indigo with hover lift and smooth transition.
+  - Links ("Resend code", "Use another method"): Clean, muted anchor tags with subtle hover underlines (`text-sm text-slate-500 hover:text-slate-800`).

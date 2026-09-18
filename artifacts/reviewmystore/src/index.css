@@ -18,6 +18,10 @@
   color: #0f172a !important;
 }
 
+.cl-formFieldHintText {
+  display: none !important;
+}
+
 .cl-formFieldInput::placeholder {
   color: #64748b !important;
   opacity: 1 !important;
@@ -35,13 +39,30 @@
   text-align: center !important;
 }
 
+.cl-otpCodeField {
+  gap: 0.625rem !important;
+}
+
+.cl-formFieldInput {
+  height: 2.75rem !important;
+  border-radius: 0.5rem !important;
+}
+
 .cl-formButtonPrimary {
+  height: 2.75rem !important;
+  border-radius: 0.5rem !important;
   background-color: #0f172a !important;
   color: #ffffff !important;
+  transition:
+    background-color 160ms ease,
+    transform 160ms ease,
+    box-shadow 160ms ease !important;
 }
 
 .cl-formButtonPrimary:hover {
   background-color: #1e293b !important;
+  box-shadow: 0 8px 18px rgb(15 23 42 / 0.16) !important;
+  transform: translateY(-1px);
 }
 
 .cl-socialButtonsBlockButton {
@@ -78,6 +99,20 @@
 
 .cl-alertText {
   color: #78350f !important;
+}
+
+.auth-hero-mesh {
+  background:
+    radial-gradient(circle at 12% 8%, rgb(96 165 250 / 0.55), transparent 30%),
+    radial-gradient(circle at 92% 18%, rgb(30 64 175 / 0.5), transparent 34%),
+    radial-gradient(circle at 50% 100%, rgb(29 78 216 / 0.8), transparent 52%);
+}
+
+.auth-hero-dots {
+  background-image: radial-gradient(rgb(255 255 255 / 0.2) 1px, transparent 1px);
+  background-size: 24px 24px;
+  mask-image: linear-gradient(to bottom, black, transparent 82%);
+  opacity: 0.3;
 }
 
 /*
