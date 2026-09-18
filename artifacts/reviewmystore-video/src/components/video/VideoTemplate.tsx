@@ -26,7 +26,7 @@ export default function VideoTemplate() {
   const { currentScene } = useVideoPlayer({ durations: SCENE_DURATIONS });
 
   return (
-    <main className="video-frame" aria-label="ReviewMyStore.ai product video">
+    <main className="video-frame" aria-label="5-STAR.AI product video">
       <div className="scene-layer pointer-events-none">
         <motion.div
           className="absolute -left-[16vw] -top-[20vw] h-[56vw] w-[56vw] rounded-full opacity-70 blur-[3vw]"
@@ -72,7 +72,7 @@ export default function VideoTemplate() {
       <div className="pointer-events-none absolute left-[7vw] right-[7vw] top-[4.2vh] z-20 flex items-center justify-between">
         <motion.img
           src={`${import.meta.env.BASE_URL}brand/logo-horizontal.png`}
-          alt="ReviewMyStore.ai"
+          alt="5-STAR.AI"
           className="h-auto w-[17vw] object-contain"
           animate={{ opacity: [0.92, 1, 0.92], y: [0, -.2, 0] }}
           transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
@@ -85,7 +85,7 @@ export default function VideoTemplate() {
 
       <div className="pointer-events-none absolute bottom-[3.8vh] left-[7vw] right-[7vw] z-20 flex items-center justify-between text-[#202124]/42">
         <span className="font-mono text-[.62vw] uppercase tracking-[.16em]">Good service / made visible</span>
-        <span className="font-mono text-[.62vw] uppercase tracking-[.16em]">reviewmystore.ai</span>
+        <span className="font-mono text-[.62vw] uppercase tracking-[.16em]">5-STAR.AI</span>
       </div>
 
       <AnimatePresence mode="sync" initial={false}>

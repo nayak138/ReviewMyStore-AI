@@ -760,9 +760,15 @@ export default function Reviews() {
             <div className="w-20 h-20 bg-muted/50 rounded-3xl flex items-center justify-center mx-auto border border-border shadow-sm">
               <MessageSquare className="w-10 h-10 text-muted-foreground" />
             </div>
-            <h2 className="text-3xl md:text-4xl font-semibold tracking-tight text-foreground">Connect your Google Business</h2>
+             <h2 className="text-3xl md:text-4xl font-semibold tracking-tight text-foreground">
+               {dashboard?.connection.status === "ERROR"
+                 ? "Reconnect your Google Business"
+                 : "Connect your Google Business"}
+             </h2>
             <p className="text-muted-foreground max-w-lg mx-auto text-lg leading-relaxed">
-              Sync your Google reviews directly to 5-Star.AI. Reply to customers, generate thoughtful AI responses, and manage your reputation safely.
+               {dashboard?.connection.status === "ERROR"
+                 ? "Your Google access needs attention. Reconnect your account to resume review syncing and reply actions."
+                 : "Sync your Google reviews directly to 5-Star.AI. Reply to customers, generate thoughtful AI responses, and manage your reputation safely."}
             </p>
             <Button
               size="lg"
@@ -775,7 +781,11 @@ export default function Reviews() {
               ) : (
                 <Store className="w-5 h-5 mr-2" />
               )}
-              {startConnection.isPending ? "Connecting..." : "Connect Google Business"}
+               {startConnection.isPending
+                 ? "Opening Google..."
+                 : dashboard.connection.status === "ERROR"
+                   ? "Reconnect Google Business"
+                   : "Connect Google Business"}
             </Button>
             {dashboard.connection.status === "ERROR" && (
               <div className="max-w-md mx-auto mt-6 p-4 bg-destructive/10 border border-destructive/20 rounded-lg text-destructive flex items-start gap-3 text-left">

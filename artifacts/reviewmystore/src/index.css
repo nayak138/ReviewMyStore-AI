@@ -139,7 +139,13 @@
 .cl-formFieldLabel,
 .cl-socialButtonsBlockButtonText,
 .cl-dividerText,
-.cl-footerActionText {
+.cl-footerActionText,
+.cl-formFieldHintText,
+.cl-formResendCodeLink,
+.cl-identityPreviewText,
+.cl-headerSubtitle,
+.cl-formFieldWarningText,
+.cl-formFieldErrorText {
   color: #334155 !important;
 }
 
@@ -151,6 +157,23 @@
 .cl-footerActionLink:hover,
 .cl-identityPreviewEditButton:hover {
   color: #1e3a8a !important;
+}
+
+.cl-formResendCodeLink,
+.cl-formFieldAction,
+.cl-formFieldAction__button {
+  color: #1d4ed8 !important;
+  font-weight: 600 !important;
+}
+
+.cl-formFieldErrorText {
+  color: #b91c1c !important;
+}
+
+.cl-footer,
+.cl-footerAction,
+.cl-footerActionText {
+  background: transparent !important;
 }
 
 .cl-alert {

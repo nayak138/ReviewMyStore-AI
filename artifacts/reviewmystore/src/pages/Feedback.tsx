@@ -19,7 +19,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getLanguage } from "@/lib/languages";
-import { AlertTriangle, Check, MessageCircleWarning, Phone, Star } from "lucide-react";
+import { AlertTriangle, Check, MessageCircleWarning, Phone, ShieldAlert, Star } from "lucide-react";
 
 const STATUS_LABEL: Record<string, string> = {
   NEW: "New",
@@ -58,6 +58,16 @@ function FeedbackCard({ item }: { item: PrivateFeedbackItem }) {
               <Badge variant="outline" className={STATUS_BADGE_CLASS[item.status]}>
                 {STATUS_LABEL[item.status]}
               </Badge>
+              {item.spamFlag && (
+                <Badge
+                  variant="outline"
+                  className="border-amber-300/70 bg-amber-50 text-amber-800 dark:border-amber-900/60 dark:bg-amber-900/20 dark:text-amber-300"
+                  title={item.spamReason ?? "This submission was flagged for review"}
+                >
+                  <ShieldAlert className="mr-1 h-3 w-3" aria-hidden="true" />
+                  Quality flag
+                </Badge>
+              )}
             </div>
             <p className="mt-2 text-sm font-medium text-foreground">{item.businessName} · {item.campaignName}</p>
             <p className="mt-0.5 text-xs text-muted-foreground">

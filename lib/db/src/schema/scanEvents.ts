@@ -5,6 +5,7 @@ import {
   pgEnum,
   boolean,
   index,
+  uniqueIndex,
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import { organizationsTable } from "./organizations";
@@ -58,6 +59,9 @@ export const scanEventsTable = pgTable(
     city: text("city"),
     referrer: text("referrer"),
     redirectSuccess: boolean("redirect_success").notNull().default(true),
+    // Deterministic short-lived fingerprint used to make public scans/taps
+    // idempotent. Nullable so historical rows remain untouched.
+    dedupeKey: text("dedupe_key"),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
@@ -68,6 +72,9 @@ export const scanEventsTable = pgTable(
       table.createdAt,
     ),
     index("scan_events_campaign_id_idx").on(table.campaignId),
+    uniqueIndex("scan_events_dedupe_key_idx")
+      .on(table.dedupeKey)
+      .where(sql`${table.dedupeKey} IS NOT NULL`),
   ],
 );
 

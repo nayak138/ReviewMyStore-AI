@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, integer, pgEnum, index } from "drizzle-orm/pg-core";
+import { pgTable, text, timestamp, integer, pgEnum, index, boolean } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import { organizationsTable } from "./organizations";
 import { businessesTable } from "./businesses";
@@ -42,6 +42,8 @@ export const privateFeedbackTable = pgTable(
     contact: text("contact"),
     language: text("language").notNull().default("en"),
     status: privateFeedbackStatusEnum("status").notNull().default("NEW"),
+    spamFlag: boolean("spam_flag").notNull().default(false),
+    spamReason: text("spam_reason"),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),

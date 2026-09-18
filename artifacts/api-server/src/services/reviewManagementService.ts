@@ -245,10 +245,14 @@ export async function bndleRequest<T extends JsonRecord = JsonRecord>(
 export async function getOrCreateProviderTeam(
   organizationId: string,
 ): Promise<string> {
-  const teamName = `ReviewMyStore ${organizationId}`;
+  const teamName = `5-STAR.AI ${organizationId}`;
+  const legacyTeamName = `ReviewMyStore ${organizationId}`;
   const organization = await bndleRequest("organization/");
   const teams = asArray(organization.teams);
-  const existing = teams.find((team) => valueString(team.name) === teamName);
+  const existing = teams.find((team) => {
+    const name = valueString(team.name);
+    return name === teamName || name === legacyTeamName;
+  });
   const existingId = existing ? valueString(existing.id) : null;
   if (existingId) return existingId;
 

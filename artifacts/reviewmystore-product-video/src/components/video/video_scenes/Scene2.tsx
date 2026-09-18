@@ -22,7 +22,7 @@ export function Scene2() {
           right <span className="text-[#ea4335]">signal.</span>
         </motion.h2>
         <motion.p className="mt-[2.8vh] max-w-[24vw] text-[1.22vw] leading-[1.45] text-[#202124]/64" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: .48, duration: .6 }}>
-          ReviewMyStore.ai connects your reputation work to the business people already know.
+          5-STAR.AI connects your reputation work to the business people already know.
         </motion.p>
       </div>
       <motion.div className="absolute right-[10vw] top-[15vh] w-[47vw] rotate-[1deg]" initial={{ y: 35, opacity: 0, scale: .96 }} animate={{ y: 0, opacity: 1, scale: 1 }} transition={{ delay: .25, duration: .9, ease }}>

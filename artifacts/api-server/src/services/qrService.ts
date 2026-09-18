@@ -31,7 +31,7 @@ export async function generateQrSvg(input: QrAssetInput): Promise<Buffer> {
 const INCH = 72; // PDF points per inch
 
 // Google's four brand colors, used as a generic stripe accent echoing the
-// ReviewMyStore.AI storefront-awning mark.
+// 5-STAR.AI storefront-awning mark.
 const GOOGLE_STRIPE = ["#4285F4", "#EA4335", "#FBBC05", "#34A853"];
 
 /** Print-ready 4in x 6in portrait card for standees: generic header,

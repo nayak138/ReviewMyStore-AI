@@ -904,6 +904,9 @@ export interface PrivateFeedbackItem {
   contact: string | null;
   language: SupportedLanguage;
   status: PrivateFeedbackStatus;
+  spamFlag: boolean;
+  /** @nullable */
+  spamReason: string | null;
   createdAt: string;
 }
 

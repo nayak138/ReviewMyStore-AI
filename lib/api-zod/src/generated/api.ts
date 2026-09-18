@@ -1813,6 +1813,8 @@ export const ListPrivateFeedbackResponse = zod.object({
   "contact": zod.string().nullable(),
   "language": zod.enum(['en', 'hi', 'bn', 'te', 'mr', 'ta', 'ur', 'gu', 'kn', 'ml', 'pa', 'or', 'as', 'mai', 'sat', 'ks', 'ne', 'sd', 'kok', 'doi', 'mni', 'sa', 'brx']),
   "status": zod.enum(['NEW', 'VIEWED', 'RESOLVED']),
+  "spamFlag": zod.boolean(),
+  "spamReason": zod.string().nullable(),
   "createdAt": zod.coerce.date()
 }))
 })
@@ -1840,6 +1842,8 @@ export const UpdatePrivateFeedbackStatusResponse = zod.object({
   "contact": zod.string().nullable(),
   "language": zod.enum(['en', 'hi', 'bn', 'te', 'mr', 'ta', 'ur', 'gu', 'kn', 'ml', 'pa', 'or', 'as', 'mai', 'sat', 'ks', 'ne', 'sd', 'kok', 'doi', 'mni', 'sa', 'brx']),
   "status": zod.enum(['NEW', 'VIEWED', 'RESOLVED']),
+  "spamFlag": zod.boolean(),
+  "spamReason": zod.string().nullable(),
   "createdAt": zod.coerce.date()
 })
 

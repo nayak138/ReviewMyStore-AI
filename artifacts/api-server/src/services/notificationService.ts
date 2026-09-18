@@ -15,6 +15,15 @@ function escSubject(value: string): string {
   return value.replace(/[\r\n]/g, " ").trim();
 }
 
+function configuredSender(): string | null {
+  const sender = process.env.RESEND_FROM_EMAIL?.trim();
+  if (sender) return sender;
+  console.warn(
+    "[notificationService] RESEND_FROM_EMAIL is not configured with a verified sender — skipping email notification.",
+  );
+  return null;
+}
+
 /** Send a new-demo-request alert email to all configured recipients.
  *  Failures are caught and logged so they never break the calling request. */
 export async function sendDemoRequestAlert(data: {
@@ -46,6 +55,8 @@ export async function sendDemoRequestAlert(data: {
   }
 
   try {
+    const sender = configuredSender();
+    if (!sender) return;
     const connectors = new ReplitConnectors();
 
     // Only include rows that have a non-empty value
@@ -101,7 +112,7 @@ export async function sendDemoRequestAlert(data: {
 </html>`;
 
     const payload = {
-      from: "5-Star.AI <onboarding@resend.dev>",
+      from: sender,
       to: recipients,
       subject,
       html,
@@ -126,6 +137,62 @@ export async function sendDemoRequestAlert(data: {
   } catch (err) {
     console.error(
       "[notificationService] Failed to send demo-request alert:",
+      err,
+    );
+  }
+}
+
+/** Notify every active owner in the affected organization. The caller passes
+ * already-authorized recipients; this service only formats and sends mail. */
+export async function sendPrivateFeedbackAlert(data: {
+  recipients: string[];
+  businessName: string;
+  rating: number;
+  message: string;
+  contact: string | null;
+  createdAt: string;
+  isSpam: boolean;
+}): Promise<void> {
+  if (data.recipients.length === 0) return;
+
+  try {
+    const sender = configuredSender();
+    if (!sender) return;
+    const rows = [
+      ["Business", data.businessName],
+      ["Rating", `${data.rating}/5`],
+      ["Message", data.message],
+      ...(data.contact ? [["Contact", data.contact] as [string, string]] : []),
+    ];
+    const rowsHtml = rows
+      .map(
+        ([label, value]) =>
+          `<tr><td style="padding:6px 12px;font-weight:600;color:#555;vertical-align:top;white-space:nowrap;">${esc(label)}</td><td style="padding:6px 12px;color:#222;">${esc(value)}</td></tr>`,
+      )
+      .join("\n");
+    const spamNotice = data.isSpam
+      ? `<p style="margin:0 0 16px;padding:10px 12px;border:1px solid #fcd34d;background:#fffbeb;color:#78350f;border-radius:6px;font-size:13px;"><strong>Quality flag:</strong> This message looks promotional or automated. Review it before taking action.</p>`
+      : "";
+    const payload = {
+      from: sender,
+      to: data.recipients,
+      subject: escSubject(
+        `New private feedback for ${data.businessName}`,
+      ),
+      html: `<!DOCTYPE html><html lang="en"><body style="margin:0;padding:32px 16px;font-family:Arial,sans-serif;background:#f5f5f5;"><table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center"><table width="600" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:8px;overflow:hidden;"><tr><td style="background:#0f172a;padding:20px 28px;color:#fff;font-size:18px;font-weight:700;">5-Star.AI</td></tr><tr><td style="padding:28px;"><h2 style="margin:0 0 16px;color:#0f172a;">New private feedback</h2>${spamNotice}<table cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse;background:#f9fafb;">${rowsHtml}</table><p style="margin:24px 0 0;font-size:12px;color:#999;">Received: ${esc(data.createdAt)}</p></td></tr></table></td></tr></table></body></html>`,
+    };
+    const response = await new ReplitConnectors().proxy("resend", "/emails", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+    if (!response.ok) {
+      console.error(
+        `[notificationService] Resend private-feedback alert failed: ${response.status} ${(await response.text()).slice(0, 500)}`,
+      );
+    }
+  } catch (err) {
+    console.error(
+      "[notificationService] Failed to send private-feedback alert:",
       err,
     );
   }

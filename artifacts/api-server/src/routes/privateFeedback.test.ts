@@ -13,6 +13,7 @@ import {
   privateFeedbackTable,
   usersTable,
 } from "@workspace/db";
+import { assessFeedbackQuality } from "../services/privateFeedbackService";
 
 /**
  * Coverage for the private-feedback flow:
@@ -51,6 +52,27 @@ let feedbackBId: string;
 
 const createdOrgIds: string[] = [];
 let noOrgUserId: string;
+
+test("private-feedback quality checks flag promotional content without blocking submission", () => {
+  assert.deepEqual(
+    assessFeedbackQuality(
+      "The service was poor, but visit https://example.com for a better deal",
+      null,
+    ),
+    { isSpam: true, reason: "Contains a promotional link" },
+  );
+  assert.deepEqual(
+    assessFeedbackQuality("The wait was long and the staff were dismissive.", null),
+    { isSpam: false, reason: null },
+  );
+});
+
+test("private-feedback quality checks flag suspicious contact links", () => {
+  assert.deepEqual(
+    assessFeedbackQuality("The order was incorrect.", "https://spam.example"),
+    { isSpam: true, reason: "Contact field contains a link" },
+  );
+});
 
 before(async () => {
   businessASlug = `pf-route-biz-a-${runId}`;

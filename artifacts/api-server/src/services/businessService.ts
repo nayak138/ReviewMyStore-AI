@@ -27,7 +27,7 @@ function slugify(input: string): string {
 
 /**
  * Slugs are globally unique (not just per-organization) since they will back
- * a future public review-page URL (e.g. reviewmystore.ai/b/<slug>).
+ * a future public review-page URL (e.g. the configured site URL/b/<slug>).
  */
 export async function generateUniqueBusinessSlug(base: string): Promise<string> {
   const baseSlug = slugify(base);

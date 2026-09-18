@@ -4131,6 +4131,10 @@ components:
           $ref: "#/components/schemas/SupportedLanguage"
         status:
           $ref: "#/components/schemas/PrivateFeedbackStatus"
+        spamFlag:
+          type: boolean
+        spamReason:
+          type: ["string", "null"]
         createdAt:
           type: string
           format: date-time
@@ -4145,6 +4149,8 @@ components:
         - contact
         - language
         - status
+        - spamFlag
+        - spamReason
         - createdAt
 
     ListPrivateFeedbackResult:

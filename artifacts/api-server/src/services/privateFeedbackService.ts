@@ -4,9 +4,11 @@ import {
   businessesTable,
   campaignsTable,
   privateFeedbackTable,
+  usersTable,
   type PrivateFeedback,
 } from "@workspace/db";
 import { findActivePublicCampaign } from "./publicReviewService";
+import { sendPrivateFeedbackAlert } from "./notificationService";
 
 export class InvalidFeedbackRatingError extends Error {
   constructor() {
@@ -30,6 +32,36 @@ export interface SubmitPrivateFeedbackInput {
   language?: string;
 }
 
+export interface FeedbackQuality {
+  isSpam: boolean;
+  reason: string | null;
+}
+
+/** Conservative quality checks flag obvious automated/promotional submissions
+ * for owner review without blocking a genuine unhappy customer. */
+export function assessFeedbackQuality(
+  message: string,
+  contact?: string | null,
+): FeedbackQuality {
+  const normalized = message.trim();
+  const urlCount = (normalized.match(/https?:\/\/|www\./gi) ?? []).length;
+  if (urlCount > 0) {
+    return { isSpam: true, reason: "Contains a promotional link" };
+  }
+  if (/(.)\1{7,}/u.test(normalized)) {
+    return { isSpam: true, reason: "Contains repeated characters" };
+  }
+  const letters = normalized.match(/[A-Za-z]/g) ?? [];
+  const uppercase = normalized.match(/[A-Z]/g) ?? [];
+  if (letters.length >= 12 && uppercase.length / letters.length > 0.8) {
+    return { isSpam: true, reason: "Unusual capitalization pattern" };
+  }
+  if (contact && /(https?:\/\/|www\.)/i.test(contact)) {
+    return { isSpam: true, reason: "Contact field contains a link" };
+  }
+  return { isSpam: false, reason: null };
+}
+
 /** Only accepts ratings below 3 — this is the private "we strive for 5-star
  * service" escape hatch shown to an unhappy customer, not a general feedback
  * box, so we reject anything else server-side even though the frontend
@@ -45,8 +77,9 @@ export async function submitPrivateFeedback(
     businessSlug,
     campaignSlug,
   );
+  const quality = assessFeedbackQuality(input.message, input.contact);
 
-  await db.insert(privateFeedbackTable).values({
+  const [feedback] = await db.insert(privateFeedbackTable).values({
     organizationId: business.organizationId,
     businessId: business.id,
     campaignId: campaign.id,
@@ -55,6 +88,34 @@ export async function submitPrivateFeedback(
     message: input.message,
     contact: input.contact ?? null,
     language: input.language ?? business.defaultLanguage ?? "en",
+    spamFlag: quality.isSpam,
+    spamReason: quality.reason,
+  }).returning({
+    id: privateFeedbackTable.id,
+    createdAt: privateFeedbackTable.createdAt,
+  });
+
+  const owners = await db
+    .select({ email: usersTable.email })
+    .from(usersTable)
+    .where(
+      and(
+        eq(usersTable.organizationId, business.organizationId),
+        eq(usersTable.role, "OWNER"),
+        eq(usersTable.status, "ACTIVE"),
+      ),
+    );
+  const recipients = owners
+    .map((owner) => owner.email?.trim())
+    .filter((email): email is string => Boolean(email));
+  void sendPrivateFeedbackAlert({
+    recipients,
+    businessName: business.name,
+    rating: input.rating,
+    message: input.message,
+    contact: input.contact ?? null,
+    createdAt: feedback.createdAt.toISOString(),
+    isSpam: quality.isSpam,
   });
 }
 
@@ -76,6 +137,8 @@ export interface PrivateFeedbackListItem {
   contact: string | null;
   language: string;
   status: PrivateFeedback["status"];
+  spamFlag: boolean;
+  spamReason: string | null;
   createdAt: Date;
 }
 
@@ -113,6 +176,8 @@ export async function listPrivateFeedback(
       contact: privateFeedbackTable.contact,
       language: privateFeedbackTable.language,
       status: privateFeedbackTable.status,
+      spamFlag: privateFeedbackTable.spamFlag,
+      spamReason: privateFeedbackTable.spamReason,
       createdAt: privateFeedbackTable.createdAt,
     })
     .from(privateFeedbackTable)
@@ -154,6 +219,8 @@ export async function updatePrivateFeedbackStatus(
       contact: privateFeedbackTable.contact,
       language: privateFeedbackTable.language,
       status: privateFeedbackTable.status,
+      spamFlag: privateFeedbackTable.spamFlag,
+      spamReason: privateFeedbackTable.spamReason,
       createdAt: privateFeedbackTable.createdAt,
     })
     .from(privateFeedbackTable)

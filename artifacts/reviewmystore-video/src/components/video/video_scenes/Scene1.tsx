@@ -36,7 +36,7 @@ export function Scene1() {
       </motion.div>
       <div className="absolute left-[7vw] top-[27vh] z-10">
         <motion.p className="eyebrow mb-[2.2vh] text-[#ea4335]" initial={{ opacity: 0, x: -18 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.15, duration: 0.55 }}>
-          ReviewMyStore.ai / 01
+          5-STAR.AI / 01
         </motion.p>
         <motion.h1
           className="display max-w-[52vw] text-[8.3vw] text-[#202124]"
