@@ -177,7 +177,21 @@ test("a returning account is relinked when its Clerk user id changes", async () 
   const newClerkUserId = `user_relink_new_${runId}`;
   registerFakeClerkUser(newClerkUserId, "Relinked Owner", email);
 
-  const relinked = await getOrCreateUserForClerkId(newClerkUserId);
+  const previousSuperAdminEmails = process.env.SUPER_ADMIN_EMAILS;
+  process.env.SUPER_ADMIN_EMAILS = [
+    previousSuperAdminEmails,
+    email,
+  ].filter(Boolean).join(",");
+  let relinked;
+  try {
+    relinked = await getOrCreateUserForClerkId(newClerkUserId);
+  } finally {
+    if (previousSuperAdminEmails === undefined) {
+      delete process.env.SUPER_ADMIN_EMAILS;
+    } else {
+      process.env.SUPER_ADMIN_EMAILS = previousSuperAdminEmails;
+    }
+  }
 
   assert.equal(relinked.id, existing.id);
   assert.equal(relinked.clerkUserId, newClerkUserId);

@@ -250,9 +250,9 @@ export async function generateUniqueOrgSlug(
  * reach the provisioning path (e.g. the frontend firing more than one
  * authenticated request before the row exists). This is closed in two
  * layers:
- *  1. A Postgres advisory lock keyed on the Clerk user id serializes
- *     concurrent provisioning attempts for the *same* user, so the loser
- *     waits, re-reads, and reuses the row the winner just committed.
+ *  1. Postgres advisory locks keyed by normalized email and Clerk user id
+ *     serialize concurrent provisioning attempts for the same identity, so
+ *     the loser waits, re-reads, and reuses the row the winner just committed.
  *  2. A retry loop catches a unique-constraint violation that slips through
  *     anyway (e.g. two different brand-new users whose names produce the
  *     same org slug) and either regenerates the slug or falls back to the
@@ -314,29 +314,32 @@ export async function getOrCreateUserForClerkId(
           return updated;
         }
 
-        // A Clerk identity can change when an account is moved between Clerk
-        // instances or environments. Re-link an existing local account by
-        // its verified primary email instead of inserting a duplicate row.
-        // Preserve the local role and organization so existing business data
-        // stays attached to the account.
-        const [emailExisting] = await tx
-          .select()
-          .from(usersTable)
-          .where(sql`lower(${usersTable.email}) = ${normalizedEmail}`)
-          .limit(1);
-        if (emailExisting) {
-          const [updated] = await tx
-            .update(usersTable)
-            .set({
-              clerkUserId,
-              name,
-              email: normalizedEmail,
-              lastLoginAt: new Date(),
-              updatedAt: new Date(),
-            })
-            .where(eq(usersTable.id, emailExisting.id))
-            .returning();
-          return updated;
+        // The platform allowlist is the explicit migration path for a Clerk
+        // identity that changed between environments. Re-link an existing
+        // local account by its verified primary email instead of inserting a
+        // duplicate row. Preserve the local role and organization so existing
+        // business data stays attached to the account. Ordinary owners must
+        // still use the one-time agency invitation flow below.
+        if (isSuperAdmin) {
+          const [emailExisting] = await tx
+            .select()
+            .from(usersTable)
+            .where(sql`lower(${usersTable.email}) = ${normalizedEmail}`)
+            .limit(1);
+          if (emailExisting) {
+            const [updated] = await tx
+              .update(usersTable)
+              .set({
+                clerkUserId,
+                name,
+                email: normalizedEmail,
+                lastLoginAt: new Date(),
+                updatedAt: new Date(),
+              })
+              .where(eq(usersTable.id, emailExisting.id))
+              .returning();
+            return updated;
+          }
         }
 
         if (isSuperAdmin) {

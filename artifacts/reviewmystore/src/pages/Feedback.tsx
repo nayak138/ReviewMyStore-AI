@@ -113,7 +113,7 @@ export default function Feedback() {
     (!workspaceBusinessId && businessData?.businesses.length === 1 ? businessData.businesses[0] : undefined);
 
   const listParams = statusFilter === "all" ? {} : { status: statusFilter as PrivateFeedbackStatus };
-  const { data, isLoading } = useListPrivateFeedback(listParams, {
+  const { data, isLoading, isError } = useListPrivateFeedback(listParams, {
     query: { enabled: !!isSignedIn, queryKey: getListPrivateFeedbackQueryKey(listParams) },
   });
 
@@ -161,6 +161,16 @@ export default function Feedback() {
           <div className="space-y-4">
             <Skeleton className="h-32 w-full" />
             <Skeleton className="h-32 w-full" />
+          </div>
+        ) : isError ? (
+          <div className="mt-12 space-y-4 text-center">
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl border border-destructive/20 bg-destructive/5">
+              <AlertTriangle className="h-7 w-7 text-destructive" aria-hidden="true" />
+            </div>
+            <h3 className="text-xl font-semibold text-foreground">Unable to load private feedback</h3>
+            <p className="mx-auto max-w-sm text-sm text-muted-foreground">
+              We couldn&apos;t load your feedback right now. Refresh the page and try again.
+            </p>
           </div>
         ) : feedback.length === 0 ? (
           <div className="mt-12 space-y-4 text-center">
