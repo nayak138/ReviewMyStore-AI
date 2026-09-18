@@ -584,6 +584,7 @@ export const UpdateEmailPreferencesResponse = zod.object({
 export const RequestAccountDataExportResponse = zod.object({
   "exportId": zod.uuid(),
   "requestedAt": zod.coerce.date(),
+  "expiresAt": zod.coerce.date(),
   "scope": zod.enum(['ACCOUNT']),
   "account": zod.object({
   "id": zod.uuid(),
@@ -679,6 +680,58 @@ export const GetAdminPortalResponse = zod.object({
   "archivedAt": zod.coerce.date().nullable(),
   "createdAt": zod.coerce.date()
 }))
+})
+
+
+/**
+ * @summary List account deactivation requests for review
+ */
+export const ListAdminDeactivationRequestsResponse = zod.object({
+  "requests": zod.array(zod.object({
+  "id": zod.uuid(),
+  "userId": zod.uuid(),
+  "userName": zod.string(),
+  "userEmail": zod.email(),
+  "organizationId": zod.uuid().nullable(),
+  "organizationName": zod.string().nullable(),
+  "requestedAt": zod.coerce.date(),
+  "status": zod.enum(['PENDING_REVIEW', 'APPROVED', 'REJECTED']),
+  "reviewedAt": zod.coerce.date().nullable(),
+  "reviewedByUserId": zod.uuid().nullable(),
+  "reviewerNote": zod.string().nullable()
+})),
+  "pendingCount": zod.int()
+})
+
+
+/**
+ * @summary Approve or reject an account deactivation request
+ */
+export const ReviewAdminDeactivationRequestParams = zod.object({
+  "id": zod.uuid()
+})
+
+export const reviewAdminDeactivationRequestBodyReviewerNoteMax = 2000;
+
+
+
+export const ReviewAdminDeactivationRequestBody = zod.object({
+  "status": zod.enum(['APPROVED', 'REJECTED']),
+  "reviewerNote": zod.string().max(reviewAdminDeactivationRequestBodyReviewerNoteMax).optional()
+})
+
+export const ReviewAdminDeactivationRequestResponse = zod.object({
+  "id": zod.uuid(),
+  "userId": zod.uuid(),
+  "userName": zod.string(),
+  "userEmail": zod.email(),
+  "organizationId": zod.uuid().nullable(),
+  "organizationName": zod.string().nullable(),
+  "requestedAt": zod.coerce.date(),
+  "status": zod.enum(['PENDING_REVIEW', 'APPROVED', 'REJECTED']),
+  "reviewedAt": zod.coerce.date().nullable(),
+  "reviewedByUserId": zod.uuid().nullable(),
+  "reviewerNote": zod.string().nullable()
 })
 
 

@@ -5,6 +5,7 @@ import {
   CreateAdminAgencyInvitationParams,
   CreateAdminAgencyInvitationResponse,
   CreateAdminAgencyResponse,
+  ListAdminDeactivationRequestsResponse,
   GetAdminOverviewResponse,
   GetAdminPortalResponse,
   GetPublicAgencyInvitationParams,
@@ -14,17 +15,24 @@ import {
   UpdateAdminAgencyBody,
   UpdateAdminAgencyParams,
   UpdateAdminAgencyResponse,
+  ReviewAdminDeactivationRequestBody,
+  ReviewAdminDeactivationRequestParams,
+  ReviewAdminDeactivationRequestResponse,
 } from "@workspace/api-zod";
 import { requireAuth, requireRole } from "../middlewares/requireAuth";
 import {
   AdminAgencyNotFoundError,
   AdminInvitationNotFoundError,
+  AdminDeactivationRequestAlreadyReviewedError,
+  AdminDeactivationRequestNotFoundError,
   AdminOwnerAlreadyExistsError,
   createAgency,
   createAgencyInvitation,
   getAdminOverview,
   getAdminPortal,
   getPublicAgencyInvitation,
+  listAdminDeactivationRequests,
+  reviewAdminDeactivationRequest,
   revokeAgencyInvitation,
   updateAgency,
 } from "../services/adminService";
@@ -49,6 +57,71 @@ router.get(
   async (_req, res) => {
     const data = GetAdminPortalResponse.parse(await getAdminPortal());
     res.json(data);
+  },
+);
+
+router.get(
+  "/admin/deactivation-requests",
+  requireAuth,
+  requireRole("SUPER_ADMIN"),
+  async (_req, res) => {
+    const data = ListAdminDeactivationRequestsResponse.parse(
+      await listAdminDeactivationRequests(),
+    );
+    res.json(data);
+  },
+);
+
+router.patch(
+  "/admin/deactivation-requests/:id",
+  requireAuth,
+  requireRole("SUPER_ADMIN"),
+  async (req, res) => {
+    const params = ReviewAdminDeactivationRequestParams.safeParse(req.params);
+    const parsed = ReviewAdminDeactivationRequestBody.safeParse(req.body);
+    if (!params.success) {
+      res.status(400).json({
+        success: false,
+        code: "INVALID_REQUEST",
+        message: params.error.message,
+      });
+      return;
+    }
+    if (!parsed.success) {
+      res.status(400).json({
+        success: false,
+        code: "INVALID_REQUEST",
+        message: parsed.error.message,
+      });
+      return;
+    }
+    try {
+      const result = await reviewAdminDeactivationRequest(
+        params.data.id,
+        req.appUser!.id,
+        parsed.data.status,
+        parsed.data.reviewerNote,
+      );
+      res.json(ReviewAdminDeactivationRequestResponse.parse(result));
+    } catch (error) {
+      if (error instanceof AdminDeactivationRequestNotFoundError) {
+        res.status(404).json({
+          success: false,
+          code: "NOT_FOUND",
+          message: error.message,
+        });
+        return;
+      }
+      if (error instanceof AdminDeactivationRequestAlreadyReviewedError) {
+        res.status(409).json({
+          success: false,
+          code: "ALREADY_REVIEWED",
+          message: error.message,
+        });
+        return;
+      }
+      throw error;
+    }
   },
 );
 

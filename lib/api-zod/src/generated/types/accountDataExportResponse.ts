@@ -11,6 +11,7 @@ import type { AccountExportProfile } from './accountExportProfile';
 export interface AccountDataExportResponse {
   exportId: string;
   requestedAt: Date;
+  expiresAt: Date;
   scope: AccountDataExportResponseScope;
   account: AccountExportProfile;
   excludedData: string[];

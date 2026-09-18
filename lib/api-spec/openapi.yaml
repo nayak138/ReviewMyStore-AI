@@ -3158,6 +3158,9 @@ components:
         requestedAt:
           type: string
           format: date-time
+        expiresAt:
+          type: string
+          format: date-time
         scope:
           type: string
           enum: [ACCOUNT]
@@ -3170,6 +3173,7 @@ components:
       required:
         - exportId
         - requestedAt
+        - expiresAt
         - scope
         - account
         - excludedData
@@ -3202,6 +3206,80 @@ components:
         - requestedAt
         - status
         - message
+
+    AdminDeactivationRequestStatus:
+      type: string
+      enum: [PENDING_REVIEW, APPROVED, REJECTED]
+
+    AdminDeactivationRequest:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        userId:
+          type: string
+          format: uuid
+        userName:
+          type: string
+        userEmail:
+          type: string
+          format: email
+        organizationId:
+          type: ["string", "null"]
+          format: uuid
+        organizationName:
+          type: ["string", "null"]
+        requestedAt:
+          type: string
+          format: date-time
+        status:
+          $ref: "#/components/schemas/AdminDeactivationRequestStatus"
+        reviewedAt:
+          type: ["string", "null"]
+          format: date-time
+        reviewedByUserId:
+          type: ["string", "null"]
+          format: uuid
+        reviewerNote:
+          type: ["string", "null"]
+      required:
+        - id
+        - userId
+        - userName
+        - userEmail
+        - organizationId
+        - organizationName
+        - requestedAt
+        - status
+        - reviewedAt
+        - reviewedByUserId
+        - reviewerNote
+
+    AdminDeactivationRequestListResult:
+      type: object
+      properties:
+        requests:
+          type: array
+          items:
+            $ref: "#/components/schemas/AdminDeactivationRequest"
+        pendingCount:
+          type: integer
+      required:
+        - requests
+        - pendingCount
+
+    AdminDeactivationRequestReviewInput:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [APPROVED, REJECTED]
+        reviewerNote:
+          type: string
+          maxLength: 2000
+      required:
+        - status
 
     SessionInfo:
       type: object

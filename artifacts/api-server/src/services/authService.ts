@@ -1,4 +1,4 @@
-import { and, desc, eq, gt, sql } from "drizzle-orm";
+import { and, desc, eq, gt, lt, sql } from "drizzle-orm";
 import { randomUUID } from "node:crypto";
 import { clerkClient } from "@clerk/express";
 import {
@@ -40,7 +40,7 @@ const DEACTIVATION_MESSAGE =
 export function buildAccountDataExport(
   user: User,
   requestedAt = new Date(),
-  exportId = randomUUID(),
+  exportId: string = randomUUID(),
   expiresAt = new Date(requestedAt.getTime() + ACCOUNT_EXPORT_TTL_MS),
 ) {
   return {
@@ -76,6 +76,15 @@ export async function createAccountDataExport(
   requestedAt = new Date(),
 ) {
   const expiresAt = new Date(requestedAt.getTime() + ACCOUNT_EXPORT_TTL_MS);
+  await db
+    .update(accountDataExportsTable)
+    .set({ status: "EXPIRED" })
+    .where(
+      and(
+        eq(accountDataExportsTable.status, "ISSUED"),
+        lt(accountDataExportsTable.expiresAt, requestedAt),
+      ),
+    );
   const [audit] = await db
     .insert(accountDataExportsTable)
     .values({

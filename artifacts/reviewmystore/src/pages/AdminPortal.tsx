@@ -5,13 +5,17 @@ import { useQueryClient } from "@tanstack/react-query";
 import {
   getGetAdminPortalQueryKey,
   getGetCurrentUserQueryKey,
+  getListAdminDeactivationRequestsQueryKey,
   useCreateAdminAgency,
   useCreateAdminAgencyInvitation,
   useGetAdminPortal,
   useGetCurrentUser,
+  useListAdminDeactivationRequests,
   useRevokeAdminAgencyInvitation,
+  useReviewAdminDeactivationRequest,
   useUpdateAdminAgency,
   type AdminAgency,
+  type AdminDeactivationRequest,
   type OrganizationPlan,
   type OrganizationStatus,
   type SubscriptionStatus,
@@ -28,6 +32,8 @@ import { useToast } from "@/hooks/use-toast";
 import {
   Building2,
   Check,
+  CheckCircle2,
+  ClipboardCheck,
   Copy,
   Link2,
   Loader2,
@@ -36,6 +42,7 @@ import {
   ShieldCheck,
   Users,
   X,
+  XCircle,
   type LucideIcon,
 } from "lucide-react";
 
@@ -57,6 +64,138 @@ function statusClass(status: OrganizationStatus) {
   return status === "ACTIVE"
     ? "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900/50 dark:bg-emerald-900/10 dark:text-emerald-400"
     : "border-destructive/30 bg-destructive/10 text-destructive";
+}
+
+function deactivationStatusClass(status: AdminDeactivationRequest["status"]) {
+  if (status === "PENDING_REVIEW") {
+    return "border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900/50 dark:bg-amber-900/10 dark:text-amber-300";
+  }
+  if (status === "APPROVED") {
+    return "border-destructive/30 bg-destructive/10 text-destructive";
+  }
+  return "border-border bg-muted text-muted-foreground";
+}
+
+function DeactivationQueue({
+  requests,
+  isLoading,
+  onReviewed,
+}: {
+  requests: AdminDeactivationRequest[];
+  isLoading: boolean;
+  onReviewed: () => void;
+}) {
+  const { toast } = useToast();
+  const [notes, setNotes] = useState<Record<string, string>>({});
+  const review = useReviewAdminDeactivationRequest({
+    mutation: {
+      onSuccess: (result) => {
+        onReviewed();
+        toast({
+          title: result.status === "APPROVED" ? "Account deactivated" : "Request rejected",
+          description: `${result.userName}'s request has been recorded.`,
+        });
+      },
+      onError: (error) =>
+        toast({
+          title: "Couldn't review request",
+          description: error instanceof Error ? error.message : "Please try again.",
+          variant: "destructive",
+        }),
+    },
+  });
+
+  if (isLoading) {
+    return <div className="space-y-4"><Skeleton className="h-32 w-full" /><Skeleton className="h-32 w-full" /></div>;
+  }
+
+  if (requests.length === 0) {
+    return (
+      <Card className="border-border shadow-sm">
+        <CardContent className="flex flex-col items-center justify-center gap-3 py-16 text-center">
+          <ClipboardCheck className="h-8 w-8 text-muted-foreground" />
+          <div>
+            <p className="font-medium text-foreground">No deactivation requests</p>
+            <p className="mt-1 text-sm text-muted-foreground">New requests will appear here for review.</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      {requests.map((request) => {
+        const isPending = request.status === "PENDING_REVIEW";
+        return (
+          <Card key={request.id} className="border-border shadow-sm">
+            <CardContent className="space-y-4 p-5">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="font-semibold text-foreground">{request.userName}</p>
+                    <Badge variant="outline" className={deactivationStatusClass(request.status)}>
+                      {request.status.replace("_", " ")}
+                    </Badge>
+                  </div>
+                  <p className="mt-1 text-sm text-muted-foreground">{request.userEmail}</p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {request.organizationName ? `${request.organizationName} · ` : "Platform account · "}
+                    Requested {formatDate(request.requestedAt)}
+                  </p>
+                </div>
+                {isPending ? (
+                  <div className="flex shrink-0 gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+                      disabled={review.isPending}
+                      onClick={() =>
+                        review.mutate({
+                          id: request.id,
+                          data: { status: "REJECTED", reviewerNote: notes[request.id] || undefined },
+                        })
+                      }
+                    >
+                      <XCircle className="mr-2 h-4 w-4" /> Reject
+                    </Button>
+                    <Button
+                      size="sm"
+                      disabled={review.isPending}
+                      onClick={() =>
+                        review.mutate({
+                          id: request.id,
+                          data: { status: "APPROVED", reviewerNote: notes[request.id] || undefined },
+                        })
+                      }
+                    >
+                      <CheckCircle2 className="mr-2 h-4 w-4" /> Approve
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="text-right text-xs text-muted-foreground">
+                    Reviewed {formatDate(request.reviewedAt)}
+                  </div>
+                )}
+              </div>
+              {isPending ? (
+                <Input
+                  value={notes[request.id] ?? ""}
+                  onChange={(event) => setNotes((current) => ({ ...current, [request.id]: event.target.value }))}
+                  placeholder="Optional reviewer note"
+                  aria-label={`Reviewer note for ${request.userName}`}
+                  maxLength={2000}
+                />
+              ) : request.reviewerNote ? (
+                <p className="rounded-lg bg-muted/40 px-3 py-2 text-sm text-muted-foreground">{request.reviewerNote}</p>
+              ) : null}
+            </CardContent>
+          </Card>
+        );
+      })}
+    </div>
+  );
 }
 
 function AgencyCard({
@@ -267,7 +406,7 @@ export default function AdminPortal() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
-  const [view, setView] = useState<"agencies" | "businesses">("agencies");
+  const [view, setView] = useState<"agencies" | "businesses" | "deactivation">("agencies");
   const [createOpen, setCreateOpen] = useState(false);
   const [latestLink, setLatestLink] = useState<string | null>(null);
   const [newAgency, setNewAgency] = useState({
@@ -286,6 +425,13 @@ export default function AdminPortal() {
   const { data, isLoading } = useGetAdminPortal({
     query: { enabled: !!isSignedIn && isSuperAdmin, queryKey: getGetAdminPortalQueryKey() },
   });
+  const { data: deactivationData, isLoading: deactivationLoading, refetch: refetchDeactivation } =
+    useListAdminDeactivationRequests({
+      query: {
+        enabled: !!isSignedIn && isSuperAdmin,
+        queryKey: getListAdminDeactivationRequestsQueryKey(),
+      },
+    });
   const createAgency = useCreateAdminAgency({
     mutation: {
       onSuccess: (result) => {
@@ -324,6 +470,7 @@ export default function AdminPortal() {
     ["Businesses", data?.overview.totalBusinesses ?? 0, Building2],
     ["Pending links", data?.overview.pendingInvitations ?? 0, Link2],
     ["Suspended", data?.overview.totalSuspendedOrganizations ?? 0, ShieldCheck],
+    ["Deactivation requests", deactivationData?.pendingCount ?? 0, ClipboardCheck],
   ];
 
   if (!isLoaded || sessionLoading) {
@@ -362,7 +509,11 @@ export default function AdminPortal() {
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="inline-flex rounded-lg border border-border bg-card p-1">
             <Button size="sm" variant={view === "agencies" ? "secondary" : "ghost"} onClick={() => setView("agencies")}>Agencies</Button>
-            <Button size="sm" variant={view === "businesses" ? "secondary" : "ghost"} onClick={() => setView("businesses")}>All businesses</Button>
+             <Button size="sm" variant={view === "businesses" ? "secondary" : "ghost"} onClick={() => setView("businesses")}>All businesses</Button>
+             <Button size="sm" variant={view === "deactivation" ? "secondary" : "ghost"} onClick={() => setView("deactivation")}>
+               Review requests
+               {(deactivationData?.pendingCount ?? 0) > 0 && <span className="ml-1.5 rounded-full bg-amber-500/15 px-1.5 text-xs text-amber-700 dark:text-amber-300">{deactivationData?.pendingCount}</span>}
+             </Button>
           </div>
           <div className="relative w-full sm:max-w-sm">
             <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
@@ -378,7 +529,7 @@ export default function AdminPortal() {
           ) : (
             <div className="space-y-4">{filteredAgencies.map((agency) => <AgencyCard key={agency.id} agency={agency} onLinkCreated={setLatestLink} />)}</div>
           )
-        ) : (
+        ) : view === "businesses" ? (
           <Card className="border-border shadow-sm">
             <CardContent className="p-0">
               <div className="divide-y divide-border">
@@ -392,6 +543,12 @@ export default function AdminPortal() {
               </div>
             </CardContent>
           </Card>
+        ) : (
+          <DeactivationQueue
+            requests={deactivationData?.requests ?? []}
+            isLoading={deactivationLoading}
+            onReviewed={() => void refetchDeactivation()}
+          />
         )}
       </div>
 

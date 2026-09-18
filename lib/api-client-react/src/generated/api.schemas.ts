@@ -222,6 +222,7 @@ export const AccountDataExportResponseScope = {
 export interface AccountDataExportResponse {
   exportId: string;
   requestedAt: string;
+  expiresAt: string;
   scope: AccountDataExportResponseScope;
   account: AccountExportProfile;
   excludedData: string[];
@@ -250,6 +251,53 @@ export interface AccountDeactivationRequestResponse {
   requestedAt: string;
   status: AccountDeactivationRequestResponseStatus;
   message: string;
+}
+
+export type AdminDeactivationRequestStatus = typeof AdminDeactivationRequestStatus[keyof typeof AdminDeactivationRequestStatus];
+
+
+export const AdminDeactivationRequestStatus = {
+  PENDING_REVIEW: 'PENDING_REVIEW',
+  APPROVED: 'APPROVED',
+  REJECTED: 'REJECTED',
+} as const;
+
+export interface AdminDeactivationRequest {
+  id: string;
+  userId: string;
+  userName: string;
+  userEmail: string;
+  /** @nullable */
+  organizationId: string | null;
+  /** @nullable */
+  organizationName: string | null;
+  requestedAt: string;
+  status: AdminDeactivationRequestStatus;
+  /** @nullable */
+  reviewedAt: string | null;
+  /** @nullable */
+  reviewedByUserId: string | null;
+  /** @nullable */
+  reviewerNote: string | null;
+}
+
+export interface AdminDeactivationRequestListResult {
+  requests: AdminDeactivationRequest[];
+  pendingCount: number;
+}
+
+export type AdminDeactivationRequestReviewInputStatus = typeof AdminDeactivationRequestReviewInputStatus[keyof typeof AdminDeactivationRequestReviewInputStatus];
+
+
+export const AdminDeactivationRequestReviewInputStatus = {
+  APPROVED: 'APPROVED',
+  REJECTED: 'REJECTED',
+} as const;
+
+export interface AdminDeactivationRequestReviewInput {
+  status: AdminDeactivationRequestReviewInputStatus;
+  /** @maxLength 2000 */
+  reviewerNote?: string;
 }
 
 export interface SessionInfo {

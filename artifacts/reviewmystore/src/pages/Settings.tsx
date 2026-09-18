@@ -140,6 +140,7 @@ export default function Settings() {
   const [deactivationOpen, setDeactivationOpen] = useState(false);
   const [deactivationConfirmation, setDeactivationConfirmation] = useState("");
   const [exportMessage, setExportMessage] = useState<string | null>(null);
+  const [exportExpiresAt, setExportExpiresAt] = useState<string | null>(null);
   const [deactivationMessage, setDeactivationMessage] = useState<string | null>(null);
   const accountDataExport = useRequestAccountDataExport();
   const accountDeactivation = useRequestAccountDeactivation();
@@ -162,10 +163,12 @@ export default function Settings() {
 
   const handleAccountExport = () => {
     setExportMessage(null);
+    setExportExpiresAt(null);
     accountDataExport.mutate(undefined, {
       onSuccess: (data) => {
         downloadAccountExport(data);
-        setExportMessage("Your account-only export was downloaded.");
+        setExportExpiresAt(new Date(data.expiresAt).toLocaleString());
+        setExportMessage("Your account-only export was downloaded and recorded.");
       },
       onError: (error) => {
         setExportMessage(
@@ -435,7 +438,7 @@ export default function Settings() {
                     <DetailRow
                       icon={Download}
                       label="Download account data"
-                      value="Get a JSON copy of your 5-Star.AI account profile and access record."
+                      value="Get a JSON copy of your account profile and access record. Each export is audit logged and expires after 15 minutes."
                       testId="settings-privacy-data-status"
                     />
                     <div className="flex flex-col items-start justify-end gap-3">
@@ -459,6 +462,11 @@ export default function Settings() {
                           data-testid="settings-export-message"
                         >
                           {exportMessage}
+                        </p>
+                      )}
+                      {exportExpiresAt && !accountDataExport.isError && (
+                        <p className="text-xs text-muted-foreground" data-testid="settings-export-expiry">
+                          Export retention window ends {exportExpiresAt}.
                         </p>
                       )}
                     </div>

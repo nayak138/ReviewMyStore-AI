@@ -27,6 +27,9 @@ import type {
   AdminAgencyCreateResult,
   AdminAgencyInvitation,
   AdminAgencyUpdateInput,
+  AdminDeactivationRequest,
+  AdminDeactivationRequestListResult,
+  AdminDeactivationRequestReviewInput,
   AdminInvitationCreateInput,
   AdminInvitationMutationResult,
   AdminOverview,
@@ -2160,6 +2163,155 @@ export function useGetAdminPortal<TData = Awaited<ReturnType<typeof getAdminPort
 
 
 
+
+export const getListAdminDeactivationRequestsUrl = () => {
+
+
+
+
+  return `/api/v1/admin/deactivation-requests`
+}
+
+/**
+ * @summary List account deactivation requests for review
+ */
+export const listAdminDeactivationRequests = async ( options?: Parameters<typeof customFetch>[1]): Promise<AdminDeactivationRequestListResult> => {
+
+  return customFetch<AdminDeactivationRequestListResult>(getListAdminDeactivationRequestsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListAdminDeactivationRequestsQueryKey = () => {
+    return [
+    `/api/v1/admin/deactivation-requests`
+    ] as const;
+    }
+
+
+export const getListAdminDeactivationRequestsQueryOptions = <TData = Awaited<ReturnType<typeof listAdminDeactivationRequests>>, TError = ErrorType<ErrorResponse>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAdminDeactivationRequests>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListAdminDeactivationRequestsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listAdminDeactivationRequests>>> = ({ signal }) => listAdminDeactivationRequests({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listAdminDeactivationRequests>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListAdminDeactivationRequestsQueryResult = NonNullable<Awaited<ReturnType<typeof listAdminDeactivationRequests>>>
+export type ListAdminDeactivationRequestsQueryError = ErrorType<ErrorResponse>
+
+
+/**
+ * @summary List account deactivation requests for review
+ */
+
+export function useListAdminDeactivationRequests<TData = Awaited<ReturnType<typeof listAdminDeactivationRequests>>, TError = ErrorType<ErrorResponse>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAdminDeactivationRequests>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListAdminDeactivationRequestsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getReviewAdminDeactivationRequestUrl = (id: string,) => {
+
+
+
+
+  return `/api/v1/admin/deactivation-requests/${id}`
+}
+
+/**
+ * @summary Approve or reject an account deactivation request
+ */
+export const reviewAdminDeactivationRequest = async (id: string,
+    adminDeactivationRequestReviewInput: AdminDeactivationRequestReviewInput, options?: Parameters<typeof customFetch>[1]): Promise<AdminDeactivationRequest> => {
+
+  return customFetch<AdminDeactivationRequest>(getReviewAdminDeactivationRequestUrl(id),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(adminDeactivationRequestReviewInput)
+  }
+);}
+
+
+
+
+
+export const getReviewAdminDeactivationRequestMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reviewAdminDeactivationRequest>>, TError,{id: string;data: BodyType<AdminDeactivationRequestReviewInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof reviewAdminDeactivationRequest>>, TError,{id: string;data: BodyType<AdminDeactivationRequestReviewInput>}, TContext> => {
+
+const mutationKey = ['reviewAdminDeactivationRequest'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof reviewAdminDeactivationRequest>>, {id: string;data: BodyType<AdminDeactivationRequestReviewInput>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  reviewAdminDeactivationRequest(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ReviewAdminDeactivationRequestMutationResult = NonNullable<Awaited<ReturnType<typeof reviewAdminDeactivationRequest>>>
+    export type ReviewAdminDeactivationRequestMutationBody = BodyType<AdminDeactivationRequestReviewInput>
+    export type ReviewAdminDeactivationRequestMutationError = ErrorType<ErrorResponse>
+
+    /**
+ * @summary Approve or reject an account deactivation request
+ */
+export const useReviewAdminDeactivationRequest = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reviewAdminDeactivationRequest>>, TError,{id: string;data: BodyType<AdminDeactivationRequestReviewInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof reviewAdminDeactivationRequest>>,
+        TError,
+        {id: string;data: BodyType<AdminDeactivationRequestReviewInput>},
+        TContext
+      > => {
+      return useMutation(getReviewAdminDeactivationRequestMutationOptions(options));
+    }
 
 export const getCreateAdminAgencyUrl = () => {
 

@@ -11,7 +11,6 @@ import {
 import { requireAuth } from "../middlewares/requireAuth";
 import { rateLimit } from "../middlewares/rateLimit";
 import {
-  buildAccountDataExport,
   createAccountDataExport,
   createAccountDeactivationRequest,
   getEmailPreferences,

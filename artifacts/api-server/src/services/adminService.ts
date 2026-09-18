@@ -9,6 +9,7 @@ import {
   isNull,
 } from "drizzle-orm";
 import {
+  accountDeactivationRequestsTable,
   agencyInvitationsTable,
   businessesTable,
   db,
@@ -45,6 +46,20 @@ export class AdminInvitationNotFoundError extends Error {
   constructor() {
     super("Invitation not found or no longer active");
     this.name = "AdminInvitationNotFoundError";
+  }
+}
+
+export class AdminDeactivationRequestNotFoundError extends Error {
+  constructor(id: string) {
+    super(`Deactivation request ${id} not found`);
+    this.name = "AdminDeactivationRequestNotFoundError";
+  }
+}
+
+export class AdminDeactivationRequestAlreadyReviewedError extends Error {
+  constructor() {
+    super("This deactivation request has already been reviewed");
+    this.name = "AdminDeactivationRequestAlreadyReviewedError";
   }
 }
 
@@ -241,6 +256,134 @@ export async function getAdminPortal() {
       createdAt: business.createdAt.toISOString(),
     })),
   };
+}
+
+function serializeDeactivationRequest(
+  request: {
+    id: string;
+    userId: string;
+    organizationId: string | null;
+    requestedAt: Date;
+    status: "PENDING_REVIEW" | "APPROVED" | "REJECTED";
+    reviewedAt: Date | null;
+    reviewedByUserId: string | null;
+    reviewerNote: string | null;
+    userName: string;
+    userEmail: string;
+    organizationName: string | null;
+  },
+) {
+  return {
+    id: request.id,
+    userId: request.userId,
+    userName: request.userName,
+    userEmail: request.userEmail,
+    organizationId: request.organizationId,
+    organizationName: request.organizationName,
+    requestedAt: request.requestedAt.toISOString(),
+    status: request.status,
+    reviewedAt: iso(request.reviewedAt),
+    reviewedByUserId: request.reviewedByUserId,
+    reviewerNote: request.reviewerNote,
+  };
+}
+
+export async function listAdminDeactivationRequests() {
+  const rows = await db
+    .select({
+      id: accountDeactivationRequestsTable.id,
+      userId: accountDeactivationRequestsTable.userId,
+      organizationId: accountDeactivationRequestsTable.organizationId,
+      requestedAt: accountDeactivationRequestsTable.requestedAt,
+      status: accountDeactivationRequestsTable.status,
+      reviewedAt: accountDeactivationRequestsTable.reviewedAt,
+      reviewedByUserId: accountDeactivationRequestsTable.reviewedByUserId,
+      reviewerNote: accountDeactivationRequestsTable.reviewerNote,
+      userName: usersTable.name,
+      userEmail: usersTable.email,
+      organizationName: organizationsTable.name,
+    })
+    .from(accountDeactivationRequestsTable)
+    .innerJoin(
+      usersTable,
+      eq(accountDeactivationRequestsTable.userId, usersTable.id),
+    )
+    .leftJoin(
+      organizationsTable,
+      eq(accountDeactivationRequestsTable.organizationId, organizationsTable.id),
+    )
+    .orderBy(desc(accountDeactivationRequestsTable.requestedAt));
+
+  return {
+    requests: rows.map(serializeDeactivationRequest),
+    pendingCount: rows.filter((row) => row.status === "PENDING_REVIEW").length,
+  };
+}
+
+export async function reviewAdminDeactivationRequest(
+  id: string,
+  reviewerId: string,
+  status: "APPROVED" | "REJECTED",
+  reviewerNote?: string,
+) {
+  return db.transaction(async (tx) => {
+    const [existing] = await tx
+      .select({ status: accountDeactivationRequestsTable.status })
+      .from(accountDeactivationRequestsTable)
+      .where(eq(accountDeactivationRequestsTable.id, id))
+      .limit(1);
+    if (!existing) throw new AdminDeactivationRequestNotFoundError(id);
+    if (existing.status !== "PENDING_REVIEW") {
+      throw new AdminDeactivationRequestAlreadyReviewedError();
+    }
+
+    const reviewedAt = new Date();
+    const [updated] = await tx
+      .update(accountDeactivationRequestsTable)
+      .set({
+        status,
+        reviewedAt,
+        reviewedByUserId: reviewerId,
+        reviewerNote: reviewerNote?.trim() || null,
+      })
+      .where(eq(accountDeactivationRequestsTable.id, id))
+      .returning();
+
+    if (status === "APPROVED") {
+      await tx
+        .update(usersTable)
+        .set({ status: "SUSPENDED", updatedAt: reviewedAt })
+        .where(eq(usersTable.id, updated.userId));
+    }
+
+    const [result] = await tx
+      .select({
+        id: accountDeactivationRequestsTable.id,
+        userId: accountDeactivationRequestsTable.userId,
+        organizationId: accountDeactivationRequestsTable.organizationId,
+        requestedAt: accountDeactivationRequestsTable.requestedAt,
+        status: accountDeactivationRequestsTable.status,
+        reviewedAt: accountDeactivationRequestsTable.reviewedAt,
+        reviewedByUserId: accountDeactivationRequestsTable.reviewedByUserId,
+        reviewerNote: accountDeactivationRequestsTable.reviewerNote,
+        userName: usersTable.name,
+        userEmail: usersTable.email,
+        organizationName: organizationsTable.name,
+      })
+      .from(accountDeactivationRequestsTable)
+      .innerJoin(
+        usersTable,
+        eq(accountDeactivationRequestsTable.userId, usersTable.id),
+      )
+      .leftJoin(
+        organizationsTable,
+        eq(accountDeactivationRequestsTable.organizationId, organizationsTable.id),
+      )
+      .where(eq(accountDeactivationRequestsTable.id, id))
+      .limit(1);
+
+    return serializeDeactivationRequest(result);
+  });
 }
 
 export async function createAgency(input: {
