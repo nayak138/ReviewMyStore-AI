@@ -27,3 +27,4 @@
 - [Account data lifecycle](account-data-lifecycle.md) — exports retain audit metadata only with a short expiry; deactivation requests require persistent administrator review.
 - [Orval request-body naming](orval-request-body-naming.md) — component request schemas must use a distinct name from the generated operation body to avoid duplicate Zod exports.
 - [Provider operation leases](provider-operation-leases.md) — review-provider mutations use durable expiring row leases, never session advisory locks.
+- [Publish-time schema readiness](publish-schema-readiness.md) — production may lag the Drizzle schema; Replit Publish applies managed database diffs, not the agent.

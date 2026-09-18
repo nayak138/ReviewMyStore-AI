@@ -65,6 +65,14 @@ test("private-feedback quality checks flag promotional content without blocking 
     assessFeedbackQuality("The wait was long and the staff were dismissive.", null),
     { isSpam: false, reason: null },
   );
+  assert.deepEqual(
+    assessFeedbackQuality("The wait was loooooooooong", null),
+    { isSpam: true, reason: "Contains repeated characters" },
+  );
+  assert.deepEqual(
+    assessFeedbackQuality("THIS SERVICE WAS VERY BAD", null),
+    { isSpam: true, reason: "Unusual capitalization pattern" },
+  );
 });
 
 test("private-feedback quality checks flag suspicious contact links", () => {

@@ -1,4 +1,4 @@
-export const DEFAULT_SITE_URL = "https://reviewmystore.ai";
+export const DEFAULT_SITE_URL = "https://5-star.ai";
 
 /**
  * Validate and normalize the public origin used in absolute SEO URLs.
