@@ -150,6 +150,42 @@ test("first login attaches the invited owner to the intended agency and consumes
   assert.equal(await getPublicAgencyInvitation(fixture.invitation.signupPath.split("/").pop()!), null);
 });
 
+test("a returning account is relinked when its Clerk user id changes", async () => {
+  const [organization] = await db
+    .insert(organizationsTable)
+    .values({
+      name: `Relink Test Organization ${runId}`,
+      slug: `relink-test-${runId}`,
+    })
+    .returning();
+  createdOrganizationIds.push(organization.id);
+
+  const email = `relink-${runId}@example.com`;
+  const [existing] = await db
+    .insert(usersTable)
+    .values({
+      organizationId: organization.id,
+      clerkUserId: `user_relink_old_${runId}`,
+      name: "Original Relink Owner",
+      email,
+      role: "OWNER",
+      status: "ACTIVE",
+    })
+    .returning();
+  createdUserIds.push(existing.id);
+
+  const newClerkUserId = `user_relink_new_${runId}`;
+  registerFakeClerkUser(newClerkUserId, "Relinked Owner", email);
+
+  const relinked = await getOrCreateUserForClerkId(newClerkUserId);
+
+  assert.equal(relinked.id, existing.id);
+  assert.equal(relinked.clerkUserId, newClerkUserId);
+  assert.equal(relinked.organizationId, organization.id);
+  assert.equal(relinked.role, "OWNER");
+  assert.equal(relinked.name, "Relinked Owner");
+});
+
 test("concurrent first-login requests for the same brand-new Clerk user provision exactly one account", async () => {
   const fixture = await createAgencyFixture(testAdminId, "race-same");
   const clerkUserId = `user_race_same_${runId}`;

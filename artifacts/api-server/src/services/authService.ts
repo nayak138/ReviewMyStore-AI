@@ -274,21 +274,27 @@ export async function getOrCreateUserForClerkId(
   if (!email) {
     throw new Error(`Clerk user ${clerkUserId} has no email address`);
   }
+  const normalizedEmail = email.trim().toLowerCase();
 
   const name =
     [clerkUser.firstName, clerkUser.lastName].filter(Boolean).join(" ") ||
     email.split("@")[0];
 
-  const isSuperAdmin = getSuperAdminEmails().has(email.toLowerCase());
+  const isSuperAdmin = getSuperAdminEmails().has(normalizedEmail);
 
   for (let attempt = 0; attempt < MAX_PROVISION_ATTEMPTS; attempt++) {
     try {
       return await db.transaction(async (tx) => {
+        // Lock by email before locking by Clerk id so concurrent sessions
+        // cannot both decide that an existing local account needs linking.
+        await tx.execute(
+          sql`select pg_advisory_xact_lock(hashtext(${`email:${normalizedEmail}`}))`,
+        );
         // Serialize concurrent provisioning attempts for this exact Clerk
         // user. The lock is scoped to the transaction and released
         // automatically on commit or rollback.
         await tx.execute(
-          sql`select pg_advisory_xact_lock(hashtext(${clerkUserId}))`,
+          sql`select pg_advisory_xact_lock(hashtext(${`clerk:${clerkUserId}`}))`,
         );
 
         // A concurrent request may have finished provisioning this user
@@ -308,6 +314,31 @@ export async function getOrCreateUserForClerkId(
           return updated;
         }
 
+        // A Clerk identity can change when an account is moved between Clerk
+        // instances or environments. Re-link an existing local account by
+        // its verified primary email instead of inserting a duplicate row.
+        // Preserve the local role and organization so existing business data
+        // stays attached to the account.
+        const [emailExisting] = await tx
+          .select()
+          .from(usersTable)
+          .where(sql`lower(${usersTable.email}) = ${normalizedEmail}`)
+          .limit(1);
+        if (emailExisting) {
+          const [updated] = await tx
+            .update(usersTable)
+            .set({
+              clerkUserId,
+              name,
+              email: normalizedEmail,
+              lastLoginAt: new Date(),
+              updatedAt: new Date(),
+            })
+            .where(eq(usersTable.id, emailExisting.id))
+            .returning();
+          return updated;
+        }
+
         if (isSuperAdmin) {
           const [created] = await tx
             .insert(usersTable)
@@ -315,7 +346,7 @@ export async function getOrCreateUserForClerkId(
               organizationId: null,
               clerkUserId,
               name,
-              email,
+              email: normalizedEmail,
               role: "SUPER_ADMIN",
               status: "ACTIVE",
               lastLoginAt: new Date(),
@@ -352,7 +383,7 @@ export async function getOrCreateUserForClerkId(
               organizationId: invitation.organizationId,
               clerkUserId,
               name,
-              email,
+              email: normalizedEmail,
               role: "OWNER",
               status: "ACTIVE",
               lastLoginAt: new Date(),
