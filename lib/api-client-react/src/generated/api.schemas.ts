@@ -1043,6 +1043,151 @@ export interface RedirectResolveResult {
   targetPath: string;
 }
 
+export type SocialMediaPlatform = typeof SocialMediaPlatform[keyof typeof SocialMediaPlatform];
+
+
+export const SocialMediaPlatform = {
+  FACEBOOK: 'FACEBOOK',
+  INSTAGRAM: 'INSTAGRAM',
+  THREADS: 'THREADS',
+} as const;
+
+export type SocialMediaAccountStatus = typeof SocialMediaAccountStatus[keyof typeof SocialMediaAccountStatus];
+
+
+export const SocialMediaAccountStatus = {
+  CONNECTED: 'CONNECTED',
+  DISCONNECTED: 'DISCONNECTED',
+  ERROR: 'ERROR',
+} as const;
+
+export interface SocialMediaAccount {
+  id: string;
+  businessId: string;
+  platform: SocialMediaPlatform;
+  externalAccountId: string;
+  displayName: string;
+  /** @nullable */
+  username: string | null;
+  /** @nullable */
+  profileUrl: string | null;
+  status: SocialMediaAccountStatus;
+  /** @nullable */
+  lastError: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface SocialMediaAvailableAccount {
+  externalAccountId: string;
+  platform: SocialMediaPlatform;
+  displayName: string;
+  /** @nullable */
+  username: string | null;
+  /** @nullable */
+  profileUrl: string | null;
+  connected: boolean;
+}
+
+export interface SocialMediaDashboardResult {
+  teamId: string;
+  accounts: SocialMediaAccount[];
+  availableAccounts: SocialMediaAvailableAccount[];
+}
+
+export interface SocialMediaConnectionInput {
+  businessId: string;
+  platform: SocialMediaPlatform;
+}
+
+export interface SocialMediaConnectionStartResult {
+  authUrl: string;
+  platform: SocialMediaPlatform;
+}
+
+export interface SocialMediaAccountAttachInput {
+  businessId: string;
+  /** @minLength 1 */
+  externalAccountId: string;
+}
+
+export interface SocialMediaPostInput {
+  businessId: string;
+  /** @maxLength 160 */
+  title?: string;
+  /**
+     * @minLength 1
+     * @maxLength 5000
+     */
+  caption: string;
+  /** @minItems 1 */
+  platforms: SocialMediaPlatform[];
+  /** @nullable */
+  scheduledAt?: string | null;
+}
+
+export type SocialMediaPostRaw = { [key: string]: unknown };
+
+export interface SocialMediaPost {
+  id: string;
+  /** @nullable */
+  title: string | null;
+  /** @nullable */
+  caption: string | null;
+  status: string;
+  /** @nullable */
+  scheduledAt: string | null;
+  /** @nullable */
+  publishedAt: string | null;
+  platforms: SocialMediaPlatform[];
+  raw: SocialMediaPostRaw;
+}
+
+export interface SocialMediaPostListResult {
+  posts: SocialMediaPost[];
+}
+
+export interface SocialMediaCommentImportInput {
+  businessId: string;
+  /** @nullable */
+  postId?: string | null;
+  /** @nullable */
+  importedPostId?: string | null;
+}
+
+export interface SocialMediaCommentImportResult {
+  /** @nullable */
+  importId: string | null;
+  status: string;
+}
+
+export interface SocialMediaComment {
+  id: string;
+  externalId: string;
+  /** @nullable */
+  postId: string | null;
+  text: string;
+  authorName: string;
+  /** @nullable */
+  parentCommentId: string | null;
+  /** @nullable */
+  createdAt: string | null;
+  canReply: boolean;
+}
+
+export interface SocialMediaCommentListResult {
+  comments: SocialMediaComment[];
+}
+
+export interface SocialMediaCommentReplyInput {
+  businessId: string;
+  /**
+     * @minLength 1
+     * @maxLength 2000
+     */
+  text: string;
+}
+
 export type ReviewConnectionStatus = typeof ReviewConnectionStatus[keyof typeof ReviewConnectionStatus];
 
 
@@ -1209,6 +1354,19 @@ responseStatus?: ReviewResponseStatus;
 search?: string;
 };
 
+export type GetSocialMediaDashboardParams = {
+businessId: string;
+};
+
+export type ListSocialMediaPostsParams = {
+businessId: string;
+};
+
+export type ListSocialMediaCommentsParams = {
+businessId: string;
+postId?: string;
+};
+
 export type ListBusinessesParams = {
 includeArchived?: boolean;
 };
@@ -1244,3 +1402,4 @@ export type ListNfcDevicesParams = {
 businessId?: string;
 campaignId?: string;
 };
+

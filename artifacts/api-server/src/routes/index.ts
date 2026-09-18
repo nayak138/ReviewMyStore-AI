@@ -14,6 +14,7 @@ import nfcDevicesRouter from "./nfcDevices";
 import demoRequestsRouter from "./demoRequests";
 import reviewManagementRouter from "./reviewManagement";
 import feedbackRouter from "./feedback";
+import socialMediaRouter from "./socialMedia";
 
 const router: IRouter = Router();
 
@@ -32,5 +33,6 @@ router.use("/v1", nfcDevicesRouter);
 router.use("/v1", demoRequestsRouter);
 router.use("/v1", reviewManagementRouter);
 router.use("/v1", feedbackRouter);
+router.use("/v1", socialMediaRouter);
 
 export default router;

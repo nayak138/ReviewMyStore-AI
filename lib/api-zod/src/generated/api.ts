@@ -308,6 +308,205 @@ export const DeleteManagedReviewReplyResponse = zod.object({
 
 
 /**
+ * @summary Get a business's connected social accounts and available accounts
+ */
+export const GetSocialMediaDashboardQueryParams = zod.object({
+  "businessId": zod.uuid()
+})
+
+export const GetSocialMediaDashboardResponse = zod.object({
+  "teamId": zod.string(),
+  "accounts": zod.array(zod.object({
+  "id": zod.uuid(),
+  "businessId": zod.uuid(),
+  "platform": zod.enum(['FACEBOOK', 'INSTAGRAM', 'THREADS']),
+  "externalAccountId": zod.string(),
+  "displayName": zod.string(),
+  "username": zod.string().nullable(),
+  "profileUrl": zod.url().nullable(),
+  "status": zod.enum(['CONNECTED', 'DISCONNECTED', 'ERROR']),
+  "lastError": zod.string().nullable(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})),
+  "availableAccounts": zod.array(zod.object({
+  "externalAccountId": zod.string(),
+  "platform": zod.enum(['FACEBOOK', 'INSTAGRAM', 'THREADS']),
+  "displayName": zod.string(),
+  "username": zod.string().nullable(),
+  "profileUrl": zod.url().nullable(),
+  "connected": zod.boolean()
+}))
+})
+
+
+/**
+ * @summary Start connecting a Facebook, Instagram, or Threads account
+ */
+export const StartSocialMediaConnectionBody = zod.object({
+  "businessId": zod.uuid(),
+  "platform": zod.enum(['FACEBOOK', 'INSTAGRAM', 'THREADS'])
+})
+
+export const StartSocialMediaConnectionResponse = zod.object({
+  "authUrl": zod.url(),
+  "platform": zod.enum(['FACEBOOK', 'INSTAGRAM', 'THREADS'])
+})
+
+
+/**
+ * @summary Attach a connected provider account to a business
+ */
+
+
+
+export const AttachSocialMediaAccountBody = zod.object({
+  "businessId": zod.uuid(),
+  "externalAccountId": zod.string().min(1)
+})
+
+export const AttachSocialMediaAccountResponse = zod.object({
+  "id": zod.uuid(),
+  "businessId": zod.uuid(),
+  "platform": zod.enum(['FACEBOOK', 'INSTAGRAM', 'THREADS']),
+  "externalAccountId": zod.string(),
+  "displayName": zod.string(),
+  "username": zod.string().nullable(),
+  "profileUrl": zod.url().nullable(),
+  "status": zod.enum(['CONNECTED', 'DISCONNECTED', 'ERROR']),
+  "lastError": zod.string().nullable(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Detach a social account from a business
+ */
+export const DetachSocialMediaAccountParams = zod.object({
+  "id": zod.uuid()
+})
+
+export const DetachSocialMediaAccountResponse = zod.void()
+
+
+/**
+ * @summary List recent social posts for a business
+ */
+export const ListSocialMediaPostsQueryParams = zod.object({
+  "businessId": zod.uuid()
+})
+
+export const ListSocialMediaPostsResponse = zod.object({
+  "posts": zod.array(zod.object({
+  "id": zod.string(),
+  "title": zod.string().nullable(),
+  "caption": zod.string().nullable(),
+  "status": zod.string(),
+  "scheduledAt": zod.coerce.date().nullable(),
+  "publishedAt": zod.coerce.date().nullable(),
+  "platforms": zod.array(zod.enum(['FACEBOOK', 'INSTAGRAM', 'THREADS'])),
+  "raw": zod.record(zod.string(), zod.unknown())
+}))
+})
+
+
+/**
+ * @summary Publish or schedule a social media post
+ */
+export const createSocialMediaPostBodyTitleMax = 160;
+
+export const createSocialMediaPostBodyCaptionMax = 5000;
+
+
+
+
+export const CreateSocialMediaPostBody = zod.object({
+  "businessId": zod.uuid(),
+  "title": zod.string().max(createSocialMediaPostBodyTitleMax).optional(),
+  "caption": zod.string().min(1).max(createSocialMediaPostBodyCaptionMax),
+  "platforms": zod.array(zod.enum(['FACEBOOK', 'INSTAGRAM', 'THREADS'])).min(1),
+  "scheduledAt": zod.coerce.date().nullish()
+})
+
+export const CreateSocialMediaPostResponse = zod.object({
+  "id": zod.string(),
+  "title": zod.string().nullable(),
+  "caption": zod.string().nullable(),
+  "status": zod.string(),
+  "scheduledAt": zod.coerce.date().nullable(),
+  "publishedAt": zod.coerce.date().nullable(),
+  "platforms": zod.array(zod.enum(['FACEBOOK', 'INSTAGRAM', 'THREADS'])),
+  "raw": zod.record(zod.string(), zod.unknown())
+})
+
+
+/**
+ * @summary List imported social media comments for a business
+ */
+export const ListSocialMediaCommentsQueryParams = zod.object({
+  "businessId": zod.uuid(),
+  "postId": zod.coerce.string().optional()
+})
+
+export const ListSocialMediaCommentsResponse = zod.object({
+  "comments": zod.array(zod.object({
+  "id": zod.string(),
+  "externalId": zod.string(),
+  "postId": zod.string().nullable(),
+  "text": zod.string(),
+  "authorName": zod.string(),
+  "parentCommentId": zod.string().nullable(),
+  "createdAt": zod.coerce.date().nullable(),
+  "canReply": zod.boolean()
+}))
+})
+
+
+/**
+ * @summary Start importing comments for a social post
+ */
+export const ImportSocialMediaCommentsBody = zod.object({
+  "businessId": zod.uuid(),
+  "postId": zod.string().nullish(),
+  "importedPostId": zod.string().nullish()
+})
+
+export const ImportSocialMediaCommentsResponse = zod.object({
+  "importId": zod.string().nullable(),
+  "status": zod.string()
+})
+
+
+/**
+ * @summary Reply to an imported social media comment
+ */
+export const ReplyToSocialMediaCommentParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const replyToSocialMediaCommentBodyTextMax = 2000;
+
+
+
+export const ReplyToSocialMediaCommentBody = zod.object({
+  "businessId": zod.uuid(),
+  "text": zod.string().min(1).max(replyToSocialMediaCommentBodyTextMax)
+})
+
+export const ReplyToSocialMediaCommentResponse = zod.object({
+  "id": zod.string(),
+  "externalId": zod.string(),
+  "postId": zod.string().nullable(),
+  "text": zod.string(),
+  "authorName": zod.string(),
+  "parentCommentId": zod.string().nullable(),
+  "createdAt": zod.coerce.date().nullable(),
+  "canReply": zod.boolean()
+})
+
+
+/**
  * Returns server health status
  * @summary Health check
  */
@@ -1932,3 +2131,5 @@ export const GetPublicAssetParams = zod.object({
 })
 
 export const GetPublicAssetResponse = zod.unknown()
+
+

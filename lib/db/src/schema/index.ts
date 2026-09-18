@@ -16,3 +16,4 @@ export * from "./objectUploads";
 export * from "./reviewGenerationReservations";
 export * from "./privateFeedback";
 export * from "./agencyInvitations";
+export * from "./socialMediaAccounts";

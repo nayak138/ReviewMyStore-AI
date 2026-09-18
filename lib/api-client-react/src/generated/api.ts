@@ -54,6 +54,7 @@ import type {
   ErrorResponse,
   FinalizeUploadRequest,
   GetPlacePhotoParams,
+  GetSocialMediaDashboardParams,
   HealthStatus,
   Keyword,
   KeywordCreateInput,
@@ -66,6 +67,8 @@ import type {
   ListNfcDevicesParams,
   ListPrivateFeedbackParams,
   ListPrivateFeedbackResult,
+  ListSocialMediaCommentsParams,
+  ListSocialMediaPostsParams,
   ManagedReviewListResult,
   ManagedReviewMutationResult,
   ManagedReviewReplyInput,
@@ -92,6 +95,19 @@ import type {
   ReviewProviderLocationsResult,
   SelectReviewProviderLocationRequest,
   SessionInfo,
+  SocialMediaAccount,
+  SocialMediaAccountAttachInput,
+  SocialMediaComment,
+  SocialMediaCommentImportInput,
+  SocialMediaCommentImportResult,
+  SocialMediaCommentListResult,
+  SocialMediaCommentReplyInput,
+  SocialMediaConnectionInput,
+  SocialMediaConnectionStartResult,
+  SocialMediaDashboardResult,
+  SocialMediaPost,
+  SocialMediaPostInput,
+  SocialMediaPostListResult,
   UpdatePrivateFeedbackStatusInput,
   UploadFinalizeResult,
   UploadUrlRequest,
@@ -195,6 +211,13 @@ export function useGetReviewDashboard<TData = Awaited<ReturnType<typeof getRevie
 
   return withQueryKey(query, queryOptions.queryKey);
 }
+
+
+
+
+
+
+
 export const getStartReviewProviderConnectionUrl = () => {
 
 
@@ -407,6 +430,13 @@ export function useGetReviewProviderLocations<TData = Awaited<ReturnType<typeof 
 
   return withQueryKey(query, queryOptions.queryKey);
 }
+
+
+
+
+
+
+
 export const getSelectReviewProviderLocationUrl = () => {
 
 
@@ -626,6 +656,13 @@ export function useListManagedReviews<TData = Awaited<ReturnType<typeof listMana
 
   return withQueryKey(query, queryOptions.queryKey);
 }
+
+
+
+
+
+
+
 export const getGenerateManagedReviewDraftUrl = (id: string,) => {
 
 
@@ -838,6 +875,685 @@ export const useDeleteManagedReviewReply = <TError = ErrorType<ErrorResponse>,
         TContext
       > => {
       return useMutation(getDeleteManagedReviewReplyMutationOptions(options));
+    }
+
+export const getGetSocialMediaDashboardUrl = (params: GetSocialMediaDashboardParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/social-media/dashboard?${stringifiedParams}` : `/api/v1/social-media/dashboard`
+}
+
+/**
+ * @summary Get a business's connected social accounts and available accounts
+ */
+export const getSocialMediaDashboard = async (params: GetSocialMediaDashboardParams, options?: Parameters<typeof customFetch>[1]): Promise<SocialMediaDashboardResult> => {
+
+  return customFetch<SocialMediaDashboardResult>(getGetSocialMediaDashboardUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetSocialMediaDashboardQueryKey = (params?: GetSocialMediaDashboardParams,) => {
+    return [
+    `/api/v1/social-media/dashboard`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetSocialMediaDashboardQueryOptions = <TData = Awaited<ReturnType<typeof getSocialMediaDashboard>>, TError = ErrorType<ErrorResponse>>(params: GetSocialMediaDashboardParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getSocialMediaDashboard>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetSocialMediaDashboardQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getSocialMediaDashboard>>> = ({ signal }) => getSocialMediaDashboard(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getSocialMediaDashboard>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetSocialMediaDashboardQueryResult = NonNullable<Awaited<ReturnType<typeof getSocialMediaDashboard>>>
+export type GetSocialMediaDashboardQueryError = ErrorType<ErrorResponse>
+
+
+/**
+ * @summary Get a business's connected social accounts and available accounts
+ */
+
+export function useGetSocialMediaDashboard<TData = Awaited<ReturnType<typeof getSocialMediaDashboard>>, TError = ErrorType<ErrorResponse>>(
+ params: GetSocialMediaDashboardParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getSocialMediaDashboard>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetSocialMediaDashboardQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getStartSocialMediaConnectionUrl = () => {
+
+
+
+
+  return `/api/v1/social-media/connection`
+}
+
+/**
+ * @summary Start connecting a Facebook, Instagram, or Threads account
+ */
+export const startSocialMediaConnection = async (socialMediaConnectionInput: SocialMediaConnectionInput, options?: Parameters<typeof customFetch>[1]): Promise<SocialMediaConnectionStartResult> => {
+
+  return customFetch<SocialMediaConnectionStartResult>(getStartSocialMediaConnectionUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(socialMediaConnectionInput)
+  }
+);}
+
+
+
+
+
+export const getStartSocialMediaConnectionMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof startSocialMediaConnection>>, TError,{data: BodyType<SocialMediaConnectionInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof startSocialMediaConnection>>, TError,{data: BodyType<SocialMediaConnectionInput>}, TContext> => {
+
+const mutationKey = ['startSocialMediaConnection'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof startSocialMediaConnection>>, {data: BodyType<SocialMediaConnectionInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  startSocialMediaConnection(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type StartSocialMediaConnectionMutationResult = NonNullable<Awaited<ReturnType<typeof startSocialMediaConnection>>>
+    export type StartSocialMediaConnectionMutationBody = BodyType<SocialMediaConnectionInput>
+    export type StartSocialMediaConnectionMutationError = ErrorType<ErrorResponse>
+
+    /**
+ * @summary Start connecting a Facebook, Instagram, or Threads account
+ */
+export const useStartSocialMediaConnection = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof startSocialMediaConnection>>, TError,{data: BodyType<SocialMediaConnectionInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof startSocialMediaConnection>>,
+        TError,
+        {data: BodyType<SocialMediaConnectionInput>},
+        TContext
+      > => {
+      return useMutation(getStartSocialMediaConnectionMutationOptions(options));
+    }
+
+export const getAttachSocialMediaAccountUrl = () => {
+
+
+
+
+  return `/api/v1/social-media/accounts/attach`
+}
+
+/**
+ * @summary Attach a connected provider account to a business
+ */
+export const attachSocialMediaAccount = async (socialMediaAccountAttachInput: SocialMediaAccountAttachInput, options?: Parameters<typeof customFetch>[1]): Promise<SocialMediaAccount> => {
+
+  return customFetch<SocialMediaAccount>(getAttachSocialMediaAccountUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(socialMediaAccountAttachInput)
+  }
+);}
+
+
+
+
+
+export const getAttachSocialMediaAccountMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof attachSocialMediaAccount>>, TError,{data: BodyType<SocialMediaAccountAttachInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof attachSocialMediaAccount>>, TError,{data: BodyType<SocialMediaAccountAttachInput>}, TContext> => {
+
+const mutationKey = ['attachSocialMediaAccount'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof attachSocialMediaAccount>>, {data: BodyType<SocialMediaAccountAttachInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  attachSocialMediaAccount(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AttachSocialMediaAccountMutationResult = NonNullable<Awaited<ReturnType<typeof attachSocialMediaAccount>>>
+    export type AttachSocialMediaAccountMutationBody = BodyType<SocialMediaAccountAttachInput>
+    export type AttachSocialMediaAccountMutationError = ErrorType<ErrorResponse>
+
+    /**
+ * @summary Attach a connected provider account to a business
+ */
+export const useAttachSocialMediaAccount = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof attachSocialMediaAccount>>, TError,{data: BodyType<SocialMediaAccountAttachInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof attachSocialMediaAccount>>,
+        TError,
+        {data: BodyType<SocialMediaAccountAttachInput>},
+        TContext
+      > => {
+      return useMutation(getAttachSocialMediaAccountMutationOptions(options));
+    }
+
+export const getDetachSocialMediaAccountUrl = (id: string,) => {
+
+
+
+
+  return `/api/v1/social-media/accounts/${id}`
+}
+
+/**
+ * @summary Detach a social account from a business
+ */
+export const detachSocialMediaAccount = async (id: string, options?: Parameters<typeof customFetch>[1]): Promise<void> => {
+
+  return customFetch<void>(getDetachSocialMediaAccountUrl(id),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+
+export const getDetachSocialMediaAccountMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof detachSocialMediaAccount>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof detachSocialMediaAccount>>, TError,{id: string}, TContext> => {
+
+const mutationKey = ['detachSocialMediaAccount'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof detachSocialMediaAccount>>, {id: string}> = (props) => {
+          const {id} = props ?? {};
+
+          return  detachSocialMediaAccount(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DetachSocialMediaAccountMutationResult = NonNullable<Awaited<ReturnType<typeof detachSocialMediaAccount>>>
+
+    export type DetachSocialMediaAccountMutationError = ErrorType<ErrorResponse>
+
+    /**
+ * @summary Detach a social account from a business
+ */
+export const useDetachSocialMediaAccount = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof detachSocialMediaAccount>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof detachSocialMediaAccount>>,
+        TError,
+        {id: string},
+        TContext
+      > => {
+      return useMutation(getDetachSocialMediaAccountMutationOptions(options));
+    }
+
+export const getListSocialMediaPostsUrl = (params: ListSocialMediaPostsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/social-media/posts?${stringifiedParams}` : `/api/v1/social-media/posts`
+}
+
+/**
+ * @summary List recent social posts for a business
+ */
+export const listSocialMediaPosts = async (params: ListSocialMediaPostsParams, options?: Parameters<typeof customFetch>[1]): Promise<SocialMediaPostListResult> => {
+
+  return customFetch<SocialMediaPostListResult>(getListSocialMediaPostsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListSocialMediaPostsQueryKey = (params?: ListSocialMediaPostsParams,) => {
+    return [
+    `/api/v1/social-media/posts`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getListSocialMediaPostsQueryOptions = <TData = Awaited<ReturnType<typeof listSocialMediaPosts>>, TError = ErrorType<ErrorResponse>>(params: ListSocialMediaPostsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listSocialMediaPosts>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListSocialMediaPostsQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listSocialMediaPosts>>> = ({ signal }) => listSocialMediaPosts(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listSocialMediaPosts>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListSocialMediaPostsQueryResult = NonNullable<Awaited<ReturnType<typeof listSocialMediaPosts>>>
+export type ListSocialMediaPostsQueryError = ErrorType<ErrorResponse>
+
+
+/**
+ * @summary List recent social posts for a business
+ */
+
+export function useListSocialMediaPosts<TData = Awaited<ReturnType<typeof listSocialMediaPosts>>, TError = ErrorType<ErrorResponse>>(
+ params: ListSocialMediaPostsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listSocialMediaPosts>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListSocialMediaPostsQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getCreateSocialMediaPostUrl = () => {
+
+
+
+
+  return `/api/v1/social-media/posts`
+}
+
+/**
+ * @summary Publish or schedule a social media post
+ */
+export const createSocialMediaPost = async (socialMediaPostInput: SocialMediaPostInput, options?: Parameters<typeof customFetch>[1]): Promise<SocialMediaPost> => {
+
+  return customFetch<SocialMediaPost>(getCreateSocialMediaPostUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(socialMediaPostInput)
+  }
+);}
+
+
+
+
+
+export const getCreateSocialMediaPostMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createSocialMediaPost>>, TError,{data: BodyType<SocialMediaPostInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createSocialMediaPost>>, TError,{data: BodyType<SocialMediaPostInput>}, TContext> => {
+
+const mutationKey = ['createSocialMediaPost'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createSocialMediaPost>>, {data: BodyType<SocialMediaPostInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createSocialMediaPost(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateSocialMediaPostMutationResult = NonNullable<Awaited<ReturnType<typeof createSocialMediaPost>>>
+    export type CreateSocialMediaPostMutationBody = BodyType<SocialMediaPostInput>
+    export type CreateSocialMediaPostMutationError = ErrorType<ErrorResponse>
+
+    /**
+ * @summary Publish or schedule a social media post
+ */
+export const useCreateSocialMediaPost = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createSocialMediaPost>>, TError,{data: BodyType<SocialMediaPostInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createSocialMediaPost>>,
+        TError,
+        {data: BodyType<SocialMediaPostInput>},
+        TContext
+      > => {
+      return useMutation(getCreateSocialMediaPostMutationOptions(options));
+    }
+
+export const getListSocialMediaCommentsUrl = (params: ListSocialMediaCommentsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/social-media/comments?${stringifiedParams}` : `/api/v1/social-media/comments`
+}
+
+/**
+ * @summary List imported social media comments for a business
+ */
+export const listSocialMediaComments = async (params: ListSocialMediaCommentsParams, options?: Parameters<typeof customFetch>[1]): Promise<SocialMediaCommentListResult> => {
+
+  return customFetch<SocialMediaCommentListResult>(getListSocialMediaCommentsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListSocialMediaCommentsQueryKey = (params?: ListSocialMediaCommentsParams,) => {
+    return [
+    `/api/v1/social-media/comments`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getListSocialMediaCommentsQueryOptions = <TData = Awaited<ReturnType<typeof listSocialMediaComments>>, TError = ErrorType<ErrorResponse>>(params: ListSocialMediaCommentsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listSocialMediaComments>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListSocialMediaCommentsQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listSocialMediaComments>>> = ({ signal }) => listSocialMediaComments(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listSocialMediaComments>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListSocialMediaCommentsQueryResult = NonNullable<Awaited<ReturnType<typeof listSocialMediaComments>>>
+export type ListSocialMediaCommentsQueryError = ErrorType<ErrorResponse>
+
+
+/**
+ * @summary List imported social media comments for a business
+ */
+
+export function useListSocialMediaComments<TData = Awaited<ReturnType<typeof listSocialMediaComments>>, TError = ErrorType<ErrorResponse>>(
+ params: ListSocialMediaCommentsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listSocialMediaComments>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListSocialMediaCommentsQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getImportSocialMediaCommentsUrl = () => {
+
+
+
+
+  return `/api/v1/social-media/comments`
+}
+
+/**
+ * @summary Start importing comments for a social post
+ */
+export const importSocialMediaComments = async (socialMediaCommentImportInput: SocialMediaCommentImportInput, options?: Parameters<typeof customFetch>[1]): Promise<SocialMediaCommentImportResult> => {
+
+  return customFetch<SocialMediaCommentImportResult>(getImportSocialMediaCommentsUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(socialMediaCommentImportInput)
+  }
+);}
+
+
+
+
+
+export const getImportSocialMediaCommentsMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof importSocialMediaComments>>, TError,{data: BodyType<SocialMediaCommentImportInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof importSocialMediaComments>>, TError,{data: BodyType<SocialMediaCommentImportInput>}, TContext> => {
+
+const mutationKey = ['importSocialMediaComments'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof importSocialMediaComments>>, {data: BodyType<SocialMediaCommentImportInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  importSocialMediaComments(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ImportSocialMediaCommentsMutationResult = NonNullable<Awaited<ReturnType<typeof importSocialMediaComments>>>
+    export type ImportSocialMediaCommentsMutationBody = BodyType<SocialMediaCommentImportInput>
+    export type ImportSocialMediaCommentsMutationError = ErrorType<ErrorResponse>
+
+    /**
+ * @summary Start importing comments for a social post
+ */
+export const useImportSocialMediaComments = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof importSocialMediaComments>>, TError,{data: BodyType<SocialMediaCommentImportInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof importSocialMediaComments>>,
+        TError,
+        {data: BodyType<SocialMediaCommentImportInput>},
+        TContext
+      > => {
+      return useMutation(getImportSocialMediaCommentsMutationOptions(options));
+    }
+
+export const getReplyToSocialMediaCommentUrl = (id: string,) => {
+
+
+
+
+  return `/api/v1/social-media/comments/${id}/reply`
+}
+
+/**
+ * @summary Reply to an imported social media comment
+ */
+export const replyToSocialMediaComment = async (id: string,
+    socialMediaCommentReplyInput: SocialMediaCommentReplyInput, options?: Parameters<typeof customFetch>[1]): Promise<SocialMediaComment> => {
+
+  return customFetch<SocialMediaComment>(getReplyToSocialMediaCommentUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(socialMediaCommentReplyInput)
+  }
+);}
+
+
+
+
+
+export const getReplyToSocialMediaCommentMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof replyToSocialMediaComment>>, TError,{id: string;data: BodyType<SocialMediaCommentReplyInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof replyToSocialMediaComment>>, TError,{id: string;data: BodyType<SocialMediaCommentReplyInput>}, TContext> => {
+
+const mutationKey = ['replyToSocialMediaComment'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof replyToSocialMediaComment>>, {id: string;data: BodyType<SocialMediaCommentReplyInput>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  replyToSocialMediaComment(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ReplyToSocialMediaCommentMutationResult = NonNullable<Awaited<ReturnType<typeof replyToSocialMediaComment>>>
+    export type ReplyToSocialMediaCommentMutationBody = BodyType<SocialMediaCommentReplyInput>
+    export type ReplyToSocialMediaCommentMutationError = ErrorType<ErrorResponse>
+
+    /**
+ * @summary Reply to an imported social media comment
+ */
+export const useReplyToSocialMediaComment = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof replyToSocialMediaComment>>, TError,{id: string;data: BodyType<SocialMediaCommentReplyInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof replyToSocialMediaComment>>,
+        TError,
+        {id: string;data: BodyType<SocialMediaCommentReplyInput>},
+        TContext
+      > => {
+      return useMutation(getReplyToSocialMediaCommentMutationOptions(options));
     }
 
 export const getHealthCheckUrl = () => {

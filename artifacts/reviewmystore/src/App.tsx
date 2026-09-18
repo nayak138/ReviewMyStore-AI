@@ -31,6 +31,7 @@ const ShortRedirect = lazy(() => import("./pages/ShortRedirect"));
 const QrCodes = lazy(() => import("./pages/QrCodes"));
 const Reviews = lazy(() => import("./pages/Reviews"));
 const Feedback = lazy(() => import("./pages/Feedback"));
+const SocialMedia = lazy(() => import("./pages/SocialMedia"));
 const Analytics = lazy(() => import("./pages/Analytics"));
 const Settings = lazy(() => import("./pages/Settings"));
 
@@ -313,6 +314,7 @@ function AppRouter() {
       <Route path="/qr-codes" component={QrCodes} />
       <Route path="/reviews" component={Reviews} />
       <Route path="/feedback" component={Feedback} />
+      <Route path="/social-media" component={SocialMedia} />
       <Route path="/analytics" component={Analytics} />
       <Route path="/settings" component={Settings} />
       {/* Super Admin only */}

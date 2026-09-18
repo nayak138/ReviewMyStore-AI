@@ -36,6 +36,8 @@ tags:
     description: Authenticated Google Business review inbox and reply operations.
   - name: feedback
     description: Authenticated management of customer private feedback submissions
+  - name: social-media
+    description: Business-scoped social account connections, publishing, and comments
 paths:
   /v1/review-management:
     get:
@@ -341,6 +343,292 @@ paths:
                 $ref: "#/components/schemas/ErrorResponse"
         "404":
           description: Review not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /v1/social-media/dashboard:
+    get:
+      operationId: getSocialMediaDashboard
+      tags: [social-media]
+      summary: Get a business's connected social accounts and available accounts
+      parameters:
+        - name: businessId
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Social media dashboard
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SocialMediaDashboardResult"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Business not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /v1/social-media/connection:
+    post:
+      operationId: startSocialMediaConnection
+      tags: [social-media]
+      summary: Start connecting a Facebook, Instagram, or Threads account
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SocialMediaConnectionInput"
+      responses:
+        "200":
+          description: Provider authorization URL
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SocialMediaConnectionStartResult"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Business not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /v1/social-media/accounts/attach:
+    post:
+      operationId: attachSocialMediaAccount
+      tags: [social-media]
+      summary: Attach a connected provider account to a business
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SocialMediaAccountAttachInput"
+      responses:
+        "200":
+          description: Attached social account
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SocialMediaAccount"
+        "400":
+          description: Invalid account or platform
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Business or provider account not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /v1/social-media/accounts/{id}:
+    delete:
+      operationId: detachSocialMediaAccount
+      tags: [social-media]
+      summary: Detach a social account from a business
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: Account detached
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Account not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /v1/social-media/posts:
+    get:
+      operationId: listSocialMediaPosts
+      tags: [social-media]
+      summary: List recent social posts for a business
+      parameters:
+        - name: businessId
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Social posts
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SocialMediaPostListResult"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    post:
+      operationId: createSocialMediaPost
+      tags: [social-media]
+      summary: Publish or schedule a social media post
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SocialMediaPostInput"
+      responses:
+        "201":
+          description: Created or scheduled post
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SocialMediaPost"
+        "400":
+          description: Invalid post or no selected platform account
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /v1/social-media/comments:
+    get:
+      operationId: listSocialMediaComments
+      tags: [social-media]
+      summary: List imported social media comments for a business
+      parameters:
+        - name: businessId
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: postId
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Imported comments
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SocialMediaCommentListResult"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    post:
+      operationId: importSocialMediaComments
+      tags: [social-media]
+      summary: Start importing comments for a social post
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SocialMediaCommentImportInput"
+      responses:
+        "202":
+          description: Comment import started
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SocialMediaCommentImportResult"
+        "400":
+          description: Invalid post reference
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /v1/social-media/comments/{id}/reply:
+    post:
+      operationId: replyToSocialMediaComment
+      tags: [social-media]
+      summary: Reply to an imported social media comment
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SocialMediaCommentReplyInput"
+      responses:
+        "200":
+          description: Published comment reply
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SocialMediaComment"
+        "400":
+          description: Invalid reply
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Comment not found
           content:
             application/json:
               schema:
@@ -4182,6 +4470,284 @@ components:
           description: Relative path of the public review page to redirect to.
       required:
         - targetPath
+
+    SocialMediaPlatform:
+      type: string
+      enum: [FACEBOOK, INSTAGRAM, THREADS]
+
+    SocialMediaAccountStatus:
+      type: string
+      enum: [CONNECTED, DISCONNECTED, ERROR]
+
+    SocialMediaAccount:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        businessId:
+          type: string
+          format: uuid
+        platform:
+          $ref: "#/components/schemas/SocialMediaPlatform"
+        externalAccountId:
+          type: string
+        displayName:
+          type: string
+        username:
+          type: ["string", "null"]
+        profileUrl:
+          type: ["string", "null"]
+          format: uri
+        status:
+          $ref: "#/components/schemas/SocialMediaAccountStatus"
+        lastError:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - businessId
+        - platform
+        - externalAccountId
+        - displayName
+        - username
+        - profileUrl
+        - status
+        - lastError
+        - createdAt
+        - updatedAt
+
+    SocialMediaAvailableAccount:
+      type: object
+      properties:
+        externalAccountId:
+          type: string
+        platform:
+          $ref: "#/components/schemas/SocialMediaPlatform"
+        displayName:
+          type: string
+        username:
+          type: ["string", "null"]
+        profileUrl:
+          type: ["string", "null"]
+          format: uri
+        connected:
+          type: boolean
+      required:
+        - externalAccountId
+        - platform
+        - displayName
+        - username
+        - profileUrl
+        - connected
+
+    SocialMediaDashboardResult:
+      type: object
+      properties:
+        teamId:
+          type: string
+        accounts:
+          type: array
+          items:
+            $ref: "#/components/schemas/SocialMediaAccount"
+        availableAccounts:
+          type: array
+          items:
+            $ref: "#/components/schemas/SocialMediaAvailableAccount"
+      required:
+        - teamId
+        - accounts
+        - availableAccounts
+
+    SocialMediaConnectionInput:
+      type: object
+      properties:
+        businessId:
+          type: string
+          format: uuid
+        platform:
+          $ref: "#/components/schemas/SocialMediaPlatform"
+      required:
+        - businessId
+        - platform
+
+    SocialMediaConnectionStartResult:
+      type: object
+      properties:
+        authUrl:
+          type: string
+          format: uri
+        platform:
+          $ref: "#/components/schemas/SocialMediaPlatform"
+      required:
+        - authUrl
+        - platform
+
+    SocialMediaAccountAttachInput:
+      type: object
+      properties:
+        businessId:
+          type: string
+          format: uuid
+        externalAccountId:
+          type: string
+          minLength: 1
+      required:
+        - businessId
+        - externalAccountId
+
+    SocialMediaPostInput:
+      type: object
+      properties:
+        businessId:
+          type: string
+          format: uuid
+        title:
+          type: string
+          maxLength: 160
+        caption:
+          type: string
+          minLength: 1
+          maxLength: 5000
+        platforms:
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/SocialMediaPlatform"
+        scheduledAt:
+          type: ["string", "null"]
+          format: date-time
+      required:
+        - businessId
+        - caption
+        - platforms
+
+    SocialMediaPost:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: ["string", "null"]
+        caption:
+          type: ["string", "null"]
+        status:
+          type: string
+        scheduledAt:
+          type: ["string", "null"]
+          format: date-time
+        publishedAt:
+          type: ["string", "null"]
+          format: date-time
+        platforms:
+          type: array
+          items:
+            $ref: "#/components/schemas/SocialMediaPlatform"
+        raw:
+          type: object
+          additionalProperties: true
+      required:
+        - id
+        - title
+        - caption
+        - status
+        - scheduledAt
+        - publishedAt
+        - platforms
+        - raw
+
+    SocialMediaPostListResult:
+      type: object
+      properties:
+        posts:
+          type: array
+          items:
+            $ref: "#/components/schemas/SocialMediaPost"
+      required:
+        - posts
+
+    SocialMediaCommentImportInput:
+      type: object
+      properties:
+        businessId:
+          type: string
+          format: uuid
+        postId:
+          type: ["string", "null"]
+        importedPostId:
+          type: ["string", "null"]
+      required:
+        - businessId
+
+    SocialMediaCommentImportResult:
+      type: object
+      properties:
+        importId:
+          type: ["string", "null"]
+        status:
+          type: string
+      required:
+        - importId
+        - status
+
+    SocialMediaComment:
+      type: object
+      properties:
+        id:
+          type: string
+        externalId:
+          type: string
+        postId:
+          type: ["string", "null"]
+        text:
+          type: string
+        authorName:
+          type: string
+        parentCommentId:
+          type: ["string", "null"]
+        createdAt:
+          type: ["string", "null"]
+          format: date-time
+        canReply:
+          type: boolean
+      required:
+        - id
+        - externalId
+        - postId
+        - text
+        - authorName
+        - parentCommentId
+        - createdAt
+        - canReply
+
+    SocialMediaCommentListResult:
+      type: object
+      properties:
+        comments:
+          type: array
+          items:
+            $ref: "#/components/schemas/SocialMediaComment"
+      required:
+        - comments
+
+    SocialMediaCommentReplyInput:
+      type: object
+      properties:
+        businessId:
+          type: string
+          format: uuid
+        text:
+          type: string
+          minLength: 1
+          maxLength: 2000
+      required:
+        - businessId
+        - text
 
     ReviewConnectionStatus:
       type: string

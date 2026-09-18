@@ -1,14 +1,15 @@
-import { Megaphone, MessageCircleWarning, MessageSquare, Store } from "lucide-react";
+import { AtSign, Megaphone, MessageCircleWarning, MessageSquare, Store } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
-export type BusinessWorkspaceTab = "campaigns" | "reviews" | "feedback";
+export type BusinessWorkspaceTab = "campaigns" | "reviews" | "feedback" | "social-media";
 
 const tabs: Array<{ id: BusinessWorkspaceTab; label: string; icon: typeof Store; href: string }> = [
   { id: "campaigns", label: "Campaigns", icon: Megaphone, href: "/campaigns" },
   { id: "reviews", label: "Review Inbox", icon: MessageSquare, href: "/reviews" },
   { id: "feedback", label: "Feedback", icon: MessageCircleWarning, href: "/feedback" },
+  { id: "social-media", label: "Social Media", icon: AtSign, href: "/social-media" },
 ];
 
 export function BusinessTabs({
@@ -26,7 +27,7 @@ export function BusinessTabs({
   return (
     <>
       <nav
-        className="mx-auto hidden w-full max-w-4xl gap-1 rounded-xl border border-border bg-card p-1 shadow-sm sm:grid sm:grid-cols-3"
+        className="mx-auto hidden w-full max-w-4xl gap-1 rounded-xl border border-border bg-card p-1 shadow-sm sm:grid sm:grid-cols-4"
         aria-label={`${businessName} workspace`}
       >
         {tabs.map(({ id, label, icon: Icon, href }) => (

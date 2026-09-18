@@ -115,7 +115,7 @@ function url(path: string, query?: Record<string, string | number | undefined>) 
   return target;
 }
 
-async function bndleRequest<T extends JsonRecord = JsonRecord>(
+export async function bndleRequest<T extends JsonRecord = JsonRecord>(
   path: string,
   init: RequestInit = {},
   query?: Record<string, string | number | undefined>,
@@ -191,7 +191,9 @@ async function bndleRequest<T extends JsonRecord = JsonRecord>(
  * bundle.social scopes social accounts to teams; we keep one team per
  * organization so tenants never see each other's accounts or reviews.
  */
-async function getOrCreateProviderTeam(organizationId: string): Promise<string> {
+export async function getOrCreateProviderTeam(
+  organizationId: string,
+): Promise<string> {
   const teamName = `ReviewMyStore ${organizationId}`;
   const organization = await bndleRequest("organization/");
   const teams = asArray(organization.teams);
