@@ -7,6 +7,80 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
+ * Clerk's shadcn theme can inherit the app's dark-mode tokens even on the
+ * dedicated auth shell. Keep these targeted rules outside Tailwind layers so
+ * the code fields and controls remain readable in every theme state.
+ */
+.cl-formFieldInput,
+.cl-otpCodeFieldInput {
+  background-color: #ffffff !important;
+  border-color: #cbd5e1 !important;
+  color: #0f172a !important;
+}
+
+.cl-formFieldInput::placeholder {
+  color: #64748b !important;
+  opacity: 1 !important;
+}
+
+.cl-formFieldInput:focus,
+.cl-otpCodeFieldInput:focus {
+  border-color: #1d4ed8 !important;
+  box-shadow: 0 0 0 3px rgb(37 99 235 / 0.2) !important;
+  outline: none !important;
+}
+
+.cl-otpCodeFieldInput {
+  font-weight: 700 !important;
+  text-align: center !important;
+}
+
+.cl-formButtonPrimary {
+  background-color: #0f172a !important;
+  color: #ffffff !important;
+}
+
+.cl-formButtonPrimary:hover {
+  background-color: #1e293b !important;
+}
+
+.cl-socialButtonsBlockButton {
+  background-color: #ffffff !important;
+  border-color: #cbd5e1 !important;
+  color: #0f172a !important;
+}
+
+.cl-socialButtonsBlockButton:hover {
+  background-color: #f8fafc !important;
+}
+
+.cl-formFieldLabel,
+.cl-socialButtonsBlockButtonText,
+.cl-dividerText,
+.cl-footerActionText {
+  color: #334155 !important;
+}
+
+.cl-footerActionLink,
+.cl-identityPreviewEditButton {
+  color: #1d4ed8 !important;
+}
+
+.cl-footerActionLink:hover,
+.cl-identityPreviewEditButton:hover {
+  color: #1e3a8a !important;
+}
+
+.cl-alert {
+  background-color: #fffbeb !important;
+  border-color: #fcd34d !important;
+}
+
+.cl-alertText {
+  color: #78350f !important;
+}
+
+/*
  * Design tokens — Sprint 3 palette (Material 3 / Stripe Dashboard / Linear
  * inspired). Values are HSL triples so Tailwind can compose them with
  * opacity modifiers (e.g. bg-primary/10). Always reference the semantic

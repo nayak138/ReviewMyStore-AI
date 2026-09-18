@@ -89,43 +89,48 @@ const clerkAppearance = {
     logoLinkUrl: basePath || "/",
   },
   variables: {
-    colorPrimary: "hsl(221, 68%, 39%)",
-    colorForeground: "hsl(224, 34%, 17%)",
-    colorMutedForeground: "hsl(220, 13%, 43%)",
-    colorDanger: "hsl(5, 72%, 48%)",
-    colorSuccess: "hsl(145, 42%, 34%)",
-    colorWarning: "hsl(39, 92%, 47%)",
-    colorBackground: "hsl(42, 42%, 97%)",
-    colorInput: "hsl(45, 50%, 99%)",
-    colorInputForeground: "hsl(224, 34%, 17%)",
-    colorNeutral: "hsl(40, 24%, 87%)",
+    colorPrimary: "hsl(221, 83%, 40%)",
+    colorForeground: "hsl(222, 47%, 11%)",
+    colorMutedForeground: "hsl(215, 16%, 38%)",
+    colorDanger: "hsl(0, 72%, 42%)",
+    colorSuccess: "hsl(142, 72%, 29%)",
+    colorWarning: "hsl(32, 95%, 30%)",
+    colorBackground: "hsl(0, 0%, 100%)",
+    colorInput: "hsl(0, 0%, 100%)",
+    colorInputForeground: "hsl(222, 47%, 11%)",
+    colorNeutral: "hsl(214, 25%, 82%)",
     fontFamily: "'DM Sans', sans-serif",
     borderRadius: "0.875rem",
   },
   elements: {
-    rootBox: "w-full flex justify-center",
-    cardBox: "bg-card rounded-[1.25rem] w-[440px] max-w-full overflow-hidden border border-border shadow-[0_20px_70px_-28px_hsl(224_34%_17%_/_0.38)]",
+    rootBox: "w-full flex justify-center !text-slate-950",
+    cardBox:
+      "!bg-white rounded-[1.25rem] w-[440px] max-w-full overflow-hidden !border-slate-200 !text-slate-950 shadow-[0_20px_70px_-28px_rgba(15,23,42,0.24)]",
     card: "!shadow-none !border-0 !bg-transparent !rounded-none",
     footer: "!shadow-none !border-0 !bg-transparent !rounded-none",
     headerTitle: "!hidden",
     headerSubtitle: "!hidden",
-    socialButtonsBlockButtonText: "!text-foreground font-medium",
-    formFieldLabel: "!text-foreground font-medium",
-    footerActionLink: "!text-primary hover:!text-primary/90 font-medium",
-    footerActionText: "!text-muted-foreground",
-    dividerText: "!text-muted-foreground",
-    identityPreviewEditButton: "!text-primary hover:!text-primary/90",
+    socialButtonsBlockButtonText: "!text-slate-900 font-medium",
+    formFieldLabel: "!text-slate-800 font-medium",
+    footerActionLink: "!text-blue-700 hover:!text-blue-900 font-medium",
+    footerActionText: "!text-slate-600",
+    dividerText: "!text-slate-500",
+    identityPreviewEditButton: "!text-blue-700 hover:!text-blue-900",
     formFieldSuccessText: "!text-emerald-600",
-    alertText: "!text-foreground",
+    alertText: "!text-amber-950",
     logoBox: "mb-2",
     logoImage: "!h-16 !w-auto !max-w-[20rem]",
-    socialButtonsBlockButton: "border-border hover:bg-accent transition-colors",
-    formButtonPrimary: "bg-primary !text-white hover:bg-primary/90 transition-colors shadow-sm",
-    formFieldInput: "bg-card border-border text-foreground focus:ring-2 focus:ring-primary focus:border-transparent transition-all",
+    socialButtonsBlockButton:
+      "!border-slate-300 !bg-white !text-slate-900 hover:!bg-slate-50 transition-colors",
+    formButtonPrimary:
+      "!bg-slate-950 !text-white hover:!bg-slate-800 transition-colors shadow-sm",
+    formFieldInput:
+      "!bg-white !border-slate-300 !text-slate-950 placeholder:!text-slate-500 focus:!border-blue-700 focus:!ring-2 focus:!ring-blue-700 transition-all",
     footerAction: "mt-4",
-    dividerLine: "bg-zinc-200 dark:bg-zinc-800",
-    alert: "border-zinc-200 dark:border-zinc-800",
-    otpCodeFieldInput: "border-zinc-200 dark:border-zinc-800 text-zinc-950 dark:text-zinc-50",
+    dividerLine: "!bg-slate-200",
+    alert: "!border-amber-200 !bg-amber-50",
+    otpCodeFieldInput:
+      "!border-slate-300 !bg-white !text-slate-950 !shadow-sm focus:!border-blue-700 focus:!ring-2 focus:!ring-blue-700",
     formFieldRow: "mb-4",
     main: "w-full",
   },
@@ -136,7 +141,7 @@ const clerkAppearance = {
  * the other side. Collapses to a single stacked column on mobile. */
 function AuthLayout({ children }: { children: ReactNode }) {
   return (
-    <div className="min-h-[100dvh] bg-background lg:grid lg:grid-cols-[minmax(360px,0.92fr)_1.08fr]">
+    <div className="min-h-[100dvh] bg-slate-50 lg:grid lg:grid-cols-[minmax(360px,0.92fr)_1.08fr]">
       <aside className="relative hidden overflow-hidden bg-primary px-12 py-14 text-primary-foreground lg:flex lg:flex-col lg:justify-between">
         <div className="absolute -right-24 -top-24 h-72 w-72 rounded-full border-[36px] border-primary-foreground/10" />
         <div className="absolute -bottom-28 -left-20 h-80 w-80 rounded-full border-[48px] border-primary-foreground/10" />
@@ -162,7 +167,7 @@ function AuthLayout({ children }: { children: ReactNode }) {
           Built for thoughtful local businesses
         </p>
       </aside>
-      <main className="flex min-h-[100dvh] flex-col items-center justify-center px-4 py-10 sm:px-8">
+      <main className="flex min-h-[100dvh] flex-col items-center justify-center bg-slate-50 px-4 py-10 text-slate-950 sm:px-8">
         <div className="mb-8 flex items-center gap-2 lg:hidden">
           <BrandLogo className="h-12 w-auto max-w-[16rem]" />
         </div>
@@ -176,10 +181,10 @@ function SignInPage() {
   return (
     <AuthLayout>
       <div className="w-full max-w-[440px]">
-        <h1 className="mb-4 text-center font-display text-2xl font-semibold tracking-tight text-foreground">
+        <h1 className="mb-4 text-center font-display text-2xl font-semibold tracking-tight text-slate-950">
           Sign in to 5-Star.AI
         </h1>
-        <p className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-center text-sm font-semibold leading-relaxed text-red-700 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-300">
+        <p className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-center text-sm font-semibold leading-relaxed text-amber-950">
           Agency Login only — contact the Admin at hello@5-star.ai
         </p>
         <SignIn routing="path" path={`${basePath}/sign-in`} />
