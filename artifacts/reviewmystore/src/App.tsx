@@ -165,7 +165,7 @@ function AuthLayout({ children }: { children: ReactNode }) {
         <div className="auth-hero-mesh pointer-events-none absolute inset-0" />
         <div className="auth-hero-dots pointer-events-none absolute inset-0" />
         <div className="relative z-10 flex items-center gap-3">
-          <BrandIcon className="h-14 w-14 shrink-0" alt="" />
+          <BrandIcon className="auth-brand-icon h-14 w-14 shrink-0" alt="" />
           <div className="relative flex items-baseline font-sans text-3xl font-extrabold tracking-[-0.06em] text-white">
             <span>5-STAR.</span>
             <span className="text-cyan-300">AI</span>
@@ -250,7 +250,7 @@ function AuthLayout({ children }: { children: ReactNode }) {
 function SignInPage() {
   return (
     <AuthLayout>
-      <div className="w-full max-w-[480px] rounded-2xl border border-slate-200/80 bg-white p-6 shadow-xl shadow-slate-200/50 sm:p-8">
+      <div className="auth-signin-card w-full max-w-[480px] rounded-2xl border border-slate-200/80 bg-white p-6 shadow-xl shadow-slate-200/50 sm:p-8">
         <div className="mb-6">
           <p className="mb-2 text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
             Agency workspace

@@ -28,6 +28,39 @@
   max-width: none !important;
 }
 
+.auth-signin-card form,
+.auth-signin-card form > div,
+.auth-signin-card [class*="cl-rootBox"],
+.auth-signin-card [class*="cl-cardBox"],
+.auth-signin-card [class*="cl-main"],
+.auth-signin-card [class*="cl-form"],
+.auth-signin-card [class*="cl-socialButtons"],
+.auth-signin-card [class*="cl-dividerRow"] {
+  box-sizing: border-box !important;
+  max-width: none !important;
+  width: 100% !important;
+}
+
+.auth-signin-card input,
+.auth-signin-card button {
+  box-sizing: border-box !important;
+}
+
+.auth-signin-card input {
+  width: 100% !important;
+}
+
+.auth-signin-card button {
+  max-width: none !important;
+}
+
+.auth-brand-icon {
+  border-radius: 1rem;
+  filter: saturate(0.92) brightness(1.04);
+  mix-blend-mode: screen;
+  opacity: 0.96;
+}
+
 .cl-formFieldInput::placeholder {
   color: #94a3b8 !important;
   opacity: 1 !important;
