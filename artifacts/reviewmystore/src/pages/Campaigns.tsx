@@ -21,7 +21,6 @@ import {
   Loader2,
   KeyRound,
   QrCode,
-  ShoppingBag,
   FileImage,
   FileCode2,
   FileText,
@@ -746,7 +745,7 @@ function QrCodeManagerDialog({ campaign, onClose }: { campaign: Campaign; onClos
             <QrCode className="h-5 w-5 text-primary" />
             QR Code — {campaign.name}
           </DialogTitle>
-          <DialogDescription>Download the QR code for this campaign or request an NFC standee for the same review link.</DialogDescription>
+          <DialogDescription>Download the QR code for this campaign or copy its short link for sharing.</DialogDescription>
         </DialogHeader>
 
         <div className="flex justify-center rounded-xl border border-border bg-white p-4">
@@ -835,12 +834,6 @@ function QrCodeManagerDialog({ campaign, onClose }: { campaign: Campaign; onClos
           ))}
         </div>
 
-        <Button asChild className="w-full min-w-0">
-          <a href={`mailto:hello@5-star.ai?subject=${encodeURIComponent(`Order NFC Standee — ${campaign.name}`)}&body=${encodeURIComponent(`Please help me order an NFC standee for the campaign "${campaign.name}".`)}`}>
-            <ShoppingBag className="mr-2 h-4 w-4" />
-            Order NFC Standee
-          </a>
-        </Button>
       </DialogContent>
     </Dialog>
   );

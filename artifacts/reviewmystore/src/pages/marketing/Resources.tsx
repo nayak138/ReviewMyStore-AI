@@ -7,7 +7,6 @@ import { BookDemoDialog } from "@/components/book-demo-dialog";
 import {
   Rocket,
   QrCode,
-  Nfc,
   MessageSquareText,
   BarChart3,
   Building2,
@@ -27,7 +26,7 @@ const guides = [
       "Sign up and search for your business by name",
       "Confirm your Google Business Profile listing",
       "Create a campaign and customize the customer prompt",
-      "Share via QR code, NFC tag, or short link",
+      "Share via QR code or short link",
     ],
   },
   {
@@ -40,18 +39,6 @@ const guides = [
       "Print at least 2×2 cm (0.8 in) for arm's-length scanning",
       "Place at the point of delight: counters, receipts, packaging",
       "Pair with a short prompt like \"Loved it? Tell Google in 30 seconds\"",
-    ],
-  },
-  {
-    icon: Nfc,
-    category: "Collection",
-    title: "Use NFC tap-to-review at the counter",
-    desc: "Link an NFC tag or stand to a campaign so customers can open your review page with a single tap of their phone.",
-    steps: [
-      "Order any NTAG-compatible tag or stand",
-      "Register the device under NFC Devices in your dashboard",
-      "Link it to a campaign — retarget it anytime without reprinting",
-      "Train staff on the one-line ask: \"Just tap your phone here\"",
     ],
   },
   {

@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { ArrowRight, Nfc, QrCode, ScanLine, Smartphone } from "lucide-react";
+import { ArrowRight, QrCode, ScanLine } from "lucide-react";
 
 const ease = [0.16, 1, 0.3, 1] as const;
 
@@ -42,10 +42,7 @@ export function Scene3() {
             <motion.div className="absolute bottom-[1.3vw] left-[1vw] right-[1vw] flex items-center justify-between rounded-[.7vw] bg-[#2f6fed] px-[.8vw] py-[.7vw] text-white" animate={{ y: ["0vw", "-.18vw", "0vw"] }} transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }}><span className="font-bold text-[.7vw]">Continue</span><ArrowRight size=".85vw" /></motion.div>
           </div>
         </div>
-        <motion.div className="absolute left-[22vw] top-[20vw] flex items-center gap-[.75vw] rounded-full border border-[#34a853]/30 bg-[#34a853]/10 px-[1vw] py-[.65vw]" initial={{ opacity: 0, x: 12 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: .9, duration: .6, ease }}><Nfc size="1.35vw" color="#34a853" /><span className="font-mono text-[.75vw] uppercase tracking-[.1em]">or tap NFC</span></motion.div>
-        <motion.div className="absolute left-[21vw] top-[23.5vw] h-[.12vw] w-[8vw] origin-left bg-[#34a853]" initial={{ scaleX: 0 }} animate={{ scaleX: 1 }} transition={{ delay: 1.05, duration: .7, ease }} />
-        <motion.div className="absolute left-[27vw] top-[23.1vw] h-[.8vw] w-[.8vw] rounded-full bg-[#34a853]" animate={{ x: [0, 5, 0], opacity: [0, 1, 0] }} transition={{ duration: 1.8, repeat: Infinity, delay: 1.2 }} />
-        <div className="absolute bottom-[1vw] left-[2vw] flex items-center gap-[.6vw] text-[#202124]/48"><ScanLine size="1.1vw" /><Smartphone size="1.1vw" /><span className="font-mono text-[.7vw] uppercase tracking-[.13em]">QR / NFC / link</span></div>
+        <motion.div className="absolute bottom-[1vw] left-[2vw] flex items-center gap-[.6vw] text-[#202124]/48"><ScanLine size="1.1vw" /><QrCode size="1.1vw" /><span className="font-mono text-[.7vw] uppercase tracking-[.13em]">QR / LINK</span></motion.div>
       </motion.div>
     </motion.section>
   );

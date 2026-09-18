@@ -410,6 +410,17 @@ export default function CustomerReview() {
       { onSuccess: () => setIsEditingKeywords(false) },
     );
   };
+  const trackCustomerAction = (action: "CALL_CLICK" | "CONTACT_SAVED") => {
+    const trackUrl = `${import.meta.env.BASE_URL}api/v1/public/review/${businessSlug}/${campaignSlug}/track-action`;
+    void fetch(trackUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action }),
+      keepalive: true,
+    }).catch(() => {
+      // Tracking must never block a customer action.
+    });
+  };
   const handleCopy = async (clickedThroughToGoogle = false) => {
     if (!reviewText) return;
     if (clickedThroughToGoogle) {
@@ -561,11 +572,11 @@ export default function CustomerReview() {
           <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center sm:justify-start">
             {business.phone && (
               <Button asChild size="sm" className="h-11 w-full min-w-0 rounded-full bg-[#1769ff] px-3 text-xs font-semibold shadow-[0_8px_18px_rgba(23,105,255,0.28)] hover:bg-[#0e59df] sm:w-auto sm:px-5 sm:text-sm">
-                <a href={`tel:${business.phone}`}><Phone className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" />Call</a>
+                <a href={`tel:${business.phone}`} onClick={() => trackCustomerAction("CALL_CLICK")}><Phone className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" />Call</a>
               </Button>
             )}
             {(business.phone || business.address || business.website) && (
-              <Button variant="outline" size="sm" className="h-11 w-full min-w-0 rounded-full border-[#cbd8f5] bg-[#e4ecff] px-3 text-xs font-semibold text-[#20345f] hover:bg-[#d8e4ff] dark:border-white/15 dark:bg-[#172548] dark:text-slate-100 dark:hover:bg-[#21345f] sm:w-auto sm:px-4 sm:text-sm" onClick={() => downloadVCard({ name: business.name, phone: business.phone, address: business.address, website: business.website })}>
+              <Button variant="outline" size="sm" className="h-11 w-full min-w-0 rounded-full border-[#cbd8f5] bg-[#e4ecff] px-3 text-xs font-semibold text-[#20345f] hover:bg-[#d8e4ff] dark:border-white/15 dark:bg-[#172548] dark:text-slate-100 dark:hover:bg-[#21345f] sm:w-auto sm:px-4 sm:text-sm" onClick={() => { trackCustomerAction("CONTACT_SAVED"); downloadVCard({ name: business.name, phone: business.phone, address: business.address, website: business.website }); }}>
                 <IdCard className="mr-1.5 h-4 w-4 text-[#5b83ff]" aria-hidden="true" />Save Contact
               </Button>
             )}

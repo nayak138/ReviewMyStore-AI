@@ -12,7 +12,9 @@ export interface BusinessAnalyticsCampaign {
   campaignName: string;
   status: BusinessAnalyticsCampaignStatus;
   qrScans: number;
-  nfcTaps: number;
   googleRedirects: number;
+  reviewsGenerated: number;
+  calls: number;
+  contactsSaved: number;
   totalActions: number;
 }

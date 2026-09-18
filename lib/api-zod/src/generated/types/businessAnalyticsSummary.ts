@@ -8,8 +8,12 @@
 
 export interface BusinessAnalyticsSummary {
   qrScans: number;
-  nfcTaps: number;
   googleRedirects: number;
+  reviewsGenerated: number;
+  newReviews: number;
+  reviewReplies: number;
+  calls: number;
+  contactsSaved: number;
   totalActions: number;
   activeCampaigns: number;
   totalCampaigns: number;
@@ -17,6 +21,5 @@ export interface BusinessAnalyticsSummary {
   averageFeedbackRating: number;
   newFeedback: number;
   resolvedFeedback: number;
-  aiReviewsGenerated: number;
   scanToGoogleRate: number;
 }

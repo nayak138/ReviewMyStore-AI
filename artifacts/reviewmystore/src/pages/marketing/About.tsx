@@ -37,7 +37,7 @@ const timeline = [
   {
     year: "Today",
     title: "Scan, edit, post",
-      desc: "5-Star.AI turns the moment of delight into a posted Google review: a QR scan or NFC tap, an AI-drafted review the customer makes their own, and one tap to publish.",
+      desc: "5-Star.AI turns the moment of delight into a posted Google review: a QR scan or short link, an AI-drafted review the customer makes their own, and one tap to publish.",
   },
 ];
 
@@ -78,7 +78,7 @@ export default function About() {
                 run reputation teams; local businesses get a laminated "Review us!" sign and hope.
               </p>
               <p className="text-muted-foreground leading-relaxed mb-4">
-                We're leveling that field. 5-Star.AI combines QR codes, NFC taps, and AI-drafted
+                We're leveling that field. 5-Star.AI combines QR codes, short links, and AI-drafted
                 reviews so that collecting a Google review takes a customer seconds — and takes your
                 staff nothing more than "just tap here."
               </p>
@@ -89,7 +89,7 @@ export default function About() {
             </div>
             <div className="grid grid-cols-2 gap-4">
               {[
-                { icon: QrCode, label: "Scan or tap to review" },
+                { icon: QrCode, label: "Scan to review" },
                 { icon: MessageSquareText, label: "AI-drafted, customer-approved" },
                 { icon: Star, label: "Posted straight to Google" },
                 { icon: BarChart3, label: "Tracked in one dashboard" },

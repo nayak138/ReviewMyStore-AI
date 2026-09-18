@@ -9,7 +9,11 @@
 export interface BusinessAnalyticsDailyPoint {
   date: string;
   qrScans: number;
-  nfcTaps: number;
   googleRedirects: number;
+  reviewsGenerated: number;
+  newReviews: number;
+  reviewReplies: number;
+  calls: number;
+  contactsSaved: number;
   privateFeedback: number;
 }

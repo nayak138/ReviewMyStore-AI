@@ -19,7 +19,7 @@ const sections = [
     body: (
       <p>
         5-Star.AI helps businesses invite their customers to leave Google reviews using QR
-        codes, NFC tags, and AI-assisted review drafting. AI-generated drafts are suggestions that
+        codes, shareable links, and AI-assisted review drafting. AI-generated drafts are suggestions that
         customers can edit or discard; posting is always the customer's decision. We do not
         guarantee any particular number of reviews, star rating, or search-ranking outcome.
       </p>

@@ -1,6 +1,6 @@
 # ReviewMyStore.ai
 
-Multi-tenant SaaS that helps local businesses collect more Google Reviews using AI-assisted review drafting, QR codes, and NFC "tap to review" standees.
+Multi-tenant SaaS that helps local businesses collect more Google Reviews using AI-assisted review drafting, QR codes, and shareable short links.
 
 ## Run & Operate
 
@@ -46,13 +46,12 @@ Multi-tenant SaaS that helps local businesses collect more Google Reviews using 
 
 ## Product
 
-Sprints 1–4 (built): project scaffolding, Clerk authentication, Organization/User data model, RBAC (SUPER_ADMIN vs OWNER), public marketing page, branded sign-in/sign-up, authenticated dashboard; Businesses & Campaigns CRUD with Google Places lookup; public customer review page with AI review generation (keyword-driven, generation limits); QR code system (PNG/SVG/print-ready 4×6" PDF per campaign, dynamic short links `/r/{code}`); NFC device management (software-only: register, assign/reassign/unassign, ACTIVE/DISABLED lifecycle — taps only count when a device is ACTIVE); analytics foundation (append-only `scan_events` logging QR scans, NFC taps, and Google click-throughs with UA/geo/referrer); dashboard with real metrics (scans, taps, redirects, top campaigns, recent activity). Future sprints: Advanced Analytics/charts, Orders, Billing/Stripe, Teams, Notifications, Super Admin.
+Sprints 1–4 (built): project scaffolding, Clerk authentication, Organization/User data model, RBAC (SUPER_ADMIN vs OWNER), public marketing page, branded sign-in/sign-up, authenticated dashboard; Businesses & Campaigns CRUD with Google Places lookup; public customer review page with AI review generation (keyword-driven, generation limits); QR code system (PNG/SVG/print-ready 4×6" PDF per campaign, dynamic short links `/r/{code}`); analytics foundation (append-only `scan_events` logging QR scans, generated reviews, Google click-throughs, calls, and saved contacts with UA/geo/referrer); dashboard with real metrics (scans, review actions, redirects, top campaigns, recent activity). Future sprints: Advanced Analytics/charts, Orders, Billing/Stripe, Teams, Notifications, Super Admin.
 
 ## User preferences
 
 - **Strict sprint-by-sprint approval process.** Build only the current sprint's scope (per the project's milestone breakdown). After finishing a sprint: run the app, fix all TS/build errors, verify it works, then STOP and wait for explicit user approval before starting the next sprint. Never auto-continue past a sprint boundary.
 - No Stripe/payment integration in the MVP. Registration is open — any signed-up user gets full access immediately, no plan gating.
-- NFC is software-only (no hardware encoding): register/track NFC UIDs, one device per campaign, generate a unique URL per device, "tap" is simulated by opening that URL.
 - AI review generation must go through an `AIService` abstraction with a dedicated prompt/template module — never call the AI provider directly from routes/controllers/frontend.
 
 ## Gotchas

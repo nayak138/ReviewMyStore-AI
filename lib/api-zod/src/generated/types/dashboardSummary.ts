@@ -13,10 +13,13 @@ export interface DashboardSummary {
   activeBusinesses: number;
   activeCampaigns: number;
   qrScans: number;
-  nfcTaps: number;
   scansToday: number;
   googleRedirects: number;
-  aiReviewsGenerated: number;
+  reviewsGenerated: number;
+  newReviews: number;
+  reviewReplies: number;
+  calls: number;
+  contactsSaved: number;
   needsOnboarding: boolean;
   topCampaigns: TopCampaignItem[];
   recentActivity: RecentActivityItem[];

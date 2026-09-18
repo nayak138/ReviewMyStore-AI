@@ -48,6 +48,7 @@ import type {
   CampaignStatusInput,
   CampaignTemplateListResult,
   CampaignUpdateInput,
+  CustomerActionInput,
   DashboardSummary,
   DemoRequest,
   DemoRequestInput,
@@ -69,7 +70,6 @@ import type {
   ListCampaignsParams,
   ListDemoRequestsResult,
   ListManagedReviewsParams,
-  ListNfcDevicesParams,
   ListPrivateFeedbackParams,
   ListPrivateFeedbackResult,
   ListSocialMediaCommentsParams,
@@ -77,12 +77,6 @@ import type {
   ManagedReviewListResult,
   ManagedReviewMutationResult,
   ManagedReviewReplyInput,
-  NfcDevice,
-  NfcDeviceAssignInput,
-  NfcDeviceCreateInput,
-  NfcDeviceListResult,
-  NfcDeviceStatusInput,
-  NfcDeviceUpdateInput,
   Organization,
   PlaceAutocompleteResult,
   PlaceDetails,
@@ -3362,7 +3356,7 @@ export const getGetDashboardSummaryUrl = () => {
 }
 
 /**
- * activeCampaigns, qrScans, and aiReviewsGenerated are placeholders (always 0) until their respective sprints are built.
+ * Organization-wide customer activity counts, review-management counts, and recent activity for the agency dashboard.
  * @summary Dashboard card counts and recent activity for the caller's organization
  */
 export const getDashboardSummary = async ( options?: Parameters<typeof customFetch>[1]): Promise<DashboardSummary> => {
@@ -5480,520 +5474,6 @@ export function useDownloadCampaignQr<TData = Awaited<ReturnType<typeof download
 
 
 
-export const getListNfcDevicesUrl = (params?: ListNfcDevicesParams,) => {
-  const normalizedParams = new URLSearchParams();
-
-  Object.entries(params || {}).forEach(([key, value]) => {
-
-    if (value !== undefined) {
-      normalizedParams.append(key, value === null ? 'null' : String(value))
-    }
-  });
-
-  const stringifiedParams = normalizedParams.toString();
-
-  return stringifiedParams.length > 0 ? `/api/v1/nfc-devices?${stringifiedParams}` : `/api/v1/nfc-devices`
-}
-
-/**
- * @summary List NFC devices for the caller's organization
- */
-export const listNfcDevices = async (params?: ListNfcDevicesParams, options?: Parameters<typeof customFetch>[1]): Promise<NfcDeviceListResult> => {
-
-  return customFetch<NfcDeviceListResult>(getListNfcDevicesUrl(params),
-  {
-    ...options,
-    method: 'GET'
-
-
-  }
-);}
-
-
-
-
-
-export const getListNfcDevicesQueryKey = (params?: ListNfcDevicesParams,) => {
-    return [
-    `/api/v1/nfc-devices`, ...(params ? [params] : [])
-    ] as const;
-    }
-
-
-export const getListNfcDevicesQueryOptions = <TData = Awaited<ReturnType<typeof listNfcDevices>>, TError = ErrorType<ErrorResponse>>(params?: ListNfcDevicesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listNfcDevices>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
-) => {
-
-const {query: queryOptions, request: requestOptions} = options ?? {};
-
-  const queryKey =  queryOptions?.queryKey ?? getListNfcDevicesQueryKey(params);
-
-
-
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof listNfcDevices>>> = ({ signal }) => listNfcDevices(params, { signal, ...requestOptions });
-
-
-
-
-
-   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listNfcDevices>>, TError, TData> & { queryKey: QueryKey }
-}
-
-export type ListNfcDevicesQueryResult = NonNullable<Awaited<ReturnType<typeof listNfcDevices>>>
-export type ListNfcDevicesQueryError = ErrorType<ErrorResponse>
-
-
-/**
- * @summary List NFC devices for the caller's organization
- */
-
-export function useListNfcDevices<TData = Awaited<ReturnType<typeof listNfcDevices>>, TError = ErrorType<ErrorResponse>>(
- params?: ListNfcDevicesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listNfcDevices>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
-
- ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
-
-  const queryOptions = getListNfcDevicesQueryOptions(params,options)
-
-  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
-
-  return withQueryKey(query, queryOptions.queryKey);
-}
-
-
-
-
-
-
-
-export const getRegisterNfcDeviceUrl = () => {
-
-
-
-
-  return `/api/v1/nfc-devices`
-}
-
-/**
- * @summary Register a new NFC device
- */
-export const registerNfcDevice = async (nfcDeviceCreateInput: NfcDeviceCreateInput, options?: Parameters<typeof customFetch>[1]): Promise<NfcDevice> => {
-
-  return customFetch<NfcDevice>(getRegisterNfcDeviceUrl(),
-  {
-    ...options,
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(nfcDeviceCreateInput)
-  }
-);}
-
-
-
-
-
-export const getRegisterNfcDeviceMutationOptions = <TError = ErrorType<ErrorResponse>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof registerNfcDevice>>, TError,{data: BodyType<NfcDeviceCreateInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
-): UseMutationOptions<Awaited<ReturnType<typeof registerNfcDevice>>, TError,{data: BodyType<NfcDeviceCreateInput>}, TContext> => {
-
-const mutationKey = ['registerNfcDevice'];
-const {mutation: mutationOptions, request: requestOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof registerNfcDevice>>, {data: BodyType<NfcDeviceCreateInput>}> = (props) => {
-          const {data} = props ?? {};
-
-          return  registerNfcDevice(data,requestOptions)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type RegisterNfcDeviceMutationResult = NonNullable<Awaited<ReturnType<typeof registerNfcDevice>>>
-    export type RegisterNfcDeviceMutationBody = BodyType<NfcDeviceCreateInput>
-    export type RegisterNfcDeviceMutationError = ErrorType<ErrorResponse>
-
-    /**
- * @summary Register a new NFC device
- */
-export const useRegisterNfcDevice = <TError = ErrorType<ErrorResponse>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof registerNfcDevice>>, TError,{data: BodyType<NfcDeviceCreateInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
- ): UseMutationResult<
-        Awaited<ReturnType<typeof registerNfcDevice>>,
-        TError,
-        {data: BodyType<NfcDeviceCreateInput>},
-        TContext
-      > => {
-      return useMutation(getRegisterNfcDeviceMutationOptions(options));
-    }
-
-export const getUpdateNfcDeviceUrl = (id: string,) => {
-
-
-
-
-  return `/api/v1/nfc-devices/${id}`
-}
-
-/**
- * @summary Update an NFC device's name, UID, or notes
- */
-export const updateNfcDevice = async (id: string,
-    nfcDeviceUpdateInput: NfcDeviceUpdateInput, options?: Parameters<typeof customFetch>[1]): Promise<NfcDevice> => {
-
-  return customFetch<NfcDevice>(getUpdateNfcDeviceUrl(id),
-  {
-    ...options,
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(nfcDeviceUpdateInput)
-  }
-);}
-
-
-
-
-
-export const getUpdateNfcDeviceMutationOptions = <TError = ErrorType<ErrorResponse>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateNfcDevice>>, TError,{id: string;data: BodyType<NfcDeviceUpdateInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
-): UseMutationOptions<Awaited<ReturnType<typeof updateNfcDevice>>, TError,{id: string;data: BodyType<NfcDeviceUpdateInput>}, TContext> => {
-
-const mutationKey = ['updateNfcDevice'];
-const {mutation: mutationOptions, request: requestOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateNfcDevice>>, {id: string;data: BodyType<NfcDeviceUpdateInput>}> = (props) => {
-          const {id,data} = props ?? {};
-
-          return  updateNfcDevice(id,data,requestOptions)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type UpdateNfcDeviceMutationResult = NonNullable<Awaited<ReturnType<typeof updateNfcDevice>>>
-    export type UpdateNfcDeviceMutationBody = BodyType<NfcDeviceUpdateInput>
-    export type UpdateNfcDeviceMutationError = ErrorType<ErrorResponse>
-
-    /**
- * @summary Update an NFC device's name, UID, or notes
- */
-export const useUpdateNfcDevice = <TError = ErrorType<ErrorResponse>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateNfcDevice>>, TError,{id: string;data: BodyType<NfcDeviceUpdateInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
- ): UseMutationResult<
-        Awaited<ReturnType<typeof updateNfcDevice>>,
-        TError,
-        {id: string;data: BodyType<NfcDeviceUpdateInput>},
-        TContext
-      > => {
-      return useMutation(getUpdateNfcDeviceMutationOptions(options));
-    }
-
-export const getDeleteNfcDeviceUrl = (id: string,) => {
-
-
-
-
-  return `/api/v1/nfc-devices/${id}`
-}
-
-/**
- * @summary Delete an NFC device
- */
-export const deleteNfcDevice = async (id: string, options?: Parameters<typeof customFetch>[1]): Promise<void> => {
-
-  return customFetch<void>(getDeleteNfcDeviceUrl(id),
-  {
-    ...options,
-    method: 'DELETE'
-
-
-  }
-);}
-
-
-
-
-
-export const getDeleteNfcDeviceMutationOptions = <TError = ErrorType<ErrorResponse>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteNfcDevice>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof customFetch>}
-): UseMutationOptions<Awaited<ReturnType<typeof deleteNfcDevice>>, TError,{id: string}, TContext> => {
-
-const mutationKey = ['deleteNfcDevice'];
-const {mutation: mutationOptions, request: requestOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteNfcDevice>>, {id: string}> = (props) => {
-          const {id} = props ?? {};
-
-          return  deleteNfcDevice(id,requestOptions)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type DeleteNfcDeviceMutationResult = NonNullable<Awaited<ReturnType<typeof deleteNfcDevice>>>
-
-    export type DeleteNfcDeviceMutationError = ErrorType<ErrorResponse>
-
-    /**
- * @summary Delete an NFC device
- */
-export const useDeleteNfcDevice = <TError = ErrorType<ErrorResponse>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteNfcDevice>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof customFetch>}
- ): UseMutationResult<
-        Awaited<ReturnType<typeof deleteNfcDevice>>,
-        TError,
-        {id: string},
-        TContext
-      > => {
-      return useMutation(getDeleteNfcDeviceMutationOptions(options));
-    }
-
-export const getAssignNfcDeviceUrl = (id: string,) => {
-
-
-
-
-  return `/api/v1/nfc-devices/${id}/assign`
-}
-
-/**
- * Assigning derives the business from the campaign, sets status to ASSIGNED, stamps assignedAt, and ensures the device has an active redirect link. Reassigning points the existing redirect link at the new campaign — no re-writing of the physical tag is needed.
- * @summary Assign (or reassign) an NFC device to a campaign
- */
-export const assignNfcDevice = async (id: string,
-    nfcDeviceAssignInput: NfcDeviceAssignInput, options?: Parameters<typeof customFetch>[1]): Promise<NfcDevice> => {
-
-  return customFetch<NfcDevice>(getAssignNfcDeviceUrl(id),
-  {
-    ...options,
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(nfcDeviceAssignInput)
-  }
-);}
-
-
-
-
-
-export const getAssignNfcDeviceMutationOptions = <TError = ErrorType<ErrorResponse>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof assignNfcDevice>>, TError,{id: string;data: BodyType<NfcDeviceAssignInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
-): UseMutationOptions<Awaited<ReturnType<typeof assignNfcDevice>>, TError,{id: string;data: BodyType<NfcDeviceAssignInput>}, TContext> => {
-
-const mutationKey = ['assignNfcDevice'];
-const {mutation: mutationOptions, request: requestOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof assignNfcDevice>>, {id: string;data: BodyType<NfcDeviceAssignInput>}> = (props) => {
-          const {id,data} = props ?? {};
-
-          return  assignNfcDevice(id,data,requestOptions)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type AssignNfcDeviceMutationResult = NonNullable<Awaited<ReturnType<typeof assignNfcDevice>>>
-    export type AssignNfcDeviceMutationBody = BodyType<NfcDeviceAssignInput>
-    export type AssignNfcDeviceMutationError = ErrorType<ErrorResponse>
-
-    /**
- * @summary Assign (or reassign) an NFC device to a campaign
- */
-export const useAssignNfcDevice = <TError = ErrorType<ErrorResponse>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof assignNfcDevice>>, TError,{id: string;data: BodyType<NfcDeviceAssignInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
- ): UseMutationResult<
-        Awaited<ReturnType<typeof assignNfcDevice>>,
-        TError,
-        {id: string;data: BodyType<NfcDeviceAssignInput>},
-        TContext
-      > => {
-      return useMutation(getAssignNfcDeviceMutationOptions(options));
-    }
-
-export const getUnassignNfcDeviceUrl = (id: string,) => {
-
-
-
-
-  return `/api/v1/nfc-devices/${id}/unassign`
-}
-
-/**
- * @summary Remove an NFC device's campaign assignment
- */
-export const unassignNfcDevice = async (id: string, options?: Parameters<typeof customFetch>[1]): Promise<NfcDevice> => {
-
-  return customFetch<NfcDevice>(getUnassignNfcDeviceUrl(id),
-  {
-    ...options,
-    method: 'POST'
-
-
-  }
-);}
-
-
-
-
-
-export const getUnassignNfcDeviceMutationOptions = <TError = ErrorType<ErrorResponse>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof unassignNfcDevice>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof customFetch>}
-): UseMutationOptions<Awaited<ReturnType<typeof unassignNfcDevice>>, TError,{id: string}, TContext> => {
-
-const mutationKey = ['unassignNfcDevice'];
-const {mutation: mutationOptions, request: requestOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof unassignNfcDevice>>, {id: string}> = (props) => {
-          const {id} = props ?? {};
-
-          return  unassignNfcDevice(id,requestOptions)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type UnassignNfcDeviceMutationResult = NonNullable<Awaited<ReturnType<typeof unassignNfcDevice>>>
-
-    export type UnassignNfcDeviceMutationError = ErrorType<ErrorResponse>
-
-    /**
- * @summary Remove an NFC device's campaign assignment
- */
-export const useUnassignNfcDevice = <TError = ErrorType<ErrorResponse>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof unassignNfcDevice>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof customFetch>}
- ): UseMutationResult<
-        Awaited<ReturnType<typeof unassignNfcDevice>>,
-        TError,
-        {id: string},
-        TContext
-      > => {
-      return useMutation(getUnassignNfcDeviceMutationOptions(options));
-    }
-
-export const getSetNfcDeviceStatusUrl = (id: string,) => {
-
-
-
-
-  return `/api/v1/nfc-devices/${id}/status`
-}
-
-/**
- * @summary Activate or disable an NFC device
- */
-export const setNfcDeviceStatus = async (id: string,
-    nfcDeviceStatusInput: NfcDeviceStatusInput, options?: Parameters<typeof customFetch>[1]): Promise<NfcDevice> => {
-
-  return customFetch<NfcDevice>(getSetNfcDeviceStatusUrl(id),
-  {
-    ...options,
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(nfcDeviceStatusInput)
-  }
-);}
-
-
-
-
-
-export const getSetNfcDeviceStatusMutationOptions = <TError = ErrorType<ErrorResponse>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setNfcDeviceStatus>>, TError,{id: string;data: BodyType<NfcDeviceStatusInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
-): UseMutationOptions<Awaited<ReturnType<typeof setNfcDeviceStatus>>, TError,{id: string;data: BodyType<NfcDeviceStatusInput>}, TContext> => {
-
-const mutationKey = ['setNfcDeviceStatus'];
-const {mutation: mutationOptions, request: requestOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof setNfcDeviceStatus>>, {id: string;data: BodyType<NfcDeviceStatusInput>}> = (props) => {
-          const {id,data} = props ?? {};
-
-          return  setNfcDeviceStatus(id,data,requestOptions)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type SetNfcDeviceStatusMutationResult = NonNullable<Awaited<ReturnType<typeof setNfcDeviceStatus>>>
-    export type SetNfcDeviceStatusMutationBody = BodyType<NfcDeviceStatusInput>
-    export type SetNfcDeviceStatusMutationError = ErrorType<ErrorResponse>
-
-    /**
- * @summary Activate or disable an NFC device
- */
-export const useSetNfcDeviceStatus = <TError = ErrorType<ErrorResponse>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setNfcDeviceStatus>>, TError,{id: string;data: BodyType<NfcDeviceStatusInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
- ): UseMutationResult<
-        Awaited<ReturnType<typeof setNfcDeviceStatus>>,
-        TError,
-        {id: string;data: BodyType<NfcDeviceStatusInput>},
-        TContext
-      > => {
-      return useMutation(getSetNfcDeviceStatusMutationOptions(options));
-    }
-
 export const getResolveRedirectUrl = (code: string,) => {
 
 
@@ -6003,8 +5483,8 @@ export const getResolveRedirectUrl = (code: string,) => {
 }
 
 /**
- * Unauthenticated. Called by the /r/{code} frontend route. Logs a QR_SCAN or NFC_TAP event (device/browser/OS parsed from the User-Agent, geo from proxy headers when available) and returns the relative review page path to redirect to.
- * @summary Resolve a QR/NFC short code to its review page URL, logging a scan event
+ * Unauthenticated. Called by the /r/{code} frontend route. Logs a QR_SCAN event (device/browser/OS parsed from the User-Agent, geo from proxy headers when available) and returns the relative review page path to redirect to.
+ * @summary Resolve a QR short code to its review page URL, logging a scan event
  */
 export const resolveRedirect = async (code: string,
     redirectResolveRequest?: RedirectResolveRequest, options?: Parameters<typeof customFetch>[1]): Promise<RedirectResolveResult> => {
@@ -6054,7 +5534,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type ResolveRedirectMutationError = ErrorType<ErrorResponse>
 
     /**
- * @summary Resolve a QR/NFC short code to its review page URL, logging a scan event
+ * @summary Resolve a QR short code to its review page URL, logging a scan event
  */
 export const useResolveRedirect = <TError = ErrorType<ErrorResponse>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof resolveRedirect>>, TError,{code: string;data?: BodyType<RedirectResolveRequest>}, TContext>, request?: SecondParameter<typeof customFetch>}
@@ -6138,6 +5618,80 @@ export const useTrackGoogleRedirect = <TError = ErrorType<ErrorResponse>,
         TContext
       > => {
       return useMutation(getTrackGoogleRedirectMutationOptions(options));
+    }
+
+export const getTrackCustomerActionUrl = (businessSlug: string,
+    campaignSlug: string,) => {
+
+
+
+
+  return `/api/v1/public/review/${businessSlug}/${campaignSlug}/track-action`
+}
+
+/**
+ * @summary Log a customer call or contact save from a public review page
+ */
+export const trackCustomerAction = async (businessSlug: string,
+    campaignSlug: string,
+    customerActionInput: CustomerActionInput, options?: Parameters<typeof customFetch>[1]): Promise<void> => {
+
+  return customFetch<void>(getTrackCustomerActionUrl(businessSlug,campaignSlug),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(customerActionInput)
+  }
+);}
+
+
+
+
+
+export const getTrackCustomerActionMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof trackCustomerAction>>, TError,{businessSlug: string;campaignSlug: string;data: BodyType<CustomerActionInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof trackCustomerAction>>, TError,{businessSlug: string;campaignSlug: string;data: BodyType<CustomerActionInput>}, TContext> => {
+
+const mutationKey = ['trackCustomerAction'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof trackCustomerAction>>, {businessSlug: string;campaignSlug: string;data: BodyType<CustomerActionInput>}> = (props) => {
+          const {businessSlug,campaignSlug,data} = props ?? {};
+
+          return  trackCustomerAction(businessSlug,campaignSlug,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type TrackCustomerActionMutationResult = NonNullable<Awaited<ReturnType<typeof trackCustomerAction>>>
+    export type TrackCustomerActionMutationBody = BodyType<CustomerActionInput>
+    export type TrackCustomerActionMutationError = ErrorType<ErrorResponse>
+
+    /**
+ * @summary Log a customer call or contact save from a public review page
+ */
+export const useTrackCustomerAction = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof trackCustomerAction>>, TError,{businessSlug: string;campaignSlug: string;data: BodyType<CustomerActionInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof trackCustomerAction>>,
+        TError,
+        {businessSlug: string;campaignSlug: string;data: BodyType<CustomerActionInput>},
+        TContext
+      > => {
+      return useMutation(getTrackCustomerActionMutationOptions(options));
     }
 
 export const getRequestUploadUrlUrl = () => {

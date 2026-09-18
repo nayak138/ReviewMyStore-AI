@@ -5,6 +5,7 @@ import {
   GetPublicReviewPageResponse,
   SubmitPrivateFeedbackBody,
   SubmitPrivateFeedbackResponse,
+  TrackCustomerActionBody,
 } from "@workspace/api-zod";
 import {
   PublicCampaignNotFoundError,
@@ -13,6 +14,7 @@ import {
   SessionCampaignMismatchError,
   generatePublicReview,
   getPublicReviewPage,
+  trackCustomerAction,
   trackGoogleRedirect,
 } from "../services/publicReviewService";
 import {
@@ -91,6 +93,7 @@ router.post(
           customerName: parsed.data.customerName,
           occasion: parsed.data.occasion,
         },
+        requestMeta(req),
       );
       res.json(GeneratePublicReviewResponse.parse(result));
     } catch (err) {
@@ -190,6 +193,42 @@ router.post(
       await trackGoogleRedirect(
         slugParam(req, "businessSlug"),
         slugParam(req, "campaignSlug"),
+        requestMeta(req),
+      );
+      res.status(204).end();
+    } catch (err) {
+      if (err instanceof PublicCampaignNotFoundError) {
+        res.status(404).json({
+          success: false,
+          code: "NOT_FOUND",
+          message: err.message,
+        });
+        return;
+      }
+      throw err;
+    }
+  },
+);
+
+router.post(
+  "/public/review/:businessSlug/:campaignSlug/track-action",
+  tapRateLimit,
+  async (req, res) => {
+    const parsed = TrackCustomerActionBody.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({
+        success: false,
+        code: "INVALID_BODY",
+        message: parsed.error.message,
+      });
+      return;
+    }
+
+    try {
+      await trackCustomerAction(
+        slugParam(req, "businessSlug"),
+        slugParam(req, "campaignSlug"),
+        parsed.data.action,
         requestMeta(req),
       );
       res.status(204).end();

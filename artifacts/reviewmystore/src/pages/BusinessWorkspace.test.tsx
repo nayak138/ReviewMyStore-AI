@@ -153,6 +153,14 @@ vi.mock("@workspace/api-client-react", () => ({
     isError: false,
     refetch: vi.fn(),
   }),
+  getGetEmailPreferencesQueryKey: () => ["email-preferences"],
+  useGetEmailPreferences: () => ({
+    data: { productUpdates: true, releaseAnnouncements: true },
+    isLoading: false,
+    isError: false,
+    refetch: vi.fn(),
+  }),
+  useUpdateEmailPreferences: mocks.mutation,
   useRequestAccountDataExport: () => mocks.accountDataExportMutation,
   useRequestAccountDeactivation: () => mocks.accountDeactivationMutation,
   useListBusinesses: () => ({ data: { businesses: mocks.businesses }, isLoading: false }),
@@ -338,10 +346,6 @@ describe("authenticated business workspace", () => {
       "href",
       "/api/v1/campaigns/campaign-1/qr/download/pdf",
     );
-    expect(screen.getByRole("link", { name: "Order NFC Standee" })).toHaveAttribute(
-      "href",
-      expect.stringContaining("mailto:hello@5-star.ai"),
-    );
   });
 
   it("reorders keywords within their category and persists each new position", async () => {
@@ -391,7 +395,7 @@ describe("authenticated business workspace", () => {
   });
 
   it("keeps Settings and only the top-level three-item sidebar visible", () => {
-    render(<Settings />);
+    renderWithQueryClient(<Settings />);
 
     expect(screen.getByRole("heading", { name: "Settings", level: 2 })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Businesses" })).toBeInTheDocument();
@@ -408,7 +412,7 @@ describe("authenticated business workspace", () => {
     const user = userEvent.setup();
     mocks.accountDataExportMutation.mutate.mockClear();
     mocks.accountDeactivationMutation.mutate.mockClear();
-    render(<Settings />);
+    renderWithQueryClient(<Settings />);
 
     await user.click(screen.getByTestId("settings-export-button"));
     expect(mocks.accountDataExportMutation.mutate).toHaveBeenCalledWith(

@@ -8,13 +8,13 @@ const sections = [
       <>
         <p>
           5-Star.AI ("5-Star.AI", "we", "us") provides a platform that helps businesses
-          collect Google reviews from their customers via QR codes, NFC taps, and AI-assisted review
+          collect Google reviews from their customers via QR codes, short links, and AI-assisted review
           drafting. This Privacy Policy explains what information we collect, how we use it, and the
           choices you have.
         </p>
         <p>
           This policy covers both business users who create an account with us and customers of
-          those businesses who use a review link, QR code, or NFC tag powered by 5-Star.AI.
+          those businesses who use a review link or QR code powered by 5-Star.AI.
         </p>
       </>
     ),
@@ -36,7 +36,7 @@ const sections = [
         </p>
         <p>
           <strong className="text-foreground">Usage and device data.</strong> We collect basic
-          analytics about scans, taps, and page visits — such as timestamps, approximate location
+          analytics about scans, calls, contact saves, and page visits — such as timestamps, approximate location
           derived from IP address, browser type, and device type — to show businesses how their
           campaigns perform.
         </p>

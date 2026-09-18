@@ -23,7 +23,7 @@ export function WhyBusinessesLoveUs() {
 export function FeaturesGrid() {
   const features = [
     { icon: ClipboardCheck, index: "01", title: "A plan built around your business", desc: "We map the customer moments, locations and goals that matter before anything goes live." },
-    { icon: QrCode, index: "02", title: "Simple ways to ask", desc: "QR, NFC and shareable links that arrive exactly where a happy customer is ready to say something." },
+    { icon: QrCode, index: "02", title: "Simple ways to ask", desc: "QR codes and shareable links that arrive exactly where a happy customer is ready to say something." },
     { icon: MessageCircle, index: "03", title: "Reviews handled thoughtfully", desc: "Keep feedback in one calm place. Spot what needs a reply and what needs a deeper look." },
     { icon: BarChart3, index: "04", title: "A clearer view of momentum", desc: "See which locations and touchpoints are creating trust, without drowning in dashboards." },
     { icon: Send, index: "05", title: "Drafts your team can own", desc: "AI suggests useful language in your voice. People approve, adjust and keep the relationship real." },
@@ -58,7 +58,7 @@ export function FeaturesGrid() {
 
 export function HowItWorks() {
   const steps = [
-    { number: "1", title: "Scan QR or Tap Link", desc: "Instant customer onboarding with zero app install." },
+    { number: "1", title: "Scan QR or Open Link", desc: "Instant customer onboarding with zero app install." },
     { number: "2", title: "AI Drafts the Perfect Review", desc: "Based on rating and keywords selected in 5 seconds." },
     { number: "3", title: "Direct Post to Google", desc: "One-click redirect right to your Google Maps review dialog." },
   ];

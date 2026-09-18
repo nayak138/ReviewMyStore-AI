@@ -47,7 +47,6 @@ export interface LogScanEventInput {
   campaignId: string | null;
   campaignName: string | null;
   redirectLinkId?: string | null;
-  nfcDeviceId?: string | null;
   redirectSuccess: boolean;
   meta: RequestMeta;
 }
@@ -65,7 +64,6 @@ export async function logScanEvent(input: LogScanEventInput): Promise<void> {
     campaignId: input.campaignId,
     campaignName: input.campaignName,
     redirectLinkId: input.redirectLinkId ?? null,
-    nfcDeviceId: input.nfcDeviceId ?? null,
     // ua-parser reports no device.type for desktop browsers.
     deviceType: parsed?.device.type ?? (parsed ? "desktop" : null),
     browser: parsed?.browser.name ?? null,

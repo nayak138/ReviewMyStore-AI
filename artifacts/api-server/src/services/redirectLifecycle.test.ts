@@ -34,22 +34,3 @@ test("redirect resolution requires every campaign and business lifecycle check",
     );
   }
 });
-
-test("NFC redirect resolution requires an active device", () => {
-  assert.equal(
-    isLiveRedirect({
-      ...live,
-      sourceType: "NFC",
-      deviceStatus: "ASSIGNED",
-    }),
-    false,
-  );
-  assert.equal(
-    isLiveRedirect({
-      ...live,
-      sourceType: "NFC",
-      deviceStatus: "ACTIVE",
-    }),
-    true,
-  );
-});

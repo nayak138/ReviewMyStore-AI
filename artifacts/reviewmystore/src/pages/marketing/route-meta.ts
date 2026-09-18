@@ -26,7 +26,7 @@ export const BLOG_META: RouteMeta = {
 export const RESOURCES_META: RouteMeta = {
   title: "Resources & Guides — 5-Star.AI",
   description:
-    "Step-by-step guides for collecting Google reviews with 5-Star.AI: setup, QR codes, NFC tap-to-review, AI drafts, and analytics.",
+    "Step-by-step guides for collecting Google reviews with 5-Star.AI: setup, QR codes, shareable links, AI drafts, and analytics.",
 };
 
 export const PRIVACY_META: RouteMeta = {

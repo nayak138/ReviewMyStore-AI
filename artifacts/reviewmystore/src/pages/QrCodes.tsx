@@ -37,7 +37,6 @@ import {
   FileCode2,
   FileText,
   Megaphone,
-  ShoppingBag,
 } from "lucide-react";
 
 const API_BASE = `${import.meta.env.BASE_URL.replace(/\/$/, "")}/api`;
@@ -232,12 +231,6 @@ export default function QrCodes() {
                 ))}
               </SelectContent>
             </Select>
-            <Button asChild variant="outline" className="shrink-0">
-              <a href="mailto:hello@5-star.ai?subject=Order%20NFC%20Standee">
-                <ShoppingBag className="mr-2 h-4 w-4" />
-                Order NFC Standee
-              </a>
-            </Button>
           </div>
         </div>
 

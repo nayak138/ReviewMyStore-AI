@@ -22,7 +22,7 @@ export const subscriptionStatusEnum = pgEnum("subscription_status", [
   "CANCELED",
 ]);
 
-// A tenant on the platform. Every Business, Campaign, QR code, and NFC
+// A tenant on the platform. Every Business, Campaign, and QR code
 // device (added in later sprints) will belong to exactly one Organization.
 // Subscription/billing fields are populated manually by a Super Admin for
 // now (no payment integration in the MVP) but are shaped so a future

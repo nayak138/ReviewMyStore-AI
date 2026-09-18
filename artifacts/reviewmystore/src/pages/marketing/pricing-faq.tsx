@@ -56,7 +56,7 @@ export function FaqSection() {
     { q: "What does the 7-day free trial include?", a: "It includes an initial working session, a focused setup around your business, access to the 5-Star.AI workflow and a review of the first signals together. We keep the week practical rather than asking your team to learn everything at once." },
     { q: "Is this a self-serve product?", a: "No. 5-Star.AI is designed as an agency-led service. We work with you to choose the right moments, configure the system and make sure the workflow fits the people who will use it." },
     { q: "Can agencies use 5-Star.AI for multiple clients?", a: "Yes. The agency view is designed for teams supporting multiple businesses and locations, with a clearer way to keep client work organized and useful." },
-    { q: "Do customers need an app to leave a review?", a: "No. QR codes, NFC touchpoints and shareable links open in a customer's regular web browser. The experience is designed to be quick and familiar." },
+    { q: "Do customers need an app to leave a review?", a: "No. QR codes and shareable links open in a customer's regular web browser. The experience is designed to be quick and familiar." },
     { q: "Will AI publish replies without approval?", a: "No. AI can help with a thoughtful first draft, but your team stays in control of the words and the final decision." },
     { q: "What happens after the trial?", a: "We review the week with you and recommend the next step based on the fit and the opportunity. There is no surprise charge or automatic self-serve upgrade." },
   ];

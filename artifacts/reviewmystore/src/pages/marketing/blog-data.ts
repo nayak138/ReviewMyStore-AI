@@ -43,14 +43,14 @@ export const blogPosts: BlogPost[] = [
         heading: "The asking problem",
         paragraphs: [
           "Most business owners know all this. The hard part is asking. Staff feel awkward, customers forget by the time they get home, and writing a review from scratch is enough friction that most people never do it.",
-          "That's the problem we built 5-Star.AI to solve: a QR code or NFC tap at the counter, an AI-drafted review the customer can edit in seconds, and one tap to post on Google. No awkward asking, no friction, no forgetting.",
+          "That's the problem we built 5-Star.AI to solve: a QR code or short link at the counter, an AI-drafted review the customer can edit in seconds, and one tap to post on Google. No awkward asking, no friction, no forgetting.",
         ],
       },
       {
         heading: "Where to start",
         paragraphs: ["If your review profile has gone quiet, start small:"],
         bullets: [
-          "Put a review prompt at your point of sale — a QR stand or NFC tag works best.",
+          "Put a review prompt at your point of sale — a QR stand or short link works best.",
           "Ask at the moment of delight, not at checkout time pressure.",
           "Respond to every review, positive or negative, within 48 hours.",
           "Track your monthly review velocity, not just your star rating.",
@@ -100,46 +100,6 @@ export const blogPosts: BlogPost[] = [
     ],
   },
   {
-    slug: "qr-vs-nfc-review-collection",
-    title: "QR Codes vs. NFC Tags: Which Collects More Reviews?",
-    excerpt:
-      "We compared both collection methods across real-world placements. The answer: use both — but in different places.",
-    category: "Product",
-    date: "June 30, 2026",
-    readTime: "4 min read",
-    author: { name: "The 5-Star.AI Team", role: "Editorial" },
-    sections: [
-      {
-        paragraphs: [
-          "Every 5-Star.AI campaign can be shared via QR code, NFC tap, or a short link. Businesses often ask which converts best. Based on what we've seen across placements, the honest answer is: it depends on where the customer encounters it.",
-        ],
-      },
-      {
-        heading: "Where QR codes win",
-        paragraphs: ["QR codes are universally understood and work at a distance. They perform best on:"],
-        bullets: [
-          "Receipts and invoices",
-          "Table tents and posters",
-          "Packaging and delivery inserts",
-          "Anywhere the customer isn't within arm's reach",
-        ],
-      },
-      {
-        heading: "Where NFC wins",
-        paragraphs: [
-          "NFC removes even the camera step — the customer taps their phone and the review page opens. At a counter or handoff moment, that half-second difference matters: staff can say \"just tap here\" and watch it happen.",
-          "The catch is proximity. NFC only works within a few centimeters, so it belongs at the point of interaction, not on a wall.",
-        ],
-      },
-      {
-        heading: "Our recommendation",
-        paragraphs: [
-          "Use NFC stands at the counter where staff can prompt a tap, and QR codes everywhere else — receipts, signage, and follow-up emails. 5-Star.AI tracks scans and taps per campaign, so you can see exactly which placements drive reviews and double down.",
-        ],
-      },
-    ],
-  },
-  {
     slug: "turning-happy-customers-into-reviewers",
     title: "The Psychology of Asking: Turning Happy Customers into Reviewers",
     excerpt:
@@ -172,7 +132,7 @@ export const blogPosts: BlogPost[] = [
       {
         heading: "Make it a system, not a favor",
         paragraphs: [
-          "Businesses that grow their review profiles consistently don't rely on staff remembering to ask. They build the ask into the environment: an NFC stand at the register, a QR on every receipt, a follow-up link after every job.",
+          "Businesses that grow their review profiles consistently don't rely on staff remembering to ask. They build the ask into the environment: a QR at the register, a QR on every receipt, and a follow-up link after every job.",
           "When asking is ambient, nobody has to feel awkward — and the reviews keep coming even on your busiest days.",
         ],
       },

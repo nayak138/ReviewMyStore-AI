@@ -1,18 +1,31 @@
-import { and, count, eq, gte, isNull, sql, sum } from "drizzle-orm";
+import { and, count, eq, gte, inArray, isNull, sql } from "drizzle-orm";
 import {
   db,
   businessesTable,
   campaignsTable,
+  managedReviewsTable,
   privateFeedbackTable,
-  reviewSessionsTable,
+  reviewAuditEventsTable,
+  reviewLocationsTable,
   scanEventsTable,
 } from "@workspace/db";
 import { BusinessNotFoundError } from "./businessService";
 
-type EventType = "QR_SCAN" | "NFC_TAP" | "GOOGLE_REDIRECT";
+type EventType =
+  | "QR_SCAN"
+  | "GOOGLE_REDIRECT"
+  | "REVIEW_GENERATED"
+  | "CALL_CLICK"
+  | "CONTACT_SAVED";
 type FeedbackStatus = "NEW" | "VIEWED" | "RESOLVED";
 
-const EVENT_TYPES: EventType[] = ["QR_SCAN", "NFC_TAP", "GOOGLE_REDIRECT"];
+const EVENT_TYPES: EventType[] = [
+  "QR_SCAN",
+  "GOOGLE_REDIRECT",
+  "REVIEW_GENERATED",
+  "CALL_CLICK",
+  "CONTACT_SAVED",
+];
 const FEEDBACK_STATUSES: FeedbackStatus[] = ["NEW", "VIEWED", "RESOLVED"];
 
 function periodStartFor(days: number, periodEnd: Date): Date {
@@ -63,8 +76,21 @@ export async function getBusinessAnalytics(
     eq(privateFeedbackTable.businessId, businessId),
     gte(privateFeedbackTable.createdAt, periodStart),
   ];
+  const reviewConditions = [
+    eq(managedReviewsTable.organizationId, organizationId),
+    eq(reviewLocationsTable.businessId, businessId),
+    gte(managedReviewsTable.createdAt, periodStart),
+  ];
+  const replyConditions = [
+    eq(reviewAuditEventsTable.organizationId, organizationId),
+    eq(reviewLocationsTable.businessId, businessId),
+    eq(reviewAuditEventsTable.eventType, "REPLY_PUBLISHED"),
+    gte(reviewAuditEventsTable.createdAt, periodStart),
+  ];
 
-  const dayExpression = sql<string>`to_char(date_trunc('day', ${scanEventsTable.createdAt}), 'YYYY-MM-DD')`;
+  const eventDayExpression = sql<string>`to_char(date_trunc('day', ${scanEventsTable.createdAt}), 'YYYY-MM-DD')`;
+  const reviewDayExpression = sql<string>`to_char(date_trunc('day', ${managedReviewsTable.createdAt}), 'YYYY-MM-DD')`;
+  const replyDayExpression = sql<string>`to_char(date_trunc('day', ${reviewAuditEventsTable.createdAt}), 'YYYY-MM-DD')`;
 
   const [
     eventTotals,
@@ -75,7 +101,10 @@ export async function getBusinessAnalytics(
     [feedbackSummary],
     feedbackRatings,
     feedbackStatuses,
-    [aiRow],
+    [newReviewsRow],
+    [repliesRow],
+    newReviewsByDate,
+    repliesByDate,
   ] = await Promise.all([
     db
       .select({ eventType: scanEventsTable.eventType, value: count() })
@@ -84,13 +113,13 @@ export async function getBusinessAnalytics(
       .groupBy(scanEventsTable.eventType),
     db
       .select({
-        date: dayExpression,
+        date: eventDayExpression,
         eventType: scanEventsTable.eventType,
         value: count(),
       })
       .from(scanEventsTable)
       .where(and(...eventConditions))
-      .groupBy(dayExpression, scanEventsTable.eventType),
+      .groupBy(eventDayExpression, scanEventsTable.eventType),
     db
       .select({
         campaignId: campaignsTable.id,
@@ -166,40 +195,86 @@ export async function getBusinessAnalytics(
       .where(and(...feedbackConditions))
       .groupBy(privateFeedbackTable.status),
     db
-      .select({ value: sum(reviewSessionsTable.generationCount) })
-      .from(reviewSessionsTable)
+      .select({ value: count() })
+      .from(managedReviewsTable)
       .innerJoin(
-        campaignsTable,
-        eq(reviewSessionsTable.campaignId, campaignsTable.id),
+        reviewLocationsTable,
+        eq(managedReviewsTable.reviewLocationId, reviewLocationsTable.id),
       )
-      .where(
-        and(
-          eq(campaignsTable.businessId, businessId),
-          isNull(campaignsTable.deletedAt),
-        ),
-      ),
+      .where(and(...reviewConditions)),
+    db
+      .select({ value: count() })
+      .from(reviewAuditEventsTable)
+      .innerJoin(
+        managedReviewsTable,
+        eq(reviewAuditEventsTable.managedReviewId, managedReviewsTable.id),
+      )
+      .innerJoin(
+        reviewLocationsTable,
+        eq(managedReviewsTable.reviewLocationId, reviewLocationsTable.id),
+      )
+      .where(and(...replyConditions)),
+    db
+      .select({ date: reviewDayExpression, value: count() })
+      .from(managedReviewsTable)
+      .innerJoin(
+        reviewLocationsTable,
+        eq(managedReviewsTable.reviewLocationId, reviewLocationsTable.id),
+      )
+      .where(and(...reviewConditions))
+      .groupBy(reviewDayExpression),
+    db
+      .select({ date: replyDayExpression, value: count() })
+      .from(reviewAuditEventsTable)
+      .innerJoin(
+        managedReviewsTable,
+        eq(reviewAuditEventsTable.managedReviewId, managedReviewsTable.id),
+      )
+      .innerJoin(
+        reviewLocationsTable,
+        eq(managedReviewsTable.reviewLocationId, reviewLocationsTable.id),
+      )
+      .where(and(...replyConditions))
+      .groupBy(replyDayExpression),
   ]);
 
   const totals: Record<EventType, number> = {
     QR_SCAN: 0,
-    NFC_TAP: 0,
     GOOGLE_REDIRECT: 0,
+    REVIEW_GENERATED: 0,
+    CALL_CLICK: 0,
+    CONTACT_SAVED: 0,
   };
   for (const row of eventTotals) {
-    if (row.eventType) totals[row.eventType] = row.value;
+    if (row.eventType && EVENT_TYPES.includes(row.eventType as EventType)) {
+      totals[row.eventType as EventType] = row.value;
+    }
   }
 
   const dailyMap = new Map<
     string,
-    { qrScans: number; nfcTaps: number; googleRedirects: number; privateFeedback: number }
+    {
+      qrScans: number;
+      googleRedirects: number;
+      reviewsGenerated: number;
+      newReviews: number;
+      reviewReplies: number;
+      calls: number;
+      contactsSaved: number;
+      privateFeedback: number;
+    }
   >();
   for (let index = 0; index < days; index += 1) {
     const date = new Date(periodStart);
     date.setUTCDate(date.getUTCDate() + index);
     dailyMap.set(dateKey(date), {
       qrScans: 0,
-      nfcTaps: 0,
       googleRedirects: 0,
+      reviewsGenerated: 0,
+      newReviews: 0,
+      reviewReplies: 0,
+      calls: 0,
+      contactsSaved: 0,
       privateFeedback: 0,
     });
   }
@@ -207,21 +282,16 @@ export async function getBusinessAnalytics(
     const point = dailyMap.get(row.date);
     if (!point) continue;
     if (row.eventType === "QR_SCAN") point.qrScans = row.value;
-    if (row.eventType === "NFC_TAP") point.nfcTaps = row.value;
     if (row.eventType === "GOOGLE_REDIRECT") point.googleRedirects = row.value;
+    if (row.eventType === "REVIEW_GENERATED") point.reviewsGenerated = row.value;
+    if (row.eventType === "CALL_CLICK") point.calls = row.value;
+    if (row.eventType === "CONTACT_SAVED") point.contactsSaved = row.value;
   }
-
-  const feedbackByDate = await db
-    .select({
-      date: sql<string>`to_char(date_trunc('day', ${privateFeedbackTable.createdAt}), 'YYYY-MM-DD')`,
-      value: count(),
-    })
-    .from(privateFeedbackTable)
-    .where(and(...feedbackConditions))
-    .groupBy(sql`date_trunc('day', ${privateFeedbackTable.createdAt})`);
-  for (const row of feedbackByDate) {
-    const point = dailyMap.get(row.date);
-    if (point) point.privateFeedback = row.value;
+  for (const row of newReviewsByDate) {
+    dailyMap.get(row.date)!.newReviews = row.value;
+  }
+  for (const row of repliesByDate) {
+    dailyMap.get(row.date)!.reviewReplies = row.value;
   }
 
   const campaignMap = new Map<
@@ -231,8 +301,10 @@ export async function getBusinessAnalytics(
       campaignName: string;
       status: "DRAFT" | "ACTIVE" | "ARCHIVED" | "DISABLED";
       qrScans: number;
-      nfcTaps: number;
       googleRedirects: number;
+      reviewsGenerated: number;
+      calls: number;
+      contactsSaved: number;
     }
   >();
   for (const row of campaignRows) {
@@ -241,12 +313,16 @@ export async function getBusinessAnalytics(
       campaignName: row.campaignName,
       status: row.status,
       qrScans: 0,
-      nfcTaps: 0,
       googleRedirects: 0,
+      reviewsGenerated: 0,
+      calls: 0,
+      contactsSaved: 0,
     };
     if (row.eventType === "QR_SCAN") existing.qrScans = row.value;
-    if (row.eventType === "NFC_TAP") existing.nfcTaps = row.value;
     if (row.eventType === "GOOGLE_REDIRECT") existing.googleRedirects = row.value;
+    if (row.eventType === "REVIEW_GENERATED") existing.reviewsGenerated = row.value;
+    if (row.eventType === "CALL_CLICK") existing.calls = row.value;
+    if (row.eventType === "CONTACT_SAVED") existing.contactsSaved = row.value;
     campaignMap.set(row.campaignId, existing);
   }
 
@@ -267,24 +343,39 @@ export async function getBusinessAnalytics(
     periodEnd,
     summary: {
       qrScans: totals.QR_SCAN,
-      nfcTaps: totals.NFC_TAP,
       googleRedirects: totals.GOOGLE_REDIRECT,
-      totalActions: totals.QR_SCAN + totals.NFC_TAP,
+      reviewsGenerated: totals.REVIEW_GENERATED,
+      newReviews: newReviewsRow?.value ?? 0,
+      reviewReplies: repliesRow?.value ?? 0,
+      calls: totals.CALL_CLICK,
+      contactsSaved: totals.CONTACT_SAVED,
+      totalActions:
+        totals.QR_SCAN +
+        totals.GOOGLE_REDIRECT +
+        totals.REVIEW_GENERATED +
+        totals.CALL_CLICK +
+        totals.CONTACT_SAVED,
       activeCampaigns: activeCampaignCount?.value ?? 0,
       totalCampaigns: campaignCount?.value ?? 0,
       privateFeedback: feedbackCount,
       averageFeedbackRating: Number(averageFeedbackRating.toFixed(1)),
       newFeedback,
       resolvedFeedback,
-      aiReviewsGenerated: Number(aiRow?.value ?? 0),
       scanToGoogleRate,
     },
-    dailyTrend: [...dailyMap.entries()].map(([date, point]) => ({ date, ...point })),
+    dailyTrend: [...dailyMap.entries()].map(([date, point]) => ({
+      date,
+      ...point,
+    })),
     campaignPerformance: [...campaignMap.values()]
       .map((campaign) => ({
         ...campaign,
         totalActions:
-          campaign.qrScans + campaign.nfcTaps + campaign.googleRedirects,
+          campaign.qrScans +
+          campaign.googleRedirects +
+          campaign.reviewsGenerated +
+          campaign.calls +
+          campaign.contactsSaved,
       }))
       .sort((a, b) => b.totalActions - a.totalActions),
     feedbackByRating: feedbackRatings.map((row) => ({

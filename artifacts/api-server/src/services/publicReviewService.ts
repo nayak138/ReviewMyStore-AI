@@ -247,6 +247,13 @@ export async function generatePublicReview(
   sessionId: string,
   keywords: string[],
   options: GeneratePublicReviewOptions,
+  meta: RequestMeta = {
+    userAgent: null,
+    referrer: null,
+    country: null,
+    region: null,
+    city: null,
+  },
 ) {
   const { business, campaign } = await findActivePublicCampaign(
     businessSlug,
@@ -389,6 +396,24 @@ export async function generatePublicReview(
       return updatedSession.generationCount;
     });
 
+    try {
+      await logScanEvent({
+        eventType: "REVIEW_GENERATED",
+        organizationId: business.organizationId,
+        businessId: business.id,
+        businessName: business.name,
+        campaignId: campaign.id,
+        campaignName: campaign.name,
+        redirectSuccess: true,
+        meta,
+      });
+    } catch (analyticsError) {
+      logger.error(
+        { err: analyticsError, businessId: business.id, campaignId: campaign.id },
+        "Failed to record generated review analytics",
+      );
+    }
+
     return {
       reviewText,
       remainingGenerations: Math.max(
@@ -473,6 +498,31 @@ export async function trackGoogleRedirect(
 
   await logScanEvent({
     eventType: "GOOGLE_REDIRECT",
+    organizationId: business.organizationId,
+    businessId: business.id,
+    businessName: business.name,
+    campaignId: campaign.id,
+    campaignName: campaign.name,
+    redirectSuccess: true,
+    meta,
+  });
+}
+
+export type PublicCustomerAction = "CALL_CLICK" | "CONTACT_SAVED";
+
+export async function trackCustomerAction(
+  businessSlug: string,
+  campaignSlug: string,
+  action: PublicCustomerAction,
+  meta: RequestMeta,
+): Promise<void> {
+  const { business, campaign } = await findActivePublicCampaign(
+    businessSlug,
+    campaignSlug,
+  );
+
+  await logScanEvent({
+    eventType: action,
     organizationId: business.organizationId,
     businessId: business.id,
     businessName: business.name,

@@ -924,8 +924,12 @@ export interface RecentActivityItem {
 
 export interface BusinessAnalyticsSummary {
   qrScans: number;
-  nfcTaps: number;
   googleRedirects: number;
+  reviewsGenerated: number;
+  newReviews: number;
+  reviewReplies: number;
+  calls: number;
+  contactsSaved: number;
   totalActions: number;
   activeCampaigns: number;
   totalCampaigns: number;
@@ -933,15 +937,18 @@ export interface BusinessAnalyticsSummary {
   averageFeedbackRating: number;
   newFeedback: number;
   resolvedFeedback: number;
-  aiReviewsGenerated: number;
   scanToGoogleRate: number;
 }
 
 export interface BusinessAnalyticsDailyPoint {
   date: string;
   qrScans: number;
-  nfcTaps: number;
   googleRedirects: number;
+  reviewsGenerated: number;
+  newReviews: number;
+  reviewReplies: number;
+  calls: number;
+  contactsSaved: number;
   privateFeedback: number;
 }
 
@@ -960,8 +967,10 @@ export interface BusinessAnalyticsCampaign {
   campaignName: string;
   status: BusinessAnalyticsCampaignStatus;
   qrScans: number;
-  nfcTaps: number;
   googleRedirects: number;
+  reviewsGenerated: number;
+  calls: number;
+  contactsSaved: number;
   totalActions: number;
 }
 
@@ -1009,10 +1018,13 @@ export interface DashboardSummary {
   activeBusinesses: number;
   activeCampaigns: number;
   qrScans: number;
-  nfcTaps: number;
   scansToday: number;
   googleRedirects: number;
-  aiReviewsGenerated: number;
+  reviewsGenerated: number;
+  newReviews: number;
+  reviewReplies: number;
+  calls: number;
+  contactsSaved: number;
   needsOnboarding: boolean;
   topCampaigns: TopCampaignItem[];
   recentActivity: RecentActivityItem[];
@@ -1060,96 +1072,16 @@ export interface CampaignQrInfo {
   businessName: string;
 }
 
-export type NfcDeviceStatus = typeof NfcDeviceStatus[keyof typeof NfcDeviceStatus];
+export type CustomerActionInputAction = typeof CustomerActionInputAction[keyof typeof CustomerActionInputAction];
 
 
-export const NfcDeviceStatus = {
-  AVAILABLE: 'AVAILABLE',
-  ASSIGNED: 'ASSIGNED',
-  ACTIVE: 'ACTIVE',
-  DISABLED: 'DISABLED',
+export const CustomerActionInputAction = {
+  CALL_CLICK: 'CALL_CLICK',
+  CONTACT_SAVED: 'CONTACT_SAVED',
 } as const;
 
-export interface NfcDevice {
-  id: string;
-  uid: string;
-  name: string;
-  /** @nullable */
-  businessId: string | null;
-  /** @nullable */
-  businessName: string | null;
-  /** @nullable */
-  campaignId: string | null;
-  /** @nullable */
-  campaignName: string | null;
-  status: NfcDeviceStatus;
-  /**
-     * Relative short-link path (e.g. /r/abc123) this device points at; null until first assigned.
-     * @nullable
-     */
-  redirectPath: string | null;
-  /** @nullable */
-  assignedAt: string | null;
-  /** @nullable */
-  notes: string | null;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface NfcDeviceListResult {
-  devices: NfcDevice[];
-}
-
-export interface NfcDeviceCreateInput {
-  /**
-     * @minLength 1
-     * @maxLength 120
-     */
-  uid: string;
-  /**
-     * @minLength 1
-     * @maxLength 120
-     */
-  name: string;
-  /**
-     * @maxLength 2000
-     * @nullable
-     */
-  notes?: string | null;
-}
-
-export interface NfcDeviceUpdateInput {
-  /**
-     * @minLength 1
-     * @maxLength 120
-     */
-  uid?: string;
-  /**
-     * @minLength 1
-     * @maxLength 120
-     */
-  name?: string;
-  /**
-     * @maxLength 2000
-     * @nullable
-     */
-  notes?: string | null;
-}
-
-export interface NfcDeviceAssignInput {
-  campaignId: string;
-}
-
-export type NfcDeviceStatusInputStatus = typeof NfcDeviceStatusInputStatus[keyof typeof NfcDeviceStatusInputStatus];
-
-
-export const NfcDeviceStatusInputStatus = {
-  ACTIVE: 'ACTIVE',
-  DISABLED: 'DISABLED',
-} as const;
-
-export interface NfcDeviceStatusInput {
-  status: NfcDeviceStatusInputStatus;
+export interface CustomerActionInput {
+  action: CustomerActionInputAction;
 }
 
 export interface RedirectResolveRequest {
@@ -1527,10 +1459,5 @@ status?: PrivateFeedbackStatus;
  * @maximum 200
  */
 limit?: number;
-};
-
-export type ListNfcDevicesParams = {
-businessId?: string;
-campaignId?: string;
 };
 

@@ -305,7 +305,7 @@ function AppRouter() {
 
       {/* Public customer-facing review page */}
       <Route path="/review/:businessSlug/:campaignSlug" component={CustomerReview} />
-      {/* Public QR/NFC short-link redirect */}
+      {/* Public QR short-link redirect */}
       <Route path="/r/:code" component={ShortRedirect} />
 
       {/* Protected Routes */}

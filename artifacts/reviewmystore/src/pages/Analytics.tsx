@@ -153,7 +153,7 @@ export default function Analytics() {
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <PerformanceStat icon={MousePointerClick} label="Google actions" value={summary?.googleRedirects ?? 0} />
-                <PerformanceStat icon={Sparkles} label="AI drafts" value={summary?.aiReviewsGenerated ?? 0} />
+                <PerformanceStat icon={Sparkles} label="AI drafts" value={summary?.reviewsGenerated ?? 0} />
               </div>
               <div className="flex items-start gap-2 rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-3 text-xs text-muted-foreground">
                 <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />

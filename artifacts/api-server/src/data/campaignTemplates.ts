@@ -23,7 +23,7 @@ export const CAMPAIGN_TEMPLATES: CampaignTemplate[] = [
   {
     id: "salon_reception",
     name: "Salon / Spa Reception",
-    description: "An NFC tag at checkout for salons, spas, and barbershops.",
+    description: "A QR code at checkout for salons, spas, and barbershops.",
     productServiceKeywords: ["Great Haircut", "Relaxing Massage", "Quality Products", "Skilled Stylist"],
     experienceKeywords: ["Friendly Staff", "On Time", "Clean Facility", "Comfortable Chairs"],
   },

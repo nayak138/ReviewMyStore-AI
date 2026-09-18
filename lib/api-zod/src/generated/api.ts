@@ -1105,8 +1105,12 @@ export const GetBusinessAnalyticsResponse = zod.object({
   "periodEnd": zod.coerce.date(),
   "summary": zod.object({
   "qrScans": zod.int(),
-  "nfcTaps": zod.int(),
   "googleRedirects": zod.int(),
+  "reviewsGenerated": zod.int(),
+  "newReviews": zod.int(),
+  "reviewReplies": zod.int(),
+  "calls": zod.int(),
+  "contactsSaved": zod.int(),
   "totalActions": zod.int(),
   "activeCampaigns": zod.int(),
   "totalCampaigns": zod.int(),
@@ -1114,14 +1118,17 @@ export const GetBusinessAnalyticsResponse = zod.object({
   "averageFeedbackRating": zod.number(),
   "newFeedback": zod.int(),
   "resolvedFeedback": zod.int(),
-  "aiReviewsGenerated": zod.int(),
   "scanToGoogleRate": zod.number()
 }),
   "dailyTrend": zod.array(zod.object({
   "date": zod.string(),
   "qrScans": zod.int(),
-  "nfcTaps": zod.int(),
   "googleRedirects": zod.int(),
+  "reviewsGenerated": zod.int(),
+  "newReviews": zod.int(),
+  "reviewReplies": zod.int(),
+  "calls": zod.int(),
+  "contactsSaved": zod.int(),
   "privateFeedback": zod.int()
 })),
   "campaignPerformance": zod.array(zod.object({
@@ -1129,8 +1136,10 @@ export const GetBusinessAnalyticsResponse = zod.object({
   "campaignName": zod.string(),
   "status": zod.enum(['DRAFT', 'ACTIVE', 'ARCHIVED', 'DISABLED']),
   "qrScans": zod.int(),
-  "nfcTaps": zod.int(),
   "googleRedirects": zod.int(),
+  "reviewsGenerated": zod.int(),
+  "calls": zod.int(),
+  "contactsSaved": zod.int(),
   "totalActions": zod.int()
 })),
   "feedbackByRating": zod.array(zod.object({
@@ -1251,7 +1260,7 @@ export const SetBusinessStatusResponse = zod.object({
 
 
 /**
- * activeCampaigns, qrScans, and aiReviewsGenerated are placeholders (always 0) until their respective sprints are built.
+ * Organization-wide customer activity counts, review-management counts, and recent activity for the agency dashboard.
  * @summary Dashboard card counts and recent activity for the caller's organization
  */
 export const GetDashboardSummaryResponse = zod.object({
@@ -1259,10 +1268,13 @@ export const GetDashboardSummaryResponse = zod.object({
   "activeBusinesses": zod.int(),
   "activeCampaigns": zod.int(),
   "qrScans": zod.int(),
-  "nfcTaps": zod.int(),
   "scansToday": zod.int(),
   "googleRedirects": zod.int(),
-  "aiReviewsGenerated": zod.int(),
+  "reviewsGenerated": zod.int(),
+  "newReviews": zod.int(),
+  "reviewReplies": zod.int(),
+  "calls": zod.int(),
+  "contactsSaved": zod.int(),
   "needsOnboarding": zod.boolean(),
   "topCampaigns": zod.array(zod.object({
   "campaignId": zod.string().nullable(),
@@ -1948,198 +1960,8 @@ export const DownloadCampaignQrResponse = zod.unknown()
 
 
 /**
- * @summary List NFC devices for the caller's organization
- */
-export const ListNfcDevicesQueryParams = zod.object({
-  "businessId": zod.uuid().optional(),
-  "campaignId": zod.uuid().optional()
-})
-
-export const ListNfcDevicesResponse = zod.object({
-  "devices": zod.array(zod.object({
-  "id": zod.uuid(),
-  "uid": zod.string(),
-  "name": zod.string(),
-  "businessId": zod.string().nullable(),
-  "businessName": zod.string().nullable(),
-  "campaignId": zod.string().nullable(),
-  "campaignName": zod.string().nullable(),
-  "status": zod.enum(['AVAILABLE', 'ASSIGNED', 'ACTIVE', 'DISABLED']),
-  "redirectPath": zod.string().nullable().describe('Relative short-link path (e.g. \/r\/abc123) this device points at; null until first assigned.'),
-  "assignedAt": zod.coerce.date().nullable(),
-  "notes": zod.string().nullable(),
-  "createdAt": zod.coerce.date(),
-  "updatedAt": zod.coerce.date()
-}))
-})
-
-
-/**
- * @summary Register a new NFC device
- */
-export const registerNfcDeviceBodyUidMax = 120;
-
-export const registerNfcDeviceBodyNameMax = 120;
-
-export const registerNfcDeviceBodyNotesMax = 2000;
-
-
-
-export const RegisterNfcDeviceBody = zod.object({
-  "uid": zod.string().min(1).max(registerNfcDeviceBodyUidMax),
-  "name": zod.string().min(1).max(registerNfcDeviceBodyNameMax),
-  "notes": zod.string().max(registerNfcDeviceBodyNotesMax).nullish()
-})
-
-export const RegisterNfcDeviceResponse = zod.object({
-  "id": zod.uuid(),
-  "uid": zod.string(),
-  "name": zod.string(),
-  "businessId": zod.string().nullable(),
-  "businessName": zod.string().nullable(),
-  "campaignId": zod.string().nullable(),
-  "campaignName": zod.string().nullable(),
-  "status": zod.enum(['AVAILABLE', 'ASSIGNED', 'ACTIVE', 'DISABLED']),
-  "redirectPath": zod.string().nullable().describe('Relative short-link path (e.g. \/r\/abc123) this device points at; null until first assigned.'),
-  "assignedAt": zod.coerce.date().nullable(),
-  "notes": zod.string().nullable(),
-  "createdAt": zod.coerce.date(),
-  "updatedAt": zod.coerce.date()
-})
-
-
-/**
- * @summary Update an NFC device's name, UID, or notes
- */
-export const UpdateNfcDeviceParams = zod.object({
-  "id": zod.uuid()
-})
-
-export const updateNfcDeviceBodyUidMax = 120;
-
-export const updateNfcDeviceBodyNameMax = 120;
-
-export const updateNfcDeviceBodyNotesMax = 2000;
-
-
-
-export const UpdateNfcDeviceBody = zod.object({
-  "uid": zod.string().min(1).max(updateNfcDeviceBodyUidMax).optional(),
-  "name": zod.string().min(1).max(updateNfcDeviceBodyNameMax).optional(),
-  "notes": zod.string().max(updateNfcDeviceBodyNotesMax).nullish()
-})
-
-export const UpdateNfcDeviceResponse = zod.object({
-  "id": zod.uuid(),
-  "uid": zod.string(),
-  "name": zod.string(),
-  "businessId": zod.string().nullable(),
-  "businessName": zod.string().nullable(),
-  "campaignId": zod.string().nullable(),
-  "campaignName": zod.string().nullable(),
-  "status": zod.enum(['AVAILABLE', 'ASSIGNED', 'ACTIVE', 'DISABLED']),
-  "redirectPath": zod.string().nullable().describe('Relative short-link path (e.g. \/r\/abc123) this device points at; null until first assigned.'),
-  "assignedAt": zod.coerce.date().nullable(),
-  "notes": zod.string().nullable(),
-  "createdAt": zod.coerce.date(),
-  "updatedAt": zod.coerce.date()
-})
-
-
-/**
- * @summary Delete an NFC device
- */
-export const DeleteNfcDeviceParams = zod.object({
-  "id": zod.uuid()
-})
-
-export const DeleteNfcDeviceResponse = zod.void()
-
-
-/**
- * Assigning derives the business from the campaign, sets status to ASSIGNED, stamps assignedAt, and ensures the device has an active redirect link. Reassigning points the existing redirect link at the new campaign — no re-writing of the physical tag is needed.
- * @summary Assign (or reassign) an NFC device to a campaign
- */
-export const AssignNfcDeviceParams = zod.object({
-  "id": zod.uuid()
-})
-
-export const AssignNfcDeviceBody = zod.object({
-  "campaignId": zod.uuid()
-})
-
-export const AssignNfcDeviceResponse = zod.object({
-  "id": zod.uuid(),
-  "uid": zod.string(),
-  "name": zod.string(),
-  "businessId": zod.string().nullable(),
-  "businessName": zod.string().nullable(),
-  "campaignId": zod.string().nullable(),
-  "campaignName": zod.string().nullable(),
-  "status": zod.enum(['AVAILABLE', 'ASSIGNED', 'ACTIVE', 'DISABLED']),
-  "redirectPath": zod.string().nullable().describe('Relative short-link path (e.g. \/r\/abc123) this device points at; null until first assigned.'),
-  "assignedAt": zod.coerce.date().nullable(),
-  "notes": zod.string().nullable(),
-  "createdAt": zod.coerce.date(),
-  "updatedAt": zod.coerce.date()
-})
-
-
-/**
- * @summary Remove an NFC device's campaign assignment
- */
-export const UnassignNfcDeviceParams = zod.object({
-  "id": zod.uuid()
-})
-
-export const UnassignNfcDeviceResponse = zod.object({
-  "id": zod.uuid(),
-  "uid": zod.string(),
-  "name": zod.string(),
-  "businessId": zod.string().nullable(),
-  "businessName": zod.string().nullable(),
-  "campaignId": zod.string().nullable(),
-  "campaignName": zod.string().nullable(),
-  "status": zod.enum(['AVAILABLE', 'ASSIGNED', 'ACTIVE', 'DISABLED']),
-  "redirectPath": zod.string().nullable().describe('Relative short-link path (e.g. \/r\/abc123) this device points at; null until first assigned.'),
-  "assignedAt": zod.coerce.date().nullable(),
-  "notes": zod.string().nullable(),
-  "createdAt": zod.coerce.date(),
-  "updatedAt": zod.coerce.date()
-})
-
-
-/**
- * @summary Activate or disable an NFC device
- */
-export const SetNfcDeviceStatusParams = zod.object({
-  "id": zod.uuid()
-})
-
-export const SetNfcDeviceStatusBody = zod.object({
-  "status": zod.enum(['ACTIVE', 'DISABLED'])
-})
-
-export const SetNfcDeviceStatusResponse = zod.object({
-  "id": zod.uuid(),
-  "uid": zod.string(),
-  "name": zod.string(),
-  "businessId": zod.string().nullable(),
-  "businessName": zod.string().nullable(),
-  "campaignId": zod.string().nullable(),
-  "campaignName": zod.string().nullable(),
-  "status": zod.enum(['AVAILABLE', 'ASSIGNED', 'ACTIVE', 'DISABLED']),
-  "redirectPath": zod.string().nullable().describe('Relative short-link path (e.g. \/r\/abc123) this device points at; null until first assigned.'),
-  "assignedAt": zod.coerce.date().nullable(),
-  "notes": zod.string().nullable(),
-  "createdAt": zod.coerce.date(),
-  "updatedAt": zod.coerce.date()
-})
-
-
-/**
- * Unauthenticated. Called by the /r/{code} frontend route. Logs a QR_SCAN or NFC_TAP event (device/browser/OS parsed from the User-Agent, geo from proxy headers when available) and returns the relative review page path to redirect to.
- * @summary Resolve a QR/NFC short code to its review page URL, logging a scan event
+ * Unauthenticated. Called by the /r/{code} frontend route. Logs a QR_SCAN event (device/browser/OS parsed from the User-Agent, geo from proxy headers when available) and returns the relative review page path to redirect to.
+ * @summary Resolve a QR short code to its review page URL, logging a scan event
  */
 export const ResolveRedirectParams = zod.object({
   "code": zod.coerce.string()
@@ -2167,6 +1989,21 @@ export const TrackGoogleRedirectParams = zod.object({
 })
 
 export const TrackGoogleRedirectResponse = zod.void()
+
+
+/**
+ * @summary Log a customer call or contact save from a public review page
+ */
+export const TrackCustomerActionParams = zod.object({
+  "businessSlug": zod.coerce.string(),
+  "campaignSlug": zod.coerce.string()
+})
+
+export const TrackCustomerActionBody = zod.object({
+  "action": zod.enum(['CALL_CLICK', 'CONTACT_SAVED'])
+})
+
+export const TrackCustomerActionResponse = zod.void()
 
 
 /**

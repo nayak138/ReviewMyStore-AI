@@ -3,13 +3,16 @@ import {
   db,
   businessesTable,
   campaignsTable,
+  managedReviewsTable,
+  reviewAuditEventsTable,
+  reviewLocationsTable,
   reviewSessionsTable,
   scanEventsTable,
 } from "@workspace/db";
 
 async function countEvents(
   organizationId: string,
-  eventTypes: Array<"QR_SCAN" | "NFC_TAP" | "GOOGLE_REDIRECT">,
+  eventTypes: Array<"QR_SCAN" | "GOOGLE_REDIRECT" | "REVIEW_GENERATED" | "CALL_CLICK" | "CONTACT_SAVED">,
   since?: Date,
 ): Promise<number> {
   const conditions = [
@@ -35,10 +38,13 @@ export async function getDashboardSummary(organizationId: string) {
     [activeCampaignsRow],
     recentBusinesses,
     qrScans,
-    nfcTaps,
     googleRedirects,
     scansToday,
-    [aiRow],
+    reviewsGenerated,
+    calls,
+    contactsSaved,
+    [newReviewsRow],
+    [reviewRepliesRow],
     topCampaignRows,
     recentEvents,
   ] = await Promise.all([
@@ -89,23 +95,28 @@ export async function getDashboardSummary(organizationId: string) {
       .orderBy(desc(businessesTable.updatedAt))
       .limit(3),
     countEvents(organizationId, ["QR_SCAN"]),
-    countEvents(organizationId, ["NFC_TAP"]),
     countEvents(organizationId, ["GOOGLE_REDIRECT"]),
     countEvents(organizationId, ["QR_SCAN"], startOfToday),
-    // AI reviews generated = sum of per-session generation counts across the
-    // org's campaigns (each generate/regenerate call increments the count).
+    countEvents(organizationId, ["REVIEW_GENERATED"]),
+    countEvents(organizationId, ["CALL_CLICK"]),
+    countEvents(organizationId, ["CONTACT_SAVED"]),
     db
-      .select({ value: sum(reviewSessionsTable.generationCount) })
-      .from(reviewSessionsTable)
+      .select({ value: count() })
+      .from(managedReviewsTable)
       .innerJoin(
-        campaignsTable,
-        eq(reviewSessionsTable.campaignId, campaignsTable.id),
+        reviewLocationsTable,
+        eq(managedReviewsTable.reviewLocationId, reviewLocationsTable.id),
       )
-      .innerJoin(
-        businessesTable,
-        eq(campaignsTable.businessId, businessesTable.id),
-      )
-      .where(eq(businessesTable.organizationId, organizationId)),
+      .where(eq(managedReviewsTable.organizationId, organizationId)),
+    db
+      .select({ value: count() })
+      .from(reviewAuditEventsTable)
+      .where(
+        and(
+          eq(reviewAuditEventsTable.organizationId, organizationId),
+          eq(reviewAuditEventsTable.eventType, "REPLY_PUBLISHED"),
+        ),
+      ),
     db
       .select({
         campaignId: scanEventsTable.campaignId,
@@ -152,7 +163,13 @@ export async function getDashboardSummary(organizationId: string) {
     const message =
       event.eventType === "QR_SCAN"
         ? `QR code scanned on ${campaign}`
-      : `Customer clicked through to Google from ${campaign}`;
+      : event.eventType === "GOOGLE_REDIRECT"
+        ? `Customer clicked through to Google from ${campaign}`
+        : event.eventType === "REVIEW_GENERATED"
+          ? `AI review draft generated for ${campaign}`
+          : event.eventType === "CALL_CLICK"
+            ? `Customer called from ${campaign}`
+            : `Customer saved a contact from ${campaign}`;
     return {
       id: event.id,
       type: event.eventType.toLowerCase(),
@@ -170,10 +187,13 @@ export async function getDashboardSummary(organizationId: string) {
     activeBusinesses: activeRow.value,
     activeCampaigns: activeCampaignsRow.value,
     qrScans,
-    nfcTaps,
     scansToday,
     googleRedirects,
-    aiReviewsGenerated: Number(aiRow?.value ?? 0),
+    reviewsGenerated,
+    newReviews: newReviewsRow?.value ?? 0,
+    reviewReplies: reviewRepliesRow?.value ?? 0,
+    calls,
+    contactsSaved,
     needsOnboarding: totalRow.value === 0,
     topCampaigns: topCampaignRows.map((row) => ({
       campaignId: row.campaignId,

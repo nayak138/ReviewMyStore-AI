@@ -19,7 +19,7 @@ export const campaignStatusEnum = pgEnum("campaign_status", [
 ]);
 
 // A Campaign is a single request-a-review "surface" for a Business (e.g. a
-// table tent QR code or an NFC tag at checkout). It owns a set of Keywords
+// table tent QR code or a short link at checkout). It owns a set of Keywords
 // customers can pick from on the public review page at
 // /review/:businessSlug/:campaignSlug.
 //

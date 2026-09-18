@@ -4,7 +4,7 @@ import { useResolveRedirect } from "@workspace/api-client-react";
 import { AlertTriangle, Loader2 } from "lucide-react";
 
 /**
- * Landing route for QR/NFC short links (/r/:code). Resolves the code via the
+ * Landing route for QR short links (/r/:code). Resolves the code via the
  * public redirect API — which logs the scan event server-side — then hard
  * redirects to the campaign's review page. Kept intentionally minimal: this
  * page is only ever seen for a moment on a customer's phone.

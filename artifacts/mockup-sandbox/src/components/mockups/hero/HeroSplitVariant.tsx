@@ -82,7 +82,7 @@ export default function HeroSplitVariant() {
               </h1>
               
               <p className="text-lg text-slate-600 mb-10 leading-relaxed font-medium max-w-lg">
-                Automate your reputation. We use AI-powered review generation, smart QR Codes, and NFC devices to turn happy customers into 5-star ratings.
+                Automate your reputation. We use AI-powered review generation, smart QR Codes, and shareable links to turn happy customers into 5-star ratings.
               </p>
 
               {/* Action Area - Integrated Search */}
@@ -190,7 +190,7 @@ export default function HeroSplitVariant() {
                   <div className="space-y-4">
                     {[
                       { name: "Sarah Jenkins", time: "2m ago", text: "Best coffee in Austin! The new seasonal blend is incredible.", via: "QR Code" },
-                      { name: "Michael Chen", time: "15m ago", text: "Super fast service and really friendly staff. Will be back.", via: "NFC Tap" },
+                      { name: "Michael Chen", time: "15m ago", text: "Super fast service and really friendly staff. Will be back.", via: "Short Link" },
                     ].map((review, i) => (
                       <motion.div 
                         key={i}

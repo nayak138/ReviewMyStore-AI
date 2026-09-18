@@ -1,4 +1,4 @@
-import { Star, MessageSquareText, Mail, Filter, Search, MoreHorizontal, QrCode, Smartphone, Download, Zap, TrendingUp, Users, Target } from "lucide-react";
+import { Star, MessageSquareText, Mail, Filter, Search, MoreHorizontal, QrCode, Download, Zap, TrendingUp, Users, Target } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export function ReviewInboxSection() {
@@ -167,16 +167,16 @@ export function AiReplyDemoSection() {
   );
 }
 
-export function QrNfcSection() {
+export function QrSection() {
   return (
     <section className="py-24 bg-background">
       <div className="container mx-auto px-4 lg:px-8 text-center max-w-5xl">
         <h2 className="text-3xl md:text-5xl font-bold tracking-tight mb-6 text-foreground">Bridge the physical and digital world</h2>
         <p className="text-lg text-muted-foreground mb-16 max-w-2xl mx-auto">
-          No apps. No searching. Just a simple tap or scan to open your exact Google Review page. Print your own materials or register your own NFC devices.
+          No apps. No searching. Just a simple scan or link to open your exact Google Review page. Print your own materials or share the campaign URL.
         </p>
 
-        <div className="grid md:grid-cols-2 gap-8">
+        <div className="grid gap-8 md:grid-cols-2">
           <div className="bg-card border border-border rounded-2xl p-8 hover:shadow-xl transition-shadow flex flex-col items-center text-center">
             <div className="w-48 h-48 bg-white p-4 rounded-xl shadow-sm border border-border mb-8 rotate-3 hover:rotate-0 transition-transform">
               {/* Fake QR visual */}
@@ -198,21 +198,6 @@ export function QrNfcSection() {
             </div>
           </div>
 
-          <div className="bg-card border border-border rounded-2xl p-8 hover:shadow-xl transition-shadow flex flex-col items-center text-center">
-            <div className="relative w-48 h-48 mb-8 flex items-center justify-center">
-              <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/20 to-purple-500/20 rounded-full blur-2xl"></div>
-              <div className="w-32 h-44 bg-zinc-900 border-4 border-zinc-800 rounded-2xl shadow-2xl relative overflow-hidden flex flex-col items-center justify-center -rotate-6 hover:rotate-0 transition-transform">
-                <Smartphone className="w-12 h-12 text-white/20 mb-2" />
-                <span className="text-white font-bold tracking-widest uppercase text-xs">Tap Here</span>
-                <div className="absolute top-0 inset-x-0 h-1/2 bg-gradient-to-b from-white/10 to-transparent"></div>
-              </div>
-            </div>
-            <h3 className="text-2xl font-bold mb-3 text-foreground">NFC Tags & Cards</h3>
-            <p className="text-muted-foreground mb-6">Works with any standard NFC tag, card, or standee — register it in your dashboard and assign it to a campaign. Tap any modern phone to review.</p>
-            <div className="flex gap-2 text-sm font-medium text-primary">
-              Works with iOS & Android
-            </div>
-          </div>
         </div>
       </div>
     </section>
@@ -254,7 +239,7 @@ export function AnalyticsSection() {
                     <div className="font-medium text-foreground">456 scans</div>
                   </div>
                   <div className="flex justify-between items-center text-sm p-2 bg-background rounded border border-border">
-                    <div className="flex items-center gap-2 text-foreground"><Smartphone className="w-4 h-4 text-muted-foreground"/> Front Desk NFC</div>
+                    <div className="flex items-center gap-2 text-foreground"><QrCode className="w-4 h-4 text-muted-foreground"/> Front Desk QR</div>
                     <div className="font-medium text-foreground">289 taps</div>
                   </div>
                 </div>

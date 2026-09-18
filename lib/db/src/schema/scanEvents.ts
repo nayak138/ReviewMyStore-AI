@@ -10,16 +10,15 @@ import { sql } from "drizzle-orm";
 import { organizationsTable } from "./organizations";
 import { businessesTable } from "./businesses";
 import { campaignsTable } from "./campaigns";
-import { nfcDevicesTable } from "./nfcDevices";
 import { redirectLinksTable } from "./redirectLinks";
 
-// QR_SCAN / NFC_TAP: someone hit /r/{code} from a printed QR or an NFC tag.
-// GOOGLE_REDIRECT: a customer clicked "Copy & Post to Google" on the public
-//   review page (counted separately so the funnel end is measurable).
+// Append-only customer activity events used by business analytics.
 export const scanEventTypeEnum = pgEnum("scan_event_type", [
   "QR_SCAN",
-  "NFC_TAP",
   "GOOGLE_REDIRECT",
+  "REVIEW_GENERATED",
+  "CALL_CLICK",
+  "CONTACT_SAVED",
 ]);
 
 // Append-only analytics log. organizationId/businessId/campaignId are
@@ -47,9 +46,6 @@ export const scanEventsTable = pgTable(
       () => redirectLinksTable.id,
       { onDelete: "set null" },
     ),
-    nfcDeviceId: text("nfc_device_id").references(() => nfcDevicesTable.id, {
-      onDelete: "set null",
-    }),
     // Denormalized names so Recent Activity / Top Campaigns render even after
     // the underlying campaign is deleted.
     businessName: text("business_name"),

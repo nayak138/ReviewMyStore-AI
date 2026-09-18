@@ -9,10 +9,12 @@ import {
   ExternalLink,
   MessageCircleWarning,
   MousePointerClick,
+  Phone,
   QrCode,
   Star,
-  Smartphone,
+  Sparkles,
   TrendingUp,
+  UserRoundPlus,
 } from "lucide-react";
 import {
   Area,
@@ -90,8 +92,12 @@ function downloadAnalyticsWorkbook(analytics: BusinessAnalytics) {
     { Metric: "Business", Value: analytics.businessName },
     { Metric: "Reporting period", Value: formatPeriod(analytics.periodStart, analytics.periodEnd) },
     { Metric: "QR scans", Value: summary.qrScans },
-    { Metric: "NFC taps", Value: summary.nfcTaps },
     { Metric: "Google actions", Value: summary.googleRedirects },
+    { Metric: "AI reviews generated", Value: summary.reviewsGenerated },
+    { Metric: "New Google reviews", Value: summary.newReviews },
+    { Metric: "Review replies", Value: summary.reviewReplies },
+    { Metric: "Calls", Value: summary.calls },
+    { Metric: "Contacts saved", Value: summary.contactsSaved },
     { Metric: "Scan to Google rate", Value: `${summary.scanToGoogleRate}%` },
     { Metric: "Active campaigns", Value: summary.activeCampaigns },
     { Metric: "Total campaigns", Value: summary.totalCampaigns },
@@ -99,21 +105,26 @@ function downloadAnalyticsWorkbook(analytics: BusinessAnalytics) {
     { Metric: "Average feedback rating", Value: summary.averageFeedbackRating },
     { Metric: "New feedback", Value: summary.newFeedback },
     { Metric: "Resolved feedback", Value: summary.resolvedFeedback },
-    { Metric: "AI review drafts generated", Value: summary.aiReviewsGenerated },
   ];
   const dailyRows = analytics.dailyTrend.map((point) => ({
     Date: point.date,
     "QR scans": point.qrScans,
-    "NFC taps": point.nfcTaps,
     "Google actions": point.googleRedirects,
+    "AI reviews generated": point.reviewsGenerated,
+    "New Google reviews": point.newReviews,
+    "Review replies": point.reviewReplies,
+    Calls: point.calls,
+    "Contacts saved": point.contactsSaved,
     "Private feedback": point.privateFeedback,
   }));
   const campaignRows = analytics.campaignPerformance.map((campaign) => ({
     Campaign: campaign.campaignName,
     Status: campaign.status,
     "QR scans": campaign.qrScans,
-    "NFC taps": campaign.nfcTaps,
     "Google actions": campaign.googleRedirects,
+    "AI reviews generated": campaign.reviewsGenerated,
+    Calls: campaign.calls,
+    "Contacts saved": campaign.contactsSaved,
     "Total actions": campaign.totalActions,
   }));
   const feedbackRows = [
@@ -208,8 +219,12 @@ export default function BusinessAnalytics() {
           <>
             <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
               <MetricCard label="QR scans" value={summary?.qrScans} helper="Customers opening QR links" icon={QrCode} color="text-blue-600 dark:text-blue-400" background="bg-blue-500/10" isLoading={isLoading} />
-              <MetricCard label="NFC taps" value={summary?.nfcTaps} helper="Customers tapping NFC tags" icon={Smartphone} color="text-primary" background="bg-primary/10" isLoading={isLoading} />
               <MetricCard label="Google actions" value={summary?.googleRedirects} helper={`${summary?.scanToGoogleRate ?? 0}% of QR scans`} icon={ExternalLink} color="text-emerald-600 dark:text-emerald-400" background="bg-emerald-500/10" isLoading={isLoading} />
+              <MetricCard label="Reviews generated" value={summary?.reviewsGenerated} helper="AI drafts created for customers" icon={Sparkles} color="text-violet-600 dark:text-violet-400" background="bg-violet-500/10" isLoading={isLoading} />
+              <MetricCard label="New reviews" value={summary?.newReviews} helper="Google reviews imported this period" icon={Star} color="text-amber-600 dark:text-amber-400" background="bg-amber-500/10" isLoading={isLoading} />
+              <MetricCard label="Review replies" value={summary?.reviewReplies} helper="Replies published to Google" icon={MessageCircleWarning} color="text-primary" background="bg-primary/10" isLoading={isLoading} />
+              <MetricCard label="Calls" value={summary?.calls} helper="Customers tapping to call" icon={Phone} color="text-emerald-600 dark:text-emerald-400" background="bg-emerald-500/10" isLoading={isLoading} />
+              <MetricCard label="Contacts saved" value={summary?.contactsSaved} helper="Customers downloading contact cards" icon={UserRoundPlus} color="text-cyan-600 dark:text-cyan-400" background="bg-cyan-500/10" isLoading={isLoading} />
               <MetricCard label="Private feedback" value={summary?.privateFeedback} helper={`${summary?.newFeedback ?? 0} still needs attention`} icon={MessageCircleWarning} color="text-rose-600 dark:text-rose-400" background="bg-rose-500/10" isLoading={isLoading} />
             </div>
 
@@ -217,7 +232,7 @@ export default function BusinessAnalytics() {
               <Card className="border-border shadow-sm">
                 <CardHeader>
                   <CardTitle>Customer activity</CardTitle>
-                  <CardDescription>Daily discovery and Google actions over the last 30 days.</CardDescription>
+                  <CardDescription>Daily discovery, review, and contact actions over the last 30 days.</CardDescription>
                 </CardHeader>
                 <CardContent>
                   {isLoading ? <ChartSkeleton /> : analytics?.dailyTrend.length ? (
@@ -240,8 +255,10 @@ export default function BusinessAnalytics() {
                           <Tooltip labelFormatter={(label) => formatDate(String(label))} contentStyle={{ borderRadius: 12, border: "1px solid hsl(var(--border))", background: "hsl(var(--card))" }} />
                           <Legend verticalAlign="top" height={32} />
                           <Area type="monotone" dataKey="qrScans" name="QR scans" stroke={CHART_COLORS.blue} fill="url(#qrFill)" strokeWidth={2} />
-                          <Area type="monotone" dataKey="nfcTaps" name="NFC taps" stroke={CHART_COLORS.primary} fill="transparent" strokeWidth={2} />
                           <Area type="monotone" dataKey="googleRedirects" name="Google actions" stroke={CHART_COLORS.green} fill="url(#googleFill)" strokeWidth={2} />
+                          <Area type="monotone" dataKey="reviewsGenerated" name="Reviews generated" stroke={CHART_COLORS.rose} fill="transparent" strokeWidth={2} />
+                          <Area type="monotone" dataKey="calls" name="Calls" stroke={CHART_COLORS.amber} fill="transparent" strokeWidth={2} />
+                          <Area type="monotone" dataKey="contactsSaved" name="Contacts saved" stroke={CHART_COLORS.primary} fill="transparent" strokeWidth={2} />
                         </AreaChart>
                       </ResponsiveContainer>
                     </div>

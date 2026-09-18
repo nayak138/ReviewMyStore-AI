@@ -13,7 +13,7 @@
 
 1. Good service deserves to be visible.
 2. Find the correct business.
-3. Give happy customers a QR, NFC, or link path while the moment is fresh.
+3. Give happy customers a QR or short-link path while the moment is fresh.
 4. Use AI to draft a specific review while the owner stays in control.
 5. Watch reviews, response time, and reputation trend upward.
 
