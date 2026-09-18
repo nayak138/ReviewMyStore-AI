@@ -24,10 +24,7 @@ import {
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/components/theme-provider";
-import {
-  BrandIcon,
-  BrandLogo,
-} from "@/components/brand-logo";
+import { BrandIcon, BrandLogo } from "@/components/brand-logo";
 import {
   getGetPublicAgencyInvitationQueryKey,
   useGetPublicAgencyInvitation,
