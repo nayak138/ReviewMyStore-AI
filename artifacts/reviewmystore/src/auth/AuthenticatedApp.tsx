@@ -144,25 +144,22 @@ function AuthLayout({ children }: { children: ReactNode }) {
 
 function SignInPage() {
   if (stripBase(window.location.pathname) === "/sign-in/create") {
-    return <Redirect to="/sign-up" />;
+    return <Redirect to="/sign-in" />;
   }
 
   return (
     <AuthLayout>
       <div className="auth-form-section w-full">
-        <div className="border-b border-slate-200 pb-6 text-center">
-          <p className="mb-2 text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-            Agency workspace
-          </p>
-          <p className="mx-auto inline-flex max-w-full rounded-full border border-amber-200 bg-amber-100 px-3 py-1 text-xs font-medium leading-relaxed text-amber-900">
-            Agency access only — contact the Admin at hello@5-star.ai
-          </p>
-        </div>
-        <div className="pt-6">
+        <div>
           <SignIn
             routing="path"
             path={`${basePath}/sign-in`}
             signUpUrl={`${basePath}/sign-up`}
+            appearance={{
+              elements: {
+                footerAction: "!hidden",
+              },
+            }}
             fallbackRedirectUrl={`${basePath}/post-sign-in`}
           />
         </div>
@@ -195,25 +192,7 @@ function SignUpPage() {
   }
 
   if (!invitation) {
-    return (
-      <AuthLayout>
-        <div className="w-full max-w-[440px] rounded-[1.25rem] border border-red-200 bg-red-50 p-8 text-center shadow-sm dark:border-red-900/60 dark:bg-red-950/30">
-          <h1 className="font-display text-3xl font-semibold tracking-tight text-red-800 dark:text-red-200">
-            Agency access only
-          </h1>
-          <p className="mt-3 text-sm leading-relaxed text-red-700 dark:text-red-300">
-            New accounts are created from a secure invitation link. Ask the
-            platform administrator for access.
-          </p>
-          <a
-            href={`${basePath}/sign-in`}
-            className="mt-6 inline-flex h-11 items-center justify-center rounded-lg bg-red-700 px-5 text-sm font-semibold text-white transition-colors hover:bg-red-800"
-          >
-            Agency login
-          </a>
-        </div>
-      </AuthLayout>
-    );
+    return <Redirect to="/sign-in" />;
   }
 
   return (
