@@ -132,6 +132,11 @@ function injectRouteMeta(
   const title = escapeHtml(meta.title);
   const description = escapeHtml(meta.description);
   const url = `${siteUrl}${route === "/" ? "/" : route}`;
+  const image = `${siteUrl}${meta.socialImage ?? "/social/social-card.png"}`;
+  const imageAlt = escapeHtml(
+    meta.socialImageAlt ??
+      "5-Star.AI — Practical reputation support for local businesses",
+  );
   let out = html
     .replace(/<title>[^<]*<\/title>/, `<title>${title}</title>`)
     .replace(
@@ -147,6 +152,16 @@ function injectRouteMeta(
     .replace(
       /(<meta name="twitter:description" content=")[^"]*(")/,
       `$1${description}$2`,
+    )
+    .replace(/(<meta property="og:image" content=")[^"]*(")/, `$1${image}$2`)
+    .replace(
+      /(<meta property="og:image:alt" content=")[^"]*(")/,
+      `$1${imageAlt}$2`,
+    )
+    .replace(/(<meta name="twitter:image" content=")[^"]*(")/, `$1${image}$2`)
+    .replace(
+      /(<meta name="twitter:image:alt" content=")[^"]*(")/,
+      `$1${imageAlt}$2`,
     );
   const extra = `    <meta property="og:url" content="${url}" />\n    <link rel="canonical" href="${url}" />\n  </head>`;
   out = out.replace("</head>", extra);

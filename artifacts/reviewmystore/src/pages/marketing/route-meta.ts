@@ -3,6 +3,8 @@ import { blogPosts } from "./blog-data";
 export interface RouteMeta {
   title: string;
   description: string;
+  socialImage?: string;
+  socialImageAlt?: string;
 }
 
 export const DEFAULT_META: RouteMeta = {
@@ -41,10 +43,16 @@ export const TERMS_META: RouteMeta = {
     "Read the Terms of Service for 5-Star.AI, the AI-powered Google review platform for local businesses.",
 };
 
-export function blogPostMeta(post: { title: string; excerpt: string }): RouteMeta {
+export function blogPostMeta(post: {
+  slug: string;
+  title: string;
+  excerpt: string;
+}): RouteMeta {
   return {
     title: `${post.title} — 5-Star.AI Blog`,
     description: post.excerpt,
+    socialImage: `/social/blog/${post.slug}.png`,
+    socialImageAlt: `${post.title} — 5-Star.AI`,
   };
 }
 
