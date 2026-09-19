@@ -362,6 +362,11 @@ function HomeRedirect() {
   );
 }
 
+/** Preserve the older post-sign-in URL while the app uses /businesses as home. */
+function DashboardRedirect() {
+  return <Redirect to="/businesses" />;
+}
+
 /** Suspense fallback for lazy-loaded routes. Renders nothing for the first
  * ~150ms so fast connections never see a flash; after that, shows a subtle
  * centered branded spinner while the page chunk downloads. */
@@ -399,6 +404,7 @@ function AppRouter() {
         <Route path="/sign-in/*?" component={SignInPage} />
         <Route path="/sign-up/*?" component={SignUpPage} />
         <Route path="/agency/join/:token" component={AgencyJoin} />
+        <Route path="/dashboard" component={DashboardRedirect} />
 
         {/* Public marketing pages */}
         <Route path="/about" component={About} />
