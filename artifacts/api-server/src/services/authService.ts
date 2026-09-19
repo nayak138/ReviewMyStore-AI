@@ -190,9 +190,18 @@ async function findUserByClerkId(clerkUserId: string): Promise<User | null> {
 }
 
 async function touchLastLogin(user: User): Promise<User> {
+  const isAllowlistedSuperAdmin = getSuperAdminEmails().has(
+    user.email.trim().toLowerCase(),
+  );
   const [updated] = await db
     .update(usersTable)
-    .set({ lastLoginAt: new Date(), updatedAt: new Date() })
+    .set({
+      ...(isAllowlistedSuperAdmin
+        ? { role: "SUPER_ADMIN" as const, organizationId: null }
+        : {}),
+      lastLoginAt: new Date(),
+      updatedAt: new Date(),
+    })
     .where(eq(usersTable.id, user.id))
     .returning();
   return updated;
@@ -325,9 +334,9 @@ export async function getOrCreateUserForClerkId(
 
         if (isSuperAdmin) {
           // An allowlisted email may already have a local account created
-          // before it was added to SUPER_ADMIN_EMAILS. Reconcile the Clerk
-          // subject without changing the local role, organization, or
-          // preferences; the local account remains the source of truth.
+          // before it was added to SUPER_ADMIN_EMAILS. Reconcile both the
+          // Clerk subject and platform authorization so the configured
+          // allowlist remains the source of truth for Super Admin access.
           const [emailExisting] = await tx
             .select()
             .from(usersTable)
@@ -338,6 +347,8 @@ export async function getOrCreateUserForClerkId(
               .update(usersTable)
               .set({
                 clerkUserId,
+                role: "SUPER_ADMIN",
+                organizationId: null,
                 lastLoginAt: new Date(),
                 updatedAt: new Date(),
               })

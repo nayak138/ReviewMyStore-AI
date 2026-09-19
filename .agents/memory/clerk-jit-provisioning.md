@@ -9,11 +9,11 @@ Local `User`/`Organization` rows are just-in-time provisioned from the Clerk ide
 
 **How to apply:** any route/service that is scoped to an Organization (e.g. Business CRUD) should require `req.appUser.organizationId` and return 403 for callers without one, including SUPER_ADMIN — this is a deliberate, unilateral design choice (business management is an Owner/tenant concern) that should be mentioned transparently to the user rather than assumed. If the user wants SUPER_ADMIN to manage all orgs' businesses later, that needs a distinct "impersonate org" or admin-scoped endpoint, not a relaxation of the tenant check.
 
-When Clerk replaces a subject for an email on the super-admin allowlist, reconcile it to any existing local account for that normalized email, preserving the local role and organization. Do not use this email-based path for ordinary owner emails.
+An email on the super-admin allowlist must reconcile to `SUPER_ADMIN` with no organization, including when the same Clerk subject or a replacement subject already has a local Owner row. Do not use this email-based path for ordinary owner emails.
 
-**Why:** An existing tenant owner can legitimately have an email that is later added to the allowlist; inserting a new SUPER_ADMIN row would fail or silently change access semantics. Broad email reconciliation would still let a second Clerk subject reuse an accepted invitation.
+**Why:** The allowlist is the explicit platform authorization source. Preserving an older Owner role caused configured Super Admins to remain trapped in tenant business screens and unable to reach the admin portal.
 
-**How to apply:** only perform the email lookup inside the allowlisted branch and preserve role, organization, status, and preferences. For non-allowlisted owners, require the existing Clerk subject or the normal active-invitation flow.
+**How to apply:** on authenticated lookup, promote an allowlisted local user to `SUPER_ADMIN` and clear organization membership; when Clerk replaces the subject, restrict normalized-email reconciliation to the allowlisted branch. Non-allowlisted owners still require their existing Clerk subject or the normal active-invitation flow.
 
 For agency onboarding, first-login JIT provisioning must require a matching active invitation for non-SUPER_ADMIN users, attach the new owner to the invitation's pre-created organization, and consume the invitation in the same transaction. Public signup must not be able to create an uninvited organization.
 

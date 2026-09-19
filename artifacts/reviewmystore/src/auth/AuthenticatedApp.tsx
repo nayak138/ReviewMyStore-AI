@@ -1,4 +1,10 @@
-import { ClerkProvider, SignIn, SignUp, useClerk } from "@clerk/react";
+import {
+  ClerkProvider,
+  SignIn,
+  SignUp,
+  useAuth,
+  useClerk,
+} from "@clerk/react";
 import { publishableKeyFromHost } from "@clerk/react/internal";
 import { shadcn } from "@clerk/themes";
 import {
@@ -12,7 +18,9 @@ import {
 import { Redirect, Route, Switch, useLocation } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 import {
+  getGetCurrentUserQueryKey,
   getGetPublicAgencyInvitationQueryKey,
+  useGetCurrentUser,
   useGetPublicAgencyInvitation,
 } from "@workspace/api-client-react";
 import {
@@ -144,7 +152,7 @@ function SignInPage() {
           <SignIn
             routing="path"
             path={`${basePath}/sign-in`}
-            fallbackRedirectUrl={`${basePath}/businesses`}
+            fallbackRedirectUrl={`${basePath}/post-sign-in`}
           />
         </div>
       </div>
@@ -210,7 +218,7 @@ function SignUpPage() {
             routing="path"
             path={`${basePath}/sign-up`}
             initialValues={{ emailAddress: invitation.email }}
-            fallbackRedirectUrl={`${basePath}/businesses`}
+            fallbackRedirectUrl={`${basePath}/post-sign-in`}
           />
         </div>
       </div>
@@ -240,8 +248,50 @@ function ClerkQueryClientCacheInvalidator() {
   return null;
 }
 
-function DashboardRedirect() {
-  return <Redirect to="/businesses" />;
+function RoleAwareRedirect() {
+  const { isLoaded, isSignedIn } = useAuth();
+  const {
+    data: session,
+    isLoading,
+    isError,
+  } = useGetCurrentUser({
+    query: {
+      enabled: isLoaded && !!isSignedIn,
+      queryKey: getGetCurrentUserQueryKey(),
+    },
+  });
+
+  if (!isLoaded || (isSignedIn && isLoading)) {
+    return <AuthPageLoader />;
+  }
+  if (!isSignedIn) {
+    return <Redirect to="/sign-in" />;
+  }
+  if (isError || !session) {
+    return (
+      <AuthLayout>
+        <div className="w-full text-center">
+          <h1 className="text-2xl font-semibold text-slate-950">
+            We couldn&apos;t open your account
+          </h1>
+          <p className="mt-3 text-sm text-slate-600">
+            Refresh the page. If the problem continues, sign out and sign in
+            again.
+          </p>
+        </div>
+      </AuthLayout>
+    );
+  }
+
+  return (
+    <Redirect
+      to={
+        session.user.role === "SUPER_ADMIN"
+          ? "/admin/portal"
+          : "/businesses"
+      }
+    />
+  );
 }
 
 function AuthPageLoader() {
@@ -263,7 +313,8 @@ function AuthenticatedRoutes() {
         <Route path="/sign-in/*?" component={SignInPage} />
         <Route path="/sign-up/*?" component={SignUpPage} />
         <Route path="/agency/join/:token" component={AgencyJoin} />
-        <Route path="/dashboard" component={DashboardRedirect} />
+        <Route path="/post-sign-in" component={RoleAwareRedirect} />
+        <Route path="/dashboard" component={RoleAwareRedirect} />
         <Route path="/onboarding" component={Onboarding} />
         <Route path="/businesses" component={Businesses} />
         <Route path="/campaigns" component={Campaigns} />

@@ -166,7 +166,7 @@ test("first login attaches the invited owner to the intended agency and consumes
   assert.equal(await getPublicAgencyInvitation(fixture.invitation.signupPath.split("/").pop()!), null);
 });
 
-test("rebinds an existing account for an allowlisted email without changing its tenant", async () => {
+test("rebinds and promotes an existing account for an allowlisted email", async () => {
   const fixture = await createAgencyFixture(testAdminId, "allowlisted-rebind");
   const email = fixture.invitation.email;
   const legacyClerkUserId = `user_legacy_${runId}`;
@@ -200,13 +200,53 @@ test("rebinds an existing account for an allowlisted email without changing its 
 
     assert.equal(rebound.id, existing.id);
     assert.equal(rebound.clerkUserId, replacementClerkUserId);
-    assert.equal(rebound.organizationId, fixture.organization.id);
-    assert.equal(rebound.role, "OWNER");
+    assert.equal(rebound.organizationId, null);
+    assert.equal(rebound.role, "SUPER_ADMIN");
     const [stored] = await db
       .select()
       .from(usersTable)
       .where(eq(usersTable.id, existing.id));
     assert.equal(stored.clerkUserId, replacementClerkUserId);
+    assert.equal(stored.organizationId, null);
+    assert.equal(stored.role, "SUPER_ADMIN");
+  } finally {
+    if (originalSuperAdminEmails === undefined) {
+      delete process.env.SUPER_ADMIN_EMAILS;
+    } else {
+      process.env.SUPER_ADMIN_EMAILS = originalSuperAdminEmails;
+    }
+  }
+});
+
+test("promotes an already-linked owner on their next authenticated request", async () => {
+  const fixture = await createAgencyFixture(testAdminId, "allowlisted-existing");
+  const email = fixture.invitation.email;
+  const clerkUserId = `user_existing_allowlisted_${runId}`;
+  const originalSuperAdminEmails = process.env.SUPER_ADMIN_EMAILS;
+  process.env.SUPER_ADMIN_EMAILS = [
+    originalSuperAdminEmails,
+    email,
+  ].filter(Boolean).join(",");
+
+  try {
+    const [existing] = await db
+      .insert(usersTable)
+      .values({
+        organizationId: fixture.organization.id,
+        clerkUserId,
+        name: "Existing Allowlisted Owner",
+        email,
+        role: "OWNER",
+        status: "ACTIVE",
+      })
+      .returning();
+    createdUserIds.push(existing.id);
+
+    const promoted = await getOrCreateUserForClerkId(clerkUserId);
+
+    assert.equal(promoted.id, existing.id);
+    assert.equal(promoted.role, "SUPER_ADMIN");
+    assert.equal(promoted.organizationId, null);
   } finally {
     if (originalSuperAdminEmails === undefined) {
       delete process.env.SUPER_ADMIN_EMAILS;
