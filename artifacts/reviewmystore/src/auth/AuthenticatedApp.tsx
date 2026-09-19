@@ -27,6 +27,8 @@ import {
   BRAND_LOGO_LIGHT,
   BrandIcon,
 } from "@/components/brand-logo";
+import { BookDemoDialog } from "@/components/book-demo-dialog";
+import { Button } from "@/components/ui/button";
 import {
   clearInvitationToken,
   resolveInvitationToken,
@@ -150,7 +152,24 @@ function SignInPage() {
   return (
     <AuthLayout>
       <div className="auth-form-section w-full">
-        <div>
+        <div className="border-b border-slate-200 pb-6 text-center">
+          <p className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+            Agency workspace
+          </p>
+          <div className="inline-flex max-w-full items-center gap-2 rounded-full border border-amber-200 bg-amber-100 p-1 pl-3 text-xs font-medium text-amber-900">
+            <span>Agency access only</span>
+            <BookDemoDialog>
+              <Button
+                type="button"
+                size="sm"
+                className="h-7 rounded-full bg-amber-900 px-3 text-xs font-semibold text-white shadow-none hover:bg-amber-800"
+              >
+                Contact form
+              </Button>
+            </BookDemoDialog>
+          </div>
+        </div>
+        <div className="pt-6">
           <SignIn
             routing="path"
             path={`${basePath}/sign-in`}
