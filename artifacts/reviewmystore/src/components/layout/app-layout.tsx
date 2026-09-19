@@ -20,6 +20,8 @@ import {
   useGetCurrentUser,
 } from "@workspace/api-client-react";
 
+const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
+
 interface NavItem {
   name: string;
   icon: LucideIcon;
@@ -74,7 +76,7 @@ export function AppLayout({ children, title, businessName }: AppLayoutProps) {
         : [];
 
   const handleSignOut = () => {
-    signOut({ redirectUrl: "/" });
+    signOut({ redirectUrl: `${basePath}/sign-in` });
   };
 
   return (

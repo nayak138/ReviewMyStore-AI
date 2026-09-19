@@ -27,6 +27,10 @@ import {
   BRAND_LOGO_LIGHT,
   BrandIcon,
 } from "@/components/brand-logo";
+import {
+  clearInvitationToken,
+  resolveInvitationToken,
+} from "./invitation-token";
 
 const AgencyJoin = lazy(() => import("@/pages/AgencyJoin"));
 const Onboarding = lazy(() => import("@/pages/Onboarding"));
@@ -139,6 +143,10 @@ function AuthLayout({ children }: { children: ReactNode }) {
 }
 
 function SignInPage() {
+  if (stripBase(window.location.pathname) === "/sign-in/create") {
+    return <Redirect to="/sign-up" />;
+  }
+
   return (
     <AuthLayout>
       <div className="auth-form-section w-full">
@@ -154,6 +162,7 @@ function SignInPage() {
           <SignIn
             routing="path"
             path={`${basePath}/sign-in`}
+            signUpUrl={`${basePath}/sign-up`}
             fallbackRedirectUrl={`${basePath}/post-sign-in`}
           />
         </div>
@@ -163,20 +172,26 @@ function SignInPage() {
 }
 
 function SignUpPage() {
-  const inviteToken =
-    new URLSearchParams(window.location.search).get("invite") ?? "";
+  const { isLoaded, isSignedIn } = useAuth();
+  const [inviteToken] = useState(() =>
+    resolveInvitationToken(window.location.search, window.sessionStorage),
+  );
   const { data: invitation, isLoading } = useGetPublicAgencyInvitation(
     inviteToken,
     {
       query: {
-        enabled: !!inviteToken,
+        enabled: isLoaded && !isSignedIn && !!inviteToken,
         queryKey: getGetPublicAgencyInvitationQueryKey(inviteToken),
       },
     },
   );
 
-  if (isLoading) {
+  if (!isLoaded || isLoading) {
     return <AuthPageLoader />;
+  }
+
+  if (isSignedIn) {
+    return <Redirect to="/post-sign-in" />;
   }
 
   if (!invitation) {
@@ -219,6 +234,7 @@ function SignUpPage() {
           <SignUp
             routing="path"
             path={`${basePath}/sign-up`}
+            signInUrl={`${basePath}/sign-in`}
             initialValues={{ emailAddress: invitation.email }}
             fallbackRedirectUrl={`${basePath}/post-sign-in`}
           />
@@ -262,6 +278,12 @@ function RoleAwareRedirect() {
       queryKey: getGetCurrentUserQueryKey(),
     },
   });
+
+  useEffect(() => {
+    if (isSignedIn) {
+      clearInvitationToken(window.sessionStorage);
+    }
+  }, [isSignedIn]);
 
   if (!isLoaded || (isSignedIn && isLoading)) {
     return <AuthPageLoader />;
@@ -344,6 +366,7 @@ export default function AuthenticatedApp() {
       proxyUrl={clerkProxyUrl}
       appearance={clerkAppearance}
       signInUrl={`${basePath}/sign-in`}
+      signUpUrl={`${basePath}/sign-up`}
       localization={{
         signIn: {
           start: {

@@ -30,12 +30,11 @@
 
 .auth-form-section form,
 .auth-form-section form > div,
-.auth-form-section [class*="cl-rootBox"],
-.auth-form-section [class*="cl-cardBox"],
-.auth-form-section [class*="cl-main"],
-.auth-form-section [class*="cl-form"],
-.auth-form-section [class*="cl-socialButtons"],
-.auth-form-section [class*="cl-dividerRow"] {
+.auth-form-section .cl-rootBox,
+.auth-form-section .cl-cardBox,
+.auth-form-section .cl-main,
+.auth-form-section .cl-socialButtons,
+.auth-form-section .cl-dividerRow {
   box-sizing: border-box !important;
   max-width: none !important;
   width: 100% !important;
@@ -64,6 +63,16 @@
   align-items: center !important;
   display: flex !important;
   justify-content: space-between !important;
+  width: 100% !important;
+}
+
+.cl-formFieldAction {
+  margin-left: auto !important;
+  width: auto !important;
+}
+
+.cl-formFieldAction__button {
+  width: auto !important;
 }
 
 .cl-formFieldLabel {
@@ -114,6 +123,10 @@
   transition:
     border-color 150ms ease,
     box-shadow 150ms ease !important;
+}
+
+.cl-formFieldInput[type="password"] {
+  padding-right: 3.25rem !important;
 }
 
 .cl-formFieldInput:hover {
