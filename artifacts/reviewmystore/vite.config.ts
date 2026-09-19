@@ -1,7 +1,7 @@
 import path from "path";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
-import { defineConfig, loadEnv, type Plugin } from "vite";
+import { createServer, defineConfig, loadEnv, type Plugin } from "vite";
 
 import runtimeErrorOverlay from "@replit/vite-plugin-runtime-error-modal";
 
@@ -153,6 +153,51 @@ function injectRouteMeta(
   return out;
 }
 
+function injectRouteBody(html: string, body: string): string {
+  const root = '<div id="root"></div>';
+  if (!html.includes(root)) {
+    throw new Error("Unable to prerender marketing route: #root shell not found");
+  }
+  return html.replace(root, `<div id="root">${body}</div>`);
+}
+
+async function renderMarketingBodies(): Promise<Record<string, string>> {
+  const root = path.resolve(import.meta.dirname);
+  const server = await createServer({
+    configFile: false,
+    root,
+    appType: "custom",
+    plugins: [react()],
+    resolve: {
+      alias: {
+        "@": path.resolve(root, "src"),
+        "@assets": path.resolve(root, "..", "..", "attached_assets"),
+      },
+      dedupe: ["react", "react-dom"],
+    },
+    server: {
+      middlewareMode: true,
+      hmr: false,
+    },
+  });
+
+  try {
+    const module = (await server.ssrLoadModule(
+      "/src/marketing-prerender.tsx",
+    )) as {
+      renderMarketingRoute: (route: string) => string;
+    };
+    return Object.fromEntries(
+      marketingRoutes().map((route) => [
+        route,
+        module.renderMarketingRoute(route),
+      ]),
+    );
+  } finally {
+    await server.close();
+  }
+}
+
 /** Serves SEO discovery files in dev and emits them into the build. */
 function seoFilesPlugin(siteUrl: string): Plugin {
   const files: Record<string, { content: () => string; type: string }> = {
@@ -204,13 +249,21 @@ function seoFilesPlugin(siteUrl: string): Plugin {
     },
     // Prerender: write a route-specific index.html for every marketing route
     // so static hosting serves crawler-visible per-page metadata.
-    closeBundle() {
+    async closeBundle() {
       const outDir = path.resolve(import.meta.dirname, "dist/public");
       const shellPath = path.join(outDir, "index.html");
       if (!fs.existsSync(shellPath)) return;
       const shell = fs.readFileSync(shellPath, "utf8");
+      const routeBodies = await renderMarketingBodies();
       for (const [route, meta] of Object.entries(marketingRouteMeta())) {
-        const html = injectRouteMeta(shell, route, meta, siteUrl);
+        const body = routeBodies[route];
+        if (!body) {
+          throw new Error(`Missing prerendered body for marketing route ${route}`);
+        }
+        const html = injectRouteBody(
+          injectRouteMeta(shell, route, meta, siteUrl),
+          body,
+        );
         const target =
           route === "/"
             ? shellPath

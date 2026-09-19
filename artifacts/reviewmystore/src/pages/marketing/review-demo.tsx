@@ -170,6 +170,9 @@ export function InteractiveReviewDemo() {
       <div className="mx-auto w-full max-w-md md:max-w-5xl">
         <div className="mx-auto mb-6 text-center sm:mb-8">
           <p className="inline-flex items-center gap-2 rounded-full border border-indigo-200/80 bg-indigo-50 px-6 py-3 text-xl font-extrabold tracking-tight text-indigo-700 shadow-sm dark:border-indigo-900 dark:bg-indigo-950/60 dark:text-indigo-300">Live Customer Preview</p>
+          <h1 className="mx-auto mt-6 max-w-3xl font-display text-4xl font-semibold leading-tight tracking-[-0.04em] text-zinc-950 dark:text-white sm:text-5xl">
+            Turn happy customers into more Google reviews
+          </h1>
         </div>
 
         <div className="grid gap-4 rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900 md:grid-cols-2 md:gap-6 md:p-6">

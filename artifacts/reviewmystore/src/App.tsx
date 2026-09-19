@@ -18,16 +18,16 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/components/theme-provider";
 import { BrandIcon } from "@/components/brand-logo";
+import About from "./pages/marketing/About";
+import Blog from "./pages/marketing/Blog";
+import BlogPost from "./pages/marketing/BlogPost";
+import Resources from "./pages/marketing/Resources";
+import Privacy from "./pages/marketing/Privacy";
+import Terms from "./pages/marketing/Terms";
+import Marketing from "./pages/Marketing";
 
 // Route-level code splitting: public visitors do not download the protected
 // dashboard or Clerk until they navigate to an authenticated route.
-const About = lazy(() => import("./pages/marketing/About"));
-const Blog = lazy(() => import("./pages/marketing/Blog"));
-const BlogPost = lazy(() => import("./pages/marketing/BlogPost"));
-const Resources = lazy(() => import("./pages/marketing/Resources"));
-const Privacy = lazy(() => import("./pages/marketing/Privacy"));
-const Terms = lazy(() => import("./pages/marketing/Terms"));
-const Marketing = lazy(() => import("./pages/Marketing"));
 const CustomerReview = lazy(() => import("./pages/CustomerReview"));
 const ShortRedirect = lazy(() => import("./pages/ShortRedirect"));
 const AuthenticatedApp = lazy(() => import("./auth/AuthenticatedApp"));
@@ -134,10 +134,10 @@ function AppShell() {
   );
 }
 
-function App() {
+function App({ ssrPath }: { ssrPath?: string }) {
   return (
     <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-      <WouterRouter base={basePath}>
+      <WouterRouter base={basePath} ssrPath={ssrPath}>
         <TooltipProvider>
           <QueryClientProvider client={queryClient}>
             <AppShell />
