@@ -24,7 +24,12 @@ import {
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/components/theme-provider";
-import { BrandIcon, BrandLogo } from "@/components/brand-logo";
+import {
+  BRAND_LOGO_DARK,
+  BRAND_LOGO_LIGHT,
+  BrandIcon,
+  BrandLogo,
+} from "@/components/brand-logo";
 import {
   getGetPublicAgencyInvitationQueryKey,
   useGetPublicAgencyInvitation,
@@ -164,24 +169,12 @@ function AuthLayout({ children }: { children: ReactNode }) {
       <aside className="relative hidden overflow-hidden bg-[#235de2] px-12 py-12 text-white lg:flex lg:flex-col lg:justify-between">
         <div className="auth-hero-mesh pointer-events-none absolute inset-0" />
         <div className="auth-hero-dots pointer-events-none absolute inset-0" />
-        <div className="relative z-10 flex items-center gap-3">
-          <BrandIcon className="auth-brand-icon h-14 w-14 shrink-0" alt="" />
-          <div className="relative flex items-baseline font-sans text-3xl font-extrabold tracking-[-0.06em] text-white">
-            <span>5-STAR.</span>
-            <span className="text-cyan-300">AI</span>
-            <span
-              className="absolute -right-7 -top-4 text-xl leading-none text-amber-300"
-              aria-hidden="true"
-            >
-              ✦
-            </span>
-            <span
-              className="absolute -right-5 top-1 text-sm leading-none text-white"
-              aria-hidden="true"
-            >
-              ✦
-            </span>
-          </div>
+        <div className="relative z-10">
+          <img
+            src={BRAND_LOGO_DARK}
+            alt="5-Star.AI"
+            className="h-12 w-auto max-w-[16rem] object-contain"
+          />
         </div>
         <div className="relative z-10 max-w-lg pb-4">
           <p className="mb-5 text-xs font-semibold uppercase tracking-[0.2em] text-white/60">
@@ -239,7 +232,11 @@ function AuthLayout({ children }: { children: ReactNode }) {
       </aside>
       <main className="flex min-h-[100dvh] flex-col items-center justify-center bg-slate-50 px-4 py-10 text-slate-950 sm:px-8">
         <div className="mb-8 flex items-center gap-2 lg:hidden">
-          <BrandLogo className="h-12 w-auto max-w-[16rem]" />
+          <img
+            src={BRAND_LOGO_LIGHT}
+            alt="5-Star.AI"
+            className="h-12 w-auto max-w-[16rem] object-contain"
+          />
         </div>
         {children}
       </main>
