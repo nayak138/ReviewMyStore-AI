@@ -14,6 +14,7 @@ import {
   businessesTable,
   db,
   organizationsTable,
+  reviewGenerationReservationsTable,
   usersTable,
 } from "@workspace/db";
 import { generateUniqueOrgSlug } from "./authService";
@@ -256,6 +257,35 @@ export async function getAdminPortal() {
       createdAt: business.createdAt.toISOString(),
     })),
   };
+}
+
+export async function resetPlatformTenantData() {
+  return db.transaction(async (tx) => {
+    const [[organizationCount], [ownerCount], [businessCount]] =
+      await Promise.all([
+        tx.select({ value: count() }).from(organizationsTable),
+        tx
+          .select({ value: count() })
+          .from(usersTable)
+          .where(eq(usersTable.role, "OWNER")),
+        tx.select({ value: count() }).from(businessesTable),
+      ]);
+
+    // Reservations intentionally have no foreign key because in-flight
+    // generation must survive ordinary tenant record changes. A platform
+    // reset is different: all tenant state is being deliberately removed.
+    await tx.delete(reviewGenerationReservationsTable);
+    await tx.delete(organizationsTable);
+    // Remove any malformed/orphaned Owner rows that were not attached to an
+    // organization. SUPER_ADMIN rows are deliberately preserved.
+    await tx.delete(usersTable).where(eq(usersTable.role, "OWNER"));
+
+    return {
+      deletedOrganizations: organizationCount.value,
+      deletedOwners: ownerCount.value,
+      deletedBusinesses: businessCount.value,
+    };
+  });
 }
 
 function serializeDeactivationRequest(

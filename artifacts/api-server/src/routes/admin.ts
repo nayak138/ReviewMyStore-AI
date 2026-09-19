@@ -18,6 +18,8 @@ import {
   ReviewAdminDeactivationRequestBody,
   ReviewAdminDeactivationRequestParams,
   ReviewAdminDeactivationRequestResponse,
+  ResetAdminPlatformDataBody,
+  ResetAdminPlatformDataResponse,
 } from "@workspace/api-zod";
 import { requireAuth, requireRole } from "../middlewares/requireAuth";
 import {
@@ -33,6 +35,7 @@ import {
   getPublicAgencyInvitation,
   listAdminDeactivationRequests,
   reviewAdminDeactivationRequest,
+  resetPlatformTenantData,
   revokeAgencyInvitation,
   updateAgency,
 } from "../services/adminService";
@@ -47,6 +50,26 @@ router.get(
     const overview = await getAdminOverview();
     const data = GetAdminOverviewResponse.parse(overview);
     res.json(data);
+  },
+);
+
+router.delete(
+  "/admin/platform-data",
+  requireAuth,
+  requireRole("SUPER_ADMIN"),
+  async (req, res) => {
+    const parsed = ResetAdminPlatformDataBody.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({
+        success: false,
+        code: "INVALID_CONFIRMATION",
+        message: 'Type "DELETE ALL AGENCIES" to confirm the reset.',
+      });
+      return;
+    }
+
+    const result = await resetPlatformTenantData();
+    res.json(ResetAdminPlatformDataResponse.parse(result));
   },
 );
 

@@ -33,6 +33,8 @@ import type {
   AdminInvitationCreateInput,
   AdminInvitationMutationResult,
   AdminOverview,
+  AdminPlatformResetInput,
+  AdminPlatformResetResult,
   AdminPortal,
   AutocompletePlacesParams,
   Business,
@@ -2307,6 +2309,77 @@ export const useReviewAdminDeactivationRequest = <TError = ErrorType<ErrorRespon
         TContext
       > => {
       return useMutation(getReviewAdminDeactivationRequestMutationOptions(options));
+    }
+
+export const getResetAdminPlatformDataUrl = () => {
+
+
+
+
+  return `/api/v1/admin/platform-data`
+}
+
+/**
+ * @summary Delete all agency tenant data while preserving Super Admin accounts
+ */
+export const resetAdminPlatformData = async (adminPlatformResetInput: AdminPlatformResetInput, options?: Parameters<typeof customFetch>[1]): Promise<AdminPlatformResetResult> => {
+
+  return customFetch<AdminPlatformResetResult>(getResetAdminPlatformDataUrl(),
+  {
+    ...options,
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(adminPlatformResetInput)
+  }
+);}
+
+
+
+
+
+export const getResetAdminPlatformDataMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof resetAdminPlatformData>>, TError,{data: BodyType<AdminPlatformResetInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof resetAdminPlatformData>>, TError,{data: BodyType<AdminPlatformResetInput>}, TContext> => {
+
+const mutationKey = ['resetAdminPlatformData'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof resetAdminPlatformData>>, {data: BodyType<AdminPlatformResetInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  resetAdminPlatformData(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ResetAdminPlatformDataMutationResult = NonNullable<Awaited<ReturnType<typeof resetAdminPlatformData>>>
+    export type ResetAdminPlatformDataMutationBody = BodyType<AdminPlatformResetInput>
+    export type ResetAdminPlatformDataMutationError = ErrorType<ErrorResponse>
+
+    /**
+ * @summary Delete all agency tenant data while preserving Super Admin accounts
+ */
+export const useResetAdminPlatformData = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof resetAdminPlatformData>>, TError,{data: BodyType<AdminPlatformResetInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof resetAdminPlatformData>>,
+        TError,
+        {data: BodyType<AdminPlatformResetInput>},
+        TContext
+      > => {
+      return useMutation(getResetAdminPlatformDataMutationOptions(options));
     }
 
 export const getCreateAdminAgencyUrl = () => {

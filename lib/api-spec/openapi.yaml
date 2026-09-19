@@ -923,6 +923,43 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  /v1/admin/platform-data:
+    delete:
+      operationId: resetAdminPlatformData
+      tags: [admin]
+      summary: Delete all agency tenant data while preserving Super Admin accounts
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminPlatformResetInput"
+      responses:
+        "200":
+          description: All agency tenant data was deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminPlatformResetResult"
+        "400":
+          description: Confirmation phrase is invalid
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Not authorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /v1/admin/agencies:
     post:
       operationId: createAdminAgency
@@ -3291,6 +3328,30 @@ components:
         - overview
         - agencies
         - businesses
+
+    AdminPlatformResetInput:
+      type: object
+      additionalProperties: false
+      properties:
+        confirmation:
+          type: string
+          enum: ["DELETE ALL AGENCIES"]
+      required:
+        - confirmation
+
+    AdminPlatformResetResult:
+      type: object
+      properties:
+        deletedOrganizations:
+          type: integer
+        deletedOwners:
+          type: integer
+        deletedBusinesses:
+          type: integer
+      required:
+        - deletedOrganizations
+        - deletedOwners
+        - deletedBusinesses
 
     AdminAgencyCreateInput:
       type: object

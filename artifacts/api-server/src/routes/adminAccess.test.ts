@@ -113,3 +113,34 @@ test("unauthenticated callers cannot access the admin portal API", async () => {
   const body = (await response.json()) as { code: string };
   assert.equal(body.code, "UNAUTHENTICATED");
 });
+
+test("regular agency owners cannot reset platform tenant data", async () => {
+  const response = await fetch(`${baseUrl}/admin/platform-data`, {
+    method: "DELETE",
+    headers: {
+      "content-type": "application/json",
+      "x-test-clerk-user": ownerClerkId,
+    },
+    body: JSON.stringify({ confirmation: "DELETE ALL AGENCIES" }),
+  });
+
+  assert.equal(response.status, 403);
+});
+
+test("a Super Admin must provide the exact platform-reset confirmation", async () => {
+  const response = await fetch(`${baseUrl}/admin/platform-data`, {
+    method: "DELETE",
+    headers: {
+      "content-type": "application/json",
+      "x-test-clerk-user": adminClerkId,
+    },
+    body: JSON.stringify({ confirmation: "delete everything" }),
+  });
+
+  assert.equal(response.status, 400);
+  const [owner] = await db
+    .select({ id: usersTable.id })
+    .from(usersTable)
+    .where(eq(usersTable.id, ownerId));
+  assert.equal(owner?.id, ownerId, "invalid confirmation must not delete data");
+});

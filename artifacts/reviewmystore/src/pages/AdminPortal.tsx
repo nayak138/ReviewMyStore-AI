@@ -11,6 +11,7 @@ import {
   useGetAdminPortal,
   useGetCurrentUser,
   useListAdminDeactivationRequests,
+  useResetAdminPlatformData,
   useRevokeAdminAgencyInvitation,
   useReviewAdminDeactivationRequest,
   useUpdateAdminAgency,
@@ -40,6 +41,8 @@ import {
   Plus,
   Search,
   ShieldCheck,
+  Trash2,
+  TriangleAlert,
   Users,
   X,
   XCircle,
@@ -48,6 +51,7 @@ import {
 
 const plans: OrganizationPlan[] = ["STARTER", "GROWTH", "PRO", "ENTERPRISE"];
 const subscriptionStatuses: SubscriptionStatus[] = ["TRIALING", "ACTIVE", "PAST_DUE", "CANCELED"];
+const RESET_CONFIRMATION = "DELETE ALL AGENCIES";
 
 function formatDate(value: string | null | undefined) {
   return value
@@ -408,6 +412,8 @@ export default function AdminPortal() {
   const [search, setSearch] = useState("");
   const [view, setView] = useState<"agencies" | "businesses" | "deactivation">("agencies");
   const [createOpen, setCreateOpen] = useState(false);
+  const [resetOpen, setResetOpen] = useState(false);
+  const [resetConfirmation, setResetConfirmation] = useState("");
   const [latestLink, setLatestLink] = useState<string | null>(null);
   const [newAgency, setNewAgency] = useState({
     name: "",
@@ -445,6 +451,33 @@ export default function AdminPortal() {
         toast({
           title: "Couldn't create agency",
           description: error instanceof Error ? error.message : "Please check the details and try again.",
+          variant: "destructive",
+        }),
+    },
+  });
+  const resetPlatformData = useResetAdminPlatformData({
+    mutation: {
+      onSuccess: (result) => {
+        void queryClient.invalidateQueries({
+          queryKey: getGetAdminPortalQueryKey(),
+        });
+        void queryClient.invalidateQueries({
+          queryKey: getListAdminDeactivationRequestsQueryKey(),
+        });
+        setResetOpen(false);
+        setResetConfirmation("");
+        toast({
+          title: "Agency data reset",
+          description: `Deleted ${result.deletedOrganizations} agencies, ${result.deletedOwners} owners, and ${result.deletedBusinesses} businesses. Super Admin accounts were preserved.`,
+        });
+      },
+      onError: (error) =>
+        toast({
+          title: "Reset failed",
+          description:
+            error instanceof Error
+              ? error.message
+              : "No data was deleted. Please try again.",
           variant: "destructive",
         }),
     },
@@ -550,6 +583,38 @@ export default function AdminPortal() {
             onReviewed={() => void refetchDeactivation()}
           />
         )}
+
+        <Card className="border-destructive/40 bg-destructive/5 shadow-sm">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-destructive">
+              <TriangleAlert className="h-5 w-5" />
+              Danger zone
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="font-medium text-foreground">
+                Reset all agency data
+              </p>
+              <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
+                Permanently delete every agency, owner, business, invitation,
+                review, campaign, and related tenant record. Super Admin
+                accounts are preserved.
+              </p>
+            </div>
+            <Button
+              variant="destructive"
+              disabled={
+                resetPlatformData.isPending ||
+                (data?.overview.totalOrganizations ?? 0) === 0
+              }
+              onClick={() => setResetOpen(true)}
+            >
+              <Trash2 className="mr-2 h-4 w-4" />
+              Reset agency data
+            </Button>
+          </CardContent>
+        </Card>
       </div>
 
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>
@@ -582,6 +647,68 @@ export default function AdminPortal() {
           <DialogHeader><DialogTitle>Signup link ready</DialogTitle><DialogDescription>This link expires in 14 days and can be used once by the invited owner.</DialogDescription></DialogHeader>
           <div className="flex gap-2"><Input readOnly value={latestLink ? signupUrl(latestLink) : ""} /><Button onClick={() => { if (latestLink) void navigator.clipboard.writeText(signupUrl(latestLink)); toast({ title: "Link copied" }); }}><Copy className="mr-2 h-4 w-4" /> Copy</Button></div>
           <DialogFooter><Button onClick={() => setLatestLink(null)}><Check className="mr-2 h-4 w-4" /> Done</Button></DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={resetOpen}
+        onOpenChange={(open) => {
+          if (!resetPlatformData.isPending) {
+            setResetOpen(open);
+            if (!open) setResetConfirmation("");
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-destructive">
+              <TriangleAlert className="h-5 w-5" />
+              Permanently reset agency data?
+            </DialogTitle>
+            <DialogDescription>
+              This cannot be undone. It deletes all agencies and everything
+              their owners created. Your Super Admin account will remain.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
+            <p className="text-sm text-foreground">
+              Type <strong>{RESET_CONFIRMATION}</strong> to continue.
+            </p>
+            <Input
+              autoComplete="off"
+              value={resetConfirmation}
+              onChange={(event) => setResetConfirmation(event.target.value)}
+              placeholder={RESET_CONFIRMATION}
+            />
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              disabled={resetPlatformData.isPending}
+              onClick={() => setResetOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              disabled={
+                resetConfirmation !== RESET_CONFIRMATION ||
+                resetPlatformData.isPending
+              }
+              onClick={() =>
+                resetPlatformData.mutate({
+                  data: { confirmation: RESET_CONFIRMATION },
+                })
+              }
+            >
+              {resetPlatformData.isPending ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Trash2 className="mr-2 h-4 w-4" />
+              )}
+              Delete all agency data
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </AppLayout>

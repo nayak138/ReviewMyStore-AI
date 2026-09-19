@@ -383,6 +383,23 @@ export interface AdminPortal {
   businesses: AdminBusiness[];
 }
 
+export type AdminPlatformResetInputConfirmation = typeof AdminPlatformResetInputConfirmation[keyof typeof AdminPlatformResetInputConfirmation];
+
+
+export const AdminPlatformResetInputConfirmation = {
+  DELETE_ALL_AGENCIES: 'DELETE ALL AGENCIES',
+} as const;
+
+export interface AdminPlatformResetInput {
+  confirmation: AdminPlatformResetInputConfirmation;
+}
+
+export interface AdminPlatformResetResult {
+  deletedOrganizations: number;
+  deletedOwners: number;
+  deletedBusinesses: number;
+}
+
 export interface AdminAgencyCreateInput {
   /**
      * @minLength 2

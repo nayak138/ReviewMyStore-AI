@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
-import { useClerk } from "@clerk/react";
+import { useAuth, useClerk } from "@clerk/react";
 import { 
   Store, 
   BarChart3, 
   Settings,
+  ShieldCheck,
   LogOut,
   Menu,
   X
@@ -14,6 +15,10 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { BrandLogo } from "@/components/brand-logo";
+import {
+  getGetCurrentUserQueryKey,
+  useGetCurrentUser,
+} from "@workspace/api-client-react";
 
 interface NavItem {
   name: string;
@@ -26,6 +31,11 @@ interface NavItem {
 const NAV_ITEMS: NavItem[] = [
   { name: "Businesses", icon: Store, href: "/businesses", ready: true },
   { name: "Insights", icon: BarChart3, href: "/insigts", ready: true },
+  { name: "Settings", icon: Settings, href: "/settings", ready: true },
+];
+
+const ADMIN_NAV_ITEMS: NavItem[] = [
+  { name: "Admin Portal", icon: ShieldCheck, href: "/admin/portal", ready: true },
   { name: "Settings", icon: Settings, href: "/settings", ready: true },
 ];
 
@@ -48,7 +58,20 @@ export function AppLayout({ children, title, businessName }: AppLayoutProps) {
     }
   };
   const [location, setLocation] = useLocation();
+  const { isLoaded, isSignedIn } = useAuth();
   const { signOut } = useClerk();
+  const { data: session } = useGetCurrentUser({
+    query: {
+      enabled: isLoaded && !!isSignedIn,
+      queryKey: getGetCurrentUserQueryKey(),
+    },
+  });
+  const navItems =
+    session?.user.role === "SUPER_ADMIN"
+      ? ADMIN_NAV_ITEMS
+      : session
+        ? NAV_ITEMS
+        : [];
 
   const handleSignOut = () => {
     signOut({ redirectUrl: "/" });
@@ -101,7 +124,7 @@ export function AppLayout({ children, title, businessName }: AppLayoutProps) {
         </div>
 
         <nav className="flex-1 overflow-y-auto p-4 space-y-1">
-          {NAV_ITEMS.map((item) => (
+          {navItems.map((item) => (
             <SidebarNavItem key={item.name} item={item} location={location} onNavigate={() => setMobileMenuOpen(false)} />
           ))}
         </nav>

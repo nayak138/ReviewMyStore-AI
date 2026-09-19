@@ -736,6 +736,20 @@ export const ReviewAdminDeactivationRequestResponse = zod.object({
 
 
 /**
+ * @summary Delete all agency tenant data while preserving Super Admin accounts
+ */
+export const ResetAdminPlatformDataBody = zod.object({
+  "confirmation": zod.enum(['DELETE ALL AGENCIES'])
+})
+
+export const ResetAdminPlatformDataResponse = zod.object({
+  "deletedOrganizations": zod.int(),
+  "deletedOwners": zod.int(),
+  "deletedBusinesses": zod.int()
+})
+
+
+/**
  * @summary Create an agency and its first invitation
  */
 export const createAdminAgencyBodyNameMin = 2;
