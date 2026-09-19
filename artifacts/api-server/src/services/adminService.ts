@@ -261,15 +261,19 @@ export async function getAdminPortal() {
 
 export async function resetPlatformTenantData() {
   return db.transaction(async (tx) => {
-    const [[organizationCount], [ownerCount], [businessCount]] =
-      await Promise.all([
-        tx.select({ value: count() }).from(organizationsTable),
-        tx
-          .select({ value: count() })
-          .from(usersTable)
-          .where(eq(usersTable.role, "OWNER")),
-        tx.select({ value: count() }).from(businessesTable),
-      ]);
+    // A transaction uses one database client, so these queries must remain
+    // sequential. Running them with Promise.all causes concurrent client.query
+    // calls, which PostgreSQL drivers are removing support for.
+    const [organizationCount] = await tx
+      .select({ value: count() })
+      .from(organizationsTable);
+    const [ownerCount] = await tx
+      .select({ value: count() })
+      .from(usersTable)
+      .where(eq(usersTable.role, "OWNER"));
+    const [businessCount] = await tx
+      .select({ value: count() })
+      .from(businessesTable);
 
     // Reservations intentionally have no foreign key because in-flight
     // generation must survive ordinary tenant record changes. A platform
