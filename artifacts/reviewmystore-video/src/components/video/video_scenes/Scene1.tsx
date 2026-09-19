@@ -64,7 +64,7 @@ export function Scene1() {
         animate={{ scale: 1, rotate: 8 }}
         transition={{ delay: 0.8, type: "spring", stiffness: 230, damping: 17 }}
       >
-        <img src={`${import.meta.env.BASE_URL}brand/logo-icon.png`} alt="" className="h-[10.5vw] w-[10.5vw] object-contain" />
+        <img src={`${import.meta.env.BASE_URL}brand/favicon.png`} alt="" className="h-[10.5vw] w-[10.5vw] object-contain" />
         <motion.div className="absolute -right-[2vw] -top-[2vw] flex h-[4.2vw] w-[4.2vw] items-center justify-center rounded-full bg-[#fbbc04] text-[#202124]" animate={{ rotate: [0, 12, 0], scale: [1, 1.08, 1] }} transition={{ duration: 2.5, repeat: Infinity }}>
           <Star size="2vw" fill="currentColor" strokeWidth={1.5} />
         </motion.div>

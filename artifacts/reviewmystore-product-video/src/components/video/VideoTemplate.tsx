@@ -71,7 +71,7 @@ export default function VideoTemplate() {
 
       <div className="pointer-events-none absolute left-[7vw] right-[7vw] top-[4.2vh] z-20 flex items-center justify-between">
         <motion.img
-          src={`${import.meta.env.BASE_URL}brand/logo-horizontal.png`}
+          src={`${import.meta.env.BASE_URL}brand/dark-logo.png`}
           alt="5-STAR.AI"
           className="h-auto w-[17vw] object-contain"
           animate={{ opacity: [0.92, 1, 0.92], y: [0, -.2, 0] }}

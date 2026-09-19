@@ -31,6 +31,6 @@ The managed artifact workflow is declared in `.replit-artifact/artifact.toml` on
 
 Brand assets are copied from the product artifact and referenced at runtime with `import.meta.env.BASE_URL`:
 
-- `public/brand/logo-horizontal.png`
-- `public/brand/logo-horizontal-dark.png`
-- `public/brand/logo-icon.png`
+- `public/brand/dark-logo.png`
+- `public/brand/light-logo.png`
+- `public/brand/favicon.png`
