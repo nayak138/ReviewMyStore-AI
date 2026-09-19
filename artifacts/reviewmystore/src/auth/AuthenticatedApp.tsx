@@ -106,7 +106,9 @@ const clerkAppearance = {
     formButtonPrimary:
       "!h-11 !w-full !rounded-lg !bg-slate-950 !text-white hover:!bg-slate-800 transition-all shadow-sm",
     formFieldInput:
-      "!h-11 !rounded-lg !bg-white !border-slate-300 !text-slate-950 placeholder:!text-slate-500 focus:!border-blue-700 focus:!ring-2 focus:!ring-blue-100 transition-all",
+      "!h-11 !w-full !rounded-lg !bg-white !border-slate-300 !pr-[3.25rem] !text-slate-950 placeholder:!text-slate-500 focus:!border-blue-700 focus:!ring-2 focus:!ring-blue-100 transition-all",
+    formFieldInputShowPasswordButton:
+      "!w-10 !min-w-10 !max-w-10 !p-2 !text-blue-600 hover:!text-blue-800",
     footerAction: "mt-5",
     dividerLine: "!bg-slate-200",
     alert: "!border-amber-200 !bg-amber-50",

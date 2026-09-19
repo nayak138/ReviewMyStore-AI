@@ -41,19 +41,6 @@
   width: 100% !important;
 }
 
-.auth-form-section input,
-.auth-form-section button {
-  box-sizing: border-box !important;
-}
-
-.auth-form-section input {
-  width: 100% !important;
-}
-
-.auth-form-section button {
-  max-width: none !important;
-}
-
 .auth-brand-icon {
   border-radius: 1rem;
   filter: saturate(0.92) brightness(1.04);
