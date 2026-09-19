@@ -27,7 +27,6 @@ import { ThemeProvider } from "@/components/theme-provider";
 import {
   BRAND_LOGO_DARK,
   BRAND_LOGO_LIGHT,
-  BrandIcon,
   BrandLogo,
 } from "@/components/brand-logo";
 import {
@@ -384,7 +383,7 @@ function PageLoader() {
       aria-label="Loading page"
     >
       <div className="flex flex-col items-center gap-4">
-        <BrandIcon className="w-10 h-10 animate-pulse" />
+        <BrandLogo className="h-10 w-auto animate-pulse" />
         <div className="h-1 w-24 overflow-hidden rounded-full bg-muted">
           <div className="h-full w-1/3 animate-[page-loader-slide_1s_ease-in-out_infinite] rounded-full bg-primary" />
         </div>
