@@ -7,7 +7,10 @@ import runtimeErrorOverlay from "@replit/vite-plugin-runtime-error-modal";
 
 import fs from "node:fs";
 
-import { blogPosts } from "./src/pages/marketing/blog-data";
+import {
+  blogPosts,
+  type BlogPost,
+} from "./src/pages/marketing/blog-data";
 import {
   marketingRouteMeta,
   type RouteMeta,
@@ -118,6 +121,48 @@ function escapeHtml(s: string): string {
     .replace(/>/g, "&gt;");
 }
 
+function toIsoDate(date: string): string {
+  const parsed = new Date(date);
+  if (Number.isNaN(parsed.getTime())) {
+    throw new Error(`Invalid blog post date: "${date}"`);
+  }
+  return parsed.toISOString().slice(0, 10);
+}
+
+function serializeJsonLd(value: unknown): string {
+  return JSON.stringify(value, null, 2).replace(/</g, "\\u003c");
+}
+
+function buildBlogPostingJsonLd(post: BlogPost, siteUrl: string): string {
+  const url = `${siteUrl}/blog/${post.slug}`;
+  const schema = {
+    "@context": "https://schema.org",
+    "@type": "BlogPosting",
+    headline: post.title,
+    description: post.excerpt,
+    author: {
+      "@type": "Organization",
+      name: post.author.name,
+    },
+    datePublished: toIsoDate(post.date),
+    ...(post.modifiedDate
+      ? { dateModified: toIsoDate(post.modifiedDate) }
+      : {}),
+    mainEntityOfPage: {
+      "@type": "WebPage",
+      "@id": url,
+    },
+    url,
+    publisher: {
+      "@type": "Organization",
+      name: "5-Star.AI",
+      url: siteUrl,
+    },
+  };
+
+  return `    <script type="application/ld+json">\n${serializeJsonLd(schema)}\n    </script>\n`;
+}
+
 /**
  * Rewrites the HTML shell's title/description/OG/Twitter tags for a specific
  * marketing route and adds canonical + og:url, so crawlers and social bots
@@ -137,6 +182,9 @@ function injectRouteMeta(
     meta.socialImageAlt ??
       "5-Star.AI — Practical reputation support for local businesses",
   );
+  const blogPost = route.startsWith("/blog/")
+    ? blogPosts.find((post) => `/blog/${post.slug}` === route)
+    : undefined;
   let out = html
     .replace(/<title>[^<]*<\/title>/, `<title>${title}</title>`)
     .replace(
@@ -163,7 +211,10 @@ function injectRouteMeta(
       /(<meta name="twitter:image:alt" content=")[^"]*(")/,
       `$1${imageAlt}$2`,
     );
-  const extra = `    <meta property="og:url" content="${url}" />\n    <link rel="canonical" href="${url}" />\n  </head>`;
+  const articleJsonLd = blogPost
+    ? buildBlogPostingJsonLd(blogPost, siteUrl)
+    : "";
+  const extra = `    <meta property="og:url" content="${url}" />\n    <link rel="canonical" href="${url}" />\n${articleJsonLd}  </head>`;
   out = out.replace("</head>", extra);
   return out;
 }

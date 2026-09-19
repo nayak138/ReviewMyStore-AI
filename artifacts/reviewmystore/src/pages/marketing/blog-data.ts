@@ -10,6 +10,7 @@ export interface BlogPost {
   excerpt: string;
   category: string;
   date: string;
+  modifiedDate?: string;
   readTime: string;
   author: { name: string; role: string };
   sections: BlogSection[];
