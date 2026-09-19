@@ -112,15 +112,17 @@ const clerkAppearance = {
 function AuthLayout({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-[100dvh] bg-white text-slate-950">
-      <main className="mx-auto flex min-h-[100dvh] w-full max-w-[560px] flex-col justify-center px-5 py-10 sm:px-8">
-        <div className="border-b border-slate-200 pb-6">
-          <img
-            src={BRAND_LOGO_LIGHT}
-            alt="5-Star.AI"
-            className="block h-14 w-auto max-w-[18rem] self-start object-contain"
-          />
+      <main className="mx-auto flex min-h-[100dvh] w-full flex-col items-center justify-center px-5 py-10 sm:px-8">
+        <div className="w-full max-w-[560px]">
+          <div className="border-b border-slate-200 pb-6">
+            <img
+              src={BRAND_LOGO_LIGHT}
+              alt="5-Star.AI"
+              className="block h-14 w-auto max-w-[18rem] self-start object-contain"
+            />
+          </div>
+          <div className="border-b border-slate-200 py-8">{children}</div>
         </div>
-        <div className="border-b border-slate-200 py-8">{children}</div>
       </main>
     </div>
   );
