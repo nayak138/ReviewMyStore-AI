@@ -61,6 +61,55 @@ function buildRobots(siteUrl: string): string {
   return `User-agent: *\nAllow: /\n\nSitemap: ${siteUrl}/sitemap.xml\n`;
 }
 
+function buildLlmsTxt(siteUrl: string): string {
+  const routeMeta = marketingRouteMeta();
+  const routes = marketingRoutes();
+  const sections = [
+    {
+      heading: "Product and resources",
+      routes: routes.filter(
+        (route) =>
+          route === "/" ||
+          route === "/about" ||
+          route === "/resources" ||
+          route === "/blog",
+      ),
+    },
+    {
+      heading: "Local SEO and reputation management guides",
+      routes: routes.filter((route) => route.startsWith("/blog/")),
+    },
+    {
+      heading: "Policies",
+      routes: routes.filter(
+        (route) => route === "/privacy" || route === "/terms",
+      ),
+    },
+  ];
+
+  const lines = [
+    "# 5-Star.AI",
+    "",
+    "> 5-Star.AI helps local businesses collect more Google reviews, improve local search visibility, and manage their online reputation.",
+    "",
+    "Use the canonical pages below for product information, setup guidance, and educational content about Google reviews, local SEO, and reputation management.",
+  ];
+
+  for (const section of sections) {
+    if (section.routes.length === 0) continue;
+    lines.push("", `## ${section.heading}`, "");
+    for (const route of section.routes) {
+      const meta = routeMeta[route];
+      const url = `${siteUrl}${route === "/" ? "/" : route}`;
+      lines.push(
+        `- [${meta?.title ?? route}](${url})${meta ? `: ${meta.description}` : ""}`,
+      );
+    }
+  }
+
+  return `${lines.join("\n")}\n`;
+}
+
 function escapeHtml(s: string): string {
   return s
     .replace(/&/g, "&amp;")
@@ -104,7 +153,7 @@ function injectRouteMeta(
   return out;
 }
 
-/** Serves sitemap.xml and robots.txt in dev and emits them into the build. */
+/** Serves SEO discovery files in dev and emits them into the build. */
 function seoFilesPlugin(siteUrl: string): Plugin {
   const files: Record<string, { content: () => string; type: string }> = {
     "sitemap.xml": {
@@ -114,6 +163,10 @@ function seoFilesPlugin(siteUrl: string): Plugin {
     "robots.txt": {
       content: () => buildRobots(siteUrl),
       type: "text/plain",
+    },
+    "llms.txt": {
+      content: () => buildLlmsTxt(siteUrl),
+      type: "text/plain; charset=utf-8",
     },
   };
   return {
