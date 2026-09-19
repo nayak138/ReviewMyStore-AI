@@ -28,29 +28,29 @@
   max-width: none !important;
 }
 
-.auth-signin-card form,
-.auth-signin-card form > div,
-.auth-signin-card [class*="cl-rootBox"],
-.auth-signin-card [class*="cl-cardBox"],
-.auth-signin-card [class*="cl-main"],
-.auth-signin-card [class*="cl-form"],
-.auth-signin-card [class*="cl-socialButtons"],
-.auth-signin-card [class*="cl-dividerRow"] {
+.auth-form-section form,
+.auth-form-section form > div,
+.auth-form-section [class*="cl-rootBox"],
+.auth-form-section [class*="cl-cardBox"],
+.auth-form-section [class*="cl-main"],
+.auth-form-section [class*="cl-form"],
+.auth-form-section [class*="cl-socialButtons"],
+.auth-form-section [class*="cl-dividerRow"] {
   box-sizing: border-box !important;
   max-width: none !important;
   width: 100% !important;
 }
 
-.auth-signin-card input,
-.auth-signin-card button {
+.auth-form-section input,
+.auth-form-section button {
   box-sizing: border-box !important;
 }
 
-.auth-signin-card input {
+.auth-form-section input {
   width: 100% !important;
 }
 
-.auth-signin-card button {
+.auth-form-section button {
   max-width: none !important;
 }
 

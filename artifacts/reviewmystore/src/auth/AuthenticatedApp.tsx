@@ -16,7 +16,6 @@ import {
   useGetPublicAgencyInvitation,
 } from "@workspace/api-client-react";
 import {
-  BRAND_LOGO_DARK,
   BRAND_LOGO_LIGHT,
   BrandIcon,
 } from "@/components/brand-logo";
@@ -112,80 +111,16 @@ const clerkAppearance = {
 
 function AuthLayout({ children }: { children: ReactNode }) {
   return (
-    <div className="min-h-[100dvh] bg-slate-50 lg:grid lg:grid-cols-[minmax(360px,0.92fr)_1.08fr]">
-      <aside className="relative hidden overflow-hidden bg-[#235de2] px-12 py-12 text-white lg:flex lg:flex-col lg:justify-between">
-        <div className="auth-hero-mesh pointer-events-none absolute inset-0" />
-        <div className="auth-hero-dots pointer-events-none absolute inset-0" />
-        <div className="relative z-10">
-          <img
-            src={BRAND_LOGO_DARK}
-            alt="5-Star.AI"
-            className="h-12 w-auto max-w-[16rem] object-contain"
-          />
-        </div>
-        <div className="relative z-10 max-w-lg pb-4">
-          <p className="mb-5 text-xs font-semibold uppercase tracking-[0.2em] text-white/60">
-            Reputation, made practical
-          </p>
-          <h1 className="font-sans text-5xl font-semibold leading-[1.02] tracking-tight text-white">
-            Make the good
-            <br />
-            moments visible.
-          </h1>
-          <p className="mt-5 max-w-sm text-base leading-relaxed text-white/75">
-            A calmer way to turn real customer experiences into reviews your
-            next guest can trust.
-          </p>
-          <div className="mt-8 max-w-sm rounded-2xl border border-white/20 bg-white/10 p-4 shadow-2xl shadow-blue-950/20 backdrop-blur-md">
-            <div className="flex items-center gap-3">
-              <div
-                className="flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-sm font-bold text-slate-700"
-                aria-hidden="true"
-              >
-                AM
-              </div>
-              <div className="min-w-0">
-                <p className="truncate text-sm font-semibold text-white">
-                  Aarav Mehta
-                </p>
-                <p className="text-xs text-white/60">Verified customer</p>
-              </div>
-              <span className="ml-auto rounded-full bg-emerald-400/20 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-emerald-100">
-                Google
-              </span>
-            </div>
-            <div
-              className="mt-4 flex items-center gap-1"
-              aria-label="5 out of 5 stars"
-            >
-              {Array.from({ length: 5 }, (_, index) => (
-                <span
-                  key={index}
-                  className="text-lg leading-none text-amber-300"
-                >
-                  ★
-                </span>
-              ))}
-            </div>
-            <p className="mt-2 text-sm leading-relaxed text-white/80">
-              “The team made our stay feel effortless. I’ll happily recommend
-              them to anyone visiting the city.”
-            </p>
-          </div>
-        </div>
-        <p className="relative z-10 text-xs uppercase tracking-[0.18em] text-white/60">
-          Built for thoughtful local businesses
-        </p>
-      </aside>
-      <main className="flex min-h-[100dvh] flex-col items-center justify-center bg-slate-50 px-4 py-10 text-slate-950 sm:px-8">
-        <div className="mb-8 flex items-center gap-2 lg:hidden">
+    <div className="min-h-[100dvh] bg-white text-slate-950">
+      <main className="mx-auto flex min-h-[100dvh] w-full max-w-[560px] flex-col justify-center px-5 py-10 sm:px-8">
+        <div className="border-b border-slate-200 pb-6">
           <img
             src={BRAND_LOGO_LIGHT}
             alt="5-Star.AI"
-            className="h-12 w-auto max-w-[16rem] object-contain"
+            className="h-10 w-auto max-w-[14rem] object-contain"
           />
         </div>
-        {children}
+        <div className="border-b border-slate-200 py-8">{children}</div>
       </main>
     </div>
   );
@@ -194,23 +129,25 @@ function AuthLayout({ children }: { children: ReactNode }) {
 function SignInPage() {
   return (
     <AuthLayout>
-      <div className="auth-signin-card w-full max-w-[480px] rounded-2xl border border-slate-200/80 bg-white p-6 shadow-xl shadow-slate-200/50 sm:p-8">
-        <div className="mb-6">
+      <div className="auth-form-section w-full">
+        <div className="border-b border-slate-200 pb-6">
           <p className="mb-2 text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
             Agency workspace
           </p>
           <h1 className="font-sans text-2xl font-semibold tracking-tight text-slate-950">
             Sign in to 5-Star.AI
           </h1>
+          <p className="mt-3 inline-flex max-w-full rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-medium leading-relaxed text-slate-600">
+            Agency access only — contact the Admin at hello@5-star.ai
+          </p>
         </div>
-        <p className="mb-6 inline-flex max-w-full rounded-full border border-amber-500/20 bg-amber-500/10 px-3 py-1 text-xs font-medium leading-relaxed text-amber-800">
-          Agency access only — contact the Admin at hello@5-star.ai
-        </p>
-        <SignIn
-          routing="path"
-          path={`${basePath}/sign-in`}
-          fallbackRedirectUrl={`${basePath}/businesses`}
-        />
+        <div className="pt-6">
+          <SignIn
+            routing="path"
+            path={`${basePath}/sign-in`}
+            fallbackRedirectUrl={`${basePath}/businesses`}
+          />
+        </div>
       </div>
     </AuthLayout>
   );
@@ -257,19 +194,26 @@ function SignUpPage() {
 
   return (
     <AuthLayout>
-      <div className="w-full max-w-[440px] rounded-[1.25rem] border border-red-200 bg-red-50 p-8 text-center shadow-sm dark:border-red-900/60 dark:bg-red-950/30">
-        <h1 className="font-display text-3xl font-semibold tracking-tight text-foreground">
-          Create your owner account
-        </h1>
-        <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-          Invitation for {invitation.organizationName}
-        </p>
-        <SignUp
-          routing="path"
-          path={`${basePath}/sign-up`}
-          initialValues={{ emailAddress: invitation.email }}
-          fallbackRedirectUrl={`${basePath}/businesses`}
-        />
+      <div className="auth-form-section w-full">
+        <div className="border-b border-slate-200 pb-6">
+          <p className="mb-2 text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+            Agency invitation
+          </p>
+          <h1 className="font-sans text-2xl font-semibold tracking-tight text-slate-950">
+            Create your owner account
+          </h1>
+          <p className="mt-3 text-sm leading-relaxed text-slate-600">
+            Invitation for {invitation.organizationName}
+          </p>
+        </div>
+        <div className="pt-6">
+          <SignUp
+            routing="path"
+            path={`${basePath}/sign-up`}
+            initialValues={{ emailAddress: invitation.email }}
+            fallbackRedirectUrl={`${basePath}/businesses`}
+          />
+        </div>
       </div>
     </AuthLayout>
   );
