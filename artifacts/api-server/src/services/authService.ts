@@ -250,9 +250,10 @@ export async function generateUniqueOrgSlug(
  * reach the provisioning path (e.g. the frontend firing more than one
  * authenticated request before the row exists). This is closed in two
  * layers:
- *  1. Postgres advisory locks keyed by normalized email and Clerk user id
- *     serialize concurrent provisioning attempts for the same identity, so
- *     the loser waits, re-reads, and reuses the row the winner just committed.
+ *  1. Postgres advisory locks keyed on the Clerk user id and normalized email
+ *     serialize concurrent provisioning attempts for the same identity or
+ *     allowlisted email, so the loser waits, re-reads, and reuses the row the
+ *     winner just committed.
  *  2. A retry loop catches a unique-constraint violation that slips through
  *     anyway (e.g. two different brand-new users whose names produce the
  *     same org slug) and either regenerates the slug or falls back to the
@@ -274,27 +275,26 @@ export async function getOrCreateUserForClerkId(
   if (!email) {
     throw new Error(`Clerk user ${clerkUserId} has no email address`);
   }
-  const normalizedEmail = email.trim().toLowerCase();
 
   const name =
     [clerkUser.firstName, clerkUser.lastName].filter(Boolean).join(" ") ||
     email.split("@")[0];
+  const normalizedEmail = email.toLowerCase();
 
   const isSuperAdmin = getSuperAdminEmails().has(normalizedEmail);
 
   for (let attempt = 0; attempt < MAX_PROVISION_ATTEMPTS; attempt++) {
     try {
       return await db.transaction(async (tx) => {
-        // Lock by email before locking by Clerk id so concurrent sessions
-        // cannot both decide that an existing local account needs linking.
-        await tx.execute(
-          sql`select pg_advisory_xact_lock(hashtext(${`email:${normalizedEmail}`}))`,
-        );
         // Serialize concurrent provisioning attempts for this exact Clerk
-        // user. The lock is scoped to the transaction and released
-        // automatically on commit or rollback.
+        // user and for the email that identifies a local account. The locks
+        // are scoped to the transaction and released automatically on commit
+        // or rollback.
         await tx.execute(
-          sql`select pg_advisory_xact_lock(hashtext(${`clerk:${clerkUserId}`}))`,
+          sql`select pg_advisory_xact_lock(hashtext(${clerkUserId}))`,
+        );
+        await tx.execute(
+          sql`select pg_advisory_xact_lock(hashtext(${normalizedEmail}))`,
         );
 
         // A concurrent request may have finished provisioning this user
@@ -314,13 +314,11 @@ export async function getOrCreateUserForClerkId(
           return updated;
         }
 
-        // The platform allowlist is the explicit migration path for a Clerk
-        // identity that changed between environments. Re-link an existing
-        // local account by its verified primary email instead of inserting a
-        // duplicate row. Preserve the local role and organization so existing
-        // business data stays attached to the account. Ordinary owners must
-        // still use the one-time agency invitation flow below.
         if (isSuperAdmin) {
+          // An allowlisted email may already have a local account created
+          // before it was added to SUPER_ADMIN_EMAILS. Reconcile the Clerk
+          // subject without changing the local role, organization, or
+          // preferences; the local account remains the source of truth.
           const [emailExisting] = await tx
             .select()
             .from(usersTable)
@@ -331,8 +329,6 @@ export async function getOrCreateUserForClerkId(
               .update(usersTable)
               .set({
                 clerkUserId,
-                name,
-                email: normalizedEmail,
                 lastLoginAt: new Date(),
                 updatedAt: new Date(),
               })
@@ -340,16 +336,14 @@ export async function getOrCreateUserForClerkId(
               .returning();
             return updated;
           }
-        }
 
-        if (isSuperAdmin) {
           const [created] = await tx
             .insert(usersTable)
             .values({
               organizationId: null,
               clerkUserId,
               name,
-              email: normalizedEmail,
+              email,
               role: "SUPER_ADMIN",
               status: "ACTIVE",
               lastLoginAt: new Date(),
@@ -386,7 +380,7 @@ export async function getOrCreateUserForClerkId(
               organizationId: invitation.organizationId,
               clerkUserId,
               name,
-              email: normalizedEmail,
+              email,
               role: "OWNER",
               status: "ACTIVE",
               lastLoginAt: new Date(),
@@ -408,13 +402,19 @@ export async function getOrCreateUserForClerkId(
       if (isUniqueViolation(error, "organizations_slug_unique")) {
         continue;
       }
-      // Someone else already provisioned this exact user; reuse that row.
-      if (
-        isUniqueViolation(error, "users_clerk_user_id_unique") ||
-        isUniqueViolation(error, "users_email_unique")
-      ) {
+      // Someone else already provisioned this exact Clerk identity; reuse it.
+      if (isUniqueViolation(error, "users_clerk_user_id_unique")) {
         const winner = await findUserByClerkId(clerkUserId);
         if (winner) return touchLastLogin(winner);
+      }
+      // A previous deployment may not have held the normalized-email lock.
+      // Retry an allowlisted super admin so the transactional email lookup
+      // above can reconcile it. Owner invitation reuse remains rejected.
+      if (
+        isSuperAdmin &&
+        isUniqueViolation(error, "users_email_unique")
+      ) {
+        continue;
       }
       throw error;
     }

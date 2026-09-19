@@ -150,54 +150,54 @@ test("first login attaches the invited owner to the intended agency and consumes
   assert.equal(await getPublicAgencyInvitation(fixture.invitation.signupPath.split("/").pop()!), null);
 });
 
-test("a returning account is relinked when its Clerk user id changes", async () => {
-  const [organization] = await db
-    .insert(organizationsTable)
-    .values({
-      name: `Relink Test Organization ${runId}`,
-      slug: `relink-test-${runId}`,
-    })
-    .returning();
-  createdOrganizationIds.push(organization.id);
-
-  const email = `relink-${runId}@example.com`;
-  const [existing] = await db
-    .insert(usersTable)
-    .values({
-      organizationId: organization.id,
-      clerkUserId: `user_relink_old_${runId}`,
-      name: "Original Relink Owner",
-      email,
-      role: "OWNER",
-      status: "ACTIVE",
-    })
-    .returning();
-  createdUserIds.push(existing.id);
-
-  const newClerkUserId = `user_relink_new_${runId}`;
-  registerFakeClerkUser(newClerkUserId, "Relinked Owner", email);
-
-  const previousSuperAdminEmails = process.env.SUPER_ADMIN_EMAILS;
+test("rebinds an existing account for an allowlisted email without changing its tenant", async () => {
+  const fixture = await createAgencyFixture(testAdminId, "allowlisted-rebind");
+  const email = fixture.invitation.email;
+  const legacyClerkUserId = `user_legacy_${runId}`;
+  const replacementClerkUserId = `user_replacement_${runId}`;
+  const originalSuperAdminEmails = process.env.SUPER_ADMIN_EMAILS;
   process.env.SUPER_ADMIN_EMAILS = [
-    previousSuperAdminEmails,
+    originalSuperAdminEmails,
     email,
   ].filter(Boolean).join(",");
-  let relinked;
+
   try {
-    relinked = await getOrCreateUserForClerkId(newClerkUserId);
+    const [existing] = await db
+      .insert(usersTable)
+      .values({
+        organizationId: fixture.organization.id,
+        clerkUserId: legacyClerkUserId,
+        name: "Existing Owner",
+        email,
+        role: "OWNER",
+        status: "ACTIVE",
+      })
+      .returning();
+    createdUserIds.push(existing.id);
+    registerFakeClerkUser(
+      replacementClerkUserId,
+      "Replacement Clerk Super Admin",
+      email,
+    );
+
+    const rebound = await getOrCreateUserForClerkId(replacementClerkUserId);
+
+    assert.equal(rebound.id, existing.id);
+    assert.equal(rebound.clerkUserId, replacementClerkUserId);
+    assert.equal(rebound.organizationId, fixture.organization.id);
+    assert.equal(rebound.role, "OWNER");
+    const [stored] = await db
+      .select()
+      .from(usersTable)
+      .where(eq(usersTable.id, existing.id));
+    assert.equal(stored.clerkUserId, replacementClerkUserId);
   } finally {
-    if (previousSuperAdminEmails === undefined) {
+    if (originalSuperAdminEmails === undefined) {
       delete process.env.SUPER_ADMIN_EMAILS;
     } else {
-      process.env.SUPER_ADMIN_EMAILS = previousSuperAdminEmails;
+      process.env.SUPER_ADMIN_EMAILS = originalSuperAdminEmails;
     }
   }
-
-  assert.equal(relinked.id, existing.id);
-  assert.equal(relinked.clerkUserId, newClerkUserId);
-  assert.equal(relinked.organizationId, organization.id);
-  assert.equal(relinked.role, "OWNER");
-  assert.equal(relinked.name, "Relinked Owner");
 });
 
 test("concurrent first-login requests for the same brand-new Clerk user provision exactly one account", async () => {
