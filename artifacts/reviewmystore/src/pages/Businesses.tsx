@@ -130,10 +130,12 @@ export default function Businesses() {
     onConfirm: () => {},
   });
 
-  const { data, isLoading } = useListBusinesses({ includeArchived: true }, {
+  const { data, isLoading, isError, refetch } = useListBusinesses({ includeArchived: true }, {
     query: {
-      enabled: !!isSignedIn,
+      enabled: isLoaded && !!isSignedIn,
       queryKey: getListBusinessesQueryKey({ includeArchived: true }),
+      refetchOnMount: "always",
+      retry: 2,
     }
   });
 
@@ -342,7 +344,16 @@ export default function Businesses() {
     });
   };
 
-  if (!isLoaded) return null;
+  if (!isLoaded) {
+    return (
+      <div className="flex min-h-[100dvh] items-center justify-center bg-background">
+        <div className="flex items-center gap-3 text-sm text-muted-foreground" role="status">
+          <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+          Loading your workspace…
+        </div>
+      </div>
+    );
+  }
   if (!isSignedIn) return <Redirect to="/sign-in" />;
 
   const businesses = data?.businesses || [];
@@ -399,6 +410,19 @@ export default function Businesses() {
                 </div>
               </div>
             ))
+          ) : isError ? (
+            <div className="col-span-full py-16 flex flex-col items-center justify-center text-center border-2 border-dashed border-destructive/30 rounded-xl">
+              <div className="w-16 h-16 rounded-full bg-destructive/10 text-destructive flex items-center justify-center mb-4">
+                <AlertCircle className="w-8 h-8" aria-hidden="true" />
+              </div>
+              <h3 className="text-xl font-semibold text-foreground">Unable to load your businesses</h3>
+              <p className="text-muted-foreground mt-2 max-w-md">
+                Your sign-in may still be connecting. Try again without refreshing the page.
+              </p>
+              <Button onClick={() => refetch()} className="mt-6">
+                Try again
+              </Button>
+            </div>
           ) : filteredBusinesses.length === 0 ? (
             <div className="col-span-full py-16 flex flex-col items-center justify-center text-center border-2 border-dashed border-border rounded-xl">
               <div className="w-16 h-16 rounded-full bg-secondary text-muted-foreground flex items-center justify-center mb-4">

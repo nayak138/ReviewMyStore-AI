@@ -30,3 +30,4 @@
 - [Publish-time schema readiness](publish-schema-readiness.md) — production may lag the Drizzle schema; Replit Publish applies managed database diffs, not the agent.
 - [Clerk identity relinking](clerk-identity-relinking.md) — only the explicit super-admin email allowlist may relink a stale Clerk ID; invitation owners stay one-time-use.
 - [Legacy dashboard URL](legacy-dashboard-route.md) — keep `/dashboard` as a compatibility redirect because Clerk or older bookmarks may still target it.
+- [Clerk dashboard hydration](clerk-dashboard-hydration.md) — gate protected queries on Clerk `isLoaded` and show a loader; sign-in can redirect before the session-backed API is ready.
