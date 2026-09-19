@@ -23,7 +23,7 @@ timeoutMs = 20000
 
 [userenv.shared]
 SUPER_ADMIN_EMAILS = "nayak138@gmail.com"
-DEMO_ALERT_EMAILS = "nayak138@gmail.com, info@reviewmystore.ai"
+DEMO_ALERT_EMAILS = "nayak138@gmail.com"
 CORS_ALLOWED_ORIGINS = "https://5-star.ai"
 VITE_SITE_URL = "https://5-star.ai"
 
