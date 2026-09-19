@@ -117,7 +117,7 @@ function AuthLayout({ children }: { children: ReactNode }) {
           <img
             src={BRAND_LOGO_LIGHT}
             alt="5-Star.AI"
-            className="h-10 w-auto max-w-[14rem] object-contain"
+            className="block h-14 w-auto max-w-[18rem] self-start object-contain"
           />
         </div>
         <div className="border-b border-slate-200 py-8">{children}</div>
@@ -134,10 +134,7 @@ function SignInPage() {
           <p className="mb-2 text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
             Agency workspace
           </p>
-          <h1 className="font-sans text-2xl font-semibold tracking-tight text-slate-950">
-            Sign in to 5-Star.AI
-          </h1>
-          <p className="mt-3 inline-flex max-w-full rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-medium leading-relaxed text-slate-600">
+          <p className="inline-flex max-w-full rounded-full border border-amber-200 bg-amber-100 px-3 py-1 text-xs font-medium leading-relaxed text-amber-900">
             Agency access only — contact the Admin at hello@5-star.ai
           </p>
         </div>
