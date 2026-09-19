@@ -694,22 +694,34 @@ export default function CustomerReview() {
                   </div>
 
                   <div className="mb-6 grid gap-3 border-t border-border pt-6 sm:grid-cols-2">
-                    <input
-                      type="text"
-                      value={customerName}
-                      onChange={(event) => setCustomerName(event.target.value)}
-                      placeholder={strings.namePlaceholder}
-                      maxLength={60}
-                      className="w-full rounded-xl border border-input bg-background/70 px-3.5 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                    />
-                    <input
-                      type="text"
-                      value={occasion}
-                      onChange={(event) => setOccasion(event.target.value)}
-                      placeholder={strings.occasionPlaceholder}
-                      maxLength={60}
-                      className="w-full rounded-xl border border-input bg-background/70 px-3.5 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                    />
+                    <div>
+                      <label htmlFor="customer-review-name" className="sr-only">
+                        {strings.namePlaceholder}
+                      </label>
+                      <input
+                        id="customer-review-name"
+                        type="text"
+                        value={customerName}
+                        onChange={(event) => setCustomerName(event.target.value)}
+                        placeholder={strings.namePlaceholder}
+                        maxLength={60}
+                        className="w-full rounded-xl border border-input bg-background/70 px-3.5 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="customer-review-occasion" className="sr-only">
+                        {strings.occasionPlaceholder}
+                      </label>
+                      <input
+                        id="customer-review-occasion"
+                        type="text"
+                        value={occasion}
+                        onChange={(event) => setOccasion(event.target.value)}
+                        placeholder={strings.occasionPlaceholder}
+                        maxLength={60}
+                        className="w-full rounded-xl border border-input bg-background/70 px-3.5 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                      />
+                    </div>
                   </div>
                 </>
               )}
