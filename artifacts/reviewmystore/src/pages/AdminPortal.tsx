@@ -52,6 +52,8 @@ import {
 const plans: OrganizationPlan[] = ["STARTER", "GROWTH", "PRO", "ENTERPRISE"];
 const subscriptionStatuses: SubscriptionStatus[] = ["TRIALING", "ACTIVE", "PAST_DUE", "CANCELED"];
 const RESET_CONFIRMATION = "DELETE ALL AGENCIES";
+const MAX_AI_QUOTA = 1_000_000;
+const MAX_BUSINESSES_LIMIT = 10_000;
 
 function formatDate(value: string | null | undefined) {
   return value
@@ -270,6 +272,17 @@ function AgencyCard({
         businessesLimit: Math.max(1, Number(businessesLimit) || 1),
       },
     });
+  const quotaValue = Number(quota);
+  const businessesLimitValue = Number(businessesLimit);
+  const limitsInvalid =
+    quota.trim() === "" ||
+    !Number.isInteger(quotaValue) ||
+    quotaValue < 0 ||
+    quotaValue > MAX_AI_QUOTA ||
+    businessesLimit.trim() === "" ||
+    !Number.isInteger(businessesLimitValue) ||
+    businessesLimitValue < 1 ||
+    businessesLimitValue > MAX_BUSINESSES_LIMIT;
 
   return (
     <Card className="border-border shadow-sm">
@@ -335,13 +348,15 @@ function AgencyCard({
         <div className="grid gap-3 sm:grid-cols-[1fr_1fr_auto]">
           <label className="space-y-1.5 text-sm">
             <span className="font-medium text-foreground">AI generations remaining</span>
-            <Input type="number" min={0} value={quota} onChange={(event) => setQuota(event.target.value)} />
+            <Input type="number" min={0} max={MAX_AI_QUOTA} value={quota} onChange={(event) => setQuota(event.target.value)} />
+            <span className="block text-xs text-muted-foreground">Maximum {MAX_AI_QUOTA.toLocaleString()}</span>
           </label>
           <label className="space-y-1.5 text-sm">
             <span className="font-medium text-foreground">Business limit</span>
-            <Input type="number" min={1} value={businessesLimit} onChange={(event) => setBusinessesLimit(event.target.value)} />
+            <Input type="number" min={1} max={MAX_BUSINESSES_LIMIT} value={businessesLimit} onChange={(event) => setBusinessesLimit(event.target.value)} />
+            <span className="block text-xs text-muted-foreground">Maximum {MAX_BUSINESSES_LIMIT.toLocaleString()}</span>
           </label>
-          <Button className="self-end" variant="outline" onClick={saveLimits} disabled={update.isPending}>
+          <Button className="self-end" variant="outline" onClick={saveLimits} disabled={update.isPending || limitsInvalid}>
             {update.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Save limits
           </Button>
@@ -497,6 +512,17 @@ export default function AdminPortal() {
       ),
     [data?.businesses, search],
   );
+  const newAiQuotaValue = Number(newAgency.aiQuota);
+  const newBusinessesLimitValue = Number(newAgency.businessesLimit);
+  const newAgencyLimitsInvalid =
+    newAgency.aiQuota.trim() === "" ||
+    !Number.isInteger(newAiQuotaValue) ||
+    newAiQuotaValue < 0 ||
+    newAiQuotaValue > MAX_AI_QUOTA ||
+    newAgency.businessesLimit.trim() === "" ||
+    !Number.isInteger(newBusinessesLimitValue) ||
+    newBusinessesLimitValue < 1 ||
+    newBusinessesLimitValue > MAX_BUSINESSES_LIMIT;
   const metrics: Array<[string, number, LucideIcon]> = [
     ["Agencies", data?.overview.totalOrganizations ?? 0, Building2],
     ["Owners", data?.overview.totalOwners ?? 0, Users],
@@ -629,13 +655,13 @@ export default function AdminPortal() {
             <div className="grid gap-3 sm:grid-cols-2">
               <label className="space-y-1.5 text-sm"><span className="font-medium">Plan</span><Select value={newAgency.plan} onValueChange={(value) => setNewAgency({ ...newAgency, plan: value as OrganizationPlan })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{plans.map((plan) => <SelectItem key={plan} value={plan}>{plan}</SelectItem>)}</SelectContent></Select></label>
               <label className="space-y-1.5 text-sm"><span className="font-medium">Subscription</span><Select value={newAgency.subscriptionStatus} onValueChange={(value) => setNewAgency({ ...newAgency, subscriptionStatus: value as SubscriptionStatus })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{subscriptionStatuses.map((status) => <SelectItem key={status} value={status}>{status.replace("_", " ")}</SelectItem>)}</SelectContent></Select></label>
-              <label className="space-y-1.5 text-sm"><span className="font-medium">AI generations</span><Input type="number" min={0} value={newAgency.aiQuota} onChange={(event) => setNewAgency({ ...newAgency, aiQuota: event.target.value })} /></label>
-              <label className="space-y-1.5 text-sm"><span className="font-medium">Business limit</span><Input type="number" min={1} value={newAgency.businessesLimit} onChange={(event) => setNewAgency({ ...newAgency, businessesLimit: event.target.value })} /></label>
+               <label className="space-y-1.5 text-sm"><span className="font-medium">AI generations</span><Input type="number" min={0} max={MAX_AI_QUOTA} value={newAgency.aiQuota} onChange={(event) => setNewAgency({ ...newAgency, aiQuota: event.target.value })} /><span className="block text-xs text-muted-foreground">Maximum {MAX_AI_QUOTA.toLocaleString()}</span></label>
+               <label className="space-y-1.5 text-sm"><span className="font-medium">Business limit</span><Input type="number" min={1} max={MAX_BUSINESSES_LIMIT} value={newAgency.businessesLimit} onChange={(event) => setNewAgency({ ...newAgency, businessesLimit: event.target.value })} /><span className="block text-xs text-muted-foreground">Maximum {MAX_BUSINESSES_LIMIT.toLocaleString()}</span>{newAgency.businessesLimit.trim() !== "" && newBusinessesLimitValue > MAX_BUSINESSES_LIMIT && <span className="block text-xs text-destructive">Business limit cannot exceed {MAX_BUSINESSES_LIMIT.toLocaleString()}.</span>}</label>
             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setCreateOpen(false)}>Cancel</Button>
-            <Button disabled={!newAgency.name.trim() || !newAgency.email.trim() || createAgency.isPending} onClick={() => createAgency.mutate({ data: { name: newAgency.name.trim(), email: newAgency.email.trim(), plan: newAgency.plan, subscriptionStatus: newAgency.subscriptionStatus, aiQuota: Number(newAgency.aiQuota) || 0, businessesLimit: Math.max(1, Number(newAgency.businessesLimit) || 1), expiresInDays: 14 } })}>
+             <Button disabled={!newAgency.name.trim() || !newAgency.email.trim() || newAgencyLimitsInvalid || createAgency.isPending} onClick={() => createAgency.mutate({ data: { name: newAgency.name.trim(), email: newAgency.email.trim(), plan: newAgency.plan, subscriptionStatus: newAgency.subscriptionStatus, aiQuota: newAiQuotaValue, businessesLimit: newBusinessesLimitValue, expiresInDays: 14 } })}>
               {createAgency.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Create agency
             </Button>
           </DialogFooter>
