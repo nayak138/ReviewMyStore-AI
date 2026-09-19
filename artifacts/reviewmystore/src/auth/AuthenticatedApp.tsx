@@ -206,7 +206,11 @@ function SignInPage() {
         <p className="mb-6 inline-flex max-w-full rounded-full border border-amber-500/20 bg-amber-500/10 px-3 py-1 text-xs font-medium leading-relaxed text-amber-800">
           Agency access only — contact the Admin at hello@5-star.ai
         </p>
-        <SignIn routing="path" path={`${basePath}/sign-in`} />
+        <SignIn
+          routing="path"
+          path={`${basePath}/sign-in`}
+          fallbackRedirectUrl={`${basePath}/businesses`}
+        />
       </div>
     </AuthLayout>
   );
