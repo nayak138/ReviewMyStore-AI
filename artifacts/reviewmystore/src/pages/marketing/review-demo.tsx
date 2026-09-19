@@ -183,6 +183,7 @@ export function InteractiveReviewDemo() {
                 src={demoHeaderImage}
                 alt="Exterior of Marina Bay Sands Singapore"
                 className="absolute inset-0 h-full w-full object-cover"
+                fetchPriority="high"
                 onError={() => setHeaderImageFailed(true)}
               />
             )}
