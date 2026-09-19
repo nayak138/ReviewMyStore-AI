@@ -3,6 +3,8 @@ import { getAuth } from "@clerk/express";
 import {
   AgencyInvitationRequiredError,
   getOrCreateUserForClerkId,
+  getOrganizationById,
+  VerifiedEmailRequiredError,
 } from "../services/authService";
 import type { User } from "@workspace/db/schema";
 
@@ -36,16 +38,47 @@ export async function requireAuth(
   }
 
   try {
-    req.appUser = await getOrCreateUserForClerkId(auth.userId);
+    const appUser = await getOrCreateUserForClerkId(auth.userId);
+    if (appUser.status !== "ACTIVE") {
+      res.status(403).json({
+        success: false,
+        code: "ACCOUNT_SUSPENDED",
+        message: "This account is suspended. Contact the platform administrator.",
+      });
+      return;
+    }
+
+    if (appUser.organizationId) {
+      const organization = await getOrganizationById(appUser.organizationId);
+      if (!organization || organization.status !== "ACTIVE") {
+        res.status(403).json({
+          success: false,
+          code: "ORGANIZATION_SUSPENDED",
+          message:
+            "This organization is unavailable. Contact the platform administrator.",
+        });
+        return;
+      }
+    }
+
+    req.appUser = appUser;
     next();
   } catch (err) {
     req.log?.error({ err }, "Failed to resolve authenticated user");
-    if (err instanceof AgencyInvitationRequiredError) {
+    if (
+      err instanceof AgencyInvitationRequiredError ||
+      err instanceof VerifiedEmailRequiredError
+    ) {
       res.status(403).json({
         success: false,
-        code: "INVITATION_REQUIRED",
+        code:
+          err instanceof VerifiedEmailRequiredError
+            ? "VERIFIED_EMAIL_REQUIRED"
+            : "INVITATION_REQUIRED",
         message:
-          "An active agency invitation is required before this account can access the platform.",
+          err instanceof VerifiedEmailRequiredError
+            ? "A verified primary email address is required before this account can access the platform."
+            : "An active agency invitation is required before this account can access the platform.",
       });
       return;
     }

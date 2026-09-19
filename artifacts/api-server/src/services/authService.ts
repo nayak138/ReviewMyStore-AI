@@ -24,6 +24,13 @@ export class AgencyInvitationRequiredError extends Error {
   }
 }
 
+export class VerifiedEmailRequiredError extends Error {
+  constructor() {
+    super("A verified primary email address is required to create an account");
+    this.name = "VerifiedEmailRequiredError";
+  }
+}
+
 const ACCOUNT_EXPORT_EXCLUDED_DATA = [
   "businesses",
   "workspaces",
@@ -267,14 +274,16 @@ export async function getOrCreateUserForClerkId(
   if (existing) return touchLastLogin(existing);
 
   const clerkUser = await clerkClient.users.getUser(clerkUserId);
-  const email =
-    clerkUser.emailAddresses.find(
-      (e) => e.id === clerkUser.primaryEmailAddressId,
-    )?.emailAddress ?? clerkUser.emailAddresses[0]?.emailAddress;
-
-  if (!email) {
-    throw new Error(`Clerk user ${clerkUserId} has no email address`);
+  const primaryEmail = clerkUser.emailAddresses.find(
+    (email) => email.id === clerkUser.primaryEmailAddressId,
+  );
+  if (
+    !primaryEmail?.emailAddress ||
+    primaryEmail.verification?.status !== "verified"
+  ) {
+    throw new VerifiedEmailRequiredError();
   }
+  const email = primaryEmail.emailAddress;
 
   const name =
     [clerkUser.firstName, clerkUser.lastName].filter(Boolean).join(" ") ||

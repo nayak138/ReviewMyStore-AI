@@ -21,6 +21,7 @@ import {
   getEmailPreferences,
   getOrCreateUserForClerkId,
   updateEmailPreferences,
+  VerifiedEmailRequiredError,
 } from "./authService.ts";
 
 /**
@@ -51,7 +52,11 @@ type FakeClerkUser = {
   firstName: string | null;
   lastName: string | null;
   primaryEmailAddressId: string;
-  emailAddresses: Array<{ id: string; emailAddress: string }>;
+  emailAddresses: Array<{
+    id: string;
+    emailAddress: string;
+    verification: { status: "verified" | "unverified" };
+  }>;
 };
 
 clerkClient.users.getUser = (async (id: string) => {
@@ -62,13 +67,24 @@ clerkClient.users.getUser = (async (id: string) => {
   >;
 }) as typeof clerkClient.users.getUser;
 
-function registerFakeClerkUser(id: string, name: string, email: string) {
+function registerFakeClerkUser(
+  id: string,
+  name: string,
+  email: string,
+  verified = true,
+) {
   fakeClerkUsers.set(id, {
     id,
     firstName: name,
     lastName: null,
     primaryEmailAddressId: "email_1",
-    emailAddresses: [{ id: "email_1", emailAddress: email }],
+    emailAddresses: [
+      {
+        id: "email_1",
+        emailAddress: email,
+        verification: { status: verified ? "verified" : "unverified" },
+      },
+    ],
   });
 }
 
@@ -290,6 +306,28 @@ test("expired invitations cannot be used for public lookup or first login", asyn
     () => getOrCreateUserForClerkId(clerkUserId),
     AgencyInvitationRequiredError,
   );
+});
+
+test("an unverified primary email cannot claim an agency invitation", async () => {
+  const fixture = await createAgencyFixture(testAdminId, "unverified-email");
+  const clerkUserId = `user_invited_unverified_${runId}`;
+  registerFakeClerkUser(
+    clerkUserId,
+    "Unverified Owner",
+    fixture.invitation.email,
+    false,
+  );
+
+  await assert.rejects(
+    () => getOrCreateUserForClerkId(clerkUserId),
+    VerifiedEmailRequiredError,
+  );
+
+  const [user] = await db
+    .select()
+    .from(usersTable)
+    .where(eq(usersTable.clerkUserId, clerkUserId));
+  assert.equal(user, undefined);
 });
 
 test("revoked invitations cannot be used", async () => {

@@ -5,18 +5,30 @@ import express from "express";
 import type { NextFunction, Request, Response } from "express";
 import type { Server } from "node:http";
 import { eq } from "drizzle-orm";
-import { db, pool, usersTable } from "@workspace/db";
+import { db, organizationsTable, pool, usersTable } from "@workspace/db";
 
 const runId = randomUUID().slice(0, 8);
 const clerkUserId = `auth-route-test-${runId}`;
 let userId: string;
+let organizationId: string;
 let server: Server;
 let base = "";
 
 before(async () => {
+  const [organization] = await db
+    .insert(organizationsTable)
+    .values({
+      name: `Auth Route Test Agency ${runId}`,
+      slug: `auth-route-test-agency-${runId}`,
+      status: "ACTIVE",
+    })
+    .returning();
+  organizationId = organization.id;
+
   const [user] = await db
     .insert(usersTable)
     .values({
+      organizationId,
       clerkUserId,
       name: "Account Export Test",
       email: `account-export-${runId}@example.com`,
@@ -68,6 +80,9 @@ before(async () => {
 after(async () => {
   server?.close();
   await db.delete(usersTable).where(eq(usersTable.id, userId));
+  await db
+    .delete(organizationsTable)
+    .where(eq(organizationsTable.id, organizationId));
   await pool.end();
 });
 
@@ -147,6 +162,50 @@ test("deactivation request is pending and does not change account data", async (
     .from(usersTable)
     .where(eq(usersTable.id, userId));
   assert.equal(user.status, "ACTIVE");
+});
+
+test("a suspended account cannot access protected routes", async () => {
+  await db
+    .update(usersTable)
+    .set({ status: "SUSPENDED" })
+    .where(eq(usersTable.id, userId));
+
+  try {
+    const response = await request("/auth/data-export", {
+      user: clerkUserId,
+      ip: "198.51.100.15",
+    });
+    assert.equal(response.status, 403);
+    const data = (await response.json()) as { code: string };
+    assert.equal(data.code, "ACCOUNT_SUSPENDED");
+  } finally {
+    await db
+      .update(usersTable)
+      .set({ status: "ACTIVE" })
+      .where(eq(usersTable.id, userId));
+  }
+});
+
+test("a suspended organization cannot access protected routes", async () => {
+  await db
+    .update(organizationsTable)
+    .set({ status: "SUSPENDED" })
+    .where(eq(organizationsTable.id, organizationId));
+
+  try {
+    const response = await request("/auth/data-export", {
+      user: clerkUserId,
+      ip: "198.51.100.16",
+    });
+    assert.equal(response.status, 403);
+    const data = (await response.json()) as { code: string };
+    assert.equal(data.code, "ORGANIZATION_SUSPENDED");
+  } finally {
+    await db
+      .update(organizationsTable)
+      .set({ status: "ACTIVE" })
+      .where(eq(organizationsTable.id, organizationId));
+  }
 });
 
 test("account export is rate limited per client IP", async () => {
