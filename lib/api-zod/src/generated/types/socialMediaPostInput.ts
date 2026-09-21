@@ -18,6 +18,12 @@ export interface SocialMediaPostInput {
   caption: string;
   /** @minItems 1 */
   platforms: SocialMediaPlatform[];
+  /**
+     * Finalized App Storage object paths for images or videos attached to the post.
+     * @maxItems 10
+     * @items.pattern ^/objects/uploads/[^/]+$
+     */
+  media?: string[];
   /** @nullable */
   scheduledAt?: Date | null;
 }

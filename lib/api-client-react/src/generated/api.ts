@@ -106,6 +106,7 @@ import type {
   SocialMediaConnectionInput,
   SocialMediaConnectionStartResult,
   SocialMediaDashboardResult,
+  SocialMediaMediaUploadInput,
   SocialMediaPost,
   SocialMediaPostInput,
   SocialMediaPostListResult,
@@ -1328,6 +1329,77 @@ export const useCreateSocialMediaPost = <TError = ErrorType<ErrorResponse>,
         TContext
       > => {
       return useMutation(getCreateSocialMediaPostMutationOptions(options));
+    }
+
+export const getRequestSocialMediaMediaUploadUrlUrl = () => {
+
+
+
+
+  return `/api/v1/social-media/media/upload-url`
+}
+
+/**
+ * @summary Request a constrained App Storage URL for social media
+ */
+export const requestSocialMediaMediaUploadUrl = async (socialMediaMediaUploadInput: SocialMediaMediaUploadInput, options?: Parameters<typeof customFetch>[1]): Promise<UploadUrlResponse> => {
+
+  return customFetch<UploadUrlResponse>(getRequestSocialMediaMediaUploadUrlUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(socialMediaMediaUploadInput)
+  }
+);}
+
+
+
+
+
+export const getRequestSocialMediaMediaUploadUrlMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof requestSocialMediaMediaUploadUrl>>, TError,{data: BodyType<SocialMediaMediaUploadInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof requestSocialMediaMediaUploadUrl>>, TError,{data: BodyType<SocialMediaMediaUploadInput>}, TContext> => {
+
+const mutationKey = ['requestSocialMediaMediaUploadUrl'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof requestSocialMediaMediaUploadUrl>>, {data: BodyType<SocialMediaMediaUploadInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  requestSocialMediaMediaUploadUrl(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RequestSocialMediaMediaUploadUrlMutationResult = NonNullable<Awaited<ReturnType<typeof requestSocialMediaMediaUploadUrl>>>
+    export type RequestSocialMediaMediaUploadUrlMutationBody = BodyType<SocialMediaMediaUploadInput>
+    export type RequestSocialMediaMediaUploadUrlMutationError = ErrorType<ErrorResponse>
+
+    /**
+ * @summary Request a constrained App Storage URL for social media
+ */
+export const useRequestSocialMediaMediaUploadUrl = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof requestSocialMediaMediaUploadUrl>>, TError,{data: BodyType<SocialMediaMediaUploadInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof requestSocialMediaMediaUploadUrl>>,
+        TError,
+        {data: BodyType<SocialMediaMediaUploadInput>},
+        TContext
+      > => {
+      return useMutation(getRequestSocialMediaMediaUploadUrlMutationOptions(options));
     }
 
 export const getListSocialMediaCommentsUrl = (params: ListSocialMediaCommentsParams,) => {

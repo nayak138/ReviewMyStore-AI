@@ -1196,8 +1196,39 @@ export interface SocialMediaPostInput {
   caption: string;
   /** @minItems 1 */
   platforms: SocialMediaPlatform[];
+  /**
+     * Finalized App Storage object paths for images or videos attached to the post.
+     * @maxItems 10
+     * @items.pattern ^/objects/uploads/[^/]+$
+     */
+  media?: string[];
   /** @nullable */
   scheduledAt?: string | null;
+}
+
+export type SocialMediaMediaUploadInputContentType = typeof SocialMediaMediaUploadInputContentType[keyof typeof SocialMediaMediaUploadInputContentType];
+
+
+export const SocialMediaMediaUploadInputContentType = {
+  'image/jpeg': 'image/jpeg',
+  'image/png': 'image/png',
+  'image/webp': 'image/webp',
+  'image/gif': 'image/gif',
+  'video/mp4': 'video/mp4',
+  'video/quicktime': 'video/quicktime',
+  'video/webm': 'video/webm',
+} as const;
+
+export interface SocialMediaMediaUploadInput {
+  businessId: string;
+  /**
+     * @minLength 1
+     * @maxLength 255
+     */
+  name: string;
+  /** @minimum 1 */
+  size: number;
+  contentType: SocialMediaMediaUploadInputContentType;
 }
 
 export type SocialMediaPostRaw = { [key: string]: unknown };

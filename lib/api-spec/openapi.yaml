@@ -529,6 +529,37 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  /v1/social-media/media/upload-url:
+    post:
+      operationId: requestSocialMediaMediaUploadUrl
+      tags: [social-media]
+      summary: Request a constrained App Storage URL for social media
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SocialMediaMediaUploadInput"
+      responses:
+        "200":
+          description: Presigned media upload URL
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UploadUrlResponse"
+        "400":
+          description: Unsupported media or invalid business
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /v1/social-media/comments:
     get:
       operationId: listSocialMediaComments
@@ -4731,6 +4762,13 @@ components:
           minItems: 1
           items:
             $ref: "#/components/schemas/SocialMediaPlatform"
+        media:
+          type: array
+          maxItems: 10
+          description: Finalized App Storage object paths for images or videos attached to the post.
+          items:
+            type: string
+            pattern: "^/objects/uploads/[^/]+$"
         scheduledAt:
           type: ["string", "null"]
           format: date-time
@@ -4738,6 +4776,31 @@ components:
         - businessId
         - caption
         - platforms
+
+    SocialMediaMediaUploadInput:
+      type: object
+      required: [businessId, name, size, contentType]
+      properties:
+        businessId:
+          type: string
+          format: uuid
+        name:
+          type: string
+          minLength: 1
+          maxLength: 255
+        size:
+          type: integer
+          minimum: 1
+        contentType:
+          type: string
+          enum:
+            - image/jpeg
+            - image/png
+            - image/webp
+            - image/gif
+            - video/mp4
+            - video/quicktime
+            - video/webm
 
     SocialMediaPost:
       type: object

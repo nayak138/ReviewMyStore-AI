@@ -1,7 +1,8 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, isNotNull } from "drizzle-orm";
 import {
   businessesTable,
   db,
+  objectUploadsTable,
   providerConnectionsTable,
   socialMediaAccountsTable,
 } from "@workspace/db";
@@ -10,10 +11,28 @@ import {
   getOrCreateProviderTeam,
   ReviewProviderError,
 } from "./reviewManagementService";
+import { ObjectStorageService } from "../lib/objectStorage";
+import {
+  canAccessObject,
+  getObjectAclPolicy,
+  ObjectPermission,
+} from "../lib/objectAcl";
 
 type JsonRecord = Record<string, unknown>;
 type Platform = "FACEBOOK" | "INSTAGRAM" | "THREADS";
 const PLATFORMS: readonly Platform[] = ["FACEBOOK", "INSTAGRAM", "THREADS"];
+const MEDIA_CONTENT_TYPES = new Set([
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "image/gif",
+  "video/mp4",
+  "video/quicktime",
+  "video/webm",
+]);
+const MAX_IMAGE_BYTES = 25 * 1024 * 1024;
+const MAX_VIDEO_BYTES = 5 * 1024 * 1024 * 1024;
+const objectStorageService = new ObjectStorageService();
 
 export class SocialMediaNotFoundError extends Error {
   constructor(message = "The requested social media resource was not found.") {
@@ -88,6 +107,101 @@ function getAppOrigin(): string | null {
     process.env.REPLIT_DOMAINS?.split(",")[0]?.trim() ||
     process.env.REPLIT_DEV_DOMAIN?.trim();
   return domain ? `https://${domain}` : null;
+}
+
+function socialMediaPublicUrl(objectPath: string): string {
+  const origin = getAppOrigin();
+  if (!origin) {
+    throw new SocialMediaBadRequestError(
+      "Could not determine this app's URL to upload the selected media.",
+    );
+  }
+  const relativePath = objectPath.replace(/^\/objects\//, "");
+  return `${origin}/api/storage/public-assets/${relativePath}`;
+}
+
+async function uploadMediaToProvider(
+  teamId: string,
+  clerkUserId: string,
+  mediaPaths: string[],
+): Promise<string[]> {
+  const uniquePaths = [...new Set(mediaPaths)];
+  if (uniquePaths.length !== mediaPaths.length) {
+    throw new SocialMediaBadRequestError("Each media item can only be attached once.");
+  }
+  if (uniquePaths.length > 10) {
+    throw new SocialMediaBadRequestError("Attach up to 10 images or videos.");
+  }
+
+  return Promise.all(
+    uniquePaths.map(async (objectPath) => {
+      if (!/^\/objects\/uploads\/[^/]+$/.test(objectPath)) {
+        throw new SocialMediaBadRequestError("One of the selected media files is invalid.");
+      }
+      const [upload] = await db
+        .select({ objectPath: objectUploadsTable.objectPath })
+        .from(objectUploadsTable)
+        .where(
+          and(
+            eq(objectUploadsTable.objectPath, objectPath),
+            eq(objectUploadsTable.ownerClerkUserId, clerkUserId),
+            isNotNull(objectUploadsTable.finalizedAt),
+          ),
+        )
+        .limit(1);
+      if (!upload) {
+        throw new SocialMediaBadRequestError(
+          "One of the selected media files is unavailable. Upload it again before publishing.",
+        );
+      }
+      const objectFile = await objectStorageService.getObjectEntityFile(objectPath);
+      const aclPolicy = await getObjectAclPolicy(objectFile);
+      const isPublic = aclPolicy
+        ? await canAccessObject({
+            objectFile,
+            requestedPermission: ObjectPermission.READ,
+          })
+        : false;
+      if (!isPublic) {
+        throw new SocialMediaBadRequestError(
+          "One of the selected media files is not ready for publishing. Upload it again before publishing.",
+        );
+      }
+      const [metadata] = await objectFile.getMetadata();
+      const contentType = valueString(metadata.contentType)?.toLowerCase() ?? "";
+      const size = Number(metadata.size);
+      if (!MEDIA_CONTENT_TYPES.has(contentType)) {
+        throw new SocialMediaBadRequestError(
+          "Use a JPG, PNG, WEBP, GIF, MP4, MOV, or WEBM file.",
+        );
+      }
+      if (!Number.isFinite(size) || size <= 0) {
+        throw new SocialMediaBadRequestError("One of the selected media files is empty.");
+      }
+      const maximum = contentType.startsWith("image/") ? MAX_IMAGE_BYTES : MAX_VIDEO_BYTES;
+      if (size > maximum) {
+        throw new SocialMediaBadRequestError(
+          contentType.startsWith("image/")
+            ? "Images must be 25 MB or smaller."
+            : "Videos must be 5 GB or smaller.",
+        );
+      }
+      const uploaded = await bndleRequest("upload/from-url", {
+        method: "POST",
+        body: JSON.stringify({
+          teamId,
+          url: socialMediaPublicUrl(objectPath),
+        }),
+      });
+      const uploadId = valueString(uploaded.id) ?? valueString(uploaded.uploadId);
+      if (!uploadId) {
+        throw new SocialMediaBadRequestError(
+          "The social provider could not prepare one of the selected media files.",
+        );
+      }
+      return uploadId;
+    }),
+  );
 }
 
 function toAccountPayload(row: typeof socialMediaAccountsTable.$inferSelect) {
@@ -168,6 +282,51 @@ async function getBusiness(organizationId: string, businessId: string) {
     .limit(1);
   if (!business) throw new SocialMediaNotFoundError("Business not found.");
   return business;
+}
+
+export async function requestSocialMediaMediaUploadUrl(
+  organizationId: string,
+  clerkUserId: string,
+  input: {
+    businessId: string;
+    name: string;
+    size: number;
+    contentType: string;
+  },
+) {
+  await getBusiness(organizationId, input.businessId);
+  const contentType = input.contentType.toLowerCase();
+  if (!MEDIA_CONTENT_TYPES.has(contentType)) {
+    throw new SocialMediaBadRequestError(
+      "Use a JPG, PNG, WEBP, GIF, MP4, MOV, or WEBM file.",
+    );
+  }
+  const maximum = contentType.startsWith("image/")
+    ? MAX_IMAGE_BYTES
+    : MAX_VIDEO_BYTES;
+  if (input.size > maximum) {
+    throw new SocialMediaBadRequestError(
+      contentType.startsWith("image/")
+        ? "Images must be 25 MB or smaller."
+        : "Videos must be 5 GB or smaller.",
+    );
+  }
+  const uploadURL = await objectStorageService.getObjectEntityUploadURL();
+  const objectPath = objectStorageService.normalizeObjectEntityPath(uploadURL);
+  await db.insert(objectUploadsTable).values({
+    objectPath,
+    ownerClerkUserId: clerkUserId,
+    expiresAt: new Date(Date.now() + 15 * 60 * 1000),
+  });
+  return {
+    uploadURL,
+    objectPath,
+    metadata: {
+      name: input.name,
+      size: input.size,
+      contentType,
+    },
+  };
 }
 
 async function getTeamId(organizationId: string): Promise<string> {
@@ -468,11 +627,13 @@ async function getBusinessTeam(
 
 export async function createSocialMediaPost(
   organizationId: string,
+  clerkUserId: string,
   input: {
     businessId: string;
     title?: string;
     caption: string;
     platforms: Platform[];
+    media?: string[];
     scheduledAt?: Date | string | null;
   },
 ) {
@@ -487,9 +648,10 @@ export async function createSocialMediaPost(
       `Connect ${missing.join(", ")} before publishing to those channels.`,
     );
   }
-  if (input.platforms.includes("INSTAGRAM")) {
+  const mediaPaths = input.media ?? [];
+  if (input.platforms.includes("INSTAGRAM") && mediaPaths.length === 0) {
     throw new SocialMediaBadRequestError(
-      "Instagram requires an image or video. Media uploads are not available in this composer yet, so choose Facebook or Threads.",
+      "Instagram requires at least one uploaded image or video.",
     );
   }
   const scheduledDate = input.scheduledAt ? new Date(input.scheduledAt) : new Date();
@@ -502,12 +664,26 @@ export async function createSocialMediaPost(
       "Choose a publishing time at least one minute in the future.",
     );
   }
+  let uploadIds: string[] = [];
+  try {
+    if (mediaPaths.length) {
+      uploadIds = await uploadMediaToProvider(teamId, clerkUserId, mediaPaths);
+    }
+  } catch (error) {
+    if (error instanceof SocialMediaBadRequestError) throw error;
+    if (error instanceof ReviewProviderError) {
+      throw new SocialMediaBadRequestError(
+        "The social provider could not process the selected media. Check the file and try again.",
+      );
+    }
+    throw error;
+  }
   const data = Object.fromEntries(
     input.platforms.map((platform) => [
       platform,
       platform === "INSTAGRAM"
-        ? { type: "POST", text: input.caption }
-        : { text: input.caption },
+        ? { type: "POST", text: input.caption, uploadIds }
+        : { text: input.caption, ...(uploadIds.length ? { uploadIds } : {}) },
     ]),
   );
   let created: JsonRecord;
@@ -542,6 +718,15 @@ export async function createSocialMediaPost(
       ) {
         throw new SocialMediaBadRequestError(
           "The provider rejected that publishing time. Choose a time at least one minute in the future.",
+        );
+      }
+      if (
+        ["upload", "media", "image", "video", "file"].some((term) =>
+          providerMessage.includes(term),
+        )
+      ) {
+        throw new SocialMediaBadRequestError(
+          "The social provider rejected the selected media. Use a supported image or video and try again.",
         );
       }
       throw new SocialMediaBadRequestError(

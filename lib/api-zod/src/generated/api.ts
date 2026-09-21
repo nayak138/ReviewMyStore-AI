@@ -419,6 +419,9 @@ export const createSocialMediaPostBodyTitleMax = 160;
 export const createSocialMediaPostBodyCaptionMax = 5000;
 
 
+export const createSocialMediaPostBodyMediaItemRegExp = new RegExp('^/objects/uploads/[^/]+$');
+export const createSocialMediaPostBodyMediaMax = 10;
+
 
 
 export const CreateSocialMediaPostBody = zod.object({
@@ -426,6 +429,7 @@ export const CreateSocialMediaPostBody = zod.object({
   "title": zod.string().max(createSocialMediaPostBodyTitleMax).optional(),
   "caption": zod.string().min(1).max(createSocialMediaPostBodyCaptionMax),
   "platforms": zod.array(zod.enum(['FACEBOOK', 'INSTAGRAM', 'THREADS'])).min(1),
+  "media": zod.array(zod.string().regex(createSocialMediaPostBodyMediaItemRegExp)).max(createSocialMediaPostBodyMediaMax).optional().describe('Finalized App Storage object paths for images or videos attached to the post.'),
   "scheduledAt": zod.coerce.date().nullish()
 })
 
@@ -438,6 +442,37 @@ export const CreateSocialMediaPostResponse = zod.object({
   "publishedAt": zod.coerce.date().nullable(),
   "platforms": zod.array(zod.enum(['FACEBOOK', 'INSTAGRAM', 'THREADS'])),
   "raw": zod.record(zod.string(), zod.unknown())
+})
+
+
+/**
+ * @summary Request a constrained App Storage URL for social media
+ */
+export const requestSocialMediaMediaUploadUrlBodyNameMax = 255;
+
+
+
+
+export const RequestSocialMediaMediaUploadUrlBody = zod.object({
+  "businessId": zod.uuid(),
+  "name": zod.string().min(1).max(requestSocialMediaMediaUploadUrlBodyNameMax),
+  "size": zod.int().min(1),
+  "contentType": zod.enum(['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'video/mp4', 'video/quicktime', 'video/webm'])
+})
+
+
+
+
+
+
+export const RequestSocialMediaMediaUploadUrlResponse = zod.object({
+  "uploadURL": zod.url(),
+  "objectPath": zod.string(),
+  "metadata": zod.object({
+  "name": zod.string().min(1),
+  "size": zod.int().min(1),
+  "contentType": zod.string().min(1)
+}).optional()
 })
 
 

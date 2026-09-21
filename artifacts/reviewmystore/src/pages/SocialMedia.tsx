@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type ChangeEvent, type FormEvent } from "react";
 import { useAuth } from "@clerk/react";
 import { Redirect } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
@@ -15,9 +15,11 @@ import {
   Loader2,
   MessageCircle,
   MessageSquare,
+  Paperclip,
   Plus,
   RefreshCw,
   Send,
+  Trash2,
   Unplug,
 } from "lucide-react";
 import {
@@ -38,7 +40,9 @@ import {
   useListSocialMediaComments,
   useListSocialMediaPosts,
   useReplyToSocialMediaComment,
+  useRequestSocialMediaMediaUploadUrl,
   useStartSocialMediaConnection,
+  useFinalizeUpload,
 } from "@workspace/api-client-react";
 import { AppLayout } from "@/components/layout/app-layout";
 import { BusinessTabs } from "@/components/business/business-tabs";
@@ -61,6 +65,17 @@ const PLATFORM_META: Record<SocialMediaPlatform, { label: string; shortLabel: st
 };
 
 const PLATFORMS = [SocialMediaPlatform.FACEBOOK, SocialMediaPlatform.INSTAGRAM, SocialMediaPlatform.THREADS] as const;
+type SupportedMediaType = "image/jpeg" | "image/png" | "image/webp" | "image/gif" | "video/mp4" | "video/quicktime" | "video/webm";
+const ACCEPTED_MEDIA_TYPES = new Set<SupportedMediaType>(["image/jpeg", "image/png", "image/webp", "image/gif", "video/mp4", "video/quicktime", "video/webm"]);
+const MAX_IMAGE_BYTES = 25 * 1024 * 1024;
+const MAX_VIDEO_BYTES = 5 * 1024 * 1024 * 1024;
+
+type UploadedMedia = {
+  objectPath: string;
+  name: string;
+  type: string;
+  previewUrl: string;
+};
 
 function formatDate(value: string | null | undefined, withTime = false) {
   if (!value) return "Not scheduled";
@@ -182,6 +197,7 @@ export default function SocialMedia() {
   const [selectedPlatforms, setSelectedPlatforms] = useState<SocialMediaPlatform[]>([]);
   const [caption, setCaption] = useState("");
   const [title, setTitle] = useState("");
+  const [media, setMedia] = useState<UploadedMedia[]>([]);
   const [scheduleEnabled, setScheduleEnabled] = useState(false);
   const [scheduledAt, setScheduledAt] = useState("");
   const [selectedPostId, setSelectedPostId] = useState<string>("");
@@ -189,6 +205,8 @@ export default function SocialMedia() {
   const [accountToDetach, setAccountToDetach] = useState<SocialMediaAccount | null>(null);
   const [connectingPlatform, setConnectingPlatform] = useState<SocialMediaPlatform | null>(null);
   const [importingPostId, setImportingPostId] = useState<string | null>(null);
+  const [isUploadingMedia, setIsUploadingMedia] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const businessesQuery = useListBusinesses(
     { includeArchived: false },
@@ -293,12 +311,15 @@ export default function SocialMedia() {
       onError: (error) => toast({ title: "Unable to detach account", description: errorMessage(error, "Please try again."), variant: "destructive" }),
     },
   });
+  const finalizeUpload = useFinalizeUpload();
+  const requestMediaUploadUrl = useRequestSocialMediaMediaUploadUrl();
   const createPost = useCreateSocialMediaPost({
     mutation: {
       onSuccess: () => {
         invalidateSocial();
         setCaption("");
         setTitle("");
+        setMedia([]);
         setScheduleEnabled(false);
         setScheduledAt("");
         toast({ title: scheduleEnabled ? "Post scheduled" : "Post published", description: scheduleEnabled ? "It will publish at the selected time." : "Your post is being sent to the selected channels." });
@@ -345,9 +366,59 @@ export default function SocialMedia() {
         title: title.trim() || undefined,
         caption: caption.trim(),
         platforms: selectedPlatforms,
+        media: media.map((item) => item.objectPath),
         scheduledAt: scheduleEnabled && scheduledAt ? new Date(scheduledAt).toISOString() : null,
       },
     });
+  };
+  const handleMediaSelection = async (event: ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(event.target.files ?? []);
+    event.target.value = "";
+    if (!files.length) return;
+    if (media.length + files.length > 10) {
+      toast({ title: "Too many media files", description: "Attach up to 10 images or videos.", variant: "destructive" });
+      return;
+    }
+    for (const file of files) {
+      const isImage = file.type.startsWith("image/");
+      if (!ACCEPTED_MEDIA_TYPES.has(file.type as SupportedMediaType) || file.size > (isImage ? MAX_IMAGE_BYTES : MAX_VIDEO_BYTES)) {
+        toast({ title: "Unsupported media file", description: "Use JPG, PNG, WEBP, GIF, MP4, MOV, or WEBM. Images can be up to 25 MB and videos up to 5 GB.", variant: "destructive" });
+        return;
+      }
+    }
+    try {
+      setIsUploadingMedia(true);
+      for (const file of files) {
+        if (!selectedBusinessId) throw new Error("Choose a business before adding media.");
+        const contentType = file.type as SupportedMediaType;
+        const upload = await requestMediaUploadUrl.mutateAsync({
+          data: {
+            businessId: selectedBusinessId,
+            name: file.name,
+            size: file.size,
+            contentType,
+          },
+        });
+        const response = await fetch(upload.uploadURL, {
+          method: "PUT",
+          body: file,
+          headers: { "Content-Type": file.type },
+        });
+        if (!response.ok) throw new Error("The file could not be uploaded.");
+        const finalized = await finalizeUpload.mutateAsync({ data: { objectPath: upload.objectPath, visibility: "public" } });
+        setMedia((current) => [...current, {
+          objectPath: finalized.objectPath,
+          name: file.name,
+          type: file.type,
+          previewUrl: `/api/storage/public-assets/${finalized.objectPath.replace(/^\/objects\//, "")}`,
+        }]);
+      }
+      toast({ title: files.length === 1 ? "Media attached" : "Media attached", description: "Your media is ready to publish or schedule." });
+    } catch (error) {
+      toast({ title: "Media upload failed", description: errorMessage(error, "Try uploading the file again."), variant: "destructive" });
+    } finally {
+      setIsUploadingMedia(false);
+    }
   };
   const handleImportComments = (post: SocialMediaPost) => {
     if (!selectedBusinessId) return;
@@ -462,16 +533,17 @@ export default function SocialMedia() {
             <section className="grid items-start gap-6 xl:grid-cols-[0.95fr_1.05fr]">
               <Card className="border-primary/20 shadow-md shadow-primary/5">
                 <CardHeader>
-                  <div className="flex items-center justify-between gap-4"><div><CardTitle className="flex items-center gap-2 text-xl"><Send className="h-4 w-4 text-primary" /> Compose a post</CardTitle><CardDescription className="mt-1">Write once, choose where it goes.</CardDescription></div><Badge variant="secondary">Text-first</Badge></div>
+                  <div className="flex items-center justify-between gap-4"><div><CardTitle className="flex items-center gap-2 text-xl"><Send className="h-4 w-4 text-primary" /> Compose a post</CardTitle><CardDescription className="mt-1">Write once, attach media when needed, and choose where it goes.</CardDescription></div><Badge variant="secondary">Media-ready</Badge></div>
                 </CardHeader>
                 <CardContent>
                   <form className="space-y-4" onSubmit={handlePublish} data-testid="form-social-post">
                     <div className="space-y-2"><Label htmlFor="post-title">Internal title <span className="font-normal text-muted-foreground">(optional)</span></Label><Input id="post-title" maxLength={160} value={title} onChange={(event) => setTitle(event.target.value)} placeholder="Spring hours update" data-testid="input-post-title" /></div>
                     <div className="space-y-2"><div className="flex items-center justify-between"><Label htmlFor="post-caption">Caption</Label><span className="text-xs text-muted-foreground">{caption.length}/5000</span></div><Textarea id="post-caption" value={caption} onChange={(event) => setCaption(event.target.value)} maxLength={5000} placeholder="Share something your customers will find useful..." className="min-h-36 resize-y leading-relaxed" required data-testid="textarea-post-caption" /></div>
-                    <div className="space-y-2"><Label>Publish to</Label><div className="grid gap-2 sm:grid-cols-3">{PLATFORMS.map((platform) => { const meta = PLATFORM_META[platform]; const selected = selectedPlatforms.includes(platform); const unavailable = !connectedPlatforms.has(platform) || platform === SocialMediaPlatform.INSTAGRAM; return <button type="button" key={platform} onClick={() => !unavailable && togglePlatform(platform)} disabled={unavailable} title={platform === SocialMediaPlatform.INSTAGRAM ? "Instagram requires an image or video, which this text-only composer does not support yet." : undefined} className={cn("flex items-center gap-2 rounded-xl border px-3 py-2.5 text-left text-sm transition-colors", selected ? "border-primary bg-primary/5 text-primary" : "border-border hover:bg-secondary", unavailable && "cursor-not-allowed opacity-45")} aria-pressed={selected} data-testid={`button-select-platform-${platform.toLowerCase()}`}><span className={cn("flex h-7 w-7 items-center justify-center rounded-lg", meta.tint)}><PlatformMark platform={platform} /></span><span className="flex-1"><span className="block">{meta.label}</span>{platform === SocialMediaPlatform.INSTAGRAM && <span className="block text-[10px] text-muted-foreground">Media required</span>}</span>{selected && <Check className="h-4 w-4" />}</button>; })}</div><p className="text-xs text-muted-foreground">Select a connected text-capable channel. Instagram becomes available after media uploads are added.</p></div>
+                    <div className="space-y-2"><div className="flex items-center justify-between gap-3"><Label>Media <span className="font-normal text-muted-foreground">(optional, required for Instagram)</span></Label><input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/quicktime,video/webm" multiple className="sr-only" onChange={handleMediaSelection} data-testid="input-post-media" /><Button type="button" variant="outline" size="sm" onClick={() => fileInputRef.current?.click()} disabled={isUploadingMedia || finalizeUpload.isPending} data-testid="button-add-post-media">{isUploadingMedia || finalizeUpload.isPending ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <Paperclip className="mr-1.5 h-3.5 w-3.5" />}{isUploadingMedia ? "Uploading media..." : "Add media"}</Button></div><p className="text-xs text-muted-foreground">JPG, PNG, WEBP, GIF, MP4, MOV, or WEBM. Images up to 25 MB; videos up to 5 GB.</p>{media.length > 0 && <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">{media.map((item) => <div key={item.objectPath} className="group relative overflow-hidden rounded-xl border border-border bg-secondary/30" data-testid={`media-preview-${item.objectPath}`}><div className="aspect-square bg-muted">{item.type.startsWith("video/") ? <video src={item.previewUrl} className="h-full w-full object-cover" controls preload="metadata" /> : <img src={item.previewUrl} alt={item.name} className="h-full w-full object-cover" />}</div><div className="flex items-center justify-between gap-1 px-2 py-1.5"><span className="truncate text-[11px] text-muted-foreground">{item.name}</span><Button type="button" variant="ghost" size="icon" className="h-6 w-6 shrink-0 text-muted-foreground hover:text-destructive" onClick={() => setMedia((current) => current.filter((mediaItem) => mediaItem.objectPath !== item.objectPath))} aria-label={`Remove ${item.name}`}><Trash2 className="h-3.5 w-3.5" /></Button></div></div>)}</div>}</div>
+                    <div className="space-y-2"><Label>Publish to</Label><div className="grid gap-2 sm:grid-cols-3">{PLATFORMS.map((platform) => { const meta = PLATFORM_META[platform]; const selected = selectedPlatforms.includes(platform); const unavailable = !connectedPlatforms.has(platform) || (platform === SocialMediaPlatform.INSTAGRAM && media.length === 0); return <button type="button" key={platform} onClick={() => !unavailable && togglePlatform(platform)} disabled={unavailable} title={platform === SocialMediaPlatform.INSTAGRAM && media.length === 0 ? "Add an image or video to publish to Instagram." : undefined} className={cn("flex items-center gap-2 rounded-xl border px-3 py-2.5 text-left text-sm transition-colors", selected ? "border-primary bg-primary/5 text-primary" : "border-border hover:bg-secondary", unavailable && "cursor-not-allowed opacity-45")} aria-pressed={selected} data-testid={`button-select-platform-${platform.toLowerCase()}`}><span className={cn("flex h-7 w-7 items-center justify-center rounded-lg", meta.tint)}><PlatformMark platform={platform} /></span><span className="flex-1"><span className="block">{meta.label}</span>{platform === SocialMediaPlatform.INSTAGRAM && <span className="block text-[10px] text-muted-foreground">Media required</span>}</span>{selected && <Check className="h-4 w-4" />}</button>; })}</div><p className="text-xs text-muted-foreground">{media.length ? "Instagram is available because this post includes media." : "Add media to unlock Instagram publishing."}</p></div>
                     <div className="rounded-xl border border-border bg-secondary/50 p-3.5"><button type="button" className="flex w-full items-center justify-between gap-4 text-left" onClick={() => setScheduleEnabled((value) => !value)} aria-pressed={scheduleEnabled} data-testid="button-toggle-schedule"><span className="flex items-center gap-2 text-sm font-medium"><CalendarClock className="h-4 w-4 text-primary" /> Schedule for later</span><span className={cn("relative h-5 w-9 rounded-full transition-colors", scheduleEnabled ? "bg-primary" : "bg-muted")}><span className={cn("absolute top-1 h-3 w-3 rounded-full bg-card transition-transform", scheduleEnabled ? "translate-x-5" : "translate-x-1")} /></span></button>{scheduleEnabled && <div className="mt-3 space-y-1.5"><Label htmlFor="scheduled-at" className="text-xs">Date and time</Label><Input id="scheduled-at" type="datetime-local" min={minimumScheduleTime()} value={scheduledAt} onChange={(event) => setScheduledAt(event.target.value)} required data-testid="input-scheduled-at" /></div>}</div>
-                    <div className="rounded-xl border border-sky-500/20 bg-sky-500/[0.06] p-3 text-xs leading-relaxed text-sky-900 dark:text-sky-100"><p className="font-semibold">About media</p><p className="mt-1 text-sky-900/75 dark:text-sky-100/75">Facebook and Threads can receive text-only posts here. Instagram requires an image or video, so Instagram publishing stays disabled until media uploads are available.</p></div>
-                    <Button type="submit" className="w-full shadow-sm" disabled={createPost.isPending || !caption.trim() || selectedPlatforms.length === 0 || (scheduleEnabled && !scheduledAt)} data-testid="button-publish-post">{createPost.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : scheduleEnabled ? <CalendarClock className="mr-2 h-4 w-4" /> : <Send className="mr-2 h-4 w-4" />}{createPost.isPending ? "Sending..." : scheduleEnabled ? "Schedule post" : "Publish now"}</Button>
+                    <div className="rounded-xl border border-sky-500/20 bg-sky-500/[0.06] p-3 text-xs leading-relaxed text-sky-900 dark:text-sky-100"><p className="font-semibold">About media</p><p className="mt-1 text-sky-900/75 dark:text-sky-100/75">Instagram posts need at least one image or video. Attached media is prepared with the social provider when you publish or schedule.</p></div>
+                    <Button type="submit" className="w-full shadow-sm" disabled={createPost.isPending || isUploadingMedia || finalizeUpload.isPending || !caption.trim() || selectedPlatforms.length === 0 || (scheduleEnabled && !scheduledAt)} data-testid="button-publish-post">{createPost.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : scheduleEnabled ? <CalendarClock className="mr-2 h-4 w-4" /> : <Send className="mr-2 h-4 w-4" />}{createPost.isPending ? "Sending..." : scheduleEnabled ? "Schedule post" : "Publish now"}</Button>
                   </form>
                 </CardContent>
               </Card>

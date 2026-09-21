@@ -61,8 +61,8 @@ router.post(
     try {
       const { name, size, contentType } = parsed.data;
 
-      // Hard cap: all uploaded images must be under 24 KB (the client
-      // compresses before upload; this is the server-side backstop).
+      // Generic uploads are deliberately small. Larger social media files use
+      // the dedicated constrained social-media upload URL instead.
       const MAX_UPLOAD_BYTES = 24 * 1024;
       if (size > MAX_UPLOAD_BYTES) {
         res.status(400).json({

@@ -142,6 +142,8 @@ export * from './socialMediaCommentReplyInput';
 export * from './socialMediaConnectionInput';
 export * from './socialMediaConnectionStartResult';
 export * from './socialMediaDashboardResult';
+export * from './socialMediaMediaUploadInput';
+export * from './socialMediaMediaUploadInputContentType';
 export * from './socialMediaPlatform';
 export * from './socialMediaPost';
 export * from './socialMediaPostInput';

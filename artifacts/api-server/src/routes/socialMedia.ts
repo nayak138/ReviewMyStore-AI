@@ -15,6 +15,8 @@ import {
   ReplyToSocialMediaCommentBody,
   ReplyToSocialMediaCommentParams,
   ReplyToSocialMediaCommentResponse,
+  RequestSocialMediaMediaUploadUrlBody,
+  RequestSocialMediaMediaUploadUrlResponse,
   SocialMediaAccount,
   SocialMediaPost,
   StartSocialMediaConnectionBody,
@@ -30,6 +32,7 @@ import {
   listSocialMediaComments,
   listSocialMediaPosts,
   replyToSocialMediaComment,
+  requestSocialMediaMediaUploadUrl,
   SocialMediaBadRequestError,
   SocialMediaConflictError,
   SocialMediaNotFoundError,
@@ -241,11 +244,41 @@ router.post(
     try {
       const result = await createSocialMediaPost(
         organizationId,
+        req.appUser!.clerkUserId,
         parsed.data,
       );
       res.status(201).json(CreateSocialMediaPostResponse.parse(result));
     } catch (error) {
       req.log.warn({ err: error }, "Unable to create social media post");
+      sendError(res, error);
+    }
+  },
+);
+
+router.post(
+  "/social-media/media/upload-url",
+  requireAuth,
+  async (req, res): Promise<void> => {
+    const parsed = RequestSocialMediaMediaUploadUrlBody.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({
+        success: false,
+        code: "INVALID_REQUEST",
+        message: parsed.error.message,
+      });
+      return;
+    }
+    const organizationId = requireOrganization(req, res);
+    if (!organizationId) return;
+    try {
+      const result = await requestSocialMediaMediaUploadUrl(
+        organizationId,
+        req.appUser!.clerkUserId,
+        parsed.data,
+      );
+      res.json(RequestSocialMediaMediaUploadUrlResponse.parse(result));
+    } catch (error) {
+      req.log.warn({ err: error }, "Unable to request social media upload URL");
       sendError(res, error);
     }
   },
