@@ -17,5 +17,6 @@ export * from "./reviewProviderOperationLeases";
 export * from "./privateFeedback";
 export * from "./agencyInvitations";
 export * from "./socialMediaAccounts";
+export * from "./socialMediaProviderTeams";
 export * from "./accountDataExports";
 export * from "./accountDeactivationRequests";

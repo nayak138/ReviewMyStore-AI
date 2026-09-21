@@ -10,6 +10,7 @@ import {
   pool,
   providerConnectionsTable,
   socialMediaAccountsTable,
+  socialMediaProviderTeamsTable,
 } from "@workspace/db";
 import { ObjectStorageService } from "../lib/objectStorage";
 import {
@@ -26,6 +27,7 @@ const BNDLE_BASE =
 
 let organizationId: string;
 let businessId: string;
+let secondBusinessId: string;
 let providerCalls: Array<{ path: string; body: Record<string, unknown> }> = [];
 const originalFetch = globalThis.fetch;
 const originalGetObject = ObjectStorageService.prototype.getObjectEntityFile;
@@ -73,8 +75,29 @@ before(async () => {
       path,
       body: JSON.parse(String(init?.body ?? "{}")) as Record<string, unknown>,
     });
+    if (path.startsWith("team/")) {
+      const teamId = path.slice("team/".length);
+      const isSecondBusinessTeam = teamId === `team-second-${runId}`;
+      return new Response(
+        JSON.stringify({
+          socialAccounts: [
+            {
+              id: `instagram-provider-${isSecondBusinessTeam ? "second" : "primary"}-${runId}`,
+              type: "INSTAGRAM",
+              externalId: isSecondBusinessTeam
+                ? `instagram-second-${runId}`
+                : `instagram-${runId}`,
+            },
+          ],
+        }),
+        { status: 200, headers: { "Content-Type": "application/json" } },
+      );
+    }
     if (path === "upload/from-url") {
-      return new Response(JSON.stringify({ id: `upload-${providerCalls.length}` }), {
+      const uploadNumber = providerCalls.filter(
+        (call) => call.path === "upload/from-url",
+      ).length;
+      return new Response(JSON.stringify({ id: `upload-${uploadNumber}` }), {
         status: 200,
         headers: { "Content-Type": "application/json" },
       });
@@ -106,6 +129,17 @@ before(async () => {
     })
     .returning();
   businessId = business.id;
+  const [secondBusiness] = await db
+    .insert(businessesTable)
+    .values({
+      organizationId,
+      name: "Second Media Test Store",
+      category: "Retail",
+      slug: `second-media-test-store-${runId}`,
+      status: "ACTIVE",
+    })
+    .returning();
+  secondBusinessId = secondBusiness.id;
   await db.insert(providerConnectionsTable).values({
     organizationId,
     provider: "BNDLE",
@@ -120,6 +154,26 @@ before(async () => {
     displayName: "Media test Instagram",
     status: "CONNECTED",
   });
+  await db.insert(socialMediaAccountsTable).values({
+    organizationId,
+    businessId: secondBusinessId,
+    platform: "INSTAGRAM",
+    externalAccountId: `instagram-second-${runId}`,
+    displayName: "Second media test Instagram",
+    status: "CONNECTED",
+  });
+  await db.insert(socialMediaProviderTeamsTable).values([
+    {
+      organizationId,
+      businessId,
+      externalTeamId: `team-${runId}`,
+    },
+    {
+      organizationId,
+      businessId: secondBusinessId,
+      externalTeamId: `team-second-${runId}`,
+    },
+  ]);
 });
 
 beforeEach(async () => {
@@ -229,8 +283,27 @@ test("registers finalized owner image and video media before publishing to Insta
   assert.equal(post.id, "post-media-test");
   assert.deepEqual(
     providerCalls.map((call) => call.path),
-    ["upload/from-url", "upload/from-url", "post"],
+    ["upload/from-url", "upload/from-url", `team/team-${runId}`, "post"],
   );
-  const postData = providerCalls[2]?.body.data as Record<string, Record<string, unknown>>;
+  assert.equal(providerCalls[3]?.body.teamId, `team-${runId}`);
+  const postData = providerCalls[3]?.body.data as Record<string, Record<string, unknown>>;
   assert.deepEqual(postData.INSTAGRAM.uploadIds, ["upload-1", "upload-2"]);
+});
+
+test("uses an isolated provider team for each business in one organization", async () => {
+  await addUpload(`/objects/uploads/second-${runId}`, ownerId);
+
+  await createSocialMediaPost(organizationId, ownerId, {
+    businessId: secondBusinessId,
+    caption: "Second business post",
+    platforms: ["INSTAGRAM"],
+    media: [`/objects/uploads/second-${runId}`],
+  });
+
+  const teamCalls = providerCalls.filter((call) => call.path.startsWith("team/"));
+  const postCall = providerCalls.find(
+    (call) => call.path === "post" && call.body.title === undefined,
+  );
+  assert.equal(teamCalls.at(-1)?.path, `team/team-second-${runId}`);
+  assert.equal(postCall?.body.teamId, `team-second-${runId}`);
 });

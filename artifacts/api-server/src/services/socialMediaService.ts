@@ -5,10 +5,12 @@ import {
   objectUploadsTable,
   providerConnectionsTable,
   socialMediaAccountsTable,
+  socialMediaProviderTeamsTable,
 } from "@workspace/db";
 import {
   bndleRequest,
-  getOrCreateProviderTeam,
+  createSocialMediaProviderTeam,
+  withProviderOperationLock,
   ReviewProviderError,
 } from "./reviewManagementService";
 import { ObjectStorageService } from "../lib/objectStorage";
@@ -329,7 +331,7 @@ export async function requestSocialMediaMediaUploadUrl(
   };
 }
 
-async function getTeamId(organizationId: string): Promise<string> {
+async function getLegacyTeamId(organizationId: string): Promise<string | null> {
   const [connection] = await db
     .select({ externalProfileId: providerConnectionsTable.externalProfileId })
     .from(providerConnectionsTable)
@@ -340,7 +342,71 @@ async function getTeamId(organizationId: string): Promise<string> {
       ),
     )
     .limit(1);
-  return connection?.externalProfileId ?? getOrCreateProviderTeam(organizationId);
+  return connection?.externalProfileId ?? null;
+}
+
+async function findBusinessTeam(
+  organizationId: string,
+  businessId: string,
+): Promise<string | null> {
+  const [existing] = await db
+    .select({ externalTeamId: socialMediaProviderTeamsTable.externalTeamId })
+    .from(socialMediaProviderTeamsTable)
+    .where(
+      and(
+        eq(socialMediaProviderTeamsTable.organizationId, organizationId),
+        eq(socialMediaProviderTeamsTable.businessId, businessId),
+      ),
+    )
+    .limit(1);
+  return existing?.externalTeamId ?? null;
+}
+
+async function getOrCreateBusinessTeam(
+  organizationId: string,
+  businessId: string,
+): Promise<string> {
+  const existingTeamId = await findBusinessTeam(organizationId, businessId);
+  if (existingTeamId) return existingTeamId;
+
+  return withProviderOperationLock(organizationId, async () => {
+    const lockedExistingTeamId = await findBusinessTeam(organizationId, businessId);
+    if (lockedExistingTeamId) return lockedExistingTeamId;
+
+    // Preserve an existing social setup when this organization has only ever
+    // used its review team for one business. Once more than one business has
+    // local social accounts, sharing that legacy team is unsafe, so all new
+    // business mappings receive their own provider team.
+    const legacyAccounts = await db
+      .select({ businessId: socialMediaAccountsTable.businessId })
+      .from(socialMediaAccountsTable)
+      .where(eq(socialMediaAccountsTable.organizationId, organizationId));
+    const legacyBusinessIds = new Set(
+      legacyAccounts.map((account) => account.businessId),
+    );
+    const legacyTeamId =
+      legacyBusinessIds.size === 1 &&
+      legacyBusinessIds.has(businessId)
+        ? await getLegacyTeamId(organizationId)
+        : null;
+    const teamId =
+      legacyTeamId ??
+      (await createSocialMediaProviderTeam(organizationId, businessId));
+
+    const [saved] = await db
+      .insert(socialMediaProviderTeamsTable)
+      .values({
+        organizationId,
+        businessId,
+        externalTeamId: teamId,
+        updatedAt: new Date(),
+      })
+      .onConflictDoNothing({
+        target: socialMediaProviderTeamsTable.businessId,
+      })
+      .returning({ externalTeamId: socialMediaProviderTeamsTable.externalTeamId });
+    return saved?.externalTeamId ?? teamId;
+  });
 }
 
 async function getProviderAccounts(teamId: string): Promise<JsonRecord[]> {
@@ -356,7 +422,7 @@ export async function getSocialMediaDashboard(
 ) {
   await getBusiness(organizationId, businessId);
   const [teamId, localAccounts] = await Promise.all([
-    getTeamId(organizationId),
+    getOrCreateBusinessTeam(organizationId, businessId),
     db
       .select()
       .from(socialMediaAccountsTable)
@@ -433,7 +499,7 @@ export async function startSocialMediaConnection(
       "Could not determine this app's URL to complete the connection.",
     );
   }
-  const teamId = await getTeamId(organizationId);
+  const teamId = await getOrCreateBusinessTeam(organizationId, businessId);
   const result = await bndleRequest("social-account/connect", {
     method: "POST",
     body: JSON.stringify({
@@ -464,7 +530,7 @@ export async function attachSocialMediaAccount(
   externalAccountId: string,
 ) {
   await getBusiness(organizationId, businessId);
-  const teamId = await getTeamId(organizationId);
+  const teamId = await getOrCreateBusinessTeam(organizationId, businessId);
   const providerAccounts = await getProviderAccounts(teamId);
   const channelMatch = providerAccounts
     .map((account) => ({
@@ -500,22 +566,6 @@ export async function attachSocialMediaAccount(
   ) {
     throw new SocialMediaBadRequestError(
       `Choose the ${payload.platform === "FACEBOOK" ? "Facebook Page" : "Instagram account"} you want to publish to.`,
-    );
-  }
-
-  const [alreadyAssigned] = await db
-    .select({ businessId: socialMediaAccountsTable.businessId })
-    .from(socialMediaAccountsTable)
-    .where(
-      and(
-        eq(socialMediaAccountsTable.organizationId, organizationId),
-        eq(socialMediaAccountsTable.platform, payload.platform),
-      ),
-    )
-    .limit(1);
-  if (alreadyAssigned && alreadyAssigned.businessId !== businessId) {
-    throw new SocialMediaConflictError(
-      `${payload.platform === "FACEBOOK" ? "Facebook" : payload.platform === "INSTAGRAM" ? "Instagram" : "Threads"} is already attached to another business. Detach it there before choosing a different account.`,
     );
   }
 
@@ -611,7 +661,7 @@ async function getBusinessTeam(
   businessId: string,
 ) {
   await getBusiness(organizationId, businessId);
-  const teamId = await getTeamId(organizationId);
+  const teamId = await getOrCreateBusinessTeam(organizationId, businessId);
   const accounts = await db
     .select()
     .from(socialMediaAccountsTable)
@@ -623,6 +673,29 @@ async function getBusinessTeam(
       ),
     );
   return { teamId, accounts };
+}
+
+async function getReadyBusinessAccounts(
+  teamId: string,
+  accounts: typeof socialMediaAccountsTable.$inferSelect[],
+) {
+  const providerAccounts = await getProviderAccounts(teamId);
+  const readyTargets = new Set(
+    providerAccounts
+      .filter(
+        (account) =>
+          !requiresChannelSelection(account) || Boolean(valueString(account.externalId)),
+      )
+      .map((account) => {
+        const platform = providerPlatform(account.type);
+        const targetId = providerTargetId(account);
+        return platform && targetId ? `${platform}:${targetId}` : null;
+      })
+      .filter((target): target is string => Boolean(target)),
+  );
+  return accounts.filter((account) =>
+    readyTargets.has(`${account.platform}:${account.externalAccountId}`),
+  );
 }
 
 export async function createSocialMediaPost(
@@ -677,6 +750,15 @@ export async function createSocialMediaPost(
       );
     }
     throw error;
+  }
+  const readyAccounts = await getReadyBusinessAccounts(teamId, accounts);
+  const missingProviderTargets = input.platforms.filter(
+    (platform) => !readyAccounts.some((account) => account.platform === platform),
+  );
+  if (missingProviderTargets.length) {
+    throw new SocialMediaBadRequestError(
+      `Connect ${missingProviderTargets.join(", ")} before publishing to those channels.`,
+    );
   }
   const data = Object.fromEntries(
     input.platforms.map((platform) => [

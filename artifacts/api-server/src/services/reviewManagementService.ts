@@ -238,9 +238,23 @@ export async function bndleRequest<T extends JsonRecord = JsonRecord>(
   return payload as T;
 }
 
+async function createProviderTeam(teamName: string): Promise<string> {
+  const created = await bndleRequest("team/", {
+    method: "POST",
+    body: JSON.stringify({ name: teamName }),
+  });
+  const teamId = valueString(created.id);
+  if (!teamId) {
+    throw new ReviewProviderError(
+      "The review provider did not return a team identifier.",
+    );
+  }
+  return teamId;
+}
+
 /**
- * bundle.social scopes social accounts to teams; we keep one team per
- * organization so tenants never see each other's accounts or reviews.
+ * Review management remains organization-scoped. Social publishing uses
+ * createProviderTeam directly and persists its business mapping separately.
  */
 export async function getOrCreateProviderTeam(
   organizationId: string,
@@ -256,17 +270,14 @@ export async function getOrCreateProviderTeam(
   const existingId = existing ? valueString(existing.id) : null;
   if (existingId) return existingId;
 
-  const created = await bndleRequest("team/", {
-    method: "POST",
-    body: JSON.stringify({ name: teamName }),
-  });
-  const teamId = valueString(created.id);
-  if (!teamId) {
-    throw new ReviewProviderError(
-      "The review provider did not return a team identifier.",
-    );
-  }
-  return teamId;
+  return createProviderTeam(teamName);
+}
+
+export async function createSocialMediaProviderTeam(
+  organizationId: string,
+  businessId: string,
+): Promise<string> {
+  return createProviderTeam(`5-STAR.AI Social ${organizationId} ${businessId}`);
 }
 
 async function getConnection(
