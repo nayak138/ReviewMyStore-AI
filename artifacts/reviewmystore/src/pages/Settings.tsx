@@ -42,15 +42,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { Switch } from "@/components/ui/switch";
 
-function initials(name: string) {
-  return name
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase())
-    .join("") || "A";
-}
-
 function formatDate(value: string | null | undefined) {
   if (!value) return "Not available";
   const date = new Date(value);
@@ -250,23 +241,7 @@ export default function Settings() {
                   </CardHeader>
                   <CardContent className="p-5 sm:p-6">
                     <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
-                      <div className="flex min-w-0 items-center gap-4">
-                        {clerkUser?.imageUrl ? (
-                          <img
-                            src={clerkUser.imageUrl}
-                            alt={`${accountName} profile`}
-                            className="h-14 w-14 shrink-0 rounded-2xl object-cover shadow-sm"
-                            data-testid="settings-profile-avatar"
-                          />
-                        ) : (
-                          <div
-                            className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-primary text-lg font-semibold text-primary-foreground shadow-sm"
-                            aria-hidden="true"
-                            data-testid="settings-profile-avatar"
-                          >
-                            {initials(accountName)}
-                          </div>
-                        )}
+                      <div className="flex min-w-0 items-center">
                         <div className="min-w-0">
                           <p className="truncate text-lg font-semibold text-foreground" data-testid="settings-profile-name">
                             {accountName}

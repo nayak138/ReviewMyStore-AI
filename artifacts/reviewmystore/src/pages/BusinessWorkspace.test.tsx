@@ -398,6 +398,7 @@ describe("authenticated business workspace", () => {
     renderWithQueryClient(<Settings />);
 
     expect(screen.queryByTestId("settings-page")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("settings-profile-avatar")).not.toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Businesses" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Insights" })).toHaveAttribute("href", "/insigts");
     expect(screen.getByRole("link", { name: "Settings" })).toBeInTheDocument();
