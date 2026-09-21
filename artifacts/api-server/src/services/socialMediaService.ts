@@ -19,6 +19,7 @@ import {
   getObjectAclPolicy,
   ObjectPermission,
 } from "../lib/objectAcl";
+import { logger } from "../lib/logger";
 
 type JsonRecord = Record<string, unknown>;
 type Platform = "FACEBOOK" | "INSTAGRAM" | "THREADS";
@@ -33,7 +34,7 @@ const MEDIA_CONTENT_TYPES = new Set([
   "video/webm",
 ]);
 const MAX_IMAGE_BYTES = 25 * 1024 * 1024;
-const MAX_VIDEO_BYTES = 5 * 1024 * 1024 * 1024;
+const MAX_VIDEO_BYTES = 100 * 1024 * 1024;
 const objectStorageService = new ObjectStorageService();
 
 export class SocialMediaNotFoundError extends Error {
@@ -185,7 +186,7 @@ async function uploadMediaToProvider(
         throw new SocialMediaBadRequestError(
           contentType.startsWith("image/")
             ? "Images must be 25 MB or smaller."
-            : "Videos must be 5 GB or smaller.",
+            : "Videos must be 100 MB or smaller.",
         );
       }
       const uploaded = await bndleRequest("upload/from-url", {
@@ -202,6 +203,33 @@ async function uploadMediaToProvider(
         );
       }
       return uploadId;
+    }),
+  );
+}
+
+async function removePublishedMedia(
+  mediaPaths: string[],
+  clerkUserId: string,
+): Promise<void> {
+  await Promise.all(
+    mediaPaths.map(async (objectPath) => {
+      try {
+        const objectFile = await objectStorageService.getObjectEntityFile(objectPath);
+        await objectFile.delete();
+        await db
+          .delete(objectUploadsTable)
+          .where(
+            and(
+              eq(objectUploadsTable.objectPath, objectPath),
+              eq(objectUploadsTable.ownerClerkUserId, clerkUserId),
+            ),
+          );
+      } catch (error) {
+        logger.error(
+          { err: error, objectPath },
+          "Could not remove social media after provider accepted the post",
+        );
+      }
     }),
   );
 }
@@ -310,7 +338,7 @@ export async function requestSocialMediaMediaUploadUrl(
     throw new SocialMediaBadRequestError(
       contentType.startsWith("image/")
         ? "Images must be 25 MB or smaller."
-        : "Videos must be 5 GB or smaller.",
+        : "Videos must be 100 MB or smaller.",
     );
   }
   const uploadURL = await objectStorageService.getObjectEntityUploadURL();
@@ -816,6 +844,9 @@ export async function createSocialMediaPost(
       );
     }
     throw error;
+  }
+  if (mediaPaths.length) {
+    await removePublishedMedia(mediaPaths, clerkUserId);
   }
   return postPayload(created);
 }

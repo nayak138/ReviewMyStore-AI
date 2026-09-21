@@ -36,6 +36,7 @@ const objectMetadata = new Map<
   string,
   { contentType: string; size: string }
 >();
+let deletedObjectPaths: string[] = [];
 
 before(async () => {
   process.env.REPLIT_DOMAINS = "social-media-test.example.com";
@@ -57,6 +58,9 @@ before(async () => {
           },
         },
       ],
+      delete: async () => {
+        deletedObjectPaths.push(objectPath);
+      },
     } as never;
   }) as typeof ObjectStorageService.prototype.getObjectEntityFile;
   globalThis.fetch = (async (
@@ -179,6 +183,7 @@ before(async () => {
 beforeEach(async () => {
   providerCalls = [];
   objectMetadata.clear();
+  deletedObjectPaths = [];
   await db
     .delete(objectUploadsTable)
     .where(eq(objectUploadsTable.ownerClerkUserId, ownerId));
@@ -245,19 +250,29 @@ test("rejects foreign, unfinished, and missing media before calling the provider
 
 test("rejects unsupported and oversized owned media before calling the provider", async () => {
   const unsupportedPath = `/objects/uploads/unsupported-${runId}`;
-  const oversizedPath = `/objects/uploads/oversized-${runId}`;
+  const oversizedImagePath = `/objects/uploads/oversized-image-${runId}`;
+  const oversizedVideoPath = `/objects/uploads/oversized-video-${runId}`;
   await addUpload(unsupportedPath, ownerId);
-  await addUpload(oversizedPath, ownerId);
+  await addUpload(oversizedImagePath, ownerId);
+  await addUpload(oversizedVideoPath, ownerId);
   objectMetadata.set(unsupportedPath, {
     contentType: "application/pdf",
     size: "1024",
   });
-  objectMetadata.set(oversizedPath, {
+  objectMetadata.set(oversizedImagePath, {
     contentType: "image/jpeg",
     size: String(25 * 1024 * 1024 + 1),
   });
+  objectMetadata.set(oversizedVideoPath, {
+    contentType: "video/mp4",
+    size: String(100 * 1024 * 1024 + 1),
+  });
 
-  for (const objectPath of [unsupportedPath, oversizedPath]) {
+  for (const objectPath of [
+    unsupportedPath,
+    oversizedImagePath,
+    oversizedVideoPath,
+  ]) {
     await assert.rejects(
       () => publishWith(objectPath),
       SocialMediaBadRequestError,
@@ -288,6 +303,12 @@ test("registers finalized owner image and video media before publishing to Insta
   assert.equal(providerCalls[3]?.body.teamId, `team-${runId}`);
   const postData = providerCalls[3]?.body.data as Record<string, Record<string, unknown>>;
   assert.deepEqual(postData.INSTAGRAM.uploadIds, ["upload-1", "upload-2"]);
+  assert.deepEqual(deletedObjectPaths, [imagePath, videoPath]);
+  const remainingUploads = await db
+    .select()
+    .from(objectUploadsTable)
+    .where(eq(objectUploadsTable.ownerClerkUserId, ownerId));
+  assert.equal(remainingUploads.length, 0);
 });
 
 test("uses an isolated provider team for each business in one organization", async () => {
