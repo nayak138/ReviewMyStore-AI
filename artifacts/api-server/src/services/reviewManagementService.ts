@@ -631,7 +631,14 @@ async function findGoogleBusinessSocialAccount(
       teamId,
     });
   } catch (error) {
-    if (error instanceof ReviewProviderError && error.upstreamStatus === 404) {
+    if (
+      error instanceof ReviewProviderError &&
+      (error.upstreamStatus === 404 ||
+        (error.upstreamStatus === 400 &&
+          /team does not have a google business account/i.test(
+            error.providerMessage ?? "",
+          )))
+    ) {
       return null;
     }
     throw error;

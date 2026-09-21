@@ -478,8 +478,12 @@ test("starting a connection provisions a provider team and returns Google's OAut
       return { body: { id: "team-created-1" } };
     }
     if (path.endsWith("/social-account/by-type") && method === "GET") {
-      // No account connected yet for this team, so a fresh OAuth link is needed.
-      return { status: 404, body: { message: "not found" } };
+      // bundle.social uses 400 (rather than 404) when this team has not
+      // connected a Google Business account yet.
+      return {
+        status: 400,
+        body: { message: "Team does not have a Google Business account" },
+      };
     }
     if (path.endsWith("/social-account/connect") && method === "POST") {
       const body = JSON.parse(String(init.body)) as Record<string, unknown>;
