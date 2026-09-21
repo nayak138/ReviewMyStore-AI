@@ -205,22 +205,6 @@ export default function Settings() {
     <AppLayout title="Account settings">
       <div className="review-noise min-h-full">
         <div className="mx-auto max-w-6xl space-y-8 px-4 py-7 sm:px-6 md:px-8 md:py-10">
-          <header className="relative overflow-hidden rounded-2xl border border-border bg-card px-5 py-6 shadow-sm sm:px-8 sm:py-8" data-testid="settings-page">
-            <div className="absolute -right-16 -top-24 h-64 w-64 rounded-full bg-primary/10 blur-3xl" aria-hidden="true" />
-            <div className="relative max-w-3xl">
-              <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-primary">
-                <UserRound className="h-3.5 w-3.5" aria-hidden="true" />
-                Account center
-              </div>
-              <h2 className="font-display text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
-                Settings
-              </h2>
-              <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground sm:text-base">
-                A calm place to review the identity you use with 5-Star.AI, see how sign-in is protected, and understand what is available for your account today.
-              </p>
-            </div>
-          </header>
-
           {isLoading ? (
             <SettingsSkeleton />
           ) : isError ? (

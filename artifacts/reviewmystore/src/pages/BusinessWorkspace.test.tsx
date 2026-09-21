@@ -394,10 +394,10 @@ describe("authenticated business workspace", () => {
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
-  it("keeps Settings and only the top-level three-item sidebar visible", () => {
+  it("keeps the settings page and only the top-level three-item sidebar visible", () => {
     renderWithQueryClient(<Settings />);
 
-    expect(screen.getByRole("heading", { name: "Settings", level: 2 })).toBeInTheDocument();
+    expect(screen.queryByTestId("settings-page")).not.toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Businesses" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Insights" })).toHaveAttribute("href", "/insigts");
     expect(screen.getByRole("link", { name: "Settings" })).toBeInTheDocument();
