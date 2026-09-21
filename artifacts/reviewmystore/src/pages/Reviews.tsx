@@ -901,15 +901,13 @@ export default function Reviews() {
                     You're close to your monthly Google review import limit.
                   </>
                 )}{" "}
-                <a
-                  href="https://bundle.social/pricing"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="font-medium underline underline-offset-2 hover:text-amber-950 dark:hover:text-amber-200"
-                >
-                  Upgrade on bundle.social
-                </a>{" "}
-                to import more.
+                 <a
+                   href="mailto:hello@5-star.ai?subject=Google%20review%20import%20limit"
+                   className="font-medium underline underline-offset-2 hover:text-amber-950 dark:hover:text-amber-200"
+                 >
+                   Contact 5-STAR.AI at hello@5-star.ai
+                 </a>{" "}
+                 for help importing more.
               </div>
             </div>
           )}

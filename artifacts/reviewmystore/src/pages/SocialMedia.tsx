@@ -55,6 +55,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 
@@ -195,6 +196,8 @@ export default function SocialMedia() {
   const [selectedBusinessId, setSelectedBusinessId] = useState<string | null>(workspaceBusinessId);
   const [callbackReturned, setCallbackReturned] = useState(false);
   const [selectedPlatforms, setSelectedPlatforms] = useState<SocialMediaPlatform[]>([]);
+  const [accountPickerPlatform, setAccountPickerPlatform] = useState<SocialMediaPlatform | "">("");
+  const [selectedAvailableAccounts, setSelectedAvailableAccounts] = useState<Partial<Record<SocialMediaPlatform, string>>>({});
   const [caption, setCaption] = useState("");
   const [title, setTitle] = useState("");
   const [media, setMedia] = useState<UploadedMedia[]>([]);
@@ -257,6 +260,19 @@ export default function SocialMedia() {
     () => new Set((dashboard?.availableAccounts ?? []).map((account) => account.platform)),
     [dashboard?.availableAccounts],
   );
+  const availableAccountsByPlatform = useMemo(
+    () =>
+      PLATFORMS.reduce(
+        (groups, platform) => {
+          groups[platform] = (dashboard?.availableAccounts ?? []).filter(
+            (account) => account.platform === platform && !account.connected,
+          );
+          return groups;
+        },
+        {} as Record<SocialMediaPlatform, NonNullable<typeof dashboard>["availableAccounts"]>,
+      ),
+    [dashboard?.availableAccounts],
+  );
 
   useEffect(() => {
     if (!selectedPostId && posts[0]) setSelectedPostId(posts[0].id);
@@ -266,6 +282,13 @@ export default function SocialMedia() {
   useEffect(() => {
     setSelectedPlatforms((current) => current.filter((platform) => connectedPlatforms.has(platform)));
   }, [connectedPlatforms]);
+
+  useEffect(() => {
+    const firstAvailablePlatform = PLATFORMS.find((platform) => availableAccountsByPlatform[platform].length > 0) ?? "";
+    if (!accountPickerPlatform || availableAccountsByPlatform[accountPickerPlatform].length === 0) {
+      setAccountPickerPlatform(firstAvailablePlatform);
+    }
+  }, [accountPickerPlatform, availableAccountsByPlatform]);
 
   useEffect(() => {
     if (callbackReturned && selectedBusinessId) {
@@ -494,38 +517,85 @@ export default function SocialMedia() {
               <Card>
                 <CardHeader className="pb-3">
                   <CardTitle className="text-lg">Add a channel</CardTitle>
-                  <CardDescription>Authorize a provider once. We will never publish without your instruction.</CardDescription>
+                   <CardDescription>Authorize a channel, then choose the exact account for this business.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-2">
-                  {PLATFORMS.map((platform) => {
-                    const meta = PLATFORM_META[platform];
-                    const connected = connectedPlatforms.has(platform);
-                    const authorized = authorizedPlatforms.has(platform);
-                    return (
-                      <div key={platform} className="flex items-center justify-between gap-3 rounded-xl border border-border px-3 py-2.5" data-testid={`row-connect-${platform.toLowerCase()}`}>
-                        <div className="flex items-center gap-3"><div className={cn("flex h-8 w-8 items-center justify-center rounded-lg", meta.tint)}><PlatformMark platform={platform} /></div><span className="text-sm font-medium">{meta.label}</span></div>
-                        {connected ? <Badge variant="outline" className="gap-1 border-emerald-500/20 bg-emerald-500/10 text-emerald-700"><CheckCircle2 className="h-3.5 w-3.5" /> Attached</Badge> :
-                          authorized ? <Badge variant="outline" className="border-amber-500/20 bg-amber-500/10 text-amber-700">Choose below</Badge> :
-                          <Button variant="outline" size="sm" onClick={() => handleConnect(platform)} disabled={!!connectingPlatform} data-testid={`button-connect-${platform.toLowerCase()}`}>
-                            {connectingPlatform === platform ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <Plus className="mr-1.5 h-3.5 w-3.5" />} Connect
-                          </Button>}
-                      </div>
-                    );
-                  })}
-                  {!!dashboard?.availableAccounts.filter((account) => !account.connected).length && (
-                    <div className="mt-4 border-t border-border pt-4">
-                      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Choose a Page or account</p>
-                      <p className="mb-3 mt-1 text-xs leading-relaxed text-muted-foreground">Authorization gives access to the accounts you approved. Select the exact destination for this business.</p>
-                      <div className="space-y-2">
-                        {dashboard.availableAccounts.filter((account) => !account.connected).map((account) => (
-                          <div className="flex items-center justify-between gap-3 rounded-xl bg-secondary/60 px-3 py-2.5" key={account.externalAccountId} data-testid={`row-available-account-${account.externalAccountId}`}>
-                            <div className="flex min-w-0 items-center gap-2"><PlatformMark platform={account.platform} /><span className="truncate text-sm">{account.displayName}</span></div>
-                            <Button size="sm" onClick={() => attachAccount.mutate({ data: { businessId: selectedBusinessId, externalAccountId: account.externalAccountId } })} disabled={attachAccount.isPending} data-testid={`button-attach-account-${account.externalAccountId}`}>Use this account</Button>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
+                   <RadioGroup
+                     value={accountPickerPlatform}
+                     onValueChange={(value) => setAccountPickerPlatform(value as SocialMediaPlatform)}
+                     className="space-y-2"
+                     aria-label="Choose a social platform"
+                   >
+                     {PLATFORMS.map((platform) => {
+                       const meta = PLATFORM_META[platform];
+                       const connected = connectedPlatforms.has(platform);
+                       const availableAccounts = availableAccountsByPlatform[platform];
+                       const authorized = authorizedPlatforms.has(platform);
+                       const selectedAccountId = selectedAvailableAccounts[platform] ?? "";
+                       return (
+                         <div key={platform} className="rounded-xl border border-border px-3 py-2.5" data-testid={`row-connect-${platform.toLowerCase()}`}>
+                           <div className="flex items-center gap-3">
+                             <RadioGroupItem
+                               value={platform}
+                               id={`social-platform-${platform.toLowerCase()}`}
+                               disabled={connected || availableAccounts.length === 0}
+                               data-testid={`radio-platform-${platform.toLowerCase()}`}
+                             />
+                             <label htmlFor={`social-platform-${platform.toLowerCase()}`} className={cn("flex min-w-0 flex-1 items-center gap-3", !connected && availableAccounts.length === 0 && "cursor-default opacity-60")}>
+                               <div className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-lg", meta.tint)}><PlatformMark platform={platform} /></div>
+                               <span className="text-sm font-medium">{meta.label}</span>
+                             </label>
+                             {connected ? (
+                               <Badge variant="outline" className="gap-1 border-emerald-500/20 bg-emerald-500/10 text-emerald-700"><CheckCircle2 className="h-3.5 w-3.5" /> Attached</Badge>
+                             ) : availableAccounts.length === 0 ? (
+                               <Button variant="outline" size="sm" onClick={() => handleConnect(platform)} disabled={!!connectingPlatform} data-testid={`button-connect-${platform.toLowerCase()}`}>
+                                 {connectingPlatform === platform ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <Plus className="mr-1.5 h-3.5 w-3.5" />} {authorized ? "Refresh access" : "Connect"}
+                               </Button>
+                             ) : (
+                               <div className="flex items-center gap-2">
+                                 <Select
+                                   value={selectedAccountId}
+                                   onValueChange={(externalAccountId) => {
+                                     setSelectedAvailableAccounts((current) => ({ ...current, [platform]: externalAccountId }));
+                                     if (selectedBusinessId) {
+                                       attachAccount.mutate({ data: { businessId: selectedBusinessId, externalAccountId } });
+                                     }
+                                   }}
+                                   disabled={attachAccount.isPending}
+                                 >
+                                   <SelectTrigger className="w-[min(13rem,48vw)]" aria-label={`Choose ${meta.label} account`} data-testid={`select-account-${platform.toLowerCase()}`}>
+                                     <SelectValue placeholder={`Choose ${meta.label} account`} />
+                                   </SelectTrigger>
+                                   <SelectContent>
+                                     {availableAccounts.map((account) => (
+                                       <SelectItem key={account.externalAccountId} value={account.externalAccountId} data-testid={`option-account-${account.externalAccountId}`}>
+                                         {account.displayName}{account.username ? ` (@${account.username})` : ""}
+                                       </SelectItem>
+                                     ))}
+                                   </SelectContent>
+                                 </Select>
+                                 <Button
+                                   type="button"
+                                   variant="ghost"
+                                   size="sm"
+                                   className="shrink-0 px-2 text-xs text-muted-foreground"
+                                   onClick={() => handleConnect(platform)}
+                                   disabled={!!connectingPlatform}
+                                   data-testid={`button-refresh-access-${platform.toLowerCase()}`}
+                                 >
+                                   {connectingPlatform === platform ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="mr-1 h-3.5 w-3.5" />}
+                                   Refresh access
+                                 </Button>
+                               </div>
+                             )}
+                           </div>
+                         </div>
+                       );
+                     })}
+                   </RadioGroup>
+                   <p className="pt-2 text-xs leading-relaxed text-muted-foreground">
+                     If an account is missing, click Refresh access and authorize the correct Instagram, Facebook, or Threads account. Then use the radio row and dropdown to select the destination for this business.
+                   </p>
                 </CardContent>
               </Card>
             </section>
