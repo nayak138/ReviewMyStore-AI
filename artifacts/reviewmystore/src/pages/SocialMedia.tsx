@@ -195,6 +195,7 @@ export default function SocialMedia() {
   const routeBusinessName = routeParams.get("businessName");
   const [selectedBusinessId, setSelectedBusinessId] = useState<string | null>(workspaceBusinessId);
   const [callbackReturned, setCallbackReturned] = useState(false);
+  const [callbackFailed, setCallbackFailed] = useState(false);
   const [selectedPlatforms, setSelectedPlatforms] = useState<SocialMediaPlatform[]>([]);
   const [accountPickerPlatform, setAccountPickerPlatform] = useState<SocialMediaPlatform | "">("");
   const [selectedAvailableAccounts, setSelectedAvailableAccounts] = useState<Partial<Record<SocialMediaPlatform, string>>>({});
@@ -232,9 +233,18 @@ export default function SocialMedia() {
     const params = new URLSearchParams(window.location.search);
     if (params.get("socialConnect") !== "1") return;
     params.delete("socialConnect");
+    const providerFailed = Boolean(
+      params.get("error") ||
+      params.get("error_description") ||
+      params.get("error_reason"),
+    );
+    params.delete("error");
+    params.delete("error_description");
+    params.delete("error_reason");
     const query = params.toString();
     window.history.replaceState({}, "", `${window.location.pathname}${query ? `?${query}` : ""}`);
-    setCallbackReturned(true);
+    setCallbackFailed(providerFailed);
+    setCallbackReturned(!providerFailed);
   }, []);
 
   const dashboardParams = { businessId: selectedBusinessId ?? "" };
@@ -291,12 +301,20 @@ export default function SocialMedia() {
   }, [accountPickerPlatform, availableAccountsByPlatform]);
 
   useEffect(() => {
-    if (callbackReturned && selectedBusinessId) {
+    if (callbackFailed && selectedBusinessId) {
+      queryClient.invalidateQueries({ queryKey: getGetSocialMediaDashboardQueryKey({ businessId: selectedBusinessId }) });
+      setCallbackFailed(false);
+      toast({
+        title: "Social authorization wasn't completed",
+        description: "No account was connected. You can try again when you're ready.",
+        variant: "destructive",
+      });
+    } else if (callbackReturned && selectedBusinessId) {
       queryClient.invalidateQueries({ queryKey: getGetSocialMediaDashboardQueryKey({ businessId: selectedBusinessId }) });
       setCallbackReturned(false);
       toast({ title: "Social account authorized", description: "Choose the Page or account you want this business to publish to." });
     }
-  }, [callbackReturned, selectedBusinessId, queryClient, toast]);
+  }, [callbackFailed, callbackReturned, selectedBusinessId, queryClient, toast]);
 
   const invalidateSocial = () => {
     if (!selectedBusinessId) return;

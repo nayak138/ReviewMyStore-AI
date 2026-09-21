@@ -489,16 +489,24 @@ test("starting a connection provisions a provider team and returns Google's OAut
       const body = JSON.parse(String(init.body)) as Record<string, unknown>;
       assert.equal(body.teamId, "team-created-1");
       assert.equal(body.type, "GOOGLE_BUSINESS");
-      // Our own app's callback route, not a bundle.social hosted page — the
-      // whole point of the custom flow is that their UI is never shown.
-      assert.match(String(body.redirectUrl), /^https:\/\/.+\/reviews\?bndleConnect=1$/);
+       // Our own app's callback route, not a bundle.social hosted page — the
+       // whole point of the custom flow is that their UI is never shown.
+       const redirectUrl = new URL(String(body.redirectUrl));
+       assert.equal(redirectUrl.origin, "https://published.example.com");
+       assert.equal(redirectUrl.pathname, "/reviews");
+       assert.equal(redirectUrl.searchParams.get("bndleConnect"), "1");
+       assert.equal(redirectUrl.searchParams.get("businessId"), "business-123");
       assert.equal(body.disableAutoLogin, true);
       return { body: { url: authUrl } };
     }
     throw new Error(`Unexpected provider request: ${method} ${path}`);
   };
 
-  const result = await startReviewProviderConnection(org.id);
+   const result = await startReviewProviderConnection(
+     org.id,
+     "https://published.example.com",
+     "business-123",
+   );
   assert.equal(result.authUrl, authUrl);
   assert.equal(result.stage, "NOT_CONNECTED");
   assert.deepEqual(result.locations, []);

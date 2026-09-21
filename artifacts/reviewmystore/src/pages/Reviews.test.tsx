@@ -347,6 +347,7 @@ describe('Reviews dashboard states', () => {
     // listener never mounted and the tab silently never auto-synced when
     // the user came back from Google.
     mocks.dashboardStatus = 'DISCONNECTED';
+    window.history.replaceState({}, '', '/reviews?businessId=business-1');
     const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
     vi.spyOn(window, 'open').mockReturnValue({ opener: null } as unknown as Window);
@@ -361,6 +362,9 @@ describe('Reviews dashboard states', () => {
     fireEvent.click(screen.getByRole('button', { name: /connect google business/i }));
 
     expect(mocks.startConnectionMutate).toHaveBeenCalledTimes(1);
+    expect(mocks.startConnectionMutate).toHaveBeenCalledWith({
+      data: { businessId: 'business-1' },
+    });
     // The fix under test: a successful start must invalidate the dashboard
     // query, not just open the portal tab.
     expect(invalidateSpy).toHaveBeenCalledWith(
@@ -382,5 +386,6 @@ describe('Reviews dashboard states', () => {
     // The user returns to this tab after finishing Google sign-in elsewhere.
     window.dispatchEvent(new Event('focus'));
     expect(mocks.syncMutate).toHaveBeenCalledTimes(1);
+    window.history.replaceState({}, '', '/reviews');
   });
 });

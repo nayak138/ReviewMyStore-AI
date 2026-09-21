@@ -121,6 +121,7 @@ export * from './reviewDashboardResult';
 export * from './reviewInboxSummary';
 export * from './reviewLocation';
 export * from './reviewProviderConnection';
+export * from './reviewProviderConnectionInput';
 export * from './reviewProviderConnectionProvider';
 export * from './reviewProviderConnectionStartResult';
 export * from './reviewProviderLocationOption';

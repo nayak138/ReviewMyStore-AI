@@ -524,22 +524,30 @@ function getAppOrigin(): string | null {
  * shows their branding or hosted UI — we render the location picker and
  * finish the connection ourselves from here.
  */
-function getConnectCallbackUrl(appOrigin = getAppOrigin()): string | null {
-  return appOrigin ? `${appOrigin}/reviews?bndleConnect=1` : null;
+function getConnectCallbackUrl(
+  appOrigin = getAppOrigin(),
+  businessId?: string,
+): string | null {
+  if (!appOrigin) return null;
+  const params = new URLSearchParams({ bndleConnect: "1" });
+  if (businessId) params.set("businessId", businessId);
+  return `${appOrigin}/reviews?${params.toString()}`;
 }
 
 export async function startReviewProviderConnection(
   organizationId: string,
   appOrigin?: string,
+  businessId?: string,
 ) {
   return withProviderOperationLock(organizationId, () =>
-    startReviewProviderConnectionUnlocked(organizationId, appOrigin),
+    startReviewProviderConnectionUnlocked(organizationId, appOrigin, businessId),
   );
 }
 
 async function startReviewProviderConnectionUnlocked(
   organizationId: string,
   appOrigin?: string,
+  businessId?: string,
 ) {
   const teamId = await getOrCreateProviderTeam(organizationId);
   const [connection] = await db
@@ -585,7 +593,7 @@ async function startReviewProviderConnectionUnlocked(
     };
   }
 
-  const redirectUrl = getConnectCallbackUrl(appOrigin);
+  const redirectUrl = getConnectCallbackUrl(appOrigin, businessId);
   if (!redirectUrl) {
     throw new ReviewProviderError(
       "Could not determine this app's URL to complete the Google connection.",

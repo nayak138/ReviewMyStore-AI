@@ -92,6 +92,7 @@ import type {
   RedirectResolveRequest,
   RedirectResolveResult,
   ReviewDashboardResult,
+  ReviewProviderConnectionInput,
   ReviewProviderConnectionStartResult,
   ReviewProviderLocationsResult,
   SelectReviewProviderLocationRequest,
@@ -231,14 +232,14 @@ export const getStartReviewProviderConnectionUrl = () => {
 /**
  * @summary Start the BNDLE-hosted Google Business authorization flow
  */
-export const startReviewProviderConnection = async ( options?: Parameters<typeof customFetch>[1]): Promise<ReviewProviderConnectionStartResult> => {
+export const startReviewProviderConnection = async (reviewProviderConnectionInput: ReviewProviderConnectionInput, options?: Parameters<typeof customFetch>[1]): Promise<ReviewProviderConnectionStartResult> => {
 
   return customFetch<ReviewProviderConnectionStartResult>(getStartReviewProviderConnectionUrl(),
   {
     ...options,
-    method: 'POST'
-
-
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(reviewProviderConnectionInput)
   }
 );}
 
@@ -247,8 +248,8 @@ export const startReviewProviderConnection = async ( options?: Parameters<typeof
 
 
 export const getStartReviewProviderConnectionMutationOptions = <TError = ErrorType<ErrorResponse>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof startReviewProviderConnection>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
-): UseMutationOptions<Awaited<ReturnType<typeof startReviewProviderConnection>>, TError,void, TContext> => {
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof startReviewProviderConnection>>, TError,{data: BodyType<ReviewProviderConnectionInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof startReviewProviderConnection>>, TError,{data: BodyType<ReviewProviderConnectionInput>}, TContext> => {
 
 const mutationKey = ['startReviewProviderConnection'];
 const {mutation: mutationOptions, request: requestOptions} = options ?
@@ -260,10 +261,10 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof startReviewProviderConnection>>, void> = () => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof startReviewProviderConnection>>, {data: BodyType<ReviewProviderConnectionInput>}> = (props) => {
+          const {data} = props ?? {};
 
-
-          return  startReviewProviderConnection(requestOptions)
+          return  startReviewProviderConnection(data,requestOptions)
         }
 
 
@@ -274,18 +275,18 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
   return  { mutationFn, ...mutationOptions }}
 
     export type StartReviewProviderConnectionMutationResult = NonNullable<Awaited<ReturnType<typeof startReviewProviderConnection>>>
-
+    export type StartReviewProviderConnectionMutationBody = BodyType<ReviewProviderConnectionInput>
     export type StartReviewProviderConnectionMutationError = ErrorType<ErrorResponse>
 
     /**
  * @summary Start the BNDLE-hosted Google Business authorization flow
  */
 export const useStartReviewProviderConnection = <TError = ErrorType<ErrorResponse>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof startReviewProviderConnection>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof startReviewProviderConnection>>, TError,{data: BodyType<ReviewProviderConnectionInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof startReviewProviderConnection>>,
         TError,
-        void,
+        {data: BodyType<ReviewProviderConnectionInput>},
         TContext
       > => {
       return useMutation(getStartReviewProviderConnectionMutationOptions(options));

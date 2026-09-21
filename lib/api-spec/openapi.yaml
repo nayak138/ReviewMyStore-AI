@@ -67,6 +67,12 @@ paths:
       operationId: startReviewProviderConnection
       tags: [review-management]
       summary: Start the BNDLE-hosted Google Business authorization flow
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReviewProviderConnectionInput"
       responses:
         "200":
           description: Provider authorization URL
@@ -5018,6 +5024,14 @@ components:
           items:
             $ref: "#/components/schemas/ReviewProviderLocationOption"
       required: [connection, authUrl, stage, locations]
+
+    ReviewProviderConnectionInput:
+      type: object
+      properties:
+        businessId:
+          type: string
+          description: Business workspace to return to after Google authorization
+      required: []
 
     ReviewProviderLocationStage:
       type: string

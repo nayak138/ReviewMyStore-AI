@@ -13,6 +13,7 @@ import {
   PublishManagedReviewReplyResponse,
   SelectReviewProviderLocationBody,
   SelectReviewProviderLocationResponse,
+  StartReviewProviderConnectionBody,
   StartReviewProviderConnectionResponse,
   SyncReviewProviderResponse,
 } from "@workspace/api-zod";
@@ -94,10 +95,20 @@ router.post(
   async (req, res): Promise<void> => {
     const organizationId = requireOrganization(req, res);
     if (!organizationId) return;
+    const body = StartReviewProviderConnectionBody.safeParse(req.body ?? {});
+    if (!body.success) {
+      res.status(400).json({
+        success: false,
+        code: "INVALID_REQUEST",
+        message: body.error.message,
+      });
+      return;
+    }
     try {
       const result = await startReviewProviderConnection(
         organizationId,
         publicOrigin(req),
+        body.data.businessId,
       );
       res.json(StartReviewProviderConnectionResponse.parse(result));
     } catch (error) {

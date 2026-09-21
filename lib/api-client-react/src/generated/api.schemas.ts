@@ -1388,6 +1388,11 @@ export interface ReviewProviderConnectionStartResult {
   locations: ReviewProviderLocationOption[];
 }
 
+export interface ReviewProviderConnectionInput {
+  /** Business workspace to return to after Google authorization */
+  businessId?: string;
+}
+
 export interface ReviewProviderLocationsResult {
   stage: ReviewProviderLocationStage;
   locations: ReviewProviderLocationOption[];

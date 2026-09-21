@@ -38,6 +38,10 @@ export const GetReviewDashboardResponse = zod.object({
 /**
  * @summary Start the BNDLE-hosted Google Business authorization flow
  */
+export const StartReviewProviderConnectionBody = zod.object({
+  "businessId": zod.string().optional().describe('Business workspace to return to after Google authorization')
+})
+
 export const StartReviewProviderConnectionResponse = zod.object({
   "connection": zod.object({
   "status": zod.enum(['DISCONNECTED', 'PENDING', 'CONNECTED', 'ERROR']),
