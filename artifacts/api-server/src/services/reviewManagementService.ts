@@ -524,18 +524,23 @@ function getAppOrigin(): string | null {
  * shows their branding or hosted UI — we render the location picker and
  * finish the connection ourselves from here.
  */
-function getConnectCallbackUrl(): string | null {
-  const appOrigin = getAppOrigin();
+function getConnectCallbackUrl(appOrigin = getAppOrigin()): string | null {
   return appOrigin ? `${appOrigin}/reviews?bndleConnect=1` : null;
 }
 
-export async function startReviewProviderConnection(organizationId: string) {
+export async function startReviewProviderConnection(
+  organizationId: string,
+  appOrigin?: string,
+) {
   return withProviderOperationLock(organizationId, () =>
-    startReviewProviderConnectionUnlocked(organizationId),
+    startReviewProviderConnectionUnlocked(organizationId, appOrigin),
   );
 }
 
-async function startReviewProviderConnectionUnlocked(organizationId: string) {
+async function startReviewProviderConnectionUnlocked(
+  organizationId: string,
+  appOrigin?: string,
+) {
   const teamId = await getOrCreateProviderTeam(organizationId);
   const [connection] = await db
     .insert(providerConnectionsTable)
@@ -580,7 +585,7 @@ async function startReviewProviderConnectionUnlocked(organizationId: string) {
     };
   }
 
-  const redirectUrl = getConnectCallbackUrl();
+  const redirectUrl = getConnectCallbackUrl(appOrigin);
   if (!redirectUrl) {
     throw new ReviewProviderError(
       "Could not determine this app's URL to complete the Google connection.",

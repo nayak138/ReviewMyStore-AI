@@ -32,6 +32,7 @@ import {
   startReviewProviderConnection,
   syncReviewProvider,
 } from "../services/reviewManagementService";
+import { publicOrigin } from "../lib/publicOrigin";
 
 const router: IRouter = Router();
 
@@ -94,7 +95,10 @@ router.post(
     const organizationId = requireOrganization(req, res);
     if (!organizationId) return;
     try {
-      const result = await startReviewProviderConnection(organizationId);
+      const result = await startReviewProviderConnection(
+        organizationId,
+        publicOrigin(req),
+      );
       res.json(StartReviewProviderConnectionResponse.parse(result));
     } catch (error) {
       req.log.warn(

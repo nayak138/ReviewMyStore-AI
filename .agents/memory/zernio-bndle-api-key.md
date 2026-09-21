@@ -20,6 +20,7 @@ The review provider behind the `BNDLE_SOCIAL_API` secret is **bundle.social** (d
 - Review import is an async job: `POST /misc/google-business/reviews/import {teamId,count}` (409 = already running; monthly per-account caps apply — Free plan is 5 reviews/month), poll `GET .../import?teamId=`, then page `GET .../reviews?teamId=`.
 - Replies: `PUT/DELETE /misc/google-business/reviews/:reviewId/reply` with `teamId` in the JSON body (yes, DELETE takes a body).
 - Social post media must be registered first: `POST /upload/from-url` accepts a publicly reachable asset URL plus `teamId` and returns an upload ID; provide those IDs in the platform payload's `uploadIds`. Instagram feed posts require at least one image or video upload ID.
+- Channel replacement requires `POST /social-account/unset-channel` before `POST /social-account/set-channel`; bundle.social allows one active Page/account per team and rejects a direct switch.
 
 **Why:** bundle.social cannot publish an App Storage path directly; it needs a provider-side upload record before the post request.
 

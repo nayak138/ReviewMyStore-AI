@@ -145,8 +145,17 @@ function AuthLayout({ children }: { children: ReactNode }) {
 }
 
 function SignInPage() {
+  const returnTo = safeReturnPath(
+    new URLSearchParams(window.location.search).get("redirect_url"),
+  );
+  const { isLoaded, isSignedIn } = useAuth();
+
   if (stripBase(window.location.pathname) === "/sign-in/create") {
     return <Redirect to="/sign-in" />;
+  }
+
+  if (isLoaded && isSignedIn) {
+    return <Redirect to={returnTo} />;
   }
 
   return (
@@ -179,7 +188,7 @@ function SignInPage() {
                 footerAction: "!hidden",
               },
             }}
-            fallbackRedirectUrl={`${basePath}/post-sign-in`}
+             fallbackRedirectUrl={withBasePath(returnTo)}
           />
         </div>
       </div>
@@ -191,6 +200,9 @@ function SignUpPage() {
   const { isLoaded, isSignedIn } = useAuth();
   const [inviteToken] = useState(() =>
     resolveInvitationToken(window.location.search, window.sessionStorage),
+  );
+  const returnTo = safeReturnPath(
+    new URLSearchParams(window.location.search).get("redirect_url"),
   );
   const { data: invitation, isLoading } = useGetPublicAgencyInvitation(
     inviteToken,
@@ -234,7 +246,7 @@ function SignUpPage() {
             path={`${basePath}/sign-up`}
             signInUrl={`${basePath}/sign-in`}
             initialValues={{ emailAddress: invitation.email }}
-            fallbackRedirectUrl={`${basePath}/post-sign-in`}
+             fallbackRedirectUrl={withBasePath(returnTo)}
           />
         </div>
       </div>
@@ -328,7 +340,48 @@ function AuthPageLoader() {
   );
 }
 
+function withBasePath(path: string): string {
+  return `${basePath}${path === "/" ? "" : path}`;
+}
+
+function safeReturnPath(value: string | null): string {
+  if (!value || !value.startsWith("/") || value.startsWith("//")) {
+    return "/post-sign-in";
+  }
+  const path = stripBase(value);
+  if (
+    path === "/sign-in" ||
+    path.startsWith("/sign-in/") ||
+    path === "/sign-up" ||
+    path.startsWith("/sign-up/")
+  ) {
+    return "/post-sign-in";
+  }
+  return path;
+}
+
+function signInRedirectFor(location: string): string {
+  const [pathname, search = ""] = location.split("?", 2);
+  const returnTo = `${pathname || "/"}${search ? `?${search}` : ""}`;
+  return `${basePath}/sign-in?redirect_url=${encodeURIComponent(returnTo)}`;
+}
+
 function AuthenticatedRoutes() {
+  const { isLoaded, isSignedIn } = useAuth();
+  const [location] = useLocation();
+  const path = location.split("?")[0];
+  const publicAuthRoute =
+    path === "/sign-in" ||
+    path.startsWith("/sign-in/") ||
+    path === "/sign-up" ||
+    path.startsWith("/sign-up/") ||
+    path.startsWith("/agency/join/");
+
+  if (!isLoaded) return <AuthPageLoader />;
+  if (!isSignedIn && !publicAuthRoute) {
+    return <Redirect to={signInRedirectFor(location)} />;
+  }
+
   return (
     <Suspense fallback={<AuthPageLoader />}>
       <Switch>
@@ -345,6 +398,7 @@ function AuthenticatedRoutes() {
         <Route path="/feedback" component={Feedback} />
         <Route path="/social-media" component={SocialMedia} />
         <Route path="/business-analytics" component={BusinessAnalytics} />
+        <Route path="/insights" component={Analytics} />
         <Route path="/insigts" component={Analytics} />
         <Route path="/settings" component={Settings} />
         <Route path="/admin/leads" component={AdminLeads} />

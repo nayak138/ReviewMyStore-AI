@@ -38,6 +38,7 @@ import {
   SocialMediaNotFoundError,
   startSocialMediaConnection,
 } from "../services/socialMediaService";
+import { publicOrigin } from "../lib/publicOrigin";
 
 const router: IRouter = Router();
 
@@ -144,6 +145,7 @@ router.post(
         organizationId,
         parsed.data.businessId,
         parsed.data.platform,
+        publicOrigin(req),
       );
       res.json(StartSocialMediaConnectionResponse.parse(result));
     } catch (error) {
@@ -246,6 +248,7 @@ router.post(
         organizationId,
         req.appUser!.clerkUserId,
         parsed.data,
+        publicOrigin(req),
       );
       res.status(201).json(CreateSocialMediaPostResponse.parse(result));
     } catch (error) {

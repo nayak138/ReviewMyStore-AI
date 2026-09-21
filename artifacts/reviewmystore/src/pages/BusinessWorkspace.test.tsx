@@ -400,7 +400,7 @@ describe("authenticated business workspace", () => {
     expect(screen.queryByTestId("settings-page")).not.toBeInTheDocument();
     expect(screen.queryByTestId("settings-profile-avatar")).not.toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Businesses" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Insights" })).toHaveAttribute("href", "/insigts");
+    expect(screen.getByRole("link", { name: "Insights" })).toHaveAttribute("href", "/insights");
     expect(screen.getByRole("link", { name: "Settings" })).toBeInTheDocument();
 
     const sidebar = screen.getByRole("navigation");

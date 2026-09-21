@@ -112,8 +112,11 @@ function getAppOrigin(): string | null {
   return domain ? `https://${domain}` : null;
 }
 
-function socialMediaPublicUrl(objectPath: string): string {
-  const origin = getAppOrigin();
+function socialMediaPublicUrl(
+  objectPath: string,
+  appOrigin = getAppOrigin(),
+): string {
+  const origin = appOrigin;
   if (!origin) {
     throw new SocialMediaBadRequestError(
       "Could not determine this app's URL to upload the selected media.",
@@ -127,6 +130,7 @@ async function uploadMediaToProvider(
   teamId: string,
   clerkUserId: string,
   mediaPaths: string[],
+  appOrigin?: string,
 ): Promise<string[]> {
   const uniquePaths = [...new Set(mediaPaths)];
   if (uniquePaths.length !== mediaPaths.length) {
@@ -193,7 +197,7 @@ async function uploadMediaToProvider(
         method: "POST",
         body: JSON.stringify({
           teamId,
-          url: socialMediaPublicUrl(objectPath),
+          url: socialMediaPublicUrl(objectPath, appOrigin),
         }),
       });
       const uploadId = valueString(uploaded.id) ?? valueString(uploaded.uploadId);
@@ -519,10 +523,11 @@ export async function startSocialMediaConnection(
   organizationId: string,
   businessId: string,
   platform: Platform,
+  appOrigin?: string,
 ) {
   await getBusiness(organizationId, businessId);
-  const appOrigin = getAppOrigin();
-  if (!appOrigin) {
+  const callbackOrigin = appOrigin ?? getAppOrigin();
+  if (!callbackOrigin) {
     throw new SocialMediaBadRequestError(
       "Could not determine this app's URL to complete the connection.",
     );
@@ -533,7 +538,7 @@ export async function startSocialMediaConnection(
     body: JSON.stringify({
       type: platform,
       teamId,
-      redirectUrl: `${appOrigin}/social-media?businessId=${encodeURIComponent(businessId)}&socialConnect=1`,
+      redirectUrl: `${callbackOrigin}/social-media?businessId=${encodeURIComponent(businessId)}&socialConnect=1`,
       disableAutoLogin: true,
       ...(platform === "INSTAGRAM"
         ? { instagramConnectionMethod: "FACEBOOK" }
@@ -598,6 +603,14 @@ export async function attachSocialMediaAccount(
   }
 
   if (channelMatch?.channel) {
+    if (account && requiresChannelSelection(account)) {
+      // bundle.social keeps one active Page/account per team. Re-selecting a
+      // different target requires clearing the previous target first.
+      await bndleRequest("social-account/unset-channel", {
+        method: "POST",
+        body: JSON.stringify({ type: payload.platform, teamId }),
+      });
+    }
     await bndleRequest("social-account/set-channel", {
       method: "POST",
       body: JSON.stringify({
@@ -737,6 +750,7 @@ export async function createSocialMediaPost(
     media?: string[];
     scheduledAt?: Date | string | null;
   },
+  appOrigin?: string,
 ) {
   const { teamId, accounts } = await getBusinessTeam(
     organizationId,
@@ -768,7 +782,12 @@ export async function createSocialMediaPost(
   let uploadIds: string[] = [];
   try {
     if (mediaPaths.length) {
-      uploadIds = await uploadMediaToProvider(teamId, clerkUserId, mediaPaths);
+      uploadIds = await uploadMediaToProvider(
+        teamId,
+        clerkUserId,
+        mediaPaths,
+        appOrigin,
+      );
     }
   } catch (error) {
     if (error instanceof SocialMediaBadRequestError) throw error;
