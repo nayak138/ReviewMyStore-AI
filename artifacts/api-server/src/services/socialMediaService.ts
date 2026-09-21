@@ -62,6 +62,27 @@ function providerPlatform(value: unknown): Platform | null {
   return PLATFORMS.includes(platform as Platform) ? (platform as Platform) : null;
 }
 
+function providerAccountId(account: JsonRecord): string | null {
+  return valueString(account.id);
+}
+
+function providerTargetId(account: JsonRecord): string | null {
+  return valueString(account.externalId) ?? providerAccountId(account);
+}
+
+function providerChannels(account: JsonRecord): JsonRecord[] {
+  return asArray(account.channels);
+}
+
+function requiresChannelSelection(account: JsonRecord): boolean {
+  const platform = providerPlatform(account.type);
+  if (platform === "FACEBOOK") return true;
+  return (
+    platform === "INSTAGRAM" &&
+    valueString(account.instagramConnectionMethod)?.toUpperCase() !== "INSTAGRAM"
+  );
+}
+
 function getAppOrigin(): string | null {
   const domain =
     process.env.REPLIT_DOMAINS?.split(",")[0]?.trim() ||
@@ -88,8 +109,7 @@ function toAccountPayload(row: typeof socialMediaAccountsTable.$inferSelect) {
 function providerAccountPayload(account: JsonRecord, connected: boolean) {
   const platform = providerPlatform(account.type);
   if (!platform) return null;
-  const externalAccountId =
-    valueString(account.id) ?? valueString(account.externalId);
+  const externalAccountId = providerTargetId(account);
   if (!externalAccountId) return null;
   return {
     externalAccountId,
@@ -97,11 +117,39 @@ function providerAccountPayload(account: JsonRecord, connected: boolean) {
     displayName:
       valueString(account.displayName) ??
       valueString(account.name) ??
+      valueString(account.userDisplayName) ??
       valueString(account.username) ??
       `${platform[0]}${platform.slice(1).toLowerCase()} account`,
-    username: valueString(account.username),
+    username: valueString(account.username) ?? valueString(account.userUsername),
     profileUrl:
-      valueString(account.profileUrl) ?? valueString(account.url),
+      valueString(account.profileUrl) ??
+      valueString(account.avatarUrl) ??
+      valueString(account.url),
+    connected,
+  };
+}
+
+function providerChannelPayload(
+  account: JsonRecord,
+  channel: JsonRecord,
+  connected: boolean,
+) {
+  const platform = providerPlatform(account.type);
+  const externalAccountId = valueString(channel.id);
+  if (!platform || !externalAccountId) return null;
+  return {
+    externalAccountId,
+    platform,
+    displayName:
+      valueString(channel.displayName) ??
+      valueString(channel.name) ??
+      valueString(channel.username) ??
+      `${platform[0]}${platform.slice(1).toLowerCase()} account`,
+    username: valueString(channel.username),
+    profileUrl:
+      valueString(channel.profileUrl) ??
+      valueString(channel.avatarUrl) ??
+      valueString(channel.url),
     connected,
   };
 }
@@ -161,23 +209,55 @@ export async function getSocialMediaDashboard(
       ),
   ]);
   const providerAccounts = await getProviderAccounts(teamId);
+  const readyTargets = new Set(
+    providerAccounts
+      .filter(
+        (account) =>
+          !requiresChannelSelection(account) || Boolean(valueString(account.externalId)),
+      )
+      .map((account) => {
+        const platform = providerPlatform(account.type);
+        const targetId = providerTargetId(account);
+        return platform && targetId ? `${platform}:${targetId}` : null;
+      })
+      .filter((target): target is string => Boolean(target)),
+  );
+  const readyLocalAccounts = localAccounts.filter((account) =>
+    readyTargets.has(`${account.platform}:${account.externalAccountId}`),
+  );
   const connectedIds = new Set(
-    localAccounts.map((account) => `${account.platform}:${account.externalAccountId}`),
+    readyLocalAccounts.map(
+      (account) => `${account.platform}:${account.externalAccountId}`,
+    ),
   );
   const availableAccounts = providerAccounts
-    .map((account) =>
-      providerAccountPayload(
-        account,
-        connectedIds.has(
-          `${providerPlatform(account.type)}:${valueString(account.id) ?? valueString(account.externalId)}`,
+    .flatMap((account) => {
+      const platform = providerPlatform(account.type);
+      if (!platform) return [];
+      if (requiresChannelSelection(account)) {
+        const selectedTargetId = valueString(account.externalId);
+        return providerChannels(account).map((channel) =>
+          providerChannelPayload(
+            account,
+            channel,
+            selectedTargetId === valueString(channel.id) &&
+              connectedIds.has(`${platform}:${valueString(channel.id)}`),
+          ),
+        );
+      }
+      const targetId = providerTargetId(account);
+      return [
+        providerAccountPayload(
+          account,
+          Boolean(targetId && connectedIds.has(`${platform}:${targetId}`)),
         ),
-      ),
-    )
+      ];
+    })
     .filter((account): account is NonNullable<typeof account> => Boolean(account));
 
   return {
     teamId,
-    accounts: localAccounts.map(toAccountPayload),
+    accounts: readyLocalAccounts.map(toAccountPayload),
     availableAccounts,
   };
 }
@@ -202,6 +282,12 @@ export async function startSocialMediaConnection(
       teamId,
       redirectUrl: `${appOrigin}/social-media?businessId=${encodeURIComponent(businessId)}&socialConnect=1`,
       disableAutoLogin: true,
+      ...(platform === "INSTAGRAM"
+        ? { instagramConnectionMethod: "FACEBOOK" }
+        : {}),
+      ...(["FACEBOOK", "INSTAGRAM"].includes(platform)
+        ? { withBusinessScope: true }
+        : {}),
     }),
   });
   const authUrl = valueString(result.url);
@@ -220,15 +306,41 @@ export async function attachSocialMediaAccount(
 ) {
   await getBusiness(organizationId, businessId);
   const teamId = await getTeamId(organizationId);
-  const account = (await getProviderAccounts(teamId)).find(
-    (candidate) =>
-      valueString(candidate.id) === externalAccountId ||
-      valueString(candidate.externalId) === externalAccountId,
-  );
-  const payload = account ? providerAccountPayload(account, true) : null;
+  const providerAccounts = await getProviderAccounts(teamId);
+  const channelMatch = providerAccounts
+    .map((account) => ({
+      account,
+      channel: providerChannels(account).find(
+        (channel) => valueString(channel.id) === externalAccountId,
+      ),
+    }))
+    .find((match) => match.channel);
+  const account =
+    channelMatch?.account ??
+    providerAccounts.find(
+      (candidate) =>
+        providerAccountId(candidate) === externalAccountId ||
+        valueString(candidate.externalId) === externalAccountId,
+    );
+  const payload =
+    account && channelMatch?.channel
+      ? providerChannelPayload(account, channelMatch.channel, true)
+      : account
+        ? providerAccountPayload(account, true)
+        : null;
   if (!payload) {
     throw new SocialMediaNotFoundError(
       "That connected social account is no longer available.",
+    );
+  }
+  if (
+    account &&
+    requiresChannelSelection(account) &&
+    !channelMatch?.channel &&
+    !valueString(account.externalId)
+  ) {
+    throw new SocialMediaBadRequestError(
+      `Choose the ${payload.platform === "FACEBOOK" ? "Facebook Page" : "Instagram account"} you want to publish to.`,
     );
   }
 
@@ -239,46 +351,53 @@ export async function attachSocialMediaAccount(
       and(
         eq(socialMediaAccountsTable.organizationId, organizationId),
         eq(socialMediaAccountsTable.platform, payload.platform),
-        eq(socialMediaAccountsTable.externalAccountId, payload.externalAccountId),
       ),
     )
     .limit(1);
   if (alreadyAssigned && alreadyAssigned.businessId !== businessId) {
     throw new SocialMediaConflictError(
-      "That social account is already attached to another business.",
+      `${payload.platform === "FACEBOOK" ? "Facebook" : payload.platform === "INSTAGRAM" ? "Instagram" : "Threads"} is already attached to another business. Detach it there before choosing a different account.`,
     );
   }
 
-  const [saved] = await db
-    .insert(socialMediaAccountsTable)
-    .values({
-      organizationId,
-      businessId,
-      platform: payload.platform,
-      externalAccountId: payload.externalAccountId,
-      displayName: payload.displayName,
-      username: payload.username,
-      profileUrl: payload.profileUrl,
-      status: "CONNECTED",
-      lastError: null,
-      updatedAt: new Date(),
-    })
-    .onConflictDoUpdate({
-      target: [
-        socialMediaAccountsTable.businessId,
-        socialMediaAccountsTable.platform,
-        socialMediaAccountsTable.externalAccountId,
-      ],
-      set: {
+  if (channelMatch?.channel) {
+    await bndleRequest("social-account/set-channel", {
+      method: "POST",
+      body: JSON.stringify({
+        type: payload.platform,
+        teamId,
+        channelId: payload.externalAccountId,
+      }),
+    });
+  }
+
+  const saved = await db.transaction(async (tx) => {
+    await tx
+      .delete(socialMediaAccountsTable)
+      .where(
+        and(
+          eq(socialMediaAccountsTable.organizationId, organizationId),
+          eq(socialMediaAccountsTable.businessId, businessId),
+          eq(socialMediaAccountsTable.platform, payload.platform),
+        ),
+      );
+    const [row] = await tx
+      .insert(socialMediaAccountsTable)
+      .values({
+        organizationId,
+        businessId,
+        platform: payload.platform,
+        externalAccountId: payload.externalAccountId,
         displayName: payload.displayName,
         username: payload.username,
         profileUrl: payload.profileUrl,
         status: "CONNECTED",
         lastError: null,
         updatedAt: new Date(),
-      },
-    })
-    .returning();
+      })
+      .returning();
+    return row;
+  });
   return toAccountPayload(saved);
 }
 
@@ -368,11 +487,21 @@ export async function createSocialMediaPost(
       `Connect ${missing.join(", ")} before publishing to those channels.`,
     );
   }
+  if (input.platforms.includes("INSTAGRAM")) {
+    throw new SocialMediaBadRequestError(
+      "Instagram requires an image or video. Media uploads are not available in this composer yet, so choose Facebook or Threads.",
+    );
+  }
   const scheduledDate = input.scheduledAt ? new Date(input.scheduledAt) : new Date();
   if (Number.isNaN(scheduledDate.getTime())) {
     throw new SocialMediaBadRequestError("Choose a valid publishing time.");
   }
-  const isScheduled = scheduledDate.getTime() > Date.now() + 30_000;
+  const isScheduled = Boolean(input.scheduledAt);
+  if (isScheduled && scheduledDate.getTime() <= Date.now() + 60_000) {
+    throw new SocialMediaBadRequestError(
+      "Choose a publishing time at least one minute in the future.",
+    );
+  }
   const data = Object.fromEntries(
     input.platforms.map((platform) => [
       platform,
@@ -381,17 +510,46 @@ export async function createSocialMediaPost(
         : { text: input.caption },
     ]),
   );
-  const created = await bndleRequest("post", {
-    method: "POST",
-    body: JSON.stringify({
-      teamId,
-      title: input.title?.trim() || undefined,
-      postDate: scheduledDate.toISOString(),
-      status: isScheduled ? "SCHEDULED" : "PUBLISHED",
-      socialAccountTypes: input.platforms,
-      data,
-    }),
-  });
+  let created: JsonRecord;
+  try {
+    created = await bndleRequest("post", {
+      method: "POST",
+      body: JSON.stringify({
+        teamId,
+        title: input.title?.trim() || undefined,
+        postDate: scheduledDate.toISOString(),
+        status: isScheduled ? "SCHEDULED" : "PUBLISHED",
+        socialAccountTypes: input.platforms,
+        data,
+      }),
+    });
+  } catch (error) {
+    if (error instanceof ReviewProviderError && error.upstreamStatus === 400) {
+      const providerMessage = error.providerMessage?.toLowerCase() ?? "";
+      if (
+        ["channel", "externalid", "page", "target"].some((term) =>
+          providerMessage.includes(term),
+        )
+      ) {
+        throw new SocialMediaBadRequestError(
+          "The selected Page or account is not ready for publishing. Refresh connected channels and choose it again.",
+        );
+      }
+      if (
+        ["postdate", "schedule", "future", "date"].some((term) =>
+          providerMessage.includes(term),
+        )
+      ) {
+        throw new SocialMediaBadRequestError(
+          "The provider rejected that publishing time. Choose a time at least one minute in the future.",
+        );
+      }
+      throw new SocialMediaBadRequestError(
+        "The social provider rejected this post. Refresh the connected channel and check the post details before trying again.",
+      );
+    }
+    throw error;
+  }
   return postPayload(created);
 }
 

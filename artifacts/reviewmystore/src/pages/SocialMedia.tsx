@@ -74,6 +74,12 @@ function formatDate(value: string | null | undefined, withTime = false) {
   }).format(date);
 }
 
+function minimumScheduleTime() {
+  const date = new Date(Date.now() + 60_000);
+  const localDate = new Date(date.getTime() - date.getTimezoneOffset() * 60_000);
+  return localDate.toISOString().slice(0, 16);
+}
+
 function errorMessage(error: unknown, fallback: string) {
   if (error instanceof Error && error.message) return error.message;
   if (error && typeof error === "object" && "message" in error && typeof error.message === "string") return error.message;
@@ -229,6 +235,10 @@ export default function SocialMedia() {
   });
   const comments = commentsQuery.data?.comments ?? [];
   const connectedPlatforms = useMemo(() => new Set((dashboard?.accounts ?? []).map((account) => account.platform)), [dashboard?.accounts]);
+  const authorizedPlatforms = useMemo(
+    () => new Set((dashboard?.availableAccounts ?? []).map((account) => account.platform)),
+    [dashboard?.availableAccounts],
+  );
 
   useEffect(() => {
     if (!selectedPostId && posts[0]) setSelectedPostId(posts[0].id);
@@ -243,7 +253,7 @@ export default function SocialMedia() {
     if (callbackReturned && selectedBusinessId) {
       queryClient.invalidateQueries({ queryKey: getGetSocialMediaDashboardQueryKey({ businessId: selectedBusinessId }) });
       setCallbackReturned(false);
-      toast({ title: "Social connection updated", description: "Your connected accounts are ready to review." });
+      toast({ title: "Social account authorized", description: "Choose the Page or account you want this business to publish to." });
     }
   }, [callbackReturned, selectedBusinessId, queryClient, toast]);
 
@@ -273,7 +283,7 @@ export default function SocialMedia() {
   });
   const attachAccount = useAttachSocialMediaAccount({
     mutation: {
-      onSuccess: () => { invalidateSocial(); toast({ title: "Account attached", description: "This business can now publish to the account." }); },
+      onSuccess: () => { invalidateSocial(); toast({ title: "Publishing account selected", description: "This business will publish to the account you chose." }); },
       onError: (error) => toast({ title: "Unable to attach account", description: errorMessage(error, "Please try again."), variant: "destructive" }),
     },
   });
@@ -419,10 +429,12 @@ export default function SocialMedia() {
                   {PLATFORMS.map((platform) => {
                     const meta = PLATFORM_META[platform];
                     const connected = connectedPlatforms.has(platform);
+                    const authorized = authorizedPlatforms.has(platform);
                     return (
                       <div key={platform} className="flex items-center justify-between gap-3 rounded-xl border border-border px-3 py-2.5" data-testid={`row-connect-${platform.toLowerCase()}`}>
                         <div className="flex items-center gap-3"><div className={cn("flex h-8 w-8 items-center justify-center rounded-lg", meta.tint)}><PlatformMark platform={platform} /></div><span className="text-sm font-medium">{meta.label}</span></div>
                         {connected ? <Badge variant="outline" className="gap-1 border-emerald-500/20 bg-emerald-500/10 text-emerald-700"><CheckCircle2 className="h-3.5 w-3.5" /> Attached</Badge> :
+                          authorized ? <Badge variant="outline" className="border-amber-500/20 bg-amber-500/10 text-amber-700">Choose below</Badge> :
                           <Button variant="outline" size="sm" onClick={() => handleConnect(platform)} disabled={!!connectingPlatform} data-testid={`button-connect-${platform.toLowerCase()}`}>
                             {connectingPlatform === platform ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <Plus className="mr-1.5 h-3.5 w-3.5" />} Connect
                           </Button>}
@@ -431,12 +443,13 @@ export default function SocialMedia() {
                   })}
                   {!!dashboard?.availableAccounts.filter((account) => !account.connected).length && (
                     <div className="mt-4 border-t border-border pt-4">
-                      <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Available provider accounts</p>
+                      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Choose a Page or account</p>
+                      <p className="mb-3 mt-1 text-xs leading-relaxed text-muted-foreground">Authorization gives access to the accounts you approved. Select the exact destination for this business.</p>
                       <div className="space-y-2">
                         {dashboard.availableAccounts.filter((account) => !account.connected).map((account) => (
                           <div className="flex items-center justify-between gap-3 rounded-xl bg-secondary/60 px-3 py-2.5" key={account.externalAccountId} data-testid={`row-available-account-${account.externalAccountId}`}>
                             <div className="flex min-w-0 items-center gap-2"><PlatformMark platform={account.platform} /><span className="truncate text-sm">{account.displayName}</span></div>
-                            <Button size="sm" onClick={() => attachAccount.mutate({ data: { businessId: selectedBusinessId, externalAccountId: account.externalAccountId } })} disabled={attachAccount.isPending} data-testid={`button-attach-account-${account.externalAccountId}`}>Attach</Button>
+                            <Button size="sm" onClick={() => attachAccount.mutate({ data: { businessId: selectedBusinessId, externalAccountId: account.externalAccountId } })} disabled={attachAccount.isPending} data-testid={`button-attach-account-${account.externalAccountId}`}>Use this account</Button>
                           </div>
                         ))}
                       </div>
@@ -455,9 +468,9 @@ export default function SocialMedia() {
                   <form className="space-y-4" onSubmit={handlePublish} data-testid="form-social-post">
                     <div className="space-y-2"><Label htmlFor="post-title">Internal title <span className="font-normal text-muted-foreground">(optional)</span></Label><Input id="post-title" maxLength={160} value={title} onChange={(event) => setTitle(event.target.value)} placeholder="Spring hours update" data-testid="input-post-title" /></div>
                     <div className="space-y-2"><div className="flex items-center justify-between"><Label htmlFor="post-caption">Caption</Label><span className="text-xs text-muted-foreground">{caption.length}/5000</span></div><Textarea id="post-caption" value={caption} onChange={(event) => setCaption(event.target.value)} maxLength={5000} placeholder="Share something your customers will find useful..." className="min-h-36 resize-y leading-relaxed" required data-testid="textarea-post-caption" /></div>
-                    <div className="space-y-2"><Label>Publish to</Label><div className="grid gap-2 sm:grid-cols-3">{PLATFORMS.map((platform) => { const meta = PLATFORM_META[platform]; const selected = selectedPlatforms.includes(platform); const unavailable = !connectedPlatforms.has(platform); return <button type="button" key={platform} onClick={() => !unavailable && togglePlatform(platform)} disabled={unavailable} className={cn("flex items-center gap-2 rounded-xl border px-3 py-2.5 text-left text-sm transition-colors", selected ? "border-primary bg-primary/5 text-primary" : "border-border hover:bg-secondary", unavailable && "cursor-not-allowed opacity-45")} aria-pressed={selected} data-testid={`button-select-platform-${platform.toLowerCase()}`}><span className={cn("flex h-7 w-7 items-center justify-center rounded-lg", meta.tint)}><PlatformMark platform={platform} /></span><span className="flex-1">{meta.label}</span>{selected && <Check className="h-4 w-4" />}</button>; })}</div><p className="text-xs text-muted-foreground">Connect a channel above to make it available here.</p></div>
-                    <div className="rounded-xl border border-border bg-secondary/50 p-3.5"><button type="button" className="flex w-full items-center justify-between gap-4 text-left" onClick={() => setScheduleEnabled((value) => !value)} aria-pressed={scheduleEnabled} data-testid="button-toggle-schedule"><span className="flex items-center gap-2 text-sm font-medium"><CalendarClock className="h-4 w-4 text-primary" /> Schedule for later</span><span className={cn("relative h-5 w-9 rounded-full transition-colors", scheduleEnabled ? "bg-primary" : "bg-muted")}><span className={cn("absolute top-1 h-3 w-3 rounded-full bg-card transition-transform", scheduleEnabled ? "translate-x-5" : "translate-x-1")} /></span></button>{scheduleEnabled && <div className="mt-3 space-y-1.5"><Label htmlFor="scheduled-at" className="text-xs">Date and time</Label><Input id="scheduled-at" type="datetime-local" min={new Date().toISOString().slice(0, 16)} value={scheduledAt} onChange={(event) => setScheduledAt(event.target.value)} required data-testid="input-scheduled-at" /></div>}</div>
-                    <div className="rounded-xl border border-sky-500/20 bg-sky-500/[0.06] p-3 text-xs leading-relaxed text-sky-900 dark:text-sky-100"><p className="font-semibold">About media</p><p className="mt-1 text-sky-900/75 dark:text-sky-100/75">This first release is intentionally text-first. Instagram publishing is supported, but media upload is not available yet, so there is no image picker to mislead you.</p></div>
+                    <div className="space-y-2"><Label>Publish to</Label><div className="grid gap-2 sm:grid-cols-3">{PLATFORMS.map((platform) => { const meta = PLATFORM_META[platform]; const selected = selectedPlatforms.includes(platform); const unavailable = !connectedPlatforms.has(platform) || platform === SocialMediaPlatform.INSTAGRAM; return <button type="button" key={platform} onClick={() => !unavailable && togglePlatform(platform)} disabled={unavailable} title={platform === SocialMediaPlatform.INSTAGRAM ? "Instagram requires an image or video, which this text-only composer does not support yet." : undefined} className={cn("flex items-center gap-2 rounded-xl border px-3 py-2.5 text-left text-sm transition-colors", selected ? "border-primary bg-primary/5 text-primary" : "border-border hover:bg-secondary", unavailable && "cursor-not-allowed opacity-45")} aria-pressed={selected} data-testid={`button-select-platform-${platform.toLowerCase()}`}><span className={cn("flex h-7 w-7 items-center justify-center rounded-lg", meta.tint)}><PlatformMark platform={platform} /></span><span className="flex-1"><span className="block">{meta.label}</span>{platform === SocialMediaPlatform.INSTAGRAM && <span className="block text-[10px] text-muted-foreground">Media required</span>}</span>{selected && <Check className="h-4 w-4" />}</button>; })}</div><p className="text-xs text-muted-foreground">Select a connected text-capable channel. Instagram becomes available after media uploads are added.</p></div>
+                    <div className="rounded-xl border border-border bg-secondary/50 p-3.5"><button type="button" className="flex w-full items-center justify-between gap-4 text-left" onClick={() => setScheduleEnabled((value) => !value)} aria-pressed={scheduleEnabled} data-testid="button-toggle-schedule"><span className="flex items-center gap-2 text-sm font-medium"><CalendarClock className="h-4 w-4 text-primary" /> Schedule for later</span><span className={cn("relative h-5 w-9 rounded-full transition-colors", scheduleEnabled ? "bg-primary" : "bg-muted")}><span className={cn("absolute top-1 h-3 w-3 rounded-full bg-card transition-transform", scheduleEnabled ? "translate-x-5" : "translate-x-1")} /></span></button>{scheduleEnabled && <div className="mt-3 space-y-1.5"><Label htmlFor="scheduled-at" className="text-xs">Date and time</Label><Input id="scheduled-at" type="datetime-local" min={minimumScheduleTime()} value={scheduledAt} onChange={(event) => setScheduledAt(event.target.value)} required data-testid="input-scheduled-at" /></div>}</div>
+                    <div className="rounded-xl border border-sky-500/20 bg-sky-500/[0.06] p-3 text-xs leading-relaxed text-sky-900 dark:text-sky-100"><p className="font-semibold">About media</p><p className="mt-1 text-sky-900/75 dark:text-sky-100/75">Facebook and Threads can receive text-only posts here. Instagram requires an image or video, so Instagram publishing stays disabled until media uploads are available.</p></div>
                     <Button type="submit" className="w-full shadow-sm" disabled={createPost.isPending || !caption.trim() || selectedPlatforms.length === 0 || (scheduleEnabled && !scheduledAt)} data-testid="button-publish-post">{createPost.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : scheduleEnabled ? <CalendarClock className="mr-2 h-4 w-4" /> : <Send className="mr-2 h-4 w-4" />}{createPost.isPending ? "Sending..." : scheduleEnabled ? "Schedule post" : "Publish now"}</Button>
                   </form>
                 </CardContent>
