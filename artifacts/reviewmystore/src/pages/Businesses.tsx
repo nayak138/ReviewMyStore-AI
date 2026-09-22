@@ -444,7 +444,7 @@ export default function Businesses() {
                 <div
                   key={business.id}
                   className={cn(
-                    "group flex min-w-0 cursor-pointer flex-wrap items-center gap-3 rounded-xl border bg-card px-4 py-3 shadow-sm transition-colors duration-200 hover:border-primary/30 hover:bg-card/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary sm:flex-nowrap sm:gap-4",
+                    "group flex min-w-0 cursor-pointer items-center gap-3 rounded-xl border bg-card px-4 py-3 shadow-sm transition-colors duration-200 hover:border-primary/30 hover:bg-card/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
                     business.archivedAt ? "border-dashed opacity-70" : "border-border",
                   )}
                   role="link"
@@ -452,44 +452,49 @@ export default function Businesses() {
                   aria-label={`Open ${business.name} workspace`}
                   onClick={() => setLocation(`/campaigns?businessId=${encodeURIComponent(business.id)}`)}
                   onKeyDown={(event) => {
+                    // Only the card itself navigates; keys pressed inside the
+                    // actions menu must reach the menu, not the card link.
+                    if (event.target !== event.currentTarget) return;
                     if (event.key === "Enter" || event.key === " ") {
                       event.preventDefault();
                       setLocation(`/campaigns?businessId=${encodeURIComponent(business.id)}`);
                     }
                   }}
                 >
-                  <div className="flex min-w-0 flex-1 items-center gap-3">
-                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-border bg-secondary text-muted-foreground">
-                      <Store className="h-5 w-5" />
-                    </div>
-                    <div className="min-w-0">
-                      <div className="flex min-w-0 flex-wrap items-center gap-2">
-                        <h3 className="truncate text-sm font-semibold leading-tight" title={business.name}>
-                          {business.name}
-                        </h3>
-                        {business.archivedAt ? (
-                          <Badge variant="secondary" className="shrink-0">Archived</Badge>
-                        ) : business.status === "ACTIVE" ? (
-                          <Badge variant="outline" className="shrink-0 border-emerald-500/20 bg-emerald-500/10 text-emerald-600">Active</Badge>
-                        ) : business.status === "SUSPENDED" ? (
-                          <Badge variant="outline" className="shrink-0 border-amber-500/20 bg-amber-500/10 text-amber-600">Suspended</Badge>
-                        ) : (
-                          <Badge variant="secondary" className="shrink-0">{business.status}</Badge>
-                        )}
-                      </div>
-                      <p className="mt-1 flex items-center truncate text-xs text-muted-foreground">
-                        <MapPin className="mr-1 h-3.5 w-3.5 shrink-0" />
-                        {business.category}
-                      </p>
-                    </div>
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-border bg-secondary text-muted-foreground">
+                    <Store className="h-5 w-5" />
                   </div>
 
-                  <div className="flex w-full min-w-0 items-center justify-between gap-3 border-t border-border/70 pt-2.5 text-xs sm:w-auto sm:flex-1 sm:border-t-0 sm:pt-0">
-                    <span className="flex min-w-0 items-center truncate text-muted-foreground" title={`/${business.slug}`}>
-                      <ExternalLink className="mr-1 h-3 w-3 shrink-0" />
-                      <span className="truncate">/{business.slug}</span>
-                    </span>
-                    <span className="shrink-0 font-medium text-primary">Open workspace →</span>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex min-w-0 items-center gap-2">
+                      <h3 className="min-w-0 truncate text-sm font-semibold leading-tight" title={business.name}>
+                        {business.name}
+                      </h3>
+                      {business.archivedAt ? (
+                        <Badge variant="secondary" className="shrink-0">Archived</Badge>
+                      ) : business.status === "ACTIVE" ? (
+                        <Badge variant="outline" className="shrink-0 border-emerald-500/20 bg-emerald-500/10 text-emerald-600">Active</Badge>
+                      ) : business.status === "SUSPENDED" ? (
+                        <Badge variant="outline" className="shrink-0 border-amber-500/20 bg-amber-500/10 text-amber-600">Suspended</Badge>
+                      ) : (
+                        <Badge variant="secondary" className="shrink-0">{business.status}</Badge>
+                      )}
+                    </div>
+
+                    <div className="mt-1.5 flex min-w-0 items-center gap-3 text-xs">
+                      <span className="flex min-w-0 items-center text-muted-foreground">
+                        <MapPin className="mr-1 h-3.5 w-3.5 shrink-0" />
+                        <span className="truncate">{business.category}</span>
+                      </span>
+                      <span
+                        className="hidden min-w-0 items-center text-muted-foreground sm:flex"
+                        title={`/${business.slug}`}
+                      >
+                        <ExternalLink className="mr-1 h-3 w-3 shrink-0" />
+                        <span className="truncate">/{business.slug}</span>
+                      </span>
+                      <span className="ml-auto shrink-0 font-medium text-primary">Open workspace →</span>
+                    </div>
                   </div>
 
                   <DropdownMenu>

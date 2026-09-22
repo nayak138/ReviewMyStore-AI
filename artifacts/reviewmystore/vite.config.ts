@@ -219,12 +219,23 @@ function injectRouteMeta(
   return out;
 }
 
-function injectRouteBody(html: string, body: string): string {
+function injectRouteBody(
+  html: string,
+  body: string,
+  route: string,
+  base: string,
+): string {
   const root = '<div id="root"></div>';
   if (!html.includes(root)) {
     throw new Error("Unable to prerender marketing route: #root shell not found");
   }
-  return html.replace(root, `<div id="root">${body}</div>`);
+  // Static hosting serves this file as the SPA fallback for every unmatched
+  // path, including authenticated routes. Without this guard the prerendered
+  // marketing markup paints for a frame on a dashboard refresh before React
+  // takes over. Clearing #root synchronously keeps that flash off the screen
+  // while leaving the crawler-visible markup intact for the real route.
+  const guard = `<script>(function(){var b=${JSON.stringify(base.replace(/\/$/, ""))};var p=location.pathname;if(b&&p.indexOf(b)===0){p=p.slice(b.length)||"/";}if(p.length>1){p=p.replace(/\\/+$/,"")||"/";}if(p!==${JSON.stringify(route)}){var r=document.getElementById("root");if(r){r.innerHTML="";}}})();</script>`;
+  return html.replace(root, `<div id="root">${body}</div>${guard}`);
 }
 
 async function renderMarketingBodies(): Promise<Record<string, string>> {
@@ -329,6 +340,8 @@ function seoFilesPlugin(siteUrl: string): Plugin {
         const html = injectRouteBody(
           injectRouteMeta(shell, route, meta, siteUrl),
           body,
+          route,
+          basePath,
         );
         const target =
           route === "/"
