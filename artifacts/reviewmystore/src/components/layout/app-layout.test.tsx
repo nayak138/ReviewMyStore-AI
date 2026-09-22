@@ -61,6 +61,7 @@ describe("AppLayout sign out", () => {
     const redirect = new URL(redirectUrl, window.location.origin);
 
     expect(redirect.pathname).toBe("/sign-in");
+    expect(redirect.searchParams.get("redirect_url")).toBe("/businesses");
     expect(redirect.searchParams.has("session_expired")).toBe(false);
   });
 });

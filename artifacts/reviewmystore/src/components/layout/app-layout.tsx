@@ -19,8 +19,7 @@ import {
   getGetCurrentUserQueryKey,
   useGetCurrentUser,
 } from "@workspace/api-client-react";
-
-const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
+import { signInRedirectFor } from "@/auth/redirect";
 
 interface NavItem {
   name: string;
@@ -76,7 +75,7 @@ export function AppLayout({ children, title, businessName }: AppLayoutProps) {
         : [];
 
   const handleSignOut = () => {
-    signOut({ redirectUrl: `${basePath}/sign-in` });
+    signOut({ redirectUrl: signInRedirectFor(location) });
   };
 
   return (
