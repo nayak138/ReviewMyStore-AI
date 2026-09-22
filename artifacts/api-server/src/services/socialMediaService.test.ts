@@ -14,8 +14,10 @@ import {
 } from "@workspace/db";
 import { ObjectStorageService } from "../lib/objectStorage";
 import {
+  attachSocialMediaAccount,
   createSocialMediaPost,
   disconnectSocialMediaConnection,
+  getSocialMediaDashboard,
   importSocialMediaComments,
   listSocialMediaComments,
   listSocialMediaPosts,
@@ -35,6 +37,7 @@ let secondBusinessId: string;
 let providerCalls: Array<{ path: string; body: Record<string, unknown> }> = [];
 let postResponse: { status: number; body: Record<string, unknown> } | null =
   null;
+let facebookProviderExternalId = `facebook-${runId}`;
 const originalFetch = globalThis.fetch;
 const originalGetObject = ObjectStorageService.prototype.getObjectEntityFile;
 
@@ -103,7 +106,21 @@ before(async () => {
               type: "FACEBOOK",
               externalId: isSecondBusinessTeam
                 ? `facebook-second-${runId}`
-                : `facebook-${runId}`,
+                : facebookProviderExternalId,
+              channels: isSecondBusinessTeam
+                ? undefined
+                : [
+                    {
+                      id: `facebook-${runId}`,
+                      displayName: "Original Facebook Page",
+                      username: "original-page",
+                    },
+                    {
+                      id: `facebook-page-new-${runId}`,
+                      displayName: "New Facebook Page",
+                      username: "new-page",
+                    },
+                  ],
             },
             {
               id: `instagram-provider-${isSecondBusinessTeam ? "second" : "primary"}-${runId}`,
@@ -116,6 +133,15 @@ before(async () => {
         }),
         { status: 200, headers: { "Content-Type": "application/json" } },
       );
+    }
+    if (path === "social-account/set-channel") {
+      facebookProviderExternalId = String(
+        providerCalls.at(-1)?.body.channelId ?? "",
+      );
+      return new Response(JSON.stringify({}), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
     }
     if (path === "upload/from-url") {
       const uploadNumber = providerCalls.filter(
@@ -246,6 +272,7 @@ before(async () => {
 beforeEach(async () => {
   providerCalls = [];
   postResponse = null;
+  facebookProviderExternalId = `facebook-${runId}`;
   objectMetadata.clear();
   deletedObjectPaths = [];
   await db
@@ -510,6 +537,67 @@ test("switching a social account clears the provider authorization and local att
     .where(eq(socialMediaAccountsTable.businessId, businessId));
   assert.equal(remaining.some((account) => account.platform === "FACEBOOK"), false);
   assert.equal(remaining.some((account) => account.platform === "INSTAGRAM"), true);
+});
+
+test("completes Meta Page selection and preserves the selected Page after reload", async () => {
+  facebookProviderExternalId = `facebook-page-new-${runId}`;
+
+  const beforeAttach = await getSocialMediaDashboard(organizationId, businessId);
+  const availablePage = beforeAttach.availableAccounts.find(
+    (account) => account.externalAccountId === `facebook-page-new-${runId}`,
+  );
+  assert.deepEqual(availablePage, {
+    externalAccountId: `facebook-page-new-${runId}`,
+    platform: "FACEBOOK",
+    displayName: "New Facebook Page",
+    username: "new-page",
+    profileUrl: null,
+    connected: false,
+  });
+
+  const attached = await attachSocialMediaAccount(
+    organizationId,
+    businessId,
+    `facebook-page-new-${runId}`,
+  );
+  assert.equal(attached.platform, "FACEBOOK");
+  assert.equal(attached.externalAccountId, `facebook-page-new-${runId}`);
+  assert.equal(attached.displayName, "New Facebook Page");
+
+  const setChannelCall = providerCalls.find(
+    (call) => call.path === "social-account/set-channel",
+  );
+  assert.equal(setChannelCall?.body.teamId, `team-${runId}`);
+  assert.equal(setChannelCall?.body.channelId, `facebook-page-new-${runId}`);
+
+  const afterReload = await getSocialMediaDashboard(organizationId, businessId);
+  const facebookAccount = afterReload.accounts.find(
+    (account) => account.platform === "FACEBOOK",
+  );
+  assert.deepEqual(
+    {
+      platform: facebookAccount?.platform,
+      externalAccountId: facebookAccount?.externalAccountId,
+      displayName: facebookAccount?.displayName,
+    },
+    {
+      platform: "FACEBOOK",
+      externalAccountId: `facebook-page-new-${runId}`,
+      displayName: "New Facebook Page",
+    },
+  );
+  assert.equal(
+    afterReload.accounts.some(
+      (account) => account.externalAccountId === `facebook-${runId}`,
+    ),
+    false,
+  );
+  assert.equal(
+    afterReload.availableAccounts.find(
+      (account) => account.externalAccountId === `facebook-page-new-${runId}`,
+    )?.connected,
+    true,
+  );
 });
 
 test("includes the selected social account type when importing comments", async () => {

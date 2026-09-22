@@ -26,6 +26,7 @@ const mocks = vi.hoisted(() => ({
   commentsLoading: false,
   importCommentsMutate: vi.fn(),
   replyMutate: vi.fn(),
+  attachMutate: vi.fn(),
   disconnectMutate: vi.fn(),
   startConnectionMutate: vi.fn(),
   dashboardData: {
@@ -53,7 +54,6 @@ vi.mock("@workspace/api-client-react", () => {
   };
   const postsData = { posts: mocks.posts };
   const commentsData = { comments: mocks.comments };
-
   return {
     SocialMediaPlatform: {
       FACEBOOK: "FACEBOOK",
@@ -94,7 +94,7 @@ vi.mock("@workspace/api-client-react", () => {
       isLoading: mocks.commentsLoading,
       data: commentsData,
     }),
-    useAttachSocialMediaAccount: () => ({ mutate: vi.fn(), isPending: false }),
+    useAttachSocialMediaAccount: () => ({ mutate: mocks.attachMutate, isPending: false }),
     useDisconnectSocialMediaConnection: () => ({ mutate: mocks.disconnectMutate, isPending: false }),
     useCreateSocialMediaPost: () => ({ mutate: vi.fn(), isPending: false }),
     useDetachSocialMediaAccount: () => ({ mutate: vi.fn(), isPending: false }),
@@ -124,7 +124,6 @@ vi.mock("@/components/layout/app-layout", () => ({
 vi.mock("@/components/business/business-tabs", () => ({
   BusinessTabs: () => null,
 }));
-
 function renderSocialMedia() {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
@@ -143,7 +142,6 @@ function renderSocialMedia() {
 function callbackParams() {
   return new URLSearchParams(window.location.search);
 }
-
 beforeEach(() => {
   mocks.toast.mockClear();
   mocks.comments.length = 0;
@@ -154,6 +152,7 @@ beforeEach(() => {
   mocks.dashboardData.availableAccounts.length = 0;
   mocks.importCommentsMutate.mockClear();
   mocks.replyMutate.mockClear();
+  mocks.attachMutate.mockClear();
   mocks.disconnectMutate.mockClear();
   mocks.startConnectionMutate.mockClear();
 });
@@ -221,6 +220,41 @@ describe("Meta callback recovery", () => {
     expect(params.has("socialConnect")).toBe(false);
     expect(params.has("error")).toBe(false);
   });
+
+  it("attaches the newly authorized Page to the selected business", async () => {
+    mocks.dashboardData.availableAccounts.push({
+      externalAccountId: "facebook-page-new",
+      platform: "FACEBOOK",
+      displayName: "New Facebook Page",
+      username: "new-page",
+      profileUrl: null,
+      connected: false,
+    });
+    window.history.replaceState(
+      {},
+      "",
+      "/social-media?businessId=business-1&socialConnect=1",
+    );
+
+    renderSocialMedia();
+
+    await waitFor(() => {
+      expect(screen.getByTestId("select-account-facebook")).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByTestId("select-account-facebook"));
+    await waitFor(() => {
+      expect(screen.getByTestId("option-account-facebook-page-new")).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByTestId("option-account-facebook-page-new"));
+
+    expect(mocks.attachMutate).toHaveBeenCalledWith({
+      data: {
+        businessId: "business-1",
+        externalAccountId: "facebook-page-new",
+      },
+    });
+  });
 });
 
 describe("workspace layout", () => {
@@ -275,7 +309,7 @@ describe("workspace layout", () => {
         expect(screen.getByTestId("select-account-facebook")).toBeInTheDocument();
       });
 
-      const channelRow = screen.getByTestId("row-connect-facebook");
+    const channelRow = screen.getByTestId("row-connect-facebook");
       const accountSelector = within(channelRow).getByTestId("select-account-facebook");
       const reconnectAccess = within(channelRow).getByTestId("button-reconnect-access-facebook");
       const accountControls = accountSelector.parentElement;
