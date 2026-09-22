@@ -386,6 +386,33 @@ test("keeps the Threads payload free of Facebook and Instagram fields", async ()
   assert.equal("uploadIds" in postData.THREADS, false);
 });
 
+test("supplies the provider-required title when the internal title is omitted", async () => {
+  await createSocialMediaPost(organizationId, ownerId, {
+    businessId,
+    caption: "  A text-only Facebook update   with extra spacing  ",
+    platforms: ["FACEBOOK"],
+  });
+
+  const postCall = providerCalls.find((call) => call.path === "post");
+  assert.equal(
+    postCall?.body.title,
+    "A text-only Facebook update with extra spacing",
+  );
+});
+
+test("uses the same fallback title for scheduled text posts", async () => {
+  await createSocialMediaPost(organizationId, ownerId, {
+    businessId,
+    caption: "Scheduled Facebook update",
+    platforms: ["FACEBOOK"],
+    scheduledAt: new Date(Date.now() + 5 * 60_000),
+  });
+
+  const postCall = providerCalls.find((call) => call.path === "post");
+  assert.equal(postCall?.body.title, "Scheduled Facebook update");
+  assert.equal(postCall?.body.status, "SCHEDULED");
+});
+
 test("maps nested provider media validation to a safe owner-facing message", async () => {
   const imagePath = `/objects/uploads/provider-media-error-${runId}`;
   await addUpload(imagePath, ownerId);
@@ -433,7 +460,9 @@ test("uses an isolated provider team for each business in one organization", asy
 
   const teamCalls = providerCalls.filter((call) => call.path.startsWith("team/"));
   const postCall = providerCalls.find(
-    (call) => call.path === "post" && call.body.title === undefined,
+    (call) =>
+      call.path === "post" &&
+      call.body.teamId === `team-second-${runId}`,
   );
   assert.equal(teamCalls.at(-1)?.path, `team/team-second-${runId}`);
   assert.equal(postCall?.body.teamId, `team-second-${runId}`);

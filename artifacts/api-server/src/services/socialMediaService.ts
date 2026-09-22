@@ -826,13 +826,20 @@ export async function createSocialMediaPost(
       },
     ]),
   );
+  // bundle.social requires a top-level title even when the internal title is
+  // optional in our UI. Use the first part of the caption as a useful
+  // fallback so text-only and scheduled posts satisfy the provider schema.
+  const postTitle =
+    input.title?.trim() ||
+    input.caption.trim().replace(/\s+/g, " ").slice(0, 80) ||
+    "Social media post";
   let created: JsonRecord;
   try {
     created = await bndleRequest("post", {
       method: "POST",
       body: JSON.stringify({
         teamId,
-        title: input.title?.trim() || undefined,
+        title: postTitle,
         postDate: scheduledDate.toISOString(),
         status: isScheduled ? "SCHEDULED" : "PUBLISHED",
         socialAccountTypes: input.platforms,
