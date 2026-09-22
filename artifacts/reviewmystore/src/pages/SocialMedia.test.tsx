@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import SocialMedia from "./SocialMedia";
 
@@ -26,6 +26,17 @@ const mocks = vi.hoisted(() => ({
   commentsLoading: false,
   importCommentsMutate: vi.fn(),
   replyMutate: vi.fn(),
+  dashboardData: {
+    accounts: [] as Array<Record<string, unknown>>,
+    availableAccounts: [] as Array<{
+      externalAccountId: string;
+      platform: "FACEBOOK" | "INSTAGRAM" | "THREADS";
+      displayName: string;
+      username: string | null;
+      profileUrl: string | null;
+      connected: boolean;
+    }>,
+  },
 }));
 
 vi.mock("@workspace/api-client-react", () => {
@@ -38,7 +49,6 @@ vi.mock("@workspace/api-client-react", () => {
   const businessesData = {
     businesses: [{ id: "business-1", name: "Test Business", address: null }],
   };
-  const dashboardData = { accounts: [], availableAccounts: [] };
   const postsData = { posts: mocks.posts };
   const commentsData = { comments: mocks.comments };
 
@@ -70,7 +80,7 @@ vi.mock("@workspace/api-client-react", () => {
     }),
     useGetSocialMediaDashboard: () => ({
       ...queryResult,
-      data: dashboardData,
+      data: mocks.dashboardData,
     }),
     useListSocialMediaPosts: () => ({
       ...queryResult,
@@ -137,6 +147,8 @@ beforeEach(() => {
   mocks.posts.length = 0;
   mocks.postsLoading = false;
   mocks.commentsLoading = false;
+  mocks.dashboardData.accounts.length = 0;
+  mocks.dashboardData.availableAccounts.length = 0;
   mocks.importCommentsMutate.mockClear();
   mocks.replyMutate.mockClear();
 });
@@ -236,6 +248,56 @@ describe("workspace layout", () => {
     expect(screen.getByTestId("social-recent-queue")).toHaveClass("min-w-0");
     expect(screen.getByTestId("social-reply-desk")).toHaveClass("min-w-0");
     expect(screen.getByTestId("select-comment-post")).toHaveClass("min-w-0");
+  });
+
+  it.each(["phone", "tablet"])(
+    "keeps available account controls inside the channel row at %s width",
+    async () => {
+      mocks.dashboardData.availableAccounts.push({
+        externalAccountId: "facebook-page-1",
+        platform: "FACEBOOK",
+        displayName: "Test Facebook Page",
+        username: "test-page",
+        profileUrl: null,
+        connected: false,
+      });
+
+      renderSocialMedia();
+
+      await waitFor(() => {
+        expect(screen.getByTestId("select-account-facebook")).toBeInTheDocument();
+      });
+
+      const channelRow = screen.getByTestId("row-connect-facebook");
+      const accountSelector = within(channelRow).getByTestId("select-account-facebook");
+      const refreshAccess = within(channelRow).getByTestId("button-refresh-access-facebook");
+      const accountControls = accountSelector.parentElement;
+
+      expect(channelRow).toContainElement(accountSelector);
+      expect(channelRow).toContainElement(refreshAccess);
+      expect(accountControls).toHaveClass("basis-full", "sm:basis-auto", "sm:pl-0");
+      expect(accountSelector).toHaveClass(
+        "min-w-0",
+        "flex-1",
+        "sm:w-[min(13rem,48vw)]",
+        "sm:flex-none",
+      );
+      expect(refreshAccess).toHaveClass("shrink-0");
+      expect(screen.queryByTestId("button-connect-facebook")).not.toBeInTheDocument();
+    },
+  );
+
+  it("keeps the Connect action when no provider accounts are available", async () => {
+    renderSocialMedia();
+
+    await waitFor(() => {
+      expect(screen.getByTestId("button-connect-facebook")).toBeInTheDocument();
+    });
+
+    const channelRow = screen.getByTestId("row-connect-facebook");
+    expect(within(channelRow).getByTestId("button-connect-facebook")).toHaveTextContent("Connect");
+    expect(within(channelRow).queryByTestId("select-account-facebook")).not.toBeInTheDocument();
+    expect(within(channelRow).queryByTestId("button-refresh-access-facebook")).not.toBeInTheDocument();
   });
 
   it("renders the post loading state without leaving an empty workspace", async () => {
