@@ -33,6 +33,14 @@ import {
   clearInvitationToken,
   resolveInvitationToken,
 } from "./invitation-token";
+import {
+  basePath,
+  safeReturnPath,
+  signInRedirectFor,
+  stripBase,
+  withBasePath,
+} from "./redirect";
+import { SessionExpiryWatcher } from "./SessionExpiryWatcher";
 
 const AgencyJoin = lazy(() => import("@/pages/AgencyJoin"));
 const Onboarding = lazy(() => import("@/pages/Onboarding"));
@@ -55,13 +63,6 @@ const clerkPubKey = publishableKeyFromHost(
 );
 
 const clerkProxyUrl = import.meta.env.VITE_CLERK_PROXY_URL;
-const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
-
-function stripBase(path: string): string {
-  return basePath && path.startsWith(basePath)
-    ? path.slice(basePath.length) || "/"
-    : path;
-}
 
 if (!clerkPubKey) {
   throw new Error("Missing VITE_CLERK_PUBLISHABLE_KEY in .env file");
@@ -340,32 +341,6 @@ function AuthPageLoader() {
   );
 }
 
-function withBasePath(path: string): string {
-  return `${basePath}${path === "/" ? "" : path}`;
-}
-
-function safeReturnPath(value: string | null): string {
-  if (!value || !value.startsWith("/") || value.startsWith("//")) {
-    return "/post-sign-in";
-  }
-  const path = stripBase(value);
-  if (
-    path === "/sign-in" ||
-    path.startsWith("/sign-in/") ||
-    path === "/sign-up" ||
-    path.startsWith("/sign-up/")
-  ) {
-    return "/post-sign-in";
-  }
-  return path;
-}
-
-function signInRedirectFor(location: string): string {
-  const [pathname, search = ""] = location.split("?", 2);
-  const returnTo = `${pathname || "/"}${search ? `?${search}` : ""}`;
-  return `${basePath}/sign-in?redirect_url=${encodeURIComponent(returnTo)}`;
-}
-
 function AuthenticatedRoutes() {
   const { isLoaded, isSignedIn } = useAuth();
   const [location] = useLocation();
@@ -437,6 +412,7 @@ export default function AuthenticatedApp() {
       routerReplace={(to) => setLocation(stripBase(to), { replace: true })}
     >
       <ClerkQueryClientCacheInvalidator />
+      <SessionExpiryWatcher />
       <AuthenticatedRoutes />
     </ClerkProvider>
   );

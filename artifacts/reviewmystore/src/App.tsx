@@ -11,6 +11,8 @@ import {
   Suspense,
 } from "react";
 import {
+  MutationCache,
+  QueryCache,
   QueryClient,
   QueryClientProvider,
 } from "@tanstack/react-query";
@@ -18,6 +20,10 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/components/theme-provider";
 import { BrandIcon } from "@/components/brand-logo";
+import {
+  isSessionExpiredError,
+  signalSessionExpired,
+} from "./auth/session-expiry";
 import About from "./pages/marketing/About";
 import Blog from "./pages/marketing/Blog";
 import BlogPost from "./pages/marketing/BlogPost";
@@ -44,7 +50,17 @@ function shouldRetryQuery(failureCount: number, error: unknown): boolean {
   return status !== 401 && status !== 403 && failureCount < 2;
 }
 
+// Any confirmed-unauthenticated (401) response from a query or mutation
+// means the session expired -- broadcast it once here so the
+// SessionExpiryWatcher mounted inside the authenticated app can clear
+// caches and sign out, regardless of which page or hook triggered it.
+function handlePotentialSessionExpiry(error: unknown): void {
+  if (isSessionExpiredError(error)) signalSessionExpired("api");
+}
+
 const queryClient = new QueryClient({
+  queryCache: new QueryCache({ onError: handlePotentialSessionExpiry }),
+  mutationCache: new MutationCache({ onError: handlePotentialSessionExpiry }),
   defaultOptions: {
     queries: {
       retry: shouldRetryQuery,
