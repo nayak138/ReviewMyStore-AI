@@ -41,6 +41,15 @@ vi.mock("@/components/book-demo-dialog", () => ({
 }));
 
 describe("SignInPage session-expiry notice", () => {
+  function renderSignInAt(url: string) {
+    window.history.replaceState(
+      {},
+      "",
+      url,
+    );
+    return render(<SignInPage />);
+  }
+
   beforeEach(() => {
     window.history.replaceState(
       {},
@@ -49,10 +58,28 @@ describe("SignInPage session-expiry notice", () => {
     );
   });
 
-  it("renders no expiry notice for a manual sign-out redirect", () => {
-    render(<SignInPage />);
+  it("renders the expired-session explanation for the marked sign-in route", () => {
+    renderSignInAt(
+      signInRedirectFor("/businesses?tab=reviews", {
+        sessionExpired: true,
+      }),
+    );
 
+    expect(
+      screen.getByText("Your session expired. Please sign in again."),
+    ).toBeInTheDocument();
     expect(screen.getByRole("form", { name: "Sign-in form" })).toBeInTheDocument();
+  });
+
+  it.each([
+    ["a manual sign-out redirect", signInRedirectFor("/businesses?tab=reviews")],
+    [
+      "an unrelated query marker",
+      `${signInRedirectFor("/businesses?tab=reviews")}&notice=1`,
+    ],
+  ])("renders no expiry notice for %s", (_description, url) => {
+    renderSignInAt(url);
+
     expect(
       screen.queryByText("Your session expired. Please sign in again."),
     ).not.toBeInTheDocument();
