@@ -6,6 +6,13 @@ import SocialMedia from "./SocialMedia";
 
 const mocks = vi.hoisted(() => ({
   toast: vi.fn(),
+  comments: [] as Array<{
+    id: string;
+    authorName: string;
+    text: string;
+    createdAt: string | null;
+    canReply: boolean;
+  }>,
   posts: [] as Array<{
     id: string;
     status: string;
@@ -15,6 +22,8 @@ const mocks = vi.hoisted(() => ({
     publishedAt: string | null;
     scheduledAt: string | null;
   }>,
+  postsLoading: false,
+  commentsLoading: false,
 }));
 
 vi.mock("@workspace/api-client-react", () => {
@@ -29,7 +38,7 @@ vi.mock("@workspace/api-client-react", () => {
   };
   const dashboardData = { accounts: [], availableAccounts: [] };
   const postsData = { posts: mocks.posts };
-  const commentsData = { comments: [] };
+  const commentsData = { comments: mocks.comments };
 
   return {
     SocialMediaPlatform: {
@@ -63,10 +72,12 @@ vi.mock("@workspace/api-client-react", () => {
     }),
     useListSocialMediaPosts: () => ({
       ...queryResult,
+      isLoading: mocks.postsLoading,
       data: postsData,
     }),
     useListSocialMediaComments: () => ({
       ...queryResult,
+      isLoading: mocks.commentsLoading,
       data: commentsData,
     }),
     useAttachSocialMediaAccount: () => ({ mutate: vi.fn(), isPending: false }),
@@ -120,7 +131,10 @@ function callbackParams() {
 
 beforeEach(() => {
   mocks.toast.mockClear();
+  mocks.comments.length = 0;
   mocks.posts.length = 0;
+  mocks.postsLoading = false;
+  mocks.commentsLoading = false;
 });
 
 afterEach(() => {
@@ -189,6 +203,31 @@ describe("Meta callback recovery", () => {
 });
 
 describe("workspace layout", () => {
+  it("renders an explicit empty queue state for an authenticated business", async () => {
+    renderSocialMedia();
+
+    await waitFor(() => {
+      expect(screen.getByTestId("state-no-posts")).toBeInTheDocument();
+    });
+
+    expect(screen.getByTestId("social-conversations")).toBeInTheDocument();
+    expect(screen.getByText("Choose a recent post to see its imported comments here.")).toBeInTheDocument();
+  });
+
+  it("renders the post loading state without leaving an empty workspace", async () => {
+    mocks.postsLoading = true;
+
+    renderSocialMedia();
+
+    await waitFor(() => {
+      expect(screen.getByTestId("state-posts-loading")).toBeInTheDocument();
+    });
+
+    expect(screen.getByTestId("social-workspace")).toBeInTheDocument();
+    expect(screen.getByTestId("social-conversations")).toBeInTheDocument();
+    expect(screen.queryByTestId("state-no-posts")).not.toBeInTheDocument();
+  });
+
   it("gives the conversation area the remaining desktop workspace height", async () => {
     renderSocialMedia();
 
@@ -235,6 +274,90 @@ describe("workspace layout", () => {
       "max-h-[min(36rem,calc(100dvh-12rem))]",
     );
     expect(screen.getByTestId("social-conversations")).toBeInTheDocument();
+  });
+
+  it("renders the empty conversation state after choosing a post", async () => {
+    mocks.posts.push({
+      id: "conversation-post",
+      status: "PUBLISHED",
+      platforms: ["FACEBOOK"],
+      title: "A post with public feedback",
+      caption: "Caption",
+      publishedAt: null,
+      scheduledAt: null,
+    });
+
+    renderSocialMedia();
+
+    await waitFor(() => {
+      expect(screen.getByTestId("card-post-conversation-post")).toBeInTheDocument();
+    });
+
+    await screen.getByTestId("button-import-comments-conversation-post").click();
+
+    await waitFor(() => {
+      expect(screen.getByTestId("state-no-comments")).toBeInTheDocument();
+    });
+  });
+
+  it("renders the conversation loading state after choosing a post", async () => {
+    mocks.posts.push({
+      id: "loading-conversation-post",
+      status: "PUBLISHED",
+      platforms: ["FACEBOOK"],
+      title: "A post loading public feedback",
+      caption: "Caption",
+      publishedAt: null,
+      scheduledAt: null,
+    });
+    mocks.commentsLoading = true;
+
+    renderSocialMedia();
+
+    await waitFor(() => {
+      expect(screen.getByTestId("card-post-loading-conversation-post")).toBeInTheDocument();
+    });
+
+    await screen.getByTestId("button-import-comments-loading-conversation-post").click();
+
+    await waitFor(() => {
+      expect(screen.getByTestId("state-comments-loading")).toBeInTheDocument();
+    });
+
+    expect(screen.queryByTestId("state-no-comments")).not.toBeInTheDocument();
+  });
+
+  it("renders populated conversation content after choosing a post", async () => {
+    mocks.posts.push({
+      id: "conversation-post",
+      status: "PUBLISHED",
+      platforms: ["FACEBOOK"],
+      title: "A post with public feedback",
+      caption: "Caption",
+      publishedAt: null,
+      scheduledAt: null,
+    });
+    mocks.comments.push({
+      id: "comment-1",
+      authorName: "A customer",
+      text: "This is useful.",
+      createdAt: null,
+      canReply: true,
+    });
+
+    renderSocialMedia();
+
+    await waitFor(() => {
+      expect(screen.getByTestId("card-post-conversation-post")).toBeInTheDocument();
+    });
+
+    await screen.getByTestId("button-import-comments-conversation-post").click();
+
+    await waitFor(() => {
+      expect(screen.getByTestId("card-comment-comment-1")).toBeInTheDocument();
+    });
+
+    expect(screen.getByTestId("text-comment-comment-1")).toHaveTextContent("This is useful.");
   });
 
   it("keeps a short post queue in the regular page flow", async () => {
