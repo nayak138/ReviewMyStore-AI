@@ -691,8 +691,12 @@ export default function SocialMedia() {
               </Card>
             </section>
 
-            <section className="grid items-start gap-6 xl:grid-cols-[0.95fr_1.05fr]">
-              <Card className="border-primary/20 shadow-md shadow-primary/5">
+             <section
+               className="grid items-start gap-6 xl:grid-cols-[minmax(0,1.05fr)_minmax(22rem,0.95fr)]"
+               data-testid="social-content-grid"
+             >
+               <div className="contents">
+               <Card className="border-primary/20 shadow-md shadow-primary/5 xl:col-start-2 xl:row-start-1">
                 <CardHeader>
                   <div className="flex items-center justify-between gap-4"><div><CardTitle className="flex items-center gap-2 text-xl"><Send className="h-4 w-4 text-primary" /> Compose a post</CardTitle><CardDescription className="mt-1">Write once, attach media when needed, and choose where it goes.</CardDescription></div><Badge variant="secondary">Media-ready</Badge></div>
                 </CardHeader>
@@ -709,7 +713,7 @@ export default function SocialMedia() {
                 </CardContent>
               </Card>
 
-              <Card>
+               <Card className="xl:col-start-1 xl:row-start-1">
                 <CardHeader className="flex-row items-start justify-between gap-4 space-y-0">
                   <div><CardTitle className="text-xl">Recent queue</CardTitle><CardDescription className="mt-1">See what is moving through this business.</CardDescription></div>
                   <Button variant="ghost" size="icon" onClick={() => postsQuery.refetch()} disabled={postsQuery.isFetching} aria-label="Refresh post queue" data-testid="button-refresh-posts"><RefreshCw className={cn("h-4 w-4", postsQuery.isFetching && "animate-spin")} /></Button>
@@ -733,12 +737,9 @@ export default function SocialMedia() {
                          <div className="rounded-2xl border border-dashed border-border px-5 py-12 text-center" data-testid="state-no-posts"><div className="mx-auto mb-3 flex h-11 w-11 items-center justify-center rounded-xl bg-secondary text-muted-foreground"><Send className="h-5 w-5" /></div><p className="text-sm font-semibold">Your queue is clear</p><p className="mx-auto mt-1 max-w-xs text-xs leading-relaxed text-muted-foreground">A thoughtful, useful post can start the conversation. Compose one on the left.</p></div>}
                 </CardContent>
               </Card>
-            </section>
+               </div>
 
-            <section
-              className="grid items-stretch gap-6 lg:grid-cols-2"
-              data-testid="social-conversations"
-            >
+             <div className="contents">
               <Card className="flex h-full min-h-0 flex-col">
                 <CardHeader><CardTitle className="flex items-center gap-2 text-xl"><MessageSquare className="h-4 w-4 text-primary" /> Public conversations</CardTitle><CardDescription className="mt-1">Import comments from a post, then reply without leaving the workspace.</CardDescription></CardHeader>
                 <CardContent className="space-y-4">
