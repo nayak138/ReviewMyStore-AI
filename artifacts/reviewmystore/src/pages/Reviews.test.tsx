@@ -24,6 +24,7 @@ const mocks = vi.hoisted(() => ({
   disconnectMutate: vi.fn(),
   syncMutate: vi.fn(),
   dashboardStatus: 'PENDING' as 'DISCONNECTED' | 'PENDING' | 'CONNECTED',
+  callbackStage: null as null | 'NOT_CONNECTED' | 'NEEDS_LOCATION' | 'NO_LOCATIONS_FOUND' | 'READY',
 }));
 
 vi.mock('@workspace/api-client-react', () => ({
@@ -80,8 +81,11 @@ vi.mock('@workspace/api-client-react', () => ({
     },
     isPending: false,
   }),
-  useGetReviewProviderLocations: () => ({
-    data: undefined,
+  useGetReviewProviderLocations: (options?: { query?: { enabled?: boolean } }) => ({
+    data:
+      options?.query?.enabled && mocks.callbackStage
+        ? { stage: mocks.callbackStage, locations: [] }
+        : undefined,
     isLoading: false,
   }),
   getGetReviewProviderLocationsQueryKey: () => ['/api/review-management/connection/locations'],
@@ -190,10 +194,12 @@ beforeEach(() => {
   mocks.startConnectionMutate.mockClear();
   mocks.disconnectMutate.mockClear();
   mocks.syncMutate.mockClear();
+  mocks.callbackStage = null;
 });
 
 afterEach(() => {
   cleanup();
+  window.history.replaceState({}, '', '/');
 });
 
 describe('AI draft publish confirmation', () => {
@@ -324,6 +330,28 @@ describe('Reviews dashboard states', () => {
     // The pending / connect screens must not leak into the connected state.
     expect(screen.queryByText('Connection Pending')).not.toBeInTheDocument();
     expect(screen.queryByText('Connect your Google Business')).not.toBeInTheDocument();
+  });
+
+  it('returns Google cancellation or denial to the requested business without a false success state', async () => {
+    mocks.dashboardStatus = 'PENDING';
+    mocks.callbackStage = 'NOT_CONNECTED';
+    window.history.replaceState(
+      {},
+      '',
+      '/reviews?businessId=business-1&businessName=Test%20Business&bndleConnect=1',
+    );
+
+    renderReviews();
+
+    expect(await screen.findByText("Connection wasn't completed")).toBeInTheDocument();
+    expect(screen.getByText("It looks like Google sign-in didn't finish. You can try connecting again.")).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /try again/i })).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Review Inbox' })).not.toBeInTheDocument();
+    expect(screen.queryByText('Google Business connected')).not.toBeInTheDocument();
+
+    const params = new URLSearchParams(window.location.search);
+    expect(params.get('businessId')).toBe('business-1');
+    expect(params.has('bndleConnect')).toBe(false);
   });
 
   it('requires confirmation before disconnecting a connected Google Business store', async () => {
