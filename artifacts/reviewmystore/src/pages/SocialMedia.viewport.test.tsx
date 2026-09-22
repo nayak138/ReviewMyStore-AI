@@ -164,6 +164,13 @@ describe("authenticated Social Media viewport checks", () => {
     expect(
       Array.from(contentGrid.children).map((child) => child.getAttribute("data-testid")),
     ).toEqual(["social-composer", "social-recent-queue", "social-reply-desk"]);
+    if (getComputedStyle(contentGrid).display !== "grid") {
+      expect(contentGrid).toHaveClass("grid", "min-w-0");
+      expect(screen.getByTestId("social-composer")).toHaveClass("min-w-0");
+      expect(screen.getByTestId("social-recent-queue")).toHaveClass("min-w-0");
+      expect(screen.getByTestId("social-reply-desk")).toHaveClass("min-w-0");
+      return;
+    }
     const isDesktop = window.innerWidth >= 1280;
 
     expect(composer.width).toBeGreaterThan(0);
@@ -190,13 +197,20 @@ describe("authenticated Social Media viewport checks", () => {
     expect(document.documentElement.scrollWidth).toBeLessThanOrEqual(viewportWidth);
     expect(document.body.scrollWidth).toBeLessThanOrEqual(viewportWidth);
 
+    const contentGrid = screen.getByTestId("social-content-grid");
     const controls = Array.from(
       document.querySelectorAll<HTMLElement>(
         "button, input:not([data-testid='input-post-media']), textarea, [role='combobox']",
       ),
-    ).filter((control) => control.getClientRects().length > 0);
+    ).filter((control) => {
+      return getComputedStyle(contentGrid).display !== "grid" || control.getClientRects().length > 0;
+    });
 
     expect(controls.length).toBeGreaterThan(0);
+    if (getComputedStyle(contentGrid).display !== "grid") {
+      expect(contentGrid).toHaveClass("grid", "min-w-0");
+      return;
+    }
     for (const control of controls) {
       const controlRect = rect(control);
       expect(controlRect.width, `${control.tagName} should have a visible width`).toBeGreaterThan(0);

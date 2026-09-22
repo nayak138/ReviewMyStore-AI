@@ -26,6 +26,8 @@ const mocks = vi.hoisted(() => ({
   commentsLoading: false,
   importCommentsMutate: vi.fn(),
   replyMutate: vi.fn(),
+  disconnectMutate: vi.fn(),
+  startConnectionMutate: vi.fn(),
   dashboardData: {
     accounts: [] as Array<Record<string, unknown>>,
     availableAccounts: [] as Array<{
@@ -93,7 +95,7 @@ vi.mock("@workspace/api-client-react", () => {
       data: commentsData,
     }),
     useAttachSocialMediaAccount: () => ({ mutate: vi.fn(), isPending: false }),
-    useDisconnectSocialMediaConnection: () => ({ mutate: vi.fn(), isPending: false }),
+    useDisconnectSocialMediaConnection: () => ({ mutate: mocks.disconnectMutate, isPending: false }),
     useCreateSocialMediaPost: () => ({ mutate: vi.fn(), isPending: false }),
     useDetachSocialMediaAccount: () => ({ mutate: vi.fn(), isPending: false }),
     useImportSocialMediaComments: () => ({ mutate: mocks.importCommentsMutate, isPending: false }),
@@ -102,7 +104,7 @@ vi.mock("@workspace/api-client-react", () => {
       mutateAsync: vi.fn(),
       isPending: false,
     }),
-    useStartSocialMediaConnection: () => ({ mutate: vi.fn(), isPending: false }),
+    useStartSocialMediaConnection: () => ({ mutate: mocks.startConnectionMutate, isPending: false }),
     useFinalizeUpload: () => ({ mutateAsync: vi.fn(), isPending: false }),
   };
 });
@@ -152,6 +154,8 @@ beforeEach(() => {
   mocks.dashboardData.availableAccounts.length = 0;
   mocks.importCommentsMutate.mockClear();
   mocks.replyMutate.mockClear();
+  mocks.disconnectMutate.mockClear();
+  mocks.startConnectionMutate.mockClear();
 });
 
 afterEach(() => {
@@ -273,22 +277,52 @@ describe("workspace layout", () => {
 
       const channelRow = screen.getByTestId("row-connect-facebook");
       const accountSelector = within(channelRow).getByTestId("select-account-facebook");
-      const refreshAccess = within(channelRow).getByTestId("button-refresh-access-facebook");
+      const reconnectAccess = within(channelRow).getByTestId("button-reconnect-access-facebook");
       const accountControls = accountSelector.parentElement;
 
       expect(channelRow).toContainElement(accountSelector);
-      expect(channelRow).toContainElement(refreshAccess);
-      expect(accountControls).toHaveClass("basis-full", "sm:basis-auto", "sm:pl-0");
+      expect(channelRow).toContainElement(reconnectAccess);
+      expect(accountControls).toHaveClass("mt-3", "flex", "min-w-0", "flex-col", "pl-8", "sm:flex-row");
       expect(accountSelector).toHaveClass(
         "min-w-0",
+        "w-full",
         "flex-1",
-        "sm:w-[min(13rem,48vw)]",
-        "sm:flex-none",
       );
-      expect(refreshAccess).toHaveClass("shrink-0");
+      expect(reconnectAccess).toHaveClass("shrink-0");
       expect(screen.queryByTestId("button-connect-facebook")).not.toBeInTheDocument();
     },
   );
+
+  it("clears the provider session before starting a reconnect", async () => {
+    mocks.dashboardData.availableAccounts.push({
+      externalAccountId: "facebook-page-1",
+      platform: "FACEBOOK",
+      displayName: "Test Facebook Page",
+      username: "test-page",
+      profileUrl: null,
+      connected: false,
+    });
+
+    renderSocialMedia();
+
+    await waitFor(() => {
+      expect(screen.getByTestId("button-reconnect-access-facebook")).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByTestId("button-reconnect-access-facebook"));
+
+    expect(mocks.disconnectMutate).toHaveBeenCalledWith(
+      { data: { businessId: "business-1", platform: "FACEBOOK" } },
+      expect.objectContaining({ onSuccess: expect.any(Function) }),
+    );
+
+    const [, callbacks] = mocks.disconnectMutate.mock.calls[0];
+    callbacks.onSuccess();
+
+    expect(mocks.startConnectionMutate).toHaveBeenCalledWith({
+      data: { businessId: "business-1", platform: "FACEBOOK" },
+    });
+  });
 
   it("keeps the Connect action when no provider accounts are available", async () => {
     renderSocialMedia();
@@ -300,7 +334,7 @@ describe("workspace layout", () => {
     const channelRow = screen.getByTestId("row-connect-facebook");
     expect(within(channelRow).getByTestId("button-connect-facebook")).toHaveTextContent("Connect");
     expect(within(channelRow).queryByTestId("select-account-facebook")).not.toBeInTheDocument();
-    expect(within(channelRow).queryByTestId("button-refresh-access-facebook")).not.toBeInTheDocument();
+    expect(within(channelRow).queryByTestId("button-reconnect-access-facebook")).not.toBeInTheDocument();
   });
 
   it("renders the post loading state without leaving an empty workspace", async () => {

@@ -10,6 +10,7 @@ import {
   CheckCircle2,
   Clock3,
   Facebook,
+  Info,
   Instagram,
   Link2,
   Loader2,
@@ -146,8 +147,8 @@ function AccountRow({
         <div className="min-w-0">
           <p className="truncate text-sm font-semibold" data-testid={`text-account-name-${account.id}`}>{account.displayName}</p>
           <p className="truncate text-xs text-muted-foreground">{account.username ? `@${account.username}` : meta.label}</p>
-        </div>
-      </div>
+         </div>
+       </div>
       <div className="flex shrink-0 items-center gap-1">
         <Button
           variant="ghost"
@@ -384,7 +385,16 @@ export default function SocialMedia() {
       },
       onError: (error) => {
         setConnectingPlatform(null);
-        toast({ title: "Unable to start connection", description: errorMessage(error, "Please try again."), variant: "destructive" });
+        const message = errorMessage(error, "Please try again.");
+        toast({
+          title: message.includes("provider could not complete")
+            ? "Meta access needs to be reset"
+            : "Unable to start connection",
+          description: message.includes("provider could not complete")
+            ? "Use Reconnect access to clear the previous Meta login, then authorize the account you want."
+            : message,
+          variant: "destructive",
+        });
       },
     },
   });
@@ -452,7 +462,7 @@ export default function SocialMedia() {
         toast({
           title: "Reply was not published",
           description: message.includes("provider could not complete")
-            ? "The social channel did not accept this reply. Refresh the channel access and try again."
+            ? "The social channel did not accept this reply. Reconnect the channel access and try again."
             : message,
           variant: "destructive",
         });
@@ -464,6 +474,31 @@ export default function SocialMedia() {
     if (!selectedBusinessId) return;
     setConnectingPlatform(platform);
     startConnection.mutate({ data: { businessId: selectedBusinessId, platform } });
+  };
+  const handleReconnect = (platform: SocialMediaPlatform) => {
+    if (!selectedBusinessId || switchingPlatform || connectingPlatform) return;
+    setSwitchingPlatform(platform);
+    disconnectSocialAccount.mutate(
+      { data: { businessId: selectedBusinessId, platform } },
+      {
+        onSuccess: () => {
+          invalidateSocial();
+          setSwitchingPlatform(null);
+          handleConnect(platform);
+        },
+        onError: (error) => {
+          setSwitchingPlatform(null);
+          toast({
+            title: "Could not reset Meta access",
+            description: errorMessage(
+              error,
+              "The previous Meta login could not be cleared. Try again or contact support.",
+            ),
+            variant: "destructive",
+          });
+        },
+      },
+    );
   };
   const handleSwitchAccount = (platform: SocialMediaPlatform) => {
     if (!selectedBusinessId || switchingPlatform || connectingPlatform) return;
@@ -647,11 +682,18 @@ export default function SocialMedia() {
                 </CardContent>
               </Card>
               <Card className="flex h-full min-w-0 min-h-0 flex-col">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-lg">Add a channel</CardTitle>
-                   <CardDescription>Authorize a channel, then choose the exact account for this business.</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-2">
+                 <CardHeader className="pb-3">
+                   <CardTitle className="text-lg">Add a channel</CardTitle>
+                    <CardDescription>Authorize Meta once, then choose the exact Page or profile for this business.</CardDescription>
+                 </CardHeader>
+                 <CardContent className="space-y-3">
+                   <div className="flex gap-3 rounded-xl border border-sky-500/20 bg-sky-500/[0.06] p-3 text-xs leading-relaxed text-sky-950 dark:text-sky-100" data-testid="social-reconnect-guide">
+                     <Info className="mt-0.5 h-4 w-4 shrink-0 text-sky-700 dark:text-sky-300" aria-hidden="true" />
+                     <div>
+                       <p className="font-semibold">Connected the wrong Meta account?</p>
+                       <p className="mt-0.5 text-sky-950/75 dark:text-sky-100/75">Use Reconnect access below. It clears the old provider login before opening Meta again, so you can authorize the correct account.</p>
+                     </div>
+                   </div>
                    <RadioGroup
                      value={accountPickerPlatform}
                      onValueChange={(value) => setAccountPickerPlatform(value as SocialMediaPlatform)}
@@ -665,26 +707,38 @@ export default function SocialMedia() {
                        const authorized = authorizedPlatforms.has(platform);
                        const selectedAccountId = selectedAvailableAccounts[platform] ?? "";
                        return (
-                         <div key={platform} className="rounded-xl border border-border px-3 py-2.5" data-testid={`row-connect-${platform.toLowerCase()}`}>
-                            <div className="flex flex-wrap items-center gap-3">
+                          <div key={platform} className="rounded-2xl border border-border bg-background p-3 sm:p-4" data-testid={`row-connect-${platform.toLowerCase()}`}>
+                             <div className="flex items-start gap-3">
                              <RadioGroupItem
                                value={platform}
                                id={`social-platform-${platform.toLowerCase()}`}
                                disabled={connected || availableAccounts.length === 0}
+                                className="mt-1"
                                data-testid={`radio-platform-${platform.toLowerCase()}`}
                              />
-                             <label htmlFor={`social-platform-${platform.toLowerCase()}`} className={cn("flex min-w-0 flex-1 items-center gap-3", !connected && availableAccounts.length === 0 && "cursor-default opacity-60")}>
+                              <label htmlFor={`social-platform-${platform.toLowerCase()}`} className={cn("flex min-w-0 flex-1 items-start gap-3", !connected && availableAccounts.length === 0 && "cursor-default opacity-60")}>
                                <div className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-lg", meta.tint)}><PlatformMark platform={platform} /></div>
-                               <span className="text-sm font-medium">{meta.label}</span>
+                                <span className="min-w-0">
+                                  <span className="block text-sm font-semibold">{meta.label}</span>
+                                  <span className="mt-0.5 block text-xs text-muted-foreground">
+                                    {connected
+                                      ? "Attached to this business"
+                                      : availableAccounts.length
+                                        ? "Choose the publishing account"
+                                        : authorized
+                                          ? "Access found — reconnect to change it"
+                                          : "Not authorized yet"}
+                                  </span>
+                                </span>
                              </label>
                              {connected ? (
-                               <Badge variant="outline" className="gap-1 border-emerald-500/20 bg-emerald-500/10 text-emerald-700"><CheckCircle2 className="h-3.5 w-3.5" /> Attached</Badge>
-                             ) : availableAccounts.length === 0 ? (
-                               <Button variant="outline" size="sm" onClick={() => handleConnect(platform)} disabled={!!connectingPlatform} data-testid={`button-connect-${platform.toLowerCase()}`}>
-                                 {connectingPlatform === platform ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <Plus className="mr-1.5 h-3.5 w-3.5" />} {authorized ? "Refresh access" : "Connect"}
-                               </Button>
-                             ) : (
-                                <div className="flex min-w-0 basis-full items-center gap-2 pl-9 sm:basis-auto sm:pl-0">
+                                <Badge variant="outline" className="shrink-0 gap-1 border-emerald-500/20 bg-emerald-500/10 text-emerald-700"><CheckCircle2 className="h-3.5 w-3.5" /> Attached</Badge>
+                              ) : null}
+                            </div>
+                            {!connected && (
+                              <div className="mt-3 flex min-w-0 flex-col gap-2 pl-8 sm:flex-row sm:items-center">
+                                {availableAccounts.length > 0 ? (
+                                  <>
                                  <Select
                                    value={selectedAccountId}
                                    onValueChange={(externalAccountId) => {
@@ -693,9 +747,9 @@ export default function SocialMedia() {
                                        attachAccount.mutate({ data: { businessId: selectedBusinessId, externalAccountId } });
                                      }
                                    }}
-                                   disabled={attachAccount.isPending}
+                                    disabled={attachAccount.isPending || !!connectingPlatform || !!switchingPlatform}
                                  >
-                                    <SelectTrigger className="min-w-0 flex-1 sm:w-[min(13rem,48vw)] sm:flex-none" aria-label={`Choose ${meta.label} account`} data-testid={`select-account-${platform.toLowerCase()}`}>
+                                     <SelectTrigger className="min-w-0 w-full flex-1" aria-label={`Choose ${meta.label} account`} data-testid={`select-account-${platform.toLowerCase()}`}>
                                      <SelectValue placeholder={`Choose ${meta.label} account`} />
                                    </SelectTrigger>
                                    <SelectContent>
@@ -708,25 +762,30 @@ export default function SocialMedia() {
                                  </Select>
                                  <Button
                                    type="button"
-                                   variant="ghost"
+                                    variant="outline"
                                    size="sm"
-                                   className="shrink-0 px-2 text-xs text-muted-foreground"
-                                   onClick={() => handleConnect(platform)}
-                                   disabled={!!connectingPlatform}
-                                   data-testid={`button-refresh-access-${platform.toLowerCase()}`}
+                                    className="shrink-0"
+                                    onClick={() => handleReconnect(platform)}
+                                    disabled={!!connectingPlatform || !!switchingPlatform}
+                                    data-testid={`button-reconnect-access-${platform.toLowerCase()}`}
                                  >
-                                   {connectingPlatform === platform ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="mr-1 h-3.5 w-3.5" />}
-                                   Refresh access
+                                    {switchingPlatform === platform || connectingPlatform === platform ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="mr-1.5 h-3.5 w-3.5" />}
+                                    Reconnect access
                                  </Button>
-                               </div>
-                             )}
+                                  </>
+                                ) : (
+                                  <Button variant="outline" size="sm" onClick={() => authorized ? handleReconnect(platform) : handleConnect(platform)} disabled={!!connectingPlatform || !!switchingPlatform} data-testid={`button-connect-${platform.toLowerCase()}`}>
+                                    {connectingPlatform === platform ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <Plus className="mr-1.5 h-3.5 w-3.5" />} {authorized ? "Reconnect access" : "Connect account"}
+                                  </Button>
+                                )}
+                              </div>
+                            )}
                            </div>
-                         </div>
                        );
                      })}
                    </RadioGroup>
-                    <p className="pt-2 text-xs leading-relaxed text-muted-foreground">
-                      If an account is missing, click Refresh access and authorize the correct Instagram, Facebook, or Threads account. To replace an attached account, use Switch first; it clears the current provider login and opens the account chooser.
+                     <p className="pt-1 text-xs leading-relaxed text-muted-foreground">
+                       Select an available Page or profile to attach it. To replace an attached account, use Switch in Connected channels; it clears the old Meta login before opening the account chooser.
                    </p>
                 </CardContent>
               </Card>
