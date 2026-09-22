@@ -14,6 +14,7 @@ import { randomUUID } from "node:crypto";
 import { and, eq } from "drizzle-orm";
 import {
   db,
+  businessesTable,
   pool,
   managedReviewsTable,
   organizationsTable,
@@ -22,6 +23,10 @@ import {
   reviewLocationsTable,
   usersTable,
 } from "@workspace/db";
+import {
+  completeBusinessUsageReservation,
+  reserveBusinessUsage,
+} from "./businessUsageService";
 import {
   ManagedReviewNotFoundError,
   ReviewProviderError,
@@ -639,7 +644,29 @@ test("starting a connection fails loudly when the provider returns no OAuth link
 test("disconnecting Google clears the provider account before marking the local connection disconnected", async () => {
   const org = await createOrg("disconnect");
   const teamId = `team-disconnect-${runId}`;
-  await createConnection(org.id, teamId);
+  const [business] = await db
+    .insert(businessesTable)
+    .values({
+      organizationId: org.id,
+      name: "Google usage test store",
+      category: "Retail",
+      slug: `google-usage-${runId}`,
+      status: "ACTIVE",
+    })
+    .returning();
+  await db.insert(providerConnectionsTable).values({
+    organizationId: org.id,
+    businessId: business.id,
+    provider: "BNDLE",
+    externalProfileId: teamId,
+    status: "CONNECTED",
+  });
+  const usageReservation = await reserveBusinessUsage({
+    organizationId: org.id,
+    businessId: business.id,
+    metric: "GOOGLE_REVIEW_IMPORTS",
+  });
+  await completeBusinessUsageReservation(usageReservation.id);
 
   providerFetch.handler = (url, init) => {
     const method = (init.method ?? "GET").toUpperCase();
@@ -650,11 +677,43 @@ test("disconnecting Google clears the provider account before marking the local 
       assert.equal(body.type, "GOOGLE_BUSINESS");
       return { body: {} };
     }
+    if (path.endsWith("/organization/") && method === "GET") {
+      return {
+        body: {
+          teams: [{ id: teamId, name: `5-STAR.AI Reviews ${org.id} ${business.id}` }],
+        },
+      };
+    }
+    if (path.endsWith("/social-account/by-type") && method === "GET") {
+      return { status: 404, body: { message: "not found" } };
+    }
+    if (path.endsWith("/social-account/connect") && method === "POST") {
+      return { body: { url: "https://accounts.google.com/reconnect" } };
+    }
     throw new Error(`Unexpected provider request: ${method} ${path}`);
   };
 
-  const dashboard = await disconnectReviewProvider(org.id);
+  const dashboard = await disconnectReviewProvider(org.id, business.id);
   assert.equal(dashboard.connection.status, "DISCONNECTED");
+  assert.equal(
+    dashboard.usage.find((item) => item.metric === "GOOGLE_REVIEW_IMPORTS")?.used,
+    1,
+  );
+
+  const reconnected = await startReviewProviderConnection(
+    org.id,
+    "https://published.example.com",
+    business.id,
+  );
+  assert.equal(reconnected.connection.status, "PENDING");
+  const reconnectedDashboard = await getReviewDashboard(org.id, business.id);
+  assert.equal(
+    reconnectedDashboard.usage.find(
+      (item) => item.metric === "GOOGLE_REVIEW_IMPORTS",
+    )?.used,
+    1,
+    "Google reconnect must preserve the business usage window and history",
+  );
 });
 
 // ---------------------------------------------------------------------------

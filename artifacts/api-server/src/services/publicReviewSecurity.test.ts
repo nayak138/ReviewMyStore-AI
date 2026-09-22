@@ -20,6 +20,7 @@ import {
   SessionCampaignMismatchError,
 } from "./publicReviewService";
 import { AIGenerationError } from "./aiService";
+import { getBusinessUsageSummary } from "./businessUsageService";
 
 const runId = randomUUID().slice(0, 8);
 const originalCreate = openrouter.chat.completions.create;
@@ -305,6 +306,7 @@ test("provider failure restores the organization quota and session attempt", asy
   }) as unknown as typeof openrouter.chat.completions.create;
 
   const sessionId = `failed-generation-session-${runId}`;
+  const usageBefore = await getBusinessUsageSummary(orgId, businessId);
   await assert.rejects(
     generatePublicReview(
       `security-test-store-${runId}`,
@@ -326,6 +328,17 @@ test("provider failure restores the organization quota and session attempt", asy
     .where(eq(reviewSessionsTable.id, sessionId));
   assert.equal(organization.aiQuota, 7);
   assert.equal(session.generationCount, 0);
+  const usageAfter = await getBusinessUsageSummary(orgId, businessId);
+  const publicGenerationsBefore =
+    usageBefore.find((item) => item.metric === "PUBLIC_AI_GENERATIONS");
+  const publicGenerationsAfter =
+    usageAfter.find((item) => item.metric === "PUBLIC_AI_GENERATIONS");
+  assert.equal(
+    publicGenerationsAfter?.used,
+    publicGenerationsBefore?.used,
+    "failed public generation must release its business allowance",
+  );
+  assert.equal(publicGenerationsAfter?.reserved, 0);
 });
 
 test("a transient provider failure can be retried with the same quota and session", async () => {

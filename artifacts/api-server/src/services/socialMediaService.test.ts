@@ -21,8 +21,14 @@ import {
   importSocialMediaComments,
   listSocialMediaComments,
   listSocialMediaPosts,
+  replyToSocialMediaComment,
   SocialMediaBadRequestError,
 } from "./socialMediaService";
+import {
+  completeBusinessUsageReservation,
+  getBusinessUsageSummary,
+  reserveBusinessUsage,
+} from "./businessUsageService";
 
 const runId = randomUUID().slice(0, 8);
 const ownerId = `social-owner-${runId}`;
@@ -525,6 +531,16 @@ test("uses an isolated provider team for each business in one organization", asy
 });
 
 test("switching a social account clears the provider authorization and local attachment", async () => {
+  const usageBefore = await getBusinessUsageSummary(organizationId, businessId);
+  const postsUsedBefore =
+    usageBefore.find((item) => item.metric === "SOCIAL_POSTS")?.used ?? 0;
+  const usageReservation = await reserveBusinessUsage({
+    organizationId,
+    businessId,
+    metric: "SOCIAL_POSTS",
+  });
+  await completeBusinessUsageReservation(usageReservation.id);
+
   await disconnectSocialMediaConnection(organizationId, businessId, "FACEBOOK");
 
   const disconnectCall = providerCalls.find(
@@ -533,11 +549,36 @@ test("switching a social account clears the provider authorization and local att
   assert.equal(disconnectCall?.body.teamId, `team-${runId}`);
   assert.equal(disconnectCall?.body.type, "FACEBOOK");
 
+  const disconnectedAccounts = await db
+    .select()
+    .from(socialMediaAccountsTable)
+    .where(eq(socialMediaAccountsTable.businessId, businessId));
+  assert.equal(
+    disconnectedAccounts.some((account) => account.platform === "FACEBOOK"),
+    false,
+  );
+  assert.equal(
+    disconnectedAccounts.some((account) => account.platform === "INSTAGRAM"),
+    true,
+  );
+
+  await attachSocialMediaAccount(
+    organizationId,
+    businessId,
+    facebookProviderExternalId,
+  );
+  const usage = await getBusinessUsageSummary(organizationId, businessId);
+  assert.equal(
+    usage.find((item) => item.metric === "SOCIAL_POSTS")?.used,
+    postsUsedBefore + 1,
+    "Meta reconnect must preserve the business usage window and history",
+  );
+
   const remaining = await db
     .select()
     .from(socialMediaAccountsTable)
     .where(eq(socialMediaAccountsTable.businessId, businessId));
-  assert.equal(remaining.some((account) => account.platform === "FACEBOOK"), false);
+  assert.equal(remaining.some((account) => account.platform === "FACEBOOK"), true);
   assert.equal(remaining.some((account) => account.platform === "INSTAGRAM"), true);
 });
 
@@ -727,6 +768,7 @@ test("ignores incomplete provider targets instead of attaching a malformed Page"
 });
 
 test("includes the selected social account type when importing comments", async () => {
+  const usageBefore = await getBusinessUsageSummary(organizationId, businessId);
   const imported = await importSocialMediaComments(organizationId, {
     businessId,
     platform: "INSTAGRAM",
@@ -743,6 +785,11 @@ test("includes the selected social account type when importing comments", async 
     importId: "comment-import-test",
     status: "FETCHING",
   });
+  const usageAfter = await getBusinessUsageSummary(organizationId, businessId);
+  assert.equal(
+    usageAfter.find((item) => item.metric === "SOCIAL_COMMENT_IMPORTS")?.used,
+    (usageBefore.find((item) => item.metric === "SOCIAL_COMMENT_IMPORTS")?.used ?? 0) + 1,
+  );
 });
 
 test("normalizes provider post channel data for comment imports", async () => {
@@ -776,4 +823,26 @@ test("keeps the provider fetched-comment id for replies", async () => {
 
   assert.equal(result.comments[0]?.id, "fetched-comment-test");
   assert.equal(result.comments[0]?.externalId, "platform-comment-test");
+});
+
+test("charges and settles the business allowance when replying to a social comment", async () => {
+  const usageBefore = await getBusinessUsageSummary(organizationId, businessId);
+  const result = await replyToSocialMediaComment(
+    organizationId,
+    businessId,
+    "fetched-comment-test",
+    "Thanks for sharing!",
+  );
+
+  assert.equal(result.id, "post-media-test");
+  const replyCall = providerCalls.find((call) => call.path === "comment");
+  assert.equal(replyCall?.body.teamId, `team-${runId}`);
+  assert.equal(replyCall?.body.fetchedParentCommentId, "fetched-comment-test");
+  assert.equal(replyCall?.body.text, "Thanks for sharing!");
+
+  const usageAfter = await getBusinessUsageSummary(organizationId, businessId);
+  assert.equal(
+    usageAfter.find((item) => item.metric === "SOCIAL_COMMENT_REPLIES")?.used,
+    (usageBefore.find((item) => item.metric === "SOCIAL_COMMENT_REPLIES")?.used ?? 0) + 1,
+  );
 });
