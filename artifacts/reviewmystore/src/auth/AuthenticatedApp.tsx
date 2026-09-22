@@ -264,7 +264,7 @@ function SignUpPage() {
   );
 }
 
-function ClerkQueryClientCacheInvalidator() {
+export function ClerkQueryClientCacheInvalidator() {
   const { addListener } = useClerk();
   const queryClient = useQueryClient();
   const prevUserIdRef = useRef<string | null | undefined>(undefined);

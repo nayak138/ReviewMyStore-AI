@@ -1,11 +1,16 @@
-import { render, screen } from "@testing-library/react";
+import { act, render, screen } from "@testing-library/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { signInRedirectFor } from "./redirect";
-import { SignInPage } from "./AuthenticatedApp";
+import {
+  ClerkQueryClientCacheInvalidator,
+  SignInPage,
+} from "./AuthenticatedApp";
 
 const mocks = vi.hoisted(() => ({
   isLoaded: true,
   isSignedIn: false,
+  addListener: vi.fn(),
 }));
 
 vi.mock("@clerk/react", () => ({
@@ -17,7 +22,7 @@ vi.mock("@clerk/react", () => ({
     isSignedIn: mocks.isSignedIn,
   }),
   useClerk: () => ({
-    addListener: () => () => {},
+    addListener: mocks.addListener,
   }),
 }));
 
@@ -56,6 +61,7 @@ describe("SignInPage session-expiry notice", () => {
       "",
       signInRedirectFor("/businesses?tab=reviews"),
     );
+    mocks.addListener.mockReset();
   });
 
   it("renders the expired-session explanation for the marked sign-in route", () => {
@@ -83,5 +89,31 @@ describe("SignInPage session-expiry notice", () => {
     expect(
       screen.queryByText("Your session expired. Please sign in again."),
     ).not.toBeInTheDocument();
+  });
+});
+
+describe("ClerkQueryClientCacheInvalidator", () => {
+  it("clears private query data when Clerk changes from signed in to signed out", () => {
+    const queryClient = new QueryClient();
+    queryClient.setQueryData(["private-workspace"], {
+      businessName: "Private workspace",
+    });
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <ClerkQueryClientCacheInvalidator />
+      </QueryClientProvider>,
+    );
+
+    const [listener] = mocks.addListener.mock.calls[0] as [
+      (event: { user?: { id: string } | null }) => void,
+    ];
+
+    act(() => {
+      listener({ user: { id: "user_123" } });
+      listener({ user: null });
+    });
+
+    expect(queryClient.getQueryData(["private-workspace"])).toBeUndefined();
   });
 });
