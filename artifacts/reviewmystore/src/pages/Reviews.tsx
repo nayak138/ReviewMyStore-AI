@@ -45,7 +45,7 @@ import {
 import { BrandIcon } from "@/components/brand-logo";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
-import { Star, MessageSquare, RefreshCw, AlertCircle, Bot, Send, Trash2, Edit3, Search, Store, Link2Off, MapPin, CheckCircle2, XCircle } from "lucide-react";
+import { Star, MessageSquare, RefreshCw, AlertCircle, Bot, Send, Trash2, Edit3, Search, Store, Link2Off, MapPin, CheckCircle2, XCircle, History } from "lucide-react";
 
 // bundle.social's Free plan allows 5 review imports/month; Pro/Business
 // default to 200. We don't know which plan the account is on, only the
@@ -966,7 +966,7 @@ export default function Reviews() {
             <div className="mb-3 flex items-center justify-between gap-3">
               <div>
                 <h3 className="text-sm font-semibold">Business usage</h3>
-                <p className="mt-1 text-xs text-muted-foreground">Review and AI allowances for this business are preserved when you reconnect Google.</p>
+                <p className="mt-1 text-xs text-muted-foreground">App allowances belong to this business and are preserved when you reconnect Google.</p>
               </div>
               <span className="text-xs text-muted-foreground">₹200/month plan</span>
             </div>
@@ -974,23 +974,68 @@ export default function Reviews() {
               {dashboard.usage
                 .filter((item) => ["GOOGLE_REVIEW_IMPORTS", "AI_REVIEW_REPLIES", "PUBLIC_AI_GENERATIONS"].includes(item.metric))
                 .map((item) => (
-                  <div key={item.metric} className="rounded-lg border border-border bg-secondary/30 p-3">
+                  <div key={item.metric} className="rounded-lg border border-border bg-secondary/30 p-3" data-testid={`usage-${item.metric.toLowerCase()}`}>
                     <div className="flex items-center justify-between gap-2 text-xs">
                       <span className="font-medium">{item.label}</span>
-                      <span className="text-muted-foreground">{item.window === "DAILY" ? "daily" : "monthly"}</span>
+                      <span className="text-muted-foreground">{item.window === "DAILY" ? "Daily" : "Monthly"}</span>
                     </div>
-                    <div className="mt-2 flex items-end justify-between gap-2">
-                      <span className="text-lg font-semibold">{item.remaining}</span>
-                      <span className="text-xs text-muted-foreground">of {item.limit} remaining</span>
+                    <div className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
+                      <span className="text-muted-foreground">Used <strong className="text-foreground">{item.used}</strong></span>
+                      <span className="text-muted-foreground">Reserved <strong className="text-foreground">{item.reserved}</strong></span>
+                      <span className="text-muted-foreground">Limit <strong className="text-foreground">{item.limit}</strong></span>
+                      <span className="text-muted-foreground">Remaining <strong className="text-foreground">{item.remaining}</strong></span>
                     </div>
                     <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-muted">
                       <div className="h-full rounded-full bg-primary" style={{ width: `${Math.min(100, (item.used + item.reserved) / item.limit * 100)}%` }} />
                     </div>
+                    <p className="mt-2 text-[11px] text-muted-foreground">
+                      Resets {new Date(item.periodEnd).toLocaleString(undefined, { month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" })}
+                    </p>
                   </div>
                 ))}
             </div>
+            <div className="mt-4 border-t border-border pt-4">
+              <div className="mb-2 flex items-center gap-2">
+                <History className="h-4 w-4 text-muted-foreground" />
+                <h4 className="text-sm font-semibold">Recent usage history</h4>
+              </div>
+              {dashboard.usageHistory?.length ? (
+                <div className="divide-y divide-border rounded-lg border border-border">
+                  {dashboard.usageHistory
+                    .filter((item) => ["GOOGLE_REVIEW_IMPORTS", "AI_REVIEW_REPLIES", "PUBLIC_AI_GENERATIONS"].includes(item.metric))
+                    .map((item) => (
+                      <div key={item.id} className="flex flex-wrap items-center justify-between gap-2 px-3 py-2.5 text-xs">
+                        <div>
+                          <span className="font-medium">{item.label}</span>
+                          <span className="ml-2 text-muted-foreground">{new Date(item.createdAt).toLocaleString()}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-muted-foreground">{item.amount} {item.amount === 1 ? "unit" : "units"}</span>
+                          <Badge variant={item.status === "SUCCEEDED" ? "secondary" : item.status === "FAILED" ? "destructive" : "outline"}>
+                            {item.status === "SUCCEEDED" ? "Completed" : item.status === "FAILED" ? "Released" : "In progress"}
+                          </Badge>
+                        </div>
+                      </div>
+                    ))}
+                </div>
+              ) : (
+                <p className="text-xs text-muted-foreground">No review or AI usage has been recorded for this business yet.</p>
+              )}
+            </div>
           </section>
         ) : null}
+        {dashboard?.connection && (
+          <section className="rounded-xl border border-sky-200/70 bg-sky-50/50 p-4 shadow-sm dark:border-sky-900/50 dark:bg-sky-950/20" data-testid="review-provider-limits">
+            <h3 className="text-sm font-semibold">Google provider limits</h3>
+            <p className="mt-1 text-xs text-muted-foreground">This upstream Google import limit is separate from your 5-STAR.AI business allowance above.</p>
+            <div className="mt-3 flex flex-wrap items-baseline gap-x-2 gap-y-1">
+              <span className="text-lg font-semibold">{dashboard.connection.remainingImportCapacity ?? "Not available"}</span>
+              <span className="text-xs text-muted-foreground">
+                {dashboard.connection.remainingImportCapacity === null ? "remaining imports after the next successful sync" : "Google review imports remaining"}
+              </span>
+            </div>
+          </section>
+        )}
 
         <div className="bg-card p-4 rounded-xl border border-border shadow-sm flex flex-col gap-3 md:flex-row">
           <div className="relative w-full md:flex-1">

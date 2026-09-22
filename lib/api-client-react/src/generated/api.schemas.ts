@@ -1195,11 +1195,42 @@ export interface BusinessUsageSummaryItem {
   periodEnd: string;
 }
 
+export type BusinessUsageHistoryItemWindow = typeof BusinessUsageHistoryItemWindow[keyof typeof BusinessUsageHistoryItemWindow];
+
+
+export const BusinessUsageHistoryItemWindow = {
+  DAILY: 'DAILY',
+  MONTHLY: 'MONTHLY',
+} as const;
+
+export type BusinessUsageHistoryItemStatus = typeof BusinessUsageHistoryItemStatus[keyof typeof BusinessUsageHistoryItemStatus];
+
+
+export const BusinessUsageHistoryItemStatus = {
+  PENDING: 'PENDING',
+  SUCCEEDED: 'SUCCEEDED',
+  FAILED: 'FAILED',
+} as const;
+
+export interface BusinessUsageHistoryItem {
+  id: string;
+  metric: BusinessUsageMetric;
+  label: string;
+  window: BusinessUsageHistoryItemWindow;
+  amount: number;
+  status: BusinessUsageHistoryItemStatus;
+  createdAt: string;
+  updatedAt: string;
+  periodStart: string;
+  periodEnd: string;
+}
+
 export interface SocialMediaDashboardResult {
   teamId: string;
   accounts: SocialMediaAccount[];
   availableAccounts: SocialMediaAvailableAccount[];
   usage: BusinessUsageSummaryItem[];
+  usageHistory: BusinessUsageHistoryItem[];
 }
 
 export interface SocialMediaConnectionInput {
@@ -1395,6 +1426,7 @@ export interface ReviewDashboardResult {
   locations: ReviewLocation[];
   summary: ReviewInboxSummary;
   usage: BusinessUsageSummaryItem[];
+  usageHistory: BusinessUsageHistoryItem[];
 }
 
 /**

@@ -13,6 +13,7 @@ import {
   BUSINESS_USAGE_CONFIG,
   BusinessUsageLimitError,
   completeBusinessUsageReservation,
+  getBusinessUsageHistory,
   getBusinessUsageSummary,
   releaseBusinessUsageReservation,
   reserveBusinessUsage,
@@ -159,4 +160,21 @@ test("each metered action is isolated by business and releases failed work", asy
     .where(eq(businessUsageReservationsTable.organizationId, organizationId));
   assert.equal(reservations.length, Object.keys(BUSINESS_USAGE_CONFIG).length * 2);
   assert.ok(reservations.every((reservation) => reservation.status !== "PENDING"));
+
+  const [firstHistory, secondHistory] = await Promise.all([
+    getBusinessUsageHistory(organizationId, firstBusinessId),
+    getBusinessUsageHistory(organizationId, secondBusinessId),
+  ]);
+  assert.equal(
+    firstHistory.length,
+    Object.keys(BUSINESS_USAGE_CONFIG).length,
+    "history should include only the first business's reservations",
+  );
+  assert.equal(
+    secondHistory.length,
+    Object.keys(BUSINESS_USAGE_CONFIG).length,
+    "history should include only the second business's reservations",
+  );
+  assert.ok(firstHistory.every((item) => item.status === "SUCCEEDED"));
+  assert.ok(secondHistory.every((item) => item.status === "FAILED"));
 });

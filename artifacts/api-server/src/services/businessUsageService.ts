@@ -1,4 +1,4 @@
-import { and, eq, gt, or, sql } from "drizzle-orm";
+import { and, desc, eq, gt, or, sql } from "drizzle-orm";
 import {
   businessUsagePeriodsTable,
   businessUsageReservationsTable,
@@ -101,6 +101,19 @@ export type BusinessUsageSummaryItem = {
   reserved: number;
   limit: number;
   remaining: number;
+  periodStart: string;
+  periodEnd: string;
+};
+
+export type BusinessUsageHistoryItem = {
+  id: string;
+  metric: BusinessUsageMetric;
+  label: string;
+  window: UsageWindow;
+  amount: number;
+  status: "PENDING" | "SUCCEEDED" | "FAILED";
+  createdAt: string;
+  updatedAt: string;
   periodStart: string;
   periodEnd: string;
 };
@@ -356,5 +369,40 @@ export async function getBusinessUsageSummary(
         periodEnd: period.end.toISOString(),
       };
     });
+  });
+}
+
+export async function getBusinessUsageHistory(
+  organizationId: string,
+  businessId: string,
+  limit = 12,
+): Promise<BusinessUsageHistoryItem[]> {
+  const rows = await db
+    .select()
+    .from(businessUsageReservationsTable)
+    .where(
+      and(
+        eq(businessUsageReservationsTable.organizationId, organizationId),
+        eq(businessUsageReservationsTable.businessId, businessId),
+      ),
+    )
+    .orderBy(desc(businessUsageReservationsTable.createdAt))
+    .limit(limit);
+
+  return rows.map((row) => {
+    const config = BUSINESS_USAGE_CONFIG[row.metric];
+    const period = periodFor(row.metric, row.periodStart);
+    return {
+      id: row.id,
+      metric: row.metric,
+      label: config.label,
+      window: config.window,
+      amount: row.amount,
+      status: row.status,
+      createdAt: row.createdAt.toISOString(),
+      updatedAt: row.updatedAt.toISOString(),
+      periodStart: period.start.toISOString(),
+      periodEnd: period.end.toISOString(),
+    };
   });
 }

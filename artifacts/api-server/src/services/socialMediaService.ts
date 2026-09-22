@@ -23,6 +23,7 @@ import {
 import { logger } from "../lib/logger";
 import {
   completeBusinessUsageReservation,
+  getBusinessUsageHistory,
   getBusinessUsageSummary,
   releaseBusinessUsageReservation,
   reserveBusinessUsage,
@@ -584,6 +585,7 @@ export async function getSocialMediaDashboard(
     accounts: readyLocalAccounts.map(toAccountPayload),
     availableAccounts,
     usage: await getBusinessUsageSummary(organizationId, businessId),
+    usageHistory: await getBusinessUsageHistory(organizationId, businessId),
   };
 }
 

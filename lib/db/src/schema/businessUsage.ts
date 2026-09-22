@@ -103,6 +103,10 @@ export const businessUsageReservationsTable = pgTable(
   },
   (table) => [
     index("business_usage_reservations_business_id_idx").on(table.businessId),
+    index("business_usage_reservations_business_created_at_idx").on(
+      table.businessId,
+      table.createdAt,
+    ),
     index("business_usage_reservations_status_idx").on(table.status),
     index("business_usage_reservations_cleanup_idx").on(
       table.status,

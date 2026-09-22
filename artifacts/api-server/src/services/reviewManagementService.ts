@@ -25,6 +25,7 @@ import { generateReviewReplyDraft } from "./aiService";
 import {
   BusinessUsageLimitError,
   completeBusinessUsageReservation,
+  getBusinessUsageHistory,
   getBusinessUsageSummary,
   releaseBusinessUsageReservation,
   reserveBusinessUsage,
@@ -1435,6 +1436,9 @@ export async function getReviewDashboard(
     },
     usage: businessId
       ? await getBusinessUsageSummary(organizationId, businessId)
+      : [],
+    usageHistory: businessId
+      ? await getBusinessUsageHistory(organizationId, businessId)
       : [],
   };
 }

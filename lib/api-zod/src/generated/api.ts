@@ -46,6 +46,18 @@ export const GetReviewDashboardResponse = zod.object({
   "remaining": zod.int(),
   "periodStart": zod.coerce.date(),
   "periodEnd": zod.coerce.date()
+})),
+  "usageHistory": zod.array(zod.object({
+  "id": zod.string(),
+  "metric": zod.enum(['GOOGLE_REVIEW_IMPORTS', 'AI_REVIEW_REPLIES', 'PUBLIC_AI_GENERATIONS', 'SOCIAL_POSTS', 'SOCIAL_COMMENT_IMPORTS', 'SOCIAL_COMMENT_REPLIES']),
+  "label": zod.string(),
+  "window": zod.enum(['DAILY', 'MONTHLY']),
+  "amount": zod.int(),
+  "status": zod.enum(['PENDING', 'SUCCEEDED', 'FAILED']),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date(),
+  "periodStart": zod.coerce.date(),
+  "periodEnd": zod.coerce.date()
 }))
 })
 
@@ -113,6 +125,18 @@ export const DisconnectReviewProviderResponse = zod.object({
   "remaining": zod.int(),
   "periodStart": zod.coerce.date(),
   "periodEnd": zod.coerce.date()
+})),
+  "usageHistory": zod.array(zod.object({
+  "id": zod.string(),
+  "metric": zod.enum(['GOOGLE_REVIEW_IMPORTS', 'AI_REVIEW_REPLIES', 'PUBLIC_AI_GENERATIONS', 'SOCIAL_POSTS', 'SOCIAL_COMMENT_IMPORTS', 'SOCIAL_COMMENT_REPLIES']),
+  "label": zod.string(),
+  "window": zod.enum(['DAILY', 'MONTHLY']),
+  "amount": zod.int(),
+  "status": zod.enum(['PENDING', 'SUCCEEDED', 'FAILED']),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date(),
+  "periodStart": zod.coerce.date(),
+  "periodEnd": zod.coerce.date()
 }))
 })
 
@@ -173,6 +197,18 @@ export const SelectReviewProviderLocationResponse = zod.object({
   "remaining": zod.int(),
   "periodStart": zod.coerce.date(),
   "periodEnd": zod.coerce.date()
+})),
+  "usageHistory": zod.array(zod.object({
+  "id": zod.string(),
+  "metric": zod.enum(['GOOGLE_REVIEW_IMPORTS', 'AI_REVIEW_REPLIES', 'PUBLIC_AI_GENERATIONS', 'SOCIAL_POSTS', 'SOCIAL_COMMENT_IMPORTS', 'SOCIAL_COMMENT_REPLIES']),
+  "label": zod.string(),
+  "window": zod.enum(['DAILY', 'MONTHLY']),
+  "amount": zod.int(),
+  "status": zod.enum(['PENDING', 'SUCCEEDED', 'FAILED']),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date(),
+  "periodStart": zod.coerce.date(),
+  "periodEnd": zod.coerce.date()
 }))
 })
 
@@ -213,6 +249,18 @@ export const SyncReviewProviderResponse = zod.object({
   "reserved": zod.int(),
   "limit": zod.int(),
   "remaining": zod.int(),
+  "periodStart": zod.coerce.date(),
+  "periodEnd": zod.coerce.date()
+})),
+  "usageHistory": zod.array(zod.object({
+  "id": zod.string(),
+  "metric": zod.enum(['GOOGLE_REVIEW_IMPORTS', 'AI_REVIEW_REPLIES', 'PUBLIC_AI_GENERATIONS', 'SOCIAL_POSTS', 'SOCIAL_COMMENT_IMPORTS', 'SOCIAL_COMMENT_REPLIES']),
+  "label": zod.string(),
+  "window": zod.enum(['DAILY', 'MONTHLY']),
+  "amount": zod.int(),
+  "status": zod.enum(['PENDING', 'SUCCEEDED', 'FAILED']),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date(),
   "periodStart": zod.coerce.date(),
   "periodEnd": zod.coerce.date()
 }))
@@ -411,6 +459,18 @@ export const GetSocialMediaDashboardResponse = zod.object({
   "reserved": zod.int(),
   "limit": zod.int(),
   "remaining": zod.int(),
+  "periodStart": zod.coerce.date(),
+  "periodEnd": zod.coerce.date()
+})),
+  "usageHistory": zod.array(zod.object({
+  "id": zod.string(),
+  "metric": zod.enum(['GOOGLE_REVIEW_IMPORTS', 'AI_REVIEW_REPLIES', 'PUBLIC_AI_GENERATIONS', 'SOCIAL_POSTS', 'SOCIAL_COMMENT_IMPORTS', 'SOCIAL_COMMENT_REPLIES']),
+  "label": zod.string(),
+  "window": zod.enum(['DAILY', 'MONTHLY']),
+  "amount": zod.int(),
+  "status": zod.enum(['PENDING', 'SUCCEEDED', 'FAILED']),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date(),
   "periodStart": zod.coerce.date(),
   "periodEnd": zod.coerce.date()
 }))

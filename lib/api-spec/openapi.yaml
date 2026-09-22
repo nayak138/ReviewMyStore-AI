@@ -4777,11 +4777,16 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/BusinessUsageSummaryItem"
+        usageHistory:
+          type: array
+          items:
+            $ref: "#/components/schemas/BusinessUsageHistoryItem"
       required:
         - teamId
         - accounts
         - availableAccounts
         - usage
+        - usageHistory
 
     SocialMediaConnectionInput:
       type: object
@@ -5089,7 +5094,11 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/BusinessUsageSummaryItem"
-      required: [connection, locations, summary, usage]
+        usageHistory:
+          type: array
+          items:
+            $ref: "#/components/schemas/BusinessUsageHistoryItem"
+      required: [connection, locations, summary, usage, usageHistory]
 
     BusinessUsageMetric:
       type: string
@@ -5133,6 +5142,47 @@ components:
         - reserved
         - limit
         - remaining
+        - periodStart
+        - periodEnd
+
+    BusinessUsageHistoryItem:
+      type: object
+      properties:
+        id:
+          type: string
+        metric:
+          $ref: "#/components/schemas/BusinessUsageMetric"
+        label:
+          type: string
+        window:
+          type: string
+          enum: [DAILY, MONTHLY]
+        amount:
+          type: integer
+        status:
+          type: string
+          enum: [PENDING, SUCCEEDED, FAILED]
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        periodStart:
+          type: string
+          format: date-time
+        periodEnd:
+          type: string
+          format: date-time
+      required:
+        - id
+        - metric
+        - label
+        - window
+        - amount
+        - status
+        - createdAt
+        - updatedAt
         - periodStart
         - periodEnd
 

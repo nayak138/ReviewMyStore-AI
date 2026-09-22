@@ -11,6 +11,7 @@ import {
   Clock3,
   Facebook,
   Info,
+  History,
   Instagram,
   Link2,
   Loader2,
@@ -665,7 +666,7 @@ export default function SocialMedia() {
                 <div className="mb-3 flex items-center justify-between gap-3">
                   <div>
                     <h2 className="text-sm font-semibold">Business usage</h2>
-                    <p className="mt-1 text-xs text-muted-foreground">Allowances are shared across this business's connected channels.</p>
+                    <p className="mt-1 text-xs text-muted-foreground">App allowances are shared across this business's connected channels.</p>
                   </div>
                   <Badge variant="secondary">₹200/month plan</Badge>
                 </div>
@@ -676,18 +677,54 @@ export default function SocialMedia() {
                       <div key={item.metric} className="rounded-xl border border-border bg-secondary/30 p-3" data-testid={`usage-${item.metric.toLowerCase()}`}>
                         <div className="flex items-center justify-between gap-2 text-xs">
                           <span className="font-medium">{item.label}</span>
-                          <span className="text-muted-foreground">{item.window === "DAILY" ? "daily" : "monthly"}</span>
+                          <span className="text-muted-foreground">{item.window === "DAILY" ? "Daily" : "Monthly"}</span>
                         </div>
-                        <div className="mt-2 flex items-end justify-between gap-2">
-                          <span className="text-lg font-semibold">{item.remaining}</span>
-                          <span className="text-xs text-muted-foreground">of {item.limit} remaining</span>
+                        <div className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
+                          <span className="text-muted-foreground">Used <strong className="text-foreground">{item.used}</strong></span>
+                          <span className="text-muted-foreground">Reserved <strong className="text-foreground">{item.reserved}</strong></span>
+                          <span className="text-muted-foreground">Limit <strong className="text-foreground">{item.limit}</strong></span>
+                          <span className="text-muted-foreground">Remaining <strong className="text-foreground">{item.remaining}</strong></span>
                         </div>
                         <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-muted">
                           <div className="h-full rounded-full bg-primary" style={{ width: `${Math.min(100, (item.used + item.reserved) / item.limit * 100)}%` }} />
                         </div>
+                        <p className="mt-2 text-[11px] text-muted-foreground">
+                          Resets {formatDate(item.periodEnd, true)}
+                        </p>
                       </div>
                     ))}
                 </div>
+                <div className="mt-4 border-t border-border pt-4">
+                  <div className="mb-2 flex items-center gap-2">
+                    <History className="h-4 w-4 text-muted-foreground" />
+                    <h3 className="text-sm font-semibold">Recent usage history</h3>
+                  </div>
+                  {dashboard.usageHistory?.length ? (
+                    <div className="divide-y divide-border rounded-xl border border-border">
+                      {dashboard.usageHistory
+                        .filter((item) => ["SOCIAL_POSTS", "SOCIAL_COMMENT_IMPORTS", "SOCIAL_COMMENT_REPLIES"].includes(item.metric))
+                        .map((item) => (
+                          <div key={item.id} className="flex flex-wrap items-center justify-between gap-2 px-3 py-2.5 text-xs">
+                            <div>
+                              <span className="font-medium">{item.label}</span>
+                              <span className="ml-2 text-muted-foreground">{formatDate(item.createdAt, true)}</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span className="text-muted-foreground">{item.amount} {item.amount === 1 ? "unit" : "units"}</span>
+                              <Badge variant={item.status === "SUCCEEDED" ? "secondary" : item.status === "FAILED" ? "destructive" : "outline"}>
+                                {item.status === "SUCCEEDED" ? "Completed" : item.status === "FAILED" ? "Released" : "In progress"}
+                              </Badge>
+                            </div>
+                          </div>
+                        ))}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-muted-foreground">No social usage has been recorded for this business yet.</p>
+                  )}
+                </div>
+                <p className="mt-3 text-[11px] text-muted-foreground">
+                  These are 5-STAR.AI allowances. Facebook, Instagram, and Threads may apply separate provider limits that are not included here.
+                </p>
               </section>
             ) : null}
              <section className="grid min-w-0 items-stretch gap-6 lg:grid-cols-2" data-testid="social-channel-grid">
