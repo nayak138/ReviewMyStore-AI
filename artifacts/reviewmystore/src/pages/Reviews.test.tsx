@@ -390,9 +390,7 @@ describe('Reviews dashboard states', () => {
     fireEvent.click(screen.getByRole('button', { name: /connect google business/i }));
 
     expect(mocks.startConnectionMutate).toHaveBeenCalledTimes(1);
-    expect(mocks.startConnectionMutate).toHaveBeenCalledWith({
-      data: { businessId: 'business-1' },
-    });
+    expect(mocks.startConnectionMutate).toHaveBeenCalledWith();
     // The fix under test: a successful start must invalidate the dashboard
     // query, not just open the portal tab.
     expect(invalidateSpy).toHaveBeenCalledWith(
