@@ -735,8 +735,7 @@ export default function SocialMedia() {
               <section
                  className="grid min-w-0 items-stretch gap-6 lg:grid-cols-2"
                data-testid="social-content-grid"
-             >
-               <div className="contents">
+               >
                   <Card className="order-1 flex h-full min-w-0 flex-col border-primary/20 shadow-md shadow-primary/5 lg:order-none lg:col-start-2 lg:row-span-2 lg:row-start-1" data-testid="social-composer">
                 <CardHeader>
                    <div className="flex flex-wrap items-start justify-between gap-4"><div className="min-w-0"><CardTitle className="flex items-center gap-2 text-xl"><Send className="h-4 w-4 shrink-0 text-primary" /> Compose a post</CardTitle><CardDescription className="mt-1">Write once, attach media when needed, and choose where it goes.</CardDescription></div><Badge variant="secondary" className="shrink-0">Media-ready</Badge></div>
@@ -776,11 +775,9 @@ export default function SocialMedia() {
                          </div>
                        ) :
                           <div className="rounded-2xl border border-dashed border-border px-5 py-12 text-center" data-testid="state-no-posts"><div className="mx-auto mb-3 flex h-11 w-11 items-center justify-center rounded-xl bg-secondary text-muted-foreground"><Send className="h-5 w-5" /></div><p className="text-sm font-semibold">Your queue is clear</p><p className="mx-auto mt-1 max-w-xs text-xs leading-relaxed text-muted-foreground">A thoughtful, useful post can start the conversation. Compose one in the post composer.</p></div>}
-                </CardContent>
-              </Card>
-               </div>
+                 </CardContent>
+               </Card>
 
-             <div className="contents">
                   <Card className="order-3 flex min-h-0 min-w-0 flex-col lg:order-none lg:col-start-1 lg:row-start-2" data-testid="social-reply-desk">
                 <CardHeader className="flex-row items-start justify-between gap-4 space-y-0"><div><CardTitle className="text-xl">Reply desk</CardTitle><CardDescription className="mt-1">{selectedPostId ? "Keep replies direct, useful, and on-brand." : "Select a post to load its conversation."}</CardDescription></div>{commentsQuery.isFetching && <RefreshCw className="h-4 w-4 animate-spin text-muted-foreground" />}</CardHeader>
                   <CardContent className="min-h-0 min-w-0 flex-1 space-y-4">
@@ -808,9 +805,8 @@ export default function SocialMedia() {
                         comments.length ? <div className="space-y-3">{comments.map((comment) => <CommentRow key={comment.id} comment={comment} draft={replyDrafts[comment.id] ?? ""} onDraftChange={(value) => setReplyDrafts((current) => ({ ...current, [comment.id]: value }))} onReply={() => handleReply(comment.id, replyDrafts[comment.id] ?? "")} isReplying={replyingCommentId === comment.id} isAnotherReplyPending={Boolean(replyingCommentId && replyingCommentId !== comment.id)} />)}</div> :
                           <div className="rounded-2xl border border-dashed border-border px-5 py-12 text-center" data-testid="state-no-comments"><div className="mx-auto mb-3 flex h-11 w-11 items-center justify-center rounded-xl bg-secondary text-muted-foreground"><MessageSquare className="h-5 w-5" /></div><p className="text-sm font-semibold">No imported comments yet</p><p className="mx-auto mt-1 max-w-sm text-xs leading-relaxed text-muted-foreground">Import a post's latest public comments to bring the conversation into this desk.</p></div>}
                   </div>
-                </CardContent>
-              </Card>
-             </div>
+                 </CardContent>
+               </Card>
              </section>
           </>
         )}

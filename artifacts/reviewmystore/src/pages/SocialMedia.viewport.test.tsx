@@ -160,6 +160,10 @@ describe("authenticated Social Media viewport checks", () => {
     const composer = rect(screen.getByTestId("social-composer"));
     const queue = rect(screen.getByTestId("social-recent-queue"));
     const replyDesk = rect(screen.getByTestId("social-reply-desk"));
+    const contentGrid = screen.getByTestId("social-content-grid");
+    expect(
+      Array.from(contentGrid.children).map((child) => child.getAttribute("data-testid")),
+    ).toEqual(["social-composer", "social-recent-queue", "social-reply-desk"]);
     const isDesktop = window.innerWidth >= 1280;
 
     expect(composer.width).toBeGreaterThan(0);
