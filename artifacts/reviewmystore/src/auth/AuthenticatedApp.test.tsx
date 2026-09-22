@@ -93,11 +93,12 @@ describe("SignInPage session-expiry notice", () => {
 });
 
 describe("ClerkQueryClientCacheInvalidator", () => {
+  beforeEach(() => {
+    mocks.addListener.mockReset();
+  });
+
   it("clears private query data when Clerk changes from signed in to signed out", () => {
     const queryClient = new QueryClient();
-    queryClient.setQueryData(["private-workspace"], {
-      businessName: "Private workspace",
-    });
 
     render(
       <QueryClientProvider client={queryClient}>
@@ -111,7 +112,34 @@ describe("ClerkQueryClientCacheInvalidator", () => {
 
     act(() => {
       listener({ user: { id: "user_123" } });
+      queryClient.setQueryData(["private-workspace"], {
+        businessName: "Private workspace",
+      });
       listener({ user: null });
+    });
+
+    expect(queryClient.getQueryData(["private-workspace"])).toBeUndefined();
+  });
+
+  it("clears the previous owner's private query data before the next owner can use the client", () => {
+    const queryClient = new QueryClient();
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <ClerkQueryClientCacheInvalidator />
+      </QueryClientProvider>,
+    );
+
+    const [listener] = mocks.addListener.mock.calls[0] as [
+      (event: { user?: { id: string } | null }) => void,
+    ];
+
+    act(() => {
+      listener({ user: { id: "owner_a" } });
+      queryClient.setQueryData(["private-workspace"], {
+        businessName: "Owner A's private workspace",
+      });
+      listener({ user: { id: "owner_b" } });
     });
 
     expect(queryClient.getQueryData(["private-workspace"])).toBeUndefined();
