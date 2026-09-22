@@ -219,8 +219,23 @@ describe("workspace layout", () => {
     expect(screen.getByTestId("social-composer")).toHaveClass("xl:col-start-2", "xl:row-start-1");
     expect(screen.getByTestId("social-recent-queue")).toHaveClass("xl:col-start-1", "xl:row-start-1");
     expect(screen.getByTestId("social-reply-desk")).toHaveClass("xl:col-start-1", "xl:row-start-2");
+    expect(screen.getByTestId("social-content-grid")).toHaveClass("min-w-0");
     expect(screen.queryByText("Public conversations")).not.toBeInTheDocument();
     expect(screen.getByText("Publish a post first to bring its public comments into this desk.")).toBeInTheDocument();
+  });
+
+  it("keeps the channel picker and composer controls wrap-safe on narrow screens", async () => {
+    renderSocialMedia();
+
+    await waitFor(() => {
+      expect(screen.getByTestId("social-composer")).toBeInTheDocument();
+    });
+
+    expect(screen.getByTestId("social-workspace")).toHaveClass("w-full", "min-w-0");
+    expect(screen.getByTestId("social-composer")).toHaveClass("min-w-0");
+    expect(screen.getByTestId("social-recent-queue")).toHaveClass("min-w-0");
+    expect(screen.getByTestId("social-reply-desk")).toHaveClass("min-w-0");
+    expect(screen.getByTestId("select-comment-post")).toHaveClass("min-w-0");
   });
 
   it("renders the post loading state without leaving an empty workspace", async () => {
@@ -287,6 +302,24 @@ describe("workspace layout", () => {
       "max-h-[min(36rem,calc(100dvh-12rem))]",
     );
     expect(screen.getByTestId("social-content-grid")).toBeInTheDocument();
+  });
+
+  it("keeps the reply desk as a separate keyboard-focusable bounded region", async () => {
+    renderSocialMedia();
+
+    await waitFor(() => {
+      expect(screen.getByTestId("comment-desk-scroll")).toBeInTheDocument();
+    });
+
+    const replyDesk = screen.getByTestId("comment-desk-scroll");
+    expect(replyDesk).toHaveAttribute("role", "region");
+    expect(replyDesk).toHaveAttribute("tabindex", "0");
+    expect(replyDesk).toHaveAttribute("aria-label", "Scrollable reply desk");
+    expect(replyDesk).toHaveClass(
+      "overflow-y-auto",
+      "overscroll-contain",
+      "max-h-[min(36rem,calc(100dvh-16rem))]",
+    );
   });
 
   it("renders the empty conversation state after choosing a post", async () => {

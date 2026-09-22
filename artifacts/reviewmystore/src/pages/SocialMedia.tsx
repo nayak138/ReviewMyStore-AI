@@ -547,7 +547,7 @@ export default function SocialMedia() {
   return (
     <AppLayout title="Social Media" businessName={workspaceBusiness?.name}>
       <div
-        className="mx-auto flex max-w-6xl flex-col space-y-6 p-4 md:p-8"
+        className="mx-auto flex w-full min-w-0 max-w-6xl flex-col space-y-6 p-4 md:p-8"
         data-testid="social-workspace"
       >
         {workspaceBusiness && (
@@ -578,8 +578,8 @@ export default function SocialMedia() {
 
         {selectedBusinessId && (
           <>
-            <section className="grid items-stretch gap-6 lg:grid-cols-2">
-              <Card className="flex h-full flex-col overflow-hidden border-primary/15 bg-primary/[0.035]">
+            <section className="grid min-w-0 items-stretch gap-6 lg:grid-cols-2">
+              <Card className="flex h-full min-w-0 flex-col overflow-hidden border-primary/15 bg-primary/[0.035]">
                 <CardHeader className="border-b border-border/70 pb-4">
                   <div className="flex items-start justify-between gap-4">
                     <div>
@@ -605,7 +605,7 @@ export default function SocialMedia() {
                     )}
                 </CardContent>
               </Card>
-              <Card className="flex h-full min-h-0 flex-col">
+              <Card className="flex h-full min-w-0 min-h-0 flex-col">
                 <CardHeader className="pb-3">
                   <CardTitle className="text-lg">Add a channel</CardTitle>
                    <CardDescription>Authorize a channel, then choose the exact account for this business.</CardDescription>
@@ -625,7 +625,7 @@ export default function SocialMedia() {
                        const selectedAccountId = selectedAvailableAccounts[platform] ?? "";
                        return (
                          <div key={platform} className="rounded-xl border border-border px-3 py-2.5" data-testid={`row-connect-${platform.toLowerCase()}`}>
-                           <div className="flex items-center gap-3">
+                            <div className="flex flex-wrap items-center gap-3">
                              <RadioGroupItem
                                value={platform}
                                id={`social-platform-${platform.toLowerCase()}`}
@@ -643,7 +643,7 @@ export default function SocialMedia() {
                                  {connectingPlatform === platform ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <Plus className="mr-1.5 h-3.5 w-3.5" />} {authorized ? "Refresh access" : "Connect"}
                                </Button>
                              ) : (
-                               <div className="flex items-center gap-2">
+                                <div className="flex min-w-0 basis-full items-center gap-2 pl-9 sm:basis-auto sm:pl-0">
                                  <Select
                                    value={selectedAccountId}
                                    onValueChange={(externalAccountId) => {
@@ -654,7 +654,7 @@ export default function SocialMedia() {
                                    }}
                                    disabled={attachAccount.isPending}
                                  >
-                                   <SelectTrigger className="w-[min(13rem,48vw)]" aria-label={`Choose ${meta.label} account`} data-testid={`select-account-${platform.toLowerCase()}`}>
+                                    <SelectTrigger className="min-w-0 flex-1 sm:w-[min(13rem,48vw)] sm:flex-none" aria-label={`Choose ${meta.label} account`} data-testid={`select-account-${platform.toLowerCase()}`}>
                                      <SelectValue placeholder={`Choose ${meta.label} account`} />
                                    </SelectTrigger>
                                    <SelectContent>
@@ -692,13 +692,13 @@ export default function SocialMedia() {
             </section>
 
              <section
-               className="grid items-start gap-6 xl:grid-cols-[minmax(0,1.05fr)_minmax(22rem,0.95fr)]"
+                className="grid min-w-0 items-start gap-6 xl:grid-cols-[minmax(0,1.05fr)_minmax(22rem,0.95fr)]"
                data-testid="social-content-grid"
              >
                <div className="contents">
-               <Card className="border-primary/20 shadow-md shadow-primary/5 xl:col-start-2 xl:row-start-1" data-testid="social-composer">
+                <Card className="min-w-0 border-primary/20 shadow-md shadow-primary/5 xl:col-start-2 xl:row-start-1" data-testid="social-composer">
                 <CardHeader>
-                  <div className="flex items-center justify-between gap-4"><div><CardTitle className="flex items-center gap-2 text-xl"><Send className="h-4 w-4 text-primary" /> Compose a post</CardTitle><CardDescription className="mt-1">Write once, attach media when needed, and choose where it goes.</CardDescription></div><Badge variant="secondary">Media-ready</Badge></div>
+                   <div className="flex flex-wrap items-start justify-between gap-4"><div className="min-w-0"><CardTitle className="flex items-center gap-2 text-xl"><Send className="h-4 w-4 shrink-0 text-primary" /> Compose a post</CardTitle><CardDescription className="mt-1">Write once, attach media when needed, and choose where it goes.</CardDescription></div><Badge variant="secondary" className="shrink-0">Media-ready</Badge></div>
                 </CardHeader>
                 <CardContent>
                   <form className="space-y-4" onSubmit={handlePublish} data-testid="form-social-post">
@@ -713,12 +713,12 @@ export default function SocialMedia() {
                 </CardContent>
               </Card>
 
-                <Card className="xl:col-start-1 xl:row-start-1" data-testid="social-recent-queue">
+                <Card className="min-w-0 xl:col-start-1 xl:row-start-1" data-testid="social-recent-queue">
                 <CardHeader className="flex-row items-start justify-between gap-4 space-y-0">
                   <div><CardTitle className="text-xl">Recent queue</CardTitle><CardDescription className="mt-1">See what is moving through this business.</CardDescription></div>
                   <Button variant="ghost" size="icon" onClick={() => postsQuery.refetch()} disabled={postsQuery.isFetching} aria-label="Refresh post queue" data-testid="button-refresh-posts"><RefreshCw className={cn("h-4 w-4", postsQuery.isFetching && "animate-spin")} /></Button>
                 </CardHeader>
-                <CardContent className="min-h-0 flex-1 space-y-3">
+                 <CardContent className="min-h-0 min-w-0 flex-1 space-y-3">
                   {postsQuery.isLoading ? <div data-testid="state-posts-loading" className="space-y-3">{[0, 1, 2].map((item) => <div key={item} className="space-y-3 rounded-2xl border border-border p-4"><Skeleton className="h-5 w-32" /><Skeleton className="h-16 w-full" /><Skeleton className="h-8 w-28" /></div>)}</div> :
                     postsQuery.isError ? <div className="rounded-xl border border-destructive/20 bg-destructive/5 p-4 text-sm" role="alert" data-testid="state-posts-error"><p className="font-semibold">Posts could not load</p><p className="mt-1 text-xs text-muted-foreground">{errorMessage(postsQuery.error, "Try again in a moment.")}</p><Button variant="outline" size="sm" className="mt-3" onClick={() => postsQuery.refetch()} data-testid="button-retry-posts">Try again</Button></div> :
                        posts.length ? (
@@ -740,13 +740,13 @@ export default function SocialMedia() {
                </div>
 
              <div className="contents">
-               <Card className="flex min-h-0 flex-col xl:col-start-1 xl:row-start-2" data-testid="social-reply-desk">
+                <Card className="flex min-h-0 min-w-0 flex-col xl:col-start-1 xl:row-start-2" data-testid="social-reply-desk">
                 <CardHeader className="flex-row items-start justify-between gap-4 space-y-0"><div><CardTitle className="text-xl">Reply desk</CardTitle><CardDescription className="mt-1">{selectedPostId ? "Keep replies direct, useful, and on-brand." : "Select a post to load its conversation."}</CardDescription></div>{commentsQuery.isFetching && <RefreshCw className="h-4 w-4 animate-spin text-muted-foreground" />}</CardHeader>
-                 <CardContent className="min-h-0 flex-1 space-y-4">
+                  <CardContent className="min-h-0 min-w-0 flex-1 space-y-4">
                    <div className="space-y-2">
                      <Label htmlFor="comment-post">Live post to review</Label>
                      <Select value={selectedPostId} onValueChange={setSelectedPostId}>
-                       <SelectTrigger id="comment-post" data-testid="select-comment-post"><SelectValue placeholder={publishedPosts.length ? "Choose a live post" : "Publish a post first"} /></SelectTrigger>
+                      <SelectTrigger id="comment-post" className="min-w-0" data-testid="select-comment-post"><SelectValue placeholder={publishedPosts.length ? "Choose a live post" : "Publish a post first"} /></SelectTrigger>
                        <SelectContent>{publishedPosts.map((post) => <SelectItem key={post.id} value={post.id} data-testid={`option-comment-post-${post.id}`}>{post.title || (post.caption || "Untitled post").slice(0, 42)}</SelectItem>)}</SelectContent>
                      </Select>
                    </div>
@@ -806,7 +806,7 @@ function CommentRow({
         <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">{comment.authorName.slice(0, 1).toUpperCase()}</div>
         <div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-x-2 gap-y-1"><p className="text-sm font-semibold" data-testid={`text-comment-author-${comment.id}`}>{comment.authorName}</p>{comment.createdAt && <span className="text-xs text-muted-foreground">{formatDate(comment.createdAt, true)}</span>}</div><p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-foreground/85" data-testid={`text-comment-${comment.id}`}>{comment.text}</p></div>
       </div>
-      {comment.canReply ? <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-end"><Textarea value={draft} onChange={(event) => onDraftChange(event.target.value)} placeholder="Write a public reply..." maxLength={2000} className="min-h-20 resize-y text-sm" aria-label={`Reply to ${comment.authorName}`} data-testid={`textarea-reply-${comment.id}`} /><Button className="shrink-0 sm:mb-0" onClick={onReply} disabled={isReplying || isAnotherReplyPending || !draft.trim()} aria-busy={isReplying} data-testid={`button-reply-comment-${comment.id}`}>{isReplying ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />} {isReplying ? "Publishing..." : "Reply"}</Button></div> : <p className="mt-3 text-xs text-muted-foreground">Replies are unavailable for this comment.</p>}
+       {comment.canReply ? <div className="mt-4 flex min-w-0 flex-col gap-2 sm:flex-row sm:items-end"><Textarea value={draft} onChange={(event) => onDraftChange(event.target.value)} placeholder="Write a public reply..." maxLength={2000} className="min-h-20 min-w-0 resize-y text-sm sm:flex-1" aria-label={`Reply to ${comment.authorName}`} data-testid={`textarea-reply-${comment.id}`} /><Button className="w-full shrink-0 sm:mb-0 sm:w-auto" onClick={onReply} disabled={isReplying || isAnotherReplyPending || !draft.trim()} aria-busy={isReplying} data-testid={`button-reply-comment-${comment.id}`}>{isReplying ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />} {isReplying ? "Publishing..." : "Reply"}</Button></div> : <p className="mt-3 text-xs text-muted-foreground">Replies are unavailable for this comment.</p>}
     </article>
   );
 }
