@@ -259,6 +259,7 @@ export default function SocialMedia() {
     query: { enabled: !!isSignedIn && !!selectedBusinessId, queryKey: postsKey },
   });
   const posts = postsQuery.data?.posts ?? [];
+  const shouldBoundPostQueue = posts.length > 3;
   const commentsParams = { businessId: selectedBusinessId ?? "", postId: selectedPostId || undefined };
   const commentsKey = getListSocialMediaCommentsQueryKey(commentsParams);
   const commentsQuery = useListSocialMediaComments(commentsParams, {
@@ -647,8 +648,21 @@ export default function SocialMedia() {
                 <CardContent className="space-y-3">
                   {postsQuery.isLoading ? [0, 1, 2].map((item) => <div key={item} className="space-y-3 rounded-2xl border border-border p-4"><Skeleton className="h-5 w-32" /><Skeleton className="h-16 w-full" /><Skeleton className="h-8 w-28" /></div>) :
                     postsQuery.isError ? <div className="rounded-xl border border-destructive/20 bg-destructive/5 p-4 text-sm" role="alert" data-testid="state-posts-error"><p className="font-semibold">Posts could not load</p><p className="mt-1 text-xs text-muted-foreground">{errorMessage(postsQuery.error, "Try again in a moment.")}</p><Button variant="outline" size="sm" className="mt-3" onClick={() => postsQuery.refetch()} data-testid="button-retry-posts">Try again</Button></div> :
-                      posts.length ? posts.slice(0, 8).map((post) => <PostCard key={post.id} post={post} onImportComments={handleImportComments} importing={importingPostId === post.id} />) :
-                        <div className="rounded-2xl border border-dashed border-border px-5 py-12 text-center" data-testid="state-no-posts"><div className="mx-auto mb-3 flex h-11 w-11 items-center justify-center rounded-xl bg-secondary text-muted-foreground"><Send className="h-5 w-5" /></div><p className="text-sm font-semibold">Your queue is clear</p><p className="mx-auto mt-1 max-w-xs text-xs leading-relaxed text-muted-foreground">A thoughtful, useful post can start the conversation. Compose one on the left.</p></div>}
+                       posts.length ? (
+                         <div
+                           className={cn(
+                             "space-y-3",
+                             shouldBoundPostQueue && "max-h-[min(36rem,calc(100dvh-12rem))] overflow-y-auto overscroll-contain pr-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 lg:max-h-[min(42rem,calc(100dvh-14rem))]",
+                           )}
+                           data-testid="post-queue-scroll"
+                           tabIndex={shouldBoundPostQueue ? 0 : undefined}
+                           role={shouldBoundPostQueue ? "region" : undefined}
+                           aria-label={shouldBoundPostQueue ? "Scrollable recent post queue" : undefined}
+                         >
+                           {posts.slice(0, 8).map((post) => <PostCard key={post.id} post={post} onImportComments={handleImportComments} importing={importingPostId === post.id} />)}
+                         </div>
+                       ) :
+                         <div className="rounded-2xl border border-dashed border-border px-5 py-12 text-center" data-testid="state-no-posts"><div className="mx-auto mb-3 flex h-11 w-11 items-center justify-center rounded-xl bg-secondary text-muted-foreground"><Send className="h-5 w-5" /></div><p className="text-sm font-semibold">Your queue is clear</p><p className="mx-auto mt-1 max-w-xs text-xs leading-relaxed text-muted-foreground">A thoughtful, useful post can start the conversation. Compose one on the left.</p></div>}
                 </CardContent>
               </Card>
             </section>

@@ -6,6 +6,15 @@ import SocialMedia from "./SocialMedia";
 
 const mocks = vi.hoisted(() => ({
   toast: vi.fn(),
+  posts: [] as Array<{
+    id: string;
+    status: string;
+    platforms: string[];
+    title: string | null;
+    caption: string;
+    publishedAt: string | null;
+    scheduledAt: string | null;
+  }>,
 }));
 
 vi.mock("@workspace/api-client-react", () => {
@@ -19,7 +28,7 @@ vi.mock("@workspace/api-client-react", () => {
     businesses: [{ id: "business-1", name: "Test Business", address: null }],
   };
   const dashboardData = { accounts: [], availableAccounts: [] };
-  const postsData = { posts: [] };
+  const postsData = { posts: mocks.posts };
   const commentsData = { comments: [] };
 
   return {
@@ -111,6 +120,7 @@ function callbackParams() {
 
 beforeEach(() => {
   mocks.toast.mockClear();
+  mocks.posts.length = 0;
 });
 
 afterEach(() => {
@@ -194,5 +204,61 @@ describe("workspace layout", () => {
       "flex-1",
       "lg:min-h-0",
     );
+  });
+
+  it("keeps a long post queue in a focusable scroll region", async () => {
+    mocks.posts.push(
+      ...Array.from({ length: 4 }, (_, index) => ({
+        id: `post-${index}`,
+        status: "PUBLISHED",
+        platforms: ["FACEBOOK"],
+        title: `Post ${index}`,
+        caption: `Caption ${index}`,
+        publishedAt: null,
+        scheduledAt: null,
+      })),
+    );
+
+    renderSocialMedia();
+
+    await waitFor(() => {
+      expect(screen.getByTestId("post-queue-scroll")).toBeInTheDocument();
+    });
+
+    const queue = screen.getByTestId("post-queue-scroll");
+    expect(queue).toHaveAttribute("role", "region");
+    expect(queue).toHaveAttribute("tabindex", "0");
+    expect(queue).toHaveAttribute("aria-label", "Scrollable recent post queue");
+    expect(queue).toHaveClass(
+      "overflow-y-auto",
+      "overscroll-contain",
+      "max-h-[min(36rem,calc(100dvh-12rem))]",
+    );
+    expect(screen.getByTestId("social-conversations")).toBeInTheDocument();
+  });
+
+  it("keeps a short post queue in the regular page flow", async () => {
+    mocks.posts.push(
+      ...Array.from({ length: 3 }, (_, index) => ({
+        id: `short-post-${index}`,
+        status: "PUBLISHED",
+        platforms: ["FACEBOOK"],
+        title: `Post ${index}`,
+        caption: `Caption ${index}`,
+        publishedAt: null,
+        scheduledAt: null,
+      })),
+    );
+
+    renderSocialMedia();
+
+    await waitFor(() => {
+      expect(screen.getByTestId("post-queue-scroll")).toBeInTheDocument();
+    });
+
+    const queue = screen.getByTestId("post-queue-scroll");
+    expect(queue).not.toHaveClass("overflow-y-auto");
+    expect(queue).not.toHaveAttribute("role");
+    expect(screen.getByTestId("state-no-comments")).toBeInTheDocument();
   });
 });
