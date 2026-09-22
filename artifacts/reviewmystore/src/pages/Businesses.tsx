@@ -397,7 +397,7 @@ export default function Businesses() {
         </div>
 
         {/* Business List */}
-        <div className="grid grid-cols-1 gap-3">
+        <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
           {isLoading ? (
             Array.from({ length: 3 }).map((_, i) => (
               <div key={i} className="rounded-xl border border-border bg-card p-6 shadow-sm space-y-4">
