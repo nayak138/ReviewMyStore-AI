@@ -696,7 +696,7 @@ export default function SocialMedia() {
                data-testid="social-content-grid"
              >
                <div className="contents">
-               <Card className="border-primary/20 shadow-md shadow-primary/5 xl:col-start-2 xl:row-start-1">
+               <Card className="border-primary/20 shadow-md shadow-primary/5 xl:col-start-2 xl:row-start-1" data-testid="social-composer">
                 <CardHeader>
                   <div className="flex items-center justify-between gap-4"><div><CardTitle className="flex items-center gap-2 text-xl"><Send className="h-4 w-4 text-primary" /> Compose a post</CardTitle><CardDescription className="mt-1">Write once, attach media when needed, and choose where it goes.</CardDescription></div><Badge variant="secondary">Media-ready</Badge></div>
                 </CardHeader>
@@ -713,7 +713,7 @@ export default function SocialMedia() {
                 </CardContent>
               </Card>
 
-               <Card className="xl:col-start-1 xl:row-start-1">
+                <Card className="xl:col-start-1 xl:row-start-1" data-testid="social-recent-queue">
                 <CardHeader className="flex-row items-start justify-between gap-4 space-y-0">
                   <div><CardTitle className="text-xl">Recent queue</CardTitle><CardDescription className="mt-1">See what is moving through this business.</CardDescription></div>
                   <Button variant="ghost" size="icon" onClick={() => postsQuery.refetch()} disabled={postsQuery.isFetching} aria-label="Refresh post queue" data-testid="button-refresh-posts"><RefreshCw className={cn("h-4 w-4", postsQuery.isFetching && "animate-spin")} /></Button>
@@ -734,24 +734,25 @@ export default function SocialMedia() {
                            {posts.slice(0, 8).map((post) => <PostCard key={post.id} post={post} onImportComments={handleImportComments} importing={importingPostId === post.id} />)}
                          </div>
                        ) :
-                         <div className="rounded-2xl border border-dashed border-border px-5 py-12 text-center" data-testid="state-no-posts"><div className="mx-auto mb-3 flex h-11 w-11 items-center justify-center rounded-xl bg-secondary text-muted-foreground"><Send className="h-5 w-5" /></div><p className="text-sm font-semibold">Your queue is clear</p><p className="mx-auto mt-1 max-w-xs text-xs leading-relaxed text-muted-foreground">A thoughtful, useful post can start the conversation. Compose one on the left.</p></div>}
+                          <div className="rounded-2xl border border-dashed border-border px-5 py-12 text-center" data-testid="state-no-posts"><div className="mx-auto mb-3 flex h-11 w-11 items-center justify-center rounded-xl bg-secondary text-muted-foreground"><Send className="h-5 w-5" /></div><p className="text-sm font-semibold">Your queue is clear</p><p className="mx-auto mt-1 max-w-xs text-xs leading-relaxed text-muted-foreground">A thoughtful, useful post can start the conversation. Compose one in the post composer.</p></div>}
                 </CardContent>
               </Card>
                </div>
 
              <div className="contents">
-              <Card className="flex h-full min-h-0 flex-col">
-                <CardHeader><CardTitle className="flex items-center gap-2 text-xl"><MessageSquare className="h-4 w-4 text-primary" /> Public conversations</CardTitle><CardDescription className="mt-1">Import comments from a post, then reply without leaving the workspace.</CardDescription></CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-2"><Label htmlFor="comment-post">Live post to review</Label><Select value={selectedPostId} onValueChange={setSelectedPostId}><SelectTrigger id="comment-post" data-testid="select-comment-post"><SelectValue placeholder={publishedPosts.length ? "Choose a live post" : "Publish a post first"} /></SelectTrigger><SelectContent>{publishedPosts.map((post) => <SelectItem key={post.id} value={post.id} data-testid={`option-comment-post-${post.id}`}>{post.title || (post.caption || "Untitled post").slice(0, 42)}</SelectItem>)}</SelectContent></Select></div>
-                  {selectedCommentPost && selectedCommentPost.platforms.length > 1 && <div className="space-y-2"><Label htmlFor="comment-platform">Channel to review</Label><Select value={selectedCommentPlatform} onValueChange={(value) => setSelectedCommentPlatform(value as SocialMediaPlatform)}><SelectTrigger id="comment-platform" data-testid="select-comment-platform"><SelectValue placeholder="Choose a channel" /></SelectTrigger><SelectContent>{selectedCommentPost.platforms.map((platform) => <SelectItem key={platform} value={platform} data-testid={`option-comment-platform-${platform.toLowerCase()}`}>{PLATFORM_META[platform].label}</SelectItem>)}</SelectContent></Select></div>}
-                  {selectedPostId && <Button variant="outline" className="w-full" onClick={() => { if (selectedCommentPost) handleImportComments(selectedCommentPost); }} disabled={!!importingPostId || !selectedCommentPlatform} data-testid="button-import-selected-comments"><MessageCircle className="mr-2 h-4 w-4" />Import latest comments</Button>}
-                  {!selectedPostId && <div className="rounded-xl bg-secondary/60 p-4 text-center text-xs leading-relaxed text-muted-foreground">{posts.length ? "Scheduled posts will be available here once they are live." : "Publish a post first to bring its public comments into this desk."}</div>}
-                </CardContent>
-              </Card>
-              <Card className="flex h-full min-h-0 flex-col">
+               <Card className="flex min-h-0 flex-col xl:col-start-1 xl:row-start-2" data-testid="social-reply-desk">
                 <CardHeader className="flex-row items-start justify-between gap-4 space-y-0"><div><CardTitle className="text-xl">Reply desk</CardTitle><CardDescription className="mt-1">{selectedPostId ? "Keep replies direct, useful, and on-brand." : "Select a post to load its conversation."}</CardDescription></div>{commentsQuery.isFetching && <RefreshCw className="h-4 w-4 animate-spin text-muted-foreground" />}</CardHeader>
-                <CardContent className="min-h-0 flex-1 space-y-3">
+                 <CardContent className="min-h-0 flex-1 space-y-4">
+                   <div className="space-y-2">
+                     <Label htmlFor="comment-post">Live post to review</Label>
+                     <Select value={selectedPostId} onValueChange={setSelectedPostId}>
+                       <SelectTrigger id="comment-post" data-testid="select-comment-post"><SelectValue placeholder={publishedPosts.length ? "Choose a live post" : "Publish a post first"} /></SelectTrigger>
+                       <SelectContent>{publishedPosts.map((post) => <SelectItem key={post.id} value={post.id} data-testid={`option-comment-post-${post.id}`}>{post.title || (post.caption || "Untitled post").slice(0, 42)}</SelectItem>)}</SelectContent>
+                     </Select>
+                   </div>
+                   {selectedCommentPost && selectedCommentPost.platforms.length > 1 && <div className="space-y-2"><Label htmlFor="comment-platform">Channel to review</Label><Select value={selectedCommentPlatform} onValueChange={(value) => setSelectedCommentPlatform(value as SocialMediaPlatform)}><SelectTrigger id="comment-platform" data-testid="select-comment-platform"><SelectValue placeholder="Choose a channel" /></SelectTrigger><SelectContent>{selectedCommentPost.platforms.map((platform) => <SelectItem key={platform} value={platform} data-testid={`option-comment-platform-${platform.toLowerCase()}`}>{PLATFORM_META[platform].label}</SelectItem>)}</SelectContent></Select></div>}
+                   {selectedPostId && <Button variant="outline" className="w-full" onClick={() => { if (selectedCommentPost) handleImportComments(selectedCommentPost); }} disabled={!!importingPostId || !selectedCommentPlatform} data-testid="button-import-selected-comments"><MessageCircle className="mr-2 h-4 w-4" />Import latest comments</Button>}
+                   {!selectedPostId && <div className="rounded-xl bg-secondary/60 p-4 text-center text-xs leading-relaxed text-muted-foreground">{posts.length ? "Scheduled posts will be available here once they are live." : "Publish a post first to bring its public comments into this desk."}</div>}
                   <div
                     className={cn(
                       "max-h-[min(36rem,calc(100dvh-16rem))] overflow-y-auto overscroll-contain pr-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 lg:max-h-[min(42rem,calc(100dvh-18rem))]",
@@ -768,7 +769,8 @@ export default function SocialMedia() {
                   </div>
                 </CardContent>
               </Card>
-            </section>
+             </div>
+             </section>
           </>
         )}
       </div>

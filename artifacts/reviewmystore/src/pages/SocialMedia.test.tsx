@@ -214,7 +214,12 @@ describe("workspace layout", () => {
       expect(screen.getByTestId("state-no-posts")).toBeInTheDocument();
     });
 
-    expect(screen.getByTestId("social-conversations")).toBeInTheDocument();
+    expect(screen.getByTestId("social-content-grid")).toBeInTheDocument();
+    expect(screen.getByTestId("social-reply-desk")).toBeInTheDocument();
+    expect(screen.getByTestId("social-composer")).toHaveClass("xl:col-start-2", "xl:row-start-1");
+    expect(screen.getByTestId("social-recent-queue")).toHaveClass("xl:col-start-1", "xl:row-start-1");
+    expect(screen.getByTestId("social-reply-desk")).toHaveClass("xl:col-start-1", "xl:row-start-2");
+    expect(screen.queryByText("Public conversations")).not.toBeInTheDocument();
     expect(screen.getByText("Publish a post first to bring its public comments into this desk.")).toBeInTheDocument();
   });
 
@@ -228,7 +233,7 @@ describe("workspace layout", () => {
     });
 
     expect(screen.getByTestId("social-workspace")).toBeInTheDocument();
-    expect(screen.getByTestId("social-conversations")).toBeInTheDocument();
+    expect(screen.getByTestId("social-content-grid")).toBeInTheDocument();
     expect(screen.queryByTestId("state-no-posts")).not.toBeInTheDocument();
   });
 
@@ -237,7 +242,7 @@ describe("workspace layout", () => {
 
     await waitFor(() => {
       expect(screen.getByTestId("social-workspace")).toBeInTheDocument();
-      expect(screen.getByTestId("social-conversations")).toBeInTheDocument();
+      expect(screen.getByTestId("social-content-grid")).toBeInTheDocument();
     });
 
     // The parent app shell owns the single page-level scroll container. The
@@ -247,7 +252,7 @@ describe("workspace layout", () => {
       "min-h-full",
       "lg:min-h-[calc(100dvh-4rem)]",
     );
-    expect(screen.getByTestId("social-conversations")).not.toHaveClass(
+    expect(screen.getByTestId("social-content-grid")).not.toHaveClass(
       "flex-1",
       "lg:min-h-0",
     );
@@ -281,7 +286,7 @@ describe("workspace layout", () => {
       "overscroll-contain",
       "max-h-[min(36rem,calc(100dvh-12rem))]",
     );
-    expect(screen.getByTestId("social-conversations")).toBeInTheDocument();
+    expect(screen.getByTestId("social-content-grid")).toBeInTheDocument();
   });
 
   it("renders the empty conversation state after choosing a post", async () => {
