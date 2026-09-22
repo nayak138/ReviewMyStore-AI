@@ -12,12 +12,14 @@ import {
 
 async function countEvents(
   organizationId: string,
-  eventTypes: Array<"QR_SCAN" | "GOOGLE_REDIRECT" | "REVIEW_GENERATED" | "CALL_CLICK" | "CONTACT_SAVED">,
+  eventTypes: string[],
   since?: Date,
 ): Promise<number> {
   const conditions = [
     eq(scanEventsTable.organizationId, organizationId),
-    inArray(scanEventsTable.eventType, eventTypes),
+    // Cast the enum to text before filtering so an older production enum
+    // safely returns zero for event types added by a newer schema.
+    inArray(sql`${scanEventsTable.eventType}::text`, eventTypes),
     eq(scanEventsTable.redirectSuccess, true),
   ];
   if (since) conditions.push(gte(scanEventsTable.createdAt, since));
@@ -40,7 +42,7 @@ export async function getDashboardSummary(organizationId: string) {
     qrScans,
     googleRedirects,
     scansToday,
-    reviewsGenerated,
+    [reviewsGeneratedRow],
     calls,
     contactsSaved,
     [newReviewsRow],
@@ -97,7 +99,22 @@ export async function getDashboardSummary(organizationId: string) {
     countEvents(organizationId, ["QR_SCAN"]),
     countEvents(organizationId, ["GOOGLE_REDIRECT"]),
     countEvents(organizationId, ["QR_SCAN"], startOfToday),
-    countEvents(organizationId, ["REVIEW_GENERATED"]),
+    // `REVIEW_GENERATED` was added to the scan-event enum after some
+    // production databases were provisioned. Count the durable session
+    // counters here so the agency dashboard remains readable while Publish
+    // applies the additive enum/column schema diff.
+    db
+      .select({ value: sum(reviewSessionsTable.generationCount) })
+      .from(reviewSessionsTable)
+      .innerJoin(
+        campaignsTable,
+        eq(reviewSessionsTable.campaignId, campaignsTable.id),
+      )
+      .innerJoin(
+        businessesTable,
+        eq(campaignsTable.businessId, businessesTable.id),
+      )
+      .where(eq(businessesTable.organizationId, organizationId)),
     countEvents(organizationId, ["CALL_CLICK"]),
     countEvents(organizationId, ["CONTACT_SAVED"]),
     db
@@ -138,7 +155,12 @@ export async function getDashboardSummary(organizationId: string) {
       .orderBy(desc(count()))
       .limit(5),
     db
-      .select()
+      .select({
+        id: scanEventsTable.id,
+        eventType: scanEventsTable.eventType,
+        campaignName: scanEventsTable.campaignName,
+        createdAt: scanEventsTable.createdAt,
+      })
       .from(scanEventsTable)
       .where(eq(scanEventsTable.organizationId, organizationId))
       .orderBy(desc(scanEventsTable.createdAt))
@@ -159,20 +181,23 @@ export async function getDashboardSummary(organizationId: string) {
   });
 
   const eventActivity = recentEvents.map((event) => {
+    const eventType = String(event.eventType);
     const campaign = event.campaignName ?? "a campaign";
     const message =
-      event.eventType === "QR_SCAN"
+      eventType === "QR_SCAN"
         ? `QR code scanned on ${campaign}`
-      : event.eventType === "GOOGLE_REDIRECT"
+      : eventType === "GOOGLE_REDIRECT"
         ? `Customer clicked through to Google from ${campaign}`
-        : event.eventType === "REVIEW_GENERATED"
+        : eventType === "REVIEW_GENERATED"
           ? `AI review draft generated for ${campaign}`
-          : event.eventType === "CALL_CLICK"
+          : eventType === "CALL_CLICK"
             ? `Customer called from ${campaign}`
+            : eventType === "NFC_TAP"
+              ? `NFC tag tapped on ${campaign}`
             : `Customer saved a contact from ${campaign}`;
     return {
       id: event.id,
-      type: event.eventType.toLowerCase(),
+      type: eventType.toLowerCase(),
       message,
       createdAt: event.createdAt,
     };
@@ -189,7 +214,7 @@ export async function getDashboardSummary(organizationId: string) {
     qrScans,
     scansToday,
     googleRedirects,
-    reviewsGenerated,
+    reviewsGenerated: Number(reviewsGeneratedRow?.value ?? 0),
     newReviews: newReviewsRow?.value ?? 0,
     reviewReplies: reviewRepliesRow?.value ?? 0,
     calls,
