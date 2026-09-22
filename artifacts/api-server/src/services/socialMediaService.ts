@@ -68,6 +68,10 @@ function asArray(value: unknown): JsonRecord[] {
   return Array.isArray(value) ? value.map(asRecord) : [];
 }
 
+function arrayValues(value: unknown): unknown[] {
+  return Array.isArray(value) ? value : [];
+}
+
 function valueString(value: unknown): string | null {
   return typeof value === "string" && value.trim() ? value.trim() : null;
 }
@@ -668,9 +672,20 @@ export async function detachSocialMediaAccount(
 }
 
 function postPayload(raw: JsonRecord) {
-  const platforms = asArray(raw.socialAccountTypes)
-    .map((value) => providerPlatform(value))
-    .filter((platform): platform is Platform => Boolean(platform));
+  const platforms = [
+    ...arrayValues(raw.socialAccountTypes).map((value) => providerPlatform(value)),
+    ...arrayValues(raw.platforms).map((value) => providerPlatform(value)),
+    ...arrayValues(raw.socialAccounts).map((value) => {
+      const account = asRecord(value);
+      return providerPlatform(
+        account.type ?? account.platform ?? account.socialAccountType,
+      );
+    }),
+    ...Object.keys(asRecord(raw.data)).map((value) => providerPlatform(value)),
+  ].filter(
+    (platform, index, values): platform is Platform =>
+      Boolean(platform) && values.indexOf(platform) === index,
+  );
   const platformData = Object.values(asRecord(raw.data))
     .map(asRecord)
     .find((data) =>

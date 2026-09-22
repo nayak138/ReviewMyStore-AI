@@ -16,6 +16,7 @@ import { ObjectStorageService } from "../lib/objectStorage";
 import {
   createSocialMediaPost,
   importSocialMediaComments,
+  listSocialMediaPosts,
   SocialMediaBadRequestError,
 } from "./socialMediaService";
 
@@ -494,4 +495,26 @@ test("includes the selected social account type when importing comments", async 
     importId: "comment-import-test",
     status: "FETCHING",
   });
+});
+
+test("normalizes provider post channel data for comment imports", async () => {
+  postResponse = {
+    status: 200,
+    body: {
+      items: [
+        {
+          id: "post-with-data-only",
+          status: "POSTED",
+          data: {
+            FACEBOOK: { text: "A Facebook post" },
+            INSTAGRAM: { text: "An Instagram post" },
+          },
+        },
+      ],
+    },
+  };
+
+  const result = await listSocialMediaPosts(organizationId, businessId);
+
+  assert.deepEqual(result.posts[0]?.platforms, ["FACEBOOK", "INSTAGRAM"]);
 });

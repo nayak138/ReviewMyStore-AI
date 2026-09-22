@@ -79,7 +79,7 @@ export function AppLayout({ children, title, businessName }: AppLayoutProps) {
   };
 
   return (
-    <div className="flex h-[100dvh] overflow-hidden bg-background">
+    <div className="fixed inset-0 flex overflow-hidden bg-background">
       {/* Mobile Menu Overlay */}
       {mobileMenuOpen && (
         <div className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm md:hidden" onClick={() => setMobileMenuOpen(false)} />
