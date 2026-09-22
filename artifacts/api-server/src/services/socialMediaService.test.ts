@@ -16,6 +16,7 @@ import { ObjectStorageService } from "../lib/objectStorage";
 import {
   createSocialMediaPost,
   importSocialMediaComments,
+  listSocialMediaComments,
   listSocialMediaPosts,
   SocialMediaBadRequestError,
 } from "./socialMediaService";
@@ -135,6 +136,21 @@ before(async () => {
         status: 202,
         headers: { "Content-Type": "application/json" },
       });
+    }
+    if (path === "comment/import/comments") {
+      return new Response(
+        JSON.stringify({
+          items: [
+            {
+              id: "fetched-comment-test",
+              externalId: "platform-comment-test",
+              text: "A fetched comment",
+              authorName: "A customer",
+            },
+          ],
+        }),
+        { status: 200, headers: { "Content-Type": "application/json" } },
+      );
     }
     return new Response(
       JSON.stringify({
@@ -517,4 +533,15 @@ test("normalizes provider post channel data for comment imports", async () => {
   const result = await listSocialMediaPosts(organizationId, businessId);
 
   assert.deepEqual(result.posts[0]?.platforms, ["FACEBOOK", "INSTAGRAM"]);
+});
+
+test("keeps the provider fetched-comment id for replies", async () => {
+  const result = await listSocialMediaComments(
+    organizationId,
+    businessId,
+    "post-live-test",
+  );
+
+  assert.equal(result.comments[0]?.id, "fetched-comment-test");
+  assert.equal(result.comments[0]?.externalId, "platform-comment-test");
 });

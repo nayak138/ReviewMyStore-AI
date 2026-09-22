@@ -220,6 +220,7 @@ export default function SocialMedia() {
   const [selectedPostId, setSelectedPostId] = useState<string>("");
   const [selectedCommentPlatform, setSelectedCommentPlatform] = useState<SocialMediaPlatform | "">("");
   const [replyDrafts, setReplyDrafts] = useState<Record<string, string>>({});
+  const [replyingCommentId, setReplyingCommentId] = useState<string | null>(null);
   const [accountToDetach, setAccountToDetach] = useState<SocialMediaAccount | null>(null);
   const [connectingPlatform, setConnectingPlatform] = useState<SocialMediaPlatform | null>(null);
   const [importingPostId, setImportingPostId] = useState<string | null>(null);
@@ -273,7 +274,6 @@ export default function SocialMedia() {
     query: { enabled: !!isSignedIn && !!selectedBusinessId, queryKey: postsKey },
   });
   const posts = postsQuery.data?.posts ?? [];
-  const shouldBoundPostQueue = posts.length > 3;
   const publishedPosts = useMemo(() => posts.filter(isPublishedPost), [posts]);
   const selectedCommentPost = publishedPosts.find((post) => post.id === selectedPostId);
   const commentsParams = { businessId: selectedBusinessId ?? "", postId: selectedPostId || undefined };
@@ -414,11 +414,22 @@ export default function SocialMedia() {
   const replyComment = useReplyToSocialMediaComment({
     mutation: {
       onSuccess: (_result, variables) => {
+        setReplyingCommentId(null);
         setReplyDrafts((current) => ({ ...current, [variables.id]: "" }));
         if (selectedBusinessId) queryClient.invalidateQueries({ queryKey: getListSocialMediaCommentsQueryKey({ businessId: selectedBusinessId, postId: selectedPostId || undefined }) });
         toast({ title: "Reply published" });
       },
-      onError: (error) => toast({ title: "Unable to publish reply", description: errorMessage(error, "Please try again."), variant: "destructive" }),
+      onError: (error) => {
+        setReplyingCommentId(null);
+        const message = errorMessage(error, "Please try again.");
+        toast({
+          title: "Reply was not published",
+          description: message.includes("provider could not complete")
+            ? "The social channel did not accept this reply. Refresh the channel access and try again."
+            : message,
+          variant: "destructive",
+        });
+      },
     },
   });
 
@@ -518,6 +529,14 @@ export default function SocialMedia() {
       data: { businessId: selectedBusinessId, postId: post.id, platform },
     });
   };
+  const handleReply = (commentId: string, text: string) => {
+    if (!selectedBusinessId || !text.trim() || replyingCommentId) return;
+    setReplyingCommentId(commentId);
+    replyComment.mutate({
+      id: commentId,
+      data: { businessId: selectedBusinessId, text: text.trim() },
+    });
+  };
   const togglePlatform = (platform: SocialMediaPlatform) => {
     setSelectedPlatforms((current) => current.includes(platform) ? current.filter((item) => item !== platform) : [...current, platform]);
   };
@@ -559,8 +578,8 @@ export default function SocialMedia() {
 
         {selectedBusinessId && (
           <>
-            <section className="grid gap-4 lg:grid-cols-[1.15fr_0.85fr]">
-              <Card className="overflow-hidden border-primary/15 bg-primary/[0.035]">
+            <section className="grid items-stretch gap-6 lg:grid-cols-2">
+              <Card className="flex h-full flex-col overflow-hidden border-primary/15 bg-primary/[0.035]">
                 <CardHeader className="border-b border-border/70 pb-4">
                   <div className="flex items-start justify-between gap-4">
                     <div>
@@ -586,7 +605,7 @@ export default function SocialMedia() {
                     )}
                 </CardContent>
               </Card>
-              <Card>
+              <Card className="flex h-full min-h-0 flex-col">
                 <CardHeader className="pb-3">
                   <CardTitle className="text-lg">Add a channel</CardTitle>
                    <CardDescription>Authorize a channel, then choose the exact account for this business.</CardDescription>
@@ -695,19 +714,18 @@ export default function SocialMedia() {
                   <div><CardTitle className="text-xl">Recent queue</CardTitle><CardDescription className="mt-1">See what is moving through this business.</CardDescription></div>
                   <Button variant="ghost" size="icon" onClick={() => postsQuery.refetch()} disabled={postsQuery.isFetching} aria-label="Refresh post queue" data-testid="button-refresh-posts"><RefreshCw className={cn("h-4 w-4", postsQuery.isFetching && "animate-spin")} /></Button>
                 </CardHeader>
-                <CardContent className="space-y-3">
+                <CardContent className="min-h-0 flex-1 space-y-3">
                   {postsQuery.isLoading ? <div data-testid="state-posts-loading" className="space-y-3">{[0, 1, 2].map((item) => <div key={item} className="space-y-3 rounded-2xl border border-border p-4"><Skeleton className="h-5 w-32" /><Skeleton className="h-16 w-full" /><Skeleton className="h-8 w-28" /></div>)}</div> :
                     postsQuery.isError ? <div className="rounded-xl border border-destructive/20 bg-destructive/5 p-4 text-sm" role="alert" data-testid="state-posts-error"><p className="font-semibold">Posts could not load</p><p className="mt-1 text-xs text-muted-foreground">{errorMessage(postsQuery.error, "Try again in a moment.")}</p><Button variant="outline" size="sm" className="mt-3" onClick={() => postsQuery.refetch()} data-testid="button-retry-posts">Try again</Button></div> :
                        posts.length ? (
                          <div
                            className={cn(
-                             "space-y-3",
-                             shouldBoundPostQueue && "max-h-[min(36rem,calc(100dvh-12rem))] overflow-y-auto overscroll-contain pr-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 lg:max-h-[min(42rem,calc(100dvh-14rem))]",
+                            "max-h-[min(36rem,calc(100dvh-12rem))] space-y-3 overflow-y-auto overscroll-contain pr-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 lg:max-h-[min(42rem,calc(100dvh-14rem))]",
                            )}
                            data-testid="post-queue-scroll"
-                           tabIndex={shouldBoundPostQueue ? 0 : undefined}
-                           role={shouldBoundPostQueue ? "region" : undefined}
-                           aria-label={shouldBoundPostQueue ? "Scrollable recent post queue" : undefined}
+                          tabIndex={0}
+                          role="region"
+                          aria-label="Scrollable recent post queue"
                          >
                            {posts.slice(0, 8).map((post) => <PostCard key={post.id} post={post} onImportComments={handleImportComments} importing={importingPostId === post.id} />)}
                          </div>
@@ -718,10 +736,10 @@ export default function SocialMedia() {
             </section>
 
             <section
-              className="grid items-stretch gap-6 lg:grid-cols-[0.8fr_1.2fr]"
+              className="grid items-stretch gap-6 lg:grid-cols-2"
               data-testid="social-conversations"
             >
-              <Card className="h-full">
+              <Card className="flex h-full min-h-0 flex-col">
                 <CardHeader><CardTitle className="flex items-center gap-2 text-xl"><MessageSquare className="h-4 w-4 text-primary" /> Public conversations</CardTitle><CardDescription className="mt-1">Import comments from a post, then reply without leaving the workspace.</CardDescription></CardHeader>
                 <CardContent className="space-y-4">
                   <div className="space-y-2"><Label htmlFor="comment-post">Live post to review</Label><Select value={selectedPostId} onValueChange={setSelectedPostId}><SelectTrigger id="comment-post" data-testid="select-comment-post"><SelectValue placeholder={publishedPosts.length ? "Choose a live post" : "Publish a post first"} /></SelectTrigger><SelectContent>{publishedPosts.map((post) => <SelectItem key={post.id} value={post.id} data-testid={`option-comment-post-${post.id}`}>{post.title || (post.caption || "Untitled post").slice(0, 42)}</SelectItem>)}</SelectContent></Select></div>
@@ -730,21 +748,21 @@ export default function SocialMedia() {
                   {!selectedPostId && <div className="rounded-xl bg-secondary/60 p-4 text-center text-xs leading-relaxed text-muted-foreground">{posts.length ? "Scheduled posts will be available here once they are live." : "Publish a post first to bring its public comments into this desk."}</div>}
                 </CardContent>
               </Card>
-              <Card className="h-full">
+              <Card className="flex h-full min-h-0 flex-col">
                 <CardHeader className="flex-row items-start justify-between gap-4 space-y-0"><div><CardTitle className="text-xl">Reply desk</CardTitle><CardDescription className="mt-1">{selectedPostId ? "Keep replies direct, useful, and on-brand." : "Select a post to load its conversation."}</CardDescription></div>{commentsQuery.isFetching && <RefreshCw className="h-4 w-4 animate-spin text-muted-foreground" />}</CardHeader>
-                <CardContent className="space-y-3">
+                <CardContent className="min-h-0 flex-1 space-y-3">
                   <div
                     className={cn(
-                      comments.length > 3 && "max-h-[min(36rem,calc(100dvh-16rem))] overflow-y-auto overscroll-contain pr-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+                      "max-h-[min(36rem,calc(100dvh-16rem))] overflow-y-auto overscroll-contain pr-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 lg:max-h-[min(42rem,calc(100dvh-18rem))]",
                     )}
                     data-testid="comment-desk-scroll"
-                    tabIndex={comments.length > 3 ? 0 : undefined}
-                    role={comments.length > 3 ? "region" : undefined}
-                    aria-label={comments.length > 3 ? "Scrollable reply desk" : undefined}
+                    tabIndex={0}
+                    role="region"
+                    aria-label="Scrollable reply desk"
                   >
                     {commentsQuery.isLoading ? <div data-testid="state-comments-loading" className="space-y-3">{[0, 1].map((item) => <div key={item} className="space-y-3 rounded-xl border border-border p-4"><Skeleton className="h-4 w-36" /><Skeleton className="h-12 w-full" /><Skeleton className="h-9 w-full" /></div>)}</div> :
                       commentsQuery.isError ? <div className="rounded-xl border border-destructive/20 bg-destructive/5 p-4 text-sm" role="alert" data-testid="state-comments-error"><p className="font-semibold">Comments could not load</p><p className="mt-1 text-xs text-muted-foreground">{errorMessage(commentsQuery.error, "Try importing the comments again.")}</p></div> :
-                        comments.length ? <div className="space-y-3">{comments.map((comment) => <CommentRow key={comment.id} comment={comment} draft={replyDrafts[comment.id] ?? ""} onDraftChange={(value) => setReplyDrafts((current) => ({ ...current, [comment.id]: value }))} onReply={() => selectedBusinessId && replyComment.mutate({ id: comment.id, data: { businessId: selectedBusinessId, text: (replyDrafts[comment.id] ?? "").trim() } })} isReplying={replyComment.isPending} />)}</div> :
+                        comments.length ? <div className="space-y-3">{comments.map((comment) => <CommentRow key={comment.id} comment={comment} draft={replyDrafts[comment.id] ?? ""} onDraftChange={(value) => setReplyDrafts((current) => ({ ...current, [comment.id]: value }))} onReply={() => handleReply(comment.id, replyDrafts[comment.id] ?? "")} isReplying={replyingCommentId === comment.id} isAnotherReplyPending={Boolean(replyingCommentId && replyingCommentId !== comment.id)} />)}</div> :
                           <div className="rounded-2xl border border-dashed border-border px-5 py-12 text-center" data-testid="state-no-comments"><div className="mx-auto mb-3 flex h-11 w-11 items-center justify-center rounded-xl bg-secondary text-muted-foreground"><MessageSquare className="h-5 w-5" /></div><p className="text-sm font-semibold">No imported comments yet</p><p className="mx-auto mt-1 max-w-sm text-xs leading-relaxed text-muted-foreground">Import a post's latest public comments to bring the conversation into this desk.</p></div>}
                   </div>
                 </CardContent>
@@ -770,12 +788,14 @@ function CommentRow({
   onDraftChange,
   onReply,
   isReplying,
+  isAnotherReplyPending,
 }: {
   comment: SocialMediaComment;
   draft: string;
   onDraftChange: (value: string) => void;
   onReply: () => void;
   isReplying: boolean;
+  isAnotherReplyPending: boolean;
 }) {
   return (
     <article className="rounded-2xl border border-border bg-background p-4" data-testid={`card-comment-${comment.id}`}>
@@ -783,7 +803,7 @@ function CommentRow({
         <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">{comment.authorName.slice(0, 1).toUpperCase()}</div>
         <div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-x-2 gap-y-1"><p className="text-sm font-semibold" data-testid={`text-comment-author-${comment.id}`}>{comment.authorName}</p>{comment.createdAt && <span className="text-xs text-muted-foreground">{formatDate(comment.createdAt, true)}</span>}</div><p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-foreground/85" data-testid={`text-comment-${comment.id}`}>{comment.text}</p></div>
       </div>
-      {comment.canReply ? <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-end"><Textarea value={draft} onChange={(event) => onDraftChange(event.target.value)} placeholder="Write a public reply..." maxLength={2000} className="min-h-20 resize-y text-sm" aria-label={`Reply to ${comment.authorName}`} data-testid={`textarea-reply-${comment.id}`} /><Button className="shrink-0 sm:mb-0" onClick={onReply} disabled={isReplying || !draft.trim()} data-testid={`button-reply-comment-${comment.id}`}>{isReplying ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}Reply</Button></div> : <p className="mt-3 text-xs text-muted-foreground">Replies are unavailable for this comment.</p>}
+      {comment.canReply ? <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-end"><Textarea value={draft} onChange={(event) => onDraftChange(event.target.value)} placeholder="Write a public reply..." maxLength={2000} className="min-h-20 resize-y text-sm" aria-label={`Reply to ${comment.authorName}`} data-testid={`textarea-reply-${comment.id}`} /><Button className="shrink-0 sm:mb-0" onClick={onReply} disabled={isReplying || isAnotherReplyPending || !draft.trim()} aria-busy={isReplying} data-testid={`button-reply-comment-${comment.id}`}>{isReplying ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />} {isReplying ? "Publishing..." : "Reply"}</Button></div> : <p className="mt-3 text-xs text-muted-foreground">Replies are unavailable for this comment.</p>}
     </article>
   );
 }

@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import SocialMedia from "./SocialMedia";
 
@@ -25,6 +25,7 @@ const mocks = vi.hoisted(() => ({
   postsLoading: false,
   commentsLoading: false,
   importCommentsMutate: vi.fn(),
+  replyMutate: vi.fn(),
 }));
 
 vi.mock("@workspace/api-client-react", () => {
@@ -85,7 +86,7 @@ vi.mock("@workspace/api-client-react", () => {
     useCreateSocialMediaPost: () => ({ mutate: vi.fn(), isPending: false }),
     useDetachSocialMediaAccount: () => ({ mutate: vi.fn(), isPending: false }),
     useImportSocialMediaComments: () => ({ mutate: mocks.importCommentsMutate, isPending: false }),
-    useReplyToSocialMediaComment: () => ({ mutate: vi.fn(), isPending: false }),
+    useReplyToSocialMediaComment: () => ({ mutate: mocks.replyMutate, isPending: false }),
     useRequestSocialMediaMediaUploadUrl: () => ({
       mutateAsync: vi.fn(),
       isPending: false,
@@ -137,6 +138,7 @@ beforeEach(() => {
   mocks.postsLoading = false;
   mocks.commentsLoading = false;
   mocks.importCommentsMutate.mockClear();
+  mocks.replyMutate.mockClear();
 });
 
 afterEach(() => {
@@ -413,8 +415,54 @@ describe("workspace layout", () => {
     });
 
     const queue = screen.getByTestId("post-queue-scroll");
-    expect(queue).not.toHaveClass("overflow-y-auto");
-    expect(queue).not.toHaveAttribute("role");
+    expect(queue).toHaveClass("overflow-y-auto");
+    expect(queue).toHaveAttribute("role", "region");
+    expect(queue).toHaveAttribute("tabindex", "0");
     expect(screen.getByTestId("state-no-comments")).toBeInTheDocument();
+  });
+
+  it("keeps reply loading scoped to the comment being submitted", async () => {
+    mocks.posts.push({
+      id: "reply-post",
+      status: "PUBLISHED",
+      platforms: ["FACEBOOK"],
+      title: "A post with two replies",
+      caption: "Caption",
+      publishedAt: null,
+      scheduledAt: null,
+    });
+    mocks.comments.push(
+      {
+        id: "comment-1",
+        authorName: "First customer",
+        text: "First comment",
+        createdAt: null,
+        canReply: true,
+      },
+      {
+        id: "comment-2",
+        authorName: "Second customer",
+        text: "Second comment",
+        createdAt: null,
+        canReply: true,
+      },
+    );
+
+    renderSocialMedia();
+
+    await waitFor(() => {
+      expect(screen.getByTestId("button-reply-comment-comment-1")).toBeInTheDocument();
+    });
+
+    const firstDraft = screen.getByTestId("textarea-reply-comment-1");
+    fireEvent.change(firstDraft, { target: { value: "Thanks for sharing!" } });
+    await screen.getByTestId("button-reply-comment-comment-1").click();
+
+    expect(mocks.replyMutate).toHaveBeenCalledWith({
+      id: "comment-1",
+      data: { businessId: "business-1", text: "Thanks for sharing!" },
+    });
+    expect(screen.getByTestId("button-reply-comment-comment-1")).toHaveAttribute("aria-busy", "true");
+    expect(screen.getByTestId("button-reply-comment-comment-2")).not.toHaveAttribute("aria-busy", "true");
   });
 });

@@ -919,9 +919,16 @@ export async function listSocialMediaPosts(
 }
 
 function commentPayload(raw: JsonRecord) {
-  const externalId = valueString(raw.externalId) ?? valueString(raw.id) ?? "";
+  // bundle.social uses `id` for the stored fetched-comment record. Replies
+  // must target that fetched ID, not the platform's `externalId`.
+  const fetchedId =
+    valueString(raw.id) ??
+    valueString(raw.commentId) ??
+    valueString(raw.externalId) ??
+    "";
+  const externalId = valueString(raw.externalId) ?? fetchedId;
   return {
-    id: externalId,
+    id: fetchedId,
     externalId,
     postId: valueString(raw.externalPostId) ?? valueString(raw.postId),
     text: valueString(raw.text) ?? valueString(raw.message) ?? "",
