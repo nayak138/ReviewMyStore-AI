@@ -10,6 +10,7 @@ import {
 import {
   bndleRequest,
   createSocialMediaProviderTeam,
+  disconnectProviderSocialAccount,
   withProviderOperationLock,
   ReviewProviderError,
 } from "./reviewManagementService";
@@ -559,6 +560,25 @@ export async function startSocialMediaConnection(
     );
   }
   return { authUrl, platform };
+}
+
+export async function disconnectSocialMediaConnection(
+  organizationId: string,
+  businessId: string,
+  platform: Platform,
+) {
+  await getBusiness(organizationId, businessId);
+  const teamId = await getOrCreateBusinessTeam(organizationId, businessId);
+  await disconnectProviderSocialAccount(teamId, platform);
+  await db
+    .delete(socialMediaAccountsTable)
+    .where(
+      and(
+        eq(socialMediaAccountsTable.organizationId, organizationId),
+        eq(socialMediaAccountsTable.businessId, businessId),
+        eq(socialMediaAccountsTable.platform, platform),
+      ),
+    );
 }
 
 export async function attachSocialMediaAccount(

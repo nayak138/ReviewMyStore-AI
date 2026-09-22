@@ -1185,6 +1185,11 @@ export interface SocialMediaAccountAttachInput {
   externalAccountId: string;
 }
 
+export interface SocialMediaConnectionResetInput {
+  businessId: string;
+  platform: SocialMediaPlatform;
+}
+
 export interface SocialMediaPostInput {
   businessId: string;
   /** @maxLength 160 */

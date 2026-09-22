@@ -32,6 +32,7 @@ import {
   getListSocialMediaCommentsQueryKey,
   getListSocialMediaPostsQueryKey,
   useAttachSocialMediaAccount,
+  useDisconnectSocialMediaConnection,
   useCreateSocialMediaPost,
   useDetachSocialMediaAccount,
   useGetSocialMediaDashboard,
@@ -125,11 +126,15 @@ function isPublishedPost(post: Pick<SocialMediaPost, "status" | "publishedAt">) 
 function AccountRow({
   account,
   onDetach,
+  onSwitch,
   isDetaching,
+  isSwitching,
 }: {
   account: SocialMediaAccount;
   onDetach: (account: SocialMediaAccount) => void;
+  onSwitch: (platform: SocialMediaPlatform) => void;
   isDetaching: boolean;
+  isSwitching: boolean;
 }) {
   const meta = PLATFORM_META[account.platform];
   return (
@@ -143,17 +148,30 @@ function AccountRow({
           <p className="truncate text-xs text-muted-foreground">{account.username ? `@${account.username}` : meta.label}</p>
         </div>
       </div>
-      <Button
-        variant="ghost"
-        size="sm"
-        className="shrink-0 text-muted-foreground hover:text-destructive"
-        onClick={() => onDetach(account)}
-        disabled={isDetaching}
-        data-testid={`button-detach-account-${account.id}`}
-      >
-        {isDetaching ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <Unplug className="mr-1.5 h-3.5 w-3.5" />}
-        Detach
-      </Button>
+      <div className="flex shrink-0 items-center gap-1">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="text-muted-foreground"
+          onClick={() => onSwitch(account.platform)}
+          disabled={isDetaching || isSwitching}
+          data-testid={`button-switch-account-${account.id}`}
+        >
+          {isSwitching ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="mr-1.5 h-3.5 w-3.5" />}
+          Switch
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="text-muted-foreground hover:text-destructive"
+          onClick={() => onDetach(account)}
+          disabled={isDetaching || isSwitching}
+          data-testid={`button-detach-account-${account.id}`}
+        >
+          {isDetaching ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <Unplug className="mr-1.5 h-3.5 w-3.5" />}
+          Detach
+        </Button>
+      </div>
     </div>
   );
 }
@@ -223,6 +241,7 @@ export default function SocialMedia() {
   const [replyingCommentId, setReplyingCommentId] = useState<string | null>(null);
   const [accountToDetach, setAccountToDetach] = useState<SocialMediaAccount | null>(null);
   const [connectingPlatform, setConnectingPlatform] = useState<SocialMediaPlatform | null>(null);
+  const [switchingPlatform, setSwitchingPlatform] = useState<SocialMediaPlatform | null>(null);
   const [importingPostId, setImportingPostId] = useState<string | null>(null);
   const [isUploadingMedia, setIsUploadingMedia] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -381,6 +400,14 @@ export default function SocialMedia() {
       onError: (error) => toast({ title: "Unable to detach account", description: errorMessage(error, "Please try again."), variant: "destructive" }),
     },
   });
+  const disconnectSocialAccount = useDisconnectSocialMediaConnection({
+    mutation: {
+      onError: (error) => {
+        setSwitchingPlatform(null);
+        toast({ title: "Unable to switch account", description: errorMessage(error, "Please try again."), variant: "destructive" });
+      },
+    },
+  });
   const finalizeUpload = useFinalizeUpload();
   const requestMediaUploadUrl = useRequestSocialMediaMediaUploadUrl();
   const createPost = useCreateSocialMediaPost({
@@ -437,6 +464,20 @@ export default function SocialMedia() {
     if (!selectedBusinessId) return;
     setConnectingPlatform(platform);
     startConnection.mutate({ data: { businessId: selectedBusinessId, platform } });
+  };
+  const handleSwitchAccount = (platform: SocialMediaPlatform) => {
+    if (!selectedBusinessId || switchingPlatform || connectingPlatform) return;
+    setSwitchingPlatform(platform);
+    disconnectSocialAccount.mutate(
+      { data: { businessId: selectedBusinessId, platform } },
+      {
+        onSuccess: () => {
+          invalidateSocial();
+          setSwitchingPlatform(null);
+          handleConnect(platform);
+        },
+      },
+    );
   };
   const handlePublish = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -597,7 +638,7 @@ export default function SocialMedia() {
                       <div className="rounded-xl border border-destructive/20 bg-destructive/5 p-4" role="alert" data-testid="state-dashboard-error">
                         <div className="flex gap-3"><AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" /><div><p className="text-sm font-semibold">Channels could not load</p><p className="mt-1 text-xs text-muted-foreground">{errorMessage(dashboardQuery.error, "Try refreshing this workspace.")}</p><Button variant="outline" size="sm" className="mt-3" onClick={() => dashboardQuery.refetch()} data-testid="button-retry-dashboard">Try again</Button></div></div>
                       </div>
-                    ) : dashboard?.accounts.length ? dashboard.accounts.map((account) => <AccountRow key={account.id} account={account} onDetach={setAccountToDetach} isDetaching={detachAccount.isPending} />) : (
+                    ) : dashboard?.accounts.length ? dashboard.accounts.map((account) => <AccountRow key={account.id} account={account} onDetach={setAccountToDetach} onSwitch={handleSwitchAccount} isDetaching={detachAccount.isPending} isSwitching={switchingPlatform === account.platform} />) : (
                       <div className="rounded-xl border border-dashed border-border px-4 py-7 text-center" data-testid="state-no-connected-accounts">
                         <p className="text-sm font-semibold">No channels attached yet</p>
                         <p className="mt-1 text-xs leading-relaxed text-muted-foreground">Start with a channel on the right, then choose the provider account for this business.</p>
@@ -684,8 +725,8 @@ export default function SocialMedia() {
                        );
                      })}
                    </RadioGroup>
-                   <p className="pt-2 text-xs leading-relaxed text-muted-foreground">
-                     If an account is missing, click Refresh access and authorize the correct Instagram, Facebook, or Threads account. Then use the radio row and dropdown to select the destination for this business.
+                    <p className="pt-2 text-xs leading-relaxed text-muted-foreground">
+                      If an account is missing, click Refresh access and authorize the correct Instagram, Facebook, or Threads account. To replace an attached account, use Switch first; it clears the current provider login and opens the account chooser.
                    </p>
                 </CardContent>
               </Card>
@@ -696,7 +737,7 @@ export default function SocialMedia() {
                data-testid="social-content-grid"
              >
                <div className="contents">
-                 <Card className="order-3 flex h-full min-w-0 flex-col border-primary/20 shadow-md shadow-primary/5 lg:col-start-2 lg:row-span-2 lg:row-start-1" data-testid="social-composer">
+                  <Card className="order-1 flex h-full min-w-0 flex-col border-primary/20 shadow-md shadow-primary/5 lg:order-none lg:col-start-2 lg:row-span-2 lg:row-start-1" data-testid="social-composer">
                 <CardHeader>
                    <div className="flex flex-wrap items-start justify-between gap-4"><div className="min-w-0"><CardTitle className="flex items-center gap-2 text-xl"><Send className="h-4 w-4 shrink-0 text-primary" /> Compose a post</CardTitle><CardDescription className="mt-1">Write once, attach media when needed, and choose where it goes.</CardDescription></div><Badge variant="secondary" className="shrink-0">Media-ready</Badge></div>
                 </CardHeader>
@@ -713,7 +754,7 @@ export default function SocialMedia() {
                 </CardContent>
               </Card>
 
-                 <Card className="order-1 min-w-0 lg:col-start-1 lg:row-start-1" data-testid="social-recent-queue">
+                  <Card className="order-2 min-w-0 lg:order-none lg:col-start-1 lg:row-start-1" data-testid="social-recent-queue">
                 <CardHeader className="flex-row items-start justify-between gap-4 space-y-0">
                   <div><CardTitle className="text-xl">Recent queue</CardTitle><CardDescription className="mt-1">See what is moving through this business.</CardDescription></div>
                   <Button variant="ghost" size="icon" onClick={() => postsQuery.refetch()} disabled={postsQuery.isFetching} aria-label="Refresh post queue" data-testid="button-refresh-posts"><RefreshCw className={cn("h-4 w-4", postsQuery.isFetching && "animate-spin")} /></Button>
@@ -740,7 +781,7 @@ export default function SocialMedia() {
                </div>
 
              <div className="contents">
-                 <Card className="order-2 flex min-h-0 min-w-0 flex-col lg:col-start-1 lg:row-start-2" data-testid="social-reply-desk">
+                  <Card className="order-3 flex min-h-0 min-w-0 flex-col lg:order-none lg:col-start-1 lg:row-start-2" data-testid="social-reply-desk">
                 <CardHeader className="flex-row items-start justify-between gap-4 space-y-0"><div><CardTitle className="text-xl">Reply desk</CardTitle><CardDescription className="mt-1">{selectedPostId ? "Keep replies direct, useful, and on-brand." : "Select a post to load its conversation."}</CardDescription></div>{commentsQuery.isFetching && <RefreshCw className="h-4 w-4 animate-spin text-muted-foreground" />}</CardHeader>
                   <CardContent className="min-h-0 min-w-0 flex-1 space-y-4">
                    <div className="space-y-2">

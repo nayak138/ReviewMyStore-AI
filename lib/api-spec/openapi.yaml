@@ -414,6 +414,37 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      operationId: disconnectSocialMediaConnection
+      tags: [social-media]
+      summary: Clear a provider social account so a different login can be connected
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SocialMediaConnectionResetInput"
+      responses:
+        "204":
+          description: Provider social account disconnected
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Business not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
   /v1/social-media/accounts/attach:
     post:
@@ -4749,6 +4780,18 @@ components:
       required:
         - businessId
         - externalAccountId
+
+    SocialMediaConnectionResetInput:
+      type: object
+      properties:
+        businessId:
+          type: string
+          format: uuid
+        platform:
+          $ref: "#/components/schemas/SocialMediaPlatform"
+      required:
+        - businessId
+        - platform
 
     SocialMediaPostInput:
       type: object

@@ -105,6 +105,7 @@ import type {
   SocialMediaCommentListResult,
   SocialMediaCommentReplyInput,
   SocialMediaConnectionInput,
+  SocialMediaConnectionResetInput,
   SocialMediaConnectionStartResult,
   SocialMediaDashboardResult,
   SocialMediaMediaUploadInput,
@@ -1033,6 +1034,77 @@ export const useStartSocialMediaConnection = <TError = ErrorType<ErrorResponse>,
         TContext
       > => {
       return useMutation(getStartSocialMediaConnectionMutationOptions(options));
+    }
+
+export const getDisconnectSocialMediaConnectionUrl = () => {
+
+
+
+
+  return `/api/v1/social-media/connection`
+}
+
+/**
+ * @summary Clear a provider social account so a different login can be connected
+ */
+export const disconnectSocialMediaConnection = async (socialMediaConnectionResetInput: SocialMediaConnectionResetInput, options?: Parameters<typeof customFetch>[1]): Promise<void> => {
+
+  return customFetch<void>(getDisconnectSocialMediaConnectionUrl(),
+  {
+    ...options,
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(socialMediaConnectionResetInput)
+  }
+);}
+
+
+
+
+
+export const getDisconnectSocialMediaConnectionMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof disconnectSocialMediaConnection>>, TError,{data: BodyType<SocialMediaConnectionResetInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof disconnectSocialMediaConnection>>, TError,{data: BodyType<SocialMediaConnectionResetInput>}, TContext> => {
+
+const mutationKey = ['disconnectSocialMediaConnection'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof disconnectSocialMediaConnection>>, {data: BodyType<SocialMediaConnectionResetInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  disconnectSocialMediaConnection(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DisconnectSocialMediaConnectionMutationResult = NonNullable<Awaited<ReturnType<typeof disconnectSocialMediaConnection>>>
+    export type DisconnectSocialMediaConnectionMutationBody = BodyType<SocialMediaConnectionResetInput>
+    export type DisconnectSocialMediaConnectionMutationError = ErrorType<ErrorResponse>
+
+    /**
+ * @summary Clear a provider social account so a different login can be connected
+ */
+export const useDisconnectSocialMediaConnection = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof disconnectSocialMediaConnection>>, TError,{data: BodyType<SocialMediaConnectionResetInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof disconnectSocialMediaConnection>>,
+        TError,
+        {data: BodyType<SocialMediaConnectionResetInput>},
+        TContext
+      > => {
+      return useMutation(getDisconnectSocialMediaConnectionMutationOptions(options));
     }
 
 export const getAttachSocialMediaAccountUrl = () => {

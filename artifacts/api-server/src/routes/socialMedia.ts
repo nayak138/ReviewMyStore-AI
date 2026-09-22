@@ -4,6 +4,7 @@ import {
   AttachSocialMediaAccountResponse,
   CreateSocialMediaPostBody,
   CreateSocialMediaPostResponse,
+  DisconnectSocialMediaConnectionBody,
   GetSocialMediaDashboardQueryParams,
   GetSocialMediaDashboardResponse,
   ImportSocialMediaCommentsBody,
@@ -27,6 +28,7 @@ import {
   attachSocialMediaAccount,
   createSocialMediaPost,
   detachSocialMediaAccount,
+  disconnectSocialMediaConnection,
   getSocialMediaDashboard,
   importSocialMediaComments,
   listSocialMediaComments,
@@ -150,6 +152,35 @@ router.post(
       res.json(StartSocialMediaConnectionResponse.parse(result));
     } catch (error) {
       req.log.warn({ err: error }, "Unable to start social media connection");
+      sendError(res, error);
+    }
+  },
+);
+
+router.delete(
+  "/social-media/connection",
+  requireAuth,
+  async (req, res): Promise<void> => {
+    const parsed = DisconnectSocialMediaConnectionBody.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({
+        success: false,
+        code: "INVALID_REQUEST",
+        message: parsed.error.message,
+      });
+      return;
+    }
+    const organizationId = requireOrganization(req, res);
+    if (!organizationId) return;
+    try {
+      await disconnectSocialMediaConnection(
+        organizationId,
+        parsed.data.businessId,
+        parsed.data.platform,
+      );
+      res.status(204).send();
+    } catch (error) {
+      req.log.warn({ err: error }, "Unable to disconnect social media account");
       sendError(res, error);
     }
   },

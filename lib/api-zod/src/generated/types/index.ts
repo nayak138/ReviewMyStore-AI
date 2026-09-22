@@ -141,6 +141,7 @@ export * from './socialMediaCommentImportResult';
 export * from './socialMediaCommentListResult';
 export * from './socialMediaCommentReplyInput';
 export * from './socialMediaConnectionInput';
+export * from './socialMediaConnectionResetInput';
 export * from './socialMediaConnectionStartResult';
 export * from './socialMediaDashboardResult';
 export * from './socialMediaMediaUploadInput';

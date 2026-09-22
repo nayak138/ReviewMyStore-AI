@@ -93,6 +93,7 @@ vi.mock("@workspace/api-client-react", () => {
       data: commentsData,
     }),
     useAttachSocialMediaAccount: () => ({ mutate: vi.fn(), isPending: false }),
+    useDisconnectSocialMediaConnection: () => ({ mutate: vi.fn(), isPending: false }),
     useCreateSocialMediaPost: () => ({ mutate: vi.fn(), isPending: false }),
     useDetachSocialMediaAccount: () => ({ mutate: vi.fn(), isPending: false }),
     useImportSocialMediaComments: () => ({ mutate: mocks.importCommentsMutate, isPending: false }),

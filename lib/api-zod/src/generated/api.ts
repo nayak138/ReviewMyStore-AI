@@ -359,6 +359,17 @@ export const StartSocialMediaConnectionResponse = zod.object({
 
 
 /**
+ * @summary Clear a provider social account so a different login can be connected
+ */
+export const DisconnectSocialMediaConnectionBody = zod.object({
+  "businessId": zod.uuid(),
+  "platform": zod.enum(['FACEBOOK', 'INSTAGRAM', 'THREADS'])
+})
+
+export const DisconnectSocialMediaConnectionResponse = zod.void()
+
+
+/**
  * @summary Attach a connected provider account to a business
  */
 

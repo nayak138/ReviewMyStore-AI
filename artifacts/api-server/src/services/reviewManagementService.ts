@@ -281,6 +281,16 @@ export async function bndleRequest<T extends JsonRecord = JsonRecord>(
   return payload as T;
 }
 
+export async function disconnectProviderSocialAccount(
+  teamId: string,
+  type: string,
+) {
+  await bndleRequest("social-account/disconnect", {
+    method: "DELETE",
+    body: JSON.stringify({ teamId, type }),
+  });
+}
+
 async function createProviderTeam(teamName: string): Promise<string> {
   const created = await bndleRequest("team/", {
     method: "POST",
@@ -592,6 +602,7 @@ async function startReviewProviderConnectionUnlocked(
   appOrigin?: string,
   businessId?: string,
 ) {
+  const previousConnection = await getConnection(organizationId);
   const teamId = await getOrCreateProviderTeam(organizationId);
   const [connection] = await db
     .insert(providerConnectionsTable)
@@ -625,7 +636,18 @@ async function startReviewProviderConnectionUnlocked(
   // that's the case, skip straight to reporting where that existing account
   // actually stands instead of trying (and failing) to start a new OAuth
   // round trip.
-  const existingAccount = await findGoogleBusinessSocialAccount(teamId);
+  let existingAccount = await findGoogleBusinessSocialAccount(teamId);
+  if (
+    existingAccount &&
+    (previousConnection?.status === "DISCONNECTED" ||
+      previousConnection?.status === "ERROR")
+  ) {
+    // Older versions only changed our local status on disconnect. Clear that
+    // stale provider account before starting a fresh OAuth round trip so the
+    // owner can choose a different Google login.
+    await disconnectProviderSocialAccount(teamId, "GOOGLE_BUSINESS");
+    existingAccount = null;
+  }
   if (existingAccount) {
     const { stage, locations } = resolveLocationStage(existingAccount);
     return {
@@ -791,6 +813,10 @@ export async function disconnectReviewProvider(organizationId: string) {
 async function disconnectReviewProviderUnlocked(organizationId: string) {
   const connection = await getConnection(organizationId);
   if (connection) {
+    await disconnectProviderSocialAccount(
+      connection.externalProfileId,
+      "GOOGLE_BUSINESS",
+    );
     await db
       .update(providerConnectionsTable)
       .set({

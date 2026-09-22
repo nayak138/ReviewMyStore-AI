@@ -15,6 +15,7 @@ import {
 import { ObjectStorageService } from "../lib/objectStorage";
 import {
   createSocialMediaPost,
+  disconnectSocialMediaConnection,
   importSocialMediaComments,
   listSocialMediaComments,
   listSocialMediaPosts,
@@ -492,6 +493,23 @@ test("uses an isolated provider team for each business in one organization", asy
   );
   assert.equal(teamCalls.at(-1)?.path, `team/team-second-${runId}`);
   assert.equal(postCall?.body.teamId, `team-second-${runId}`);
+});
+
+test("switching a social account clears the provider authorization and local attachment", async () => {
+  await disconnectSocialMediaConnection(organizationId, businessId, "FACEBOOK");
+
+  const disconnectCall = providerCalls.find(
+    (call) => call.path === "social-account/disconnect",
+  );
+  assert.equal(disconnectCall?.body.teamId, `team-${runId}`);
+  assert.equal(disconnectCall?.body.type, "FACEBOOK");
+
+  const remaining = await db
+    .select()
+    .from(socialMediaAccountsTable)
+    .where(eq(socialMediaAccountsTable.businessId, businessId));
+  assert.equal(remaining.some((account) => account.platform === "FACEBOOK"), false);
+  assert.equal(remaining.some((account) => account.platform === "INSTAGRAM"), true);
 });
 
 test("includes the selected social account type when importing comments", async () => {

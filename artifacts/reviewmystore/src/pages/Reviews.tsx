@@ -460,6 +460,7 @@ export default function Reviews() {
   const [rating, setRating] = useState<string>("all");
   const [responseStatus, setResponseStatus] = useState<string>("all");
   const [disconnectDialogOpen, setDisconnectDialogOpen] = useState(false);
+  const [disconnectAction, setDisconnectAction] = useState<"disconnect" | "switch">("disconnect");
 
   // Google redirects back to this exact page (see getConnectCallbackUrl on
   // the server) once OAuth finishes. Detect that once on mount and strip the
@@ -666,6 +667,11 @@ export default function Reviews() {
     },
   });
 
+  const openDisconnectDialog = (action: "disconnect" | "switch") => {
+    setDisconnectAction(action);
+    setDisconnectDialogOpen(true);
+  };
+
   // Connecting happens in a separate tab (Google refuses OAuth in an iframe).
   // Our local status only flips from PENDING to CONNECTED once a sync runs,
   // so auto-trigger a sync when the user comes back to this tab instead of
@@ -720,7 +726,7 @@ export default function Reviews() {
         }}
         onRetry={() => {
           setCallbackStage("idle");
-          startConnection.mutate();
+          startConnection.mutate({ data: {} });
         }}
         isConfirming={selectLocation.isPending}
       />
@@ -774,7 +780,7 @@ export default function Reviews() {
               size="lg"
               className="mt-6 shadow-md"
               disabled={startConnection.isPending}
-               onClick={() => startConnection.mutate()}
+               onClick={() => startConnection.mutate({ data: {} })}
             >
               {startConnection.isPending ? (
                 <RefreshCw className="w-5 h-5 mr-2 animate-spin" />
@@ -833,7 +839,7 @@ export default function Reviews() {
                 size="lg"
                 className="shadow-sm"
                 disabled={startConnection.isPending}
-                onClick={() => startConnection.mutate()}
+                onClick={() => startConnection.mutate({ data: {} })}
               >
                 Retry Connection
               </Button>
@@ -870,10 +876,20 @@ export default function Reviews() {
               Sync Now
             </Button>
             <Button
+              variant="outline"
+              size="sm"
+              className="bg-background shadow-sm"
+              onClick={() => openDisconnectDialog("switch")}
+              disabled={disconnectProvider.isPending || startConnection.isPending}
+            >
+              <RefreshCw className="w-4 h-4 mr-2" />
+              Switch Google account
+            </Button>
+            <Button
               variant="ghost"
               size="sm"
               className="text-destructive hover:bg-destructive/10 hover:text-destructive"
-              onClick={() => setDisconnectDialogOpen(true)}
+              onClick={() => openDisconnectDialog("disconnect")}
               disabled={disconnectProvider.isPending}
             >
               <Link2Off className="w-4 h-4 mr-2" />
@@ -1009,26 +1025,38 @@ export default function Reviews() {
         >
           <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle>Disconnect this Google Business store?</AlertDialogTitle>
+              <AlertDialogTitle>
+                {disconnectAction === "switch"
+                  ? "Switch Google account?"
+                  : "Disconnect this Google Business store?"}
+              </AlertDialogTitle>
               <AlertDialogDescription>
-                Review syncing and Google reply actions will stop immediately. Your
-                imported review history stays in 5-Star.AI, and you can connect
-                this or a different store again whenever you’re ready.
+                {disconnectAction === "switch"
+                  ? "The current Google authorization will be cleared, then Google will open so you can choose the correct account. Your imported review history stays in 5-Star.AI."
+                  : "Review syncing and Google reply actions will stop immediately. Your imported review history stays in 5-Star.AI, and you can connect this or a different store again whenever you’re ready."}
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel disabled={disconnectProvider.isPending}>
+              <AlertDialogCancel disabled={disconnectProvider.isPending || startConnection.isPending}>
                 Keep connected
               </AlertDialogCancel>
               <AlertDialogAction
-                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                disabled={disconnectProvider.isPending}
+                className={disconnectAction === "switch" ? undefined : "bg-destructive text-destructive-foreground hover:bg-destructive/90"}
+                disabled={disconnectProvider.isPending || startConnection.isPending}
                 onClick={(event) => {
                   event.preventDefault();
-                  disconnectProvider.mutate();
+                  disconnectProvider.mutate(undefined, {
+                    onSuccess: () => {
+                      if (disconnectAction === "switch") {
+                        startConnection.mutate({ data: {} });
+                      }
+                    },
+                  });
                 }}
               >
-                {disconnectProvider.isPending ? "Disconnecting…" : "Disconnect store"}
+                {disconnectProvider.isPending
+                  ? disconnectAction === "switch" ? "Clearing account…" : "Disconnecting…"
+                  : disconnectAction === "switch" ? "Switch account" : "Disconnect store"}
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>

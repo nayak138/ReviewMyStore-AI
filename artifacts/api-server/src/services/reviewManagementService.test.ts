@@ -27,6 +27,7 @@ import {
   ReviewProviderError,
   deleteManagedReviewReply,
   bndleRequest,
+  disconnectReviewProvider,
   generateManagedReviewDraft,
   getReviewDashboard,
   getReviewProviderConnectionLocations,
@@ -633,6 +634,27 @@ test("starting a connection fails loudly when the provider returns no OAuth link
       return true;
     },
   );
+});
+
+test("disconnecting Google clears the provider account before marking the local connection disconnected", async () => {
+  const org = await createOrg("disconnect");
+  const teamId = `team-disconnect-${runId}`;
+  await createConnection(org.id, teamId);
+
+  providerFetch.handler = (url, init) => {
+    const method = (init.method ?? "GET").toUpperCase();
+    const path = url.pathname;
+    if (path.endsWith("/social-account/disconnect") && method === "DELETE") {
+      const body = JSON.parse(String(init.body)) as Record<string, unknown>;
+      assert.equal(body.teamId, teamId);
+      assert.equal(body.type, "GOOGLE_BUSINESS");
+      return { body: {} };
+    }
+    throw new Error(`Unexpected provider request: ${method} ${path}`);
+  };
+
+  const dashboard = await disconnectReviewProvider(org.id);
+  assert.equal(dashboard.connection.status, "DISCONNECTED");
 });
 
 // ---------------------------------------------------------------------------
