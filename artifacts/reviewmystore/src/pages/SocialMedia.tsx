@@ -476,7 +476,7 @@ export default function SocialMedia() {
 
   return (
     <AppLayout title="Social Media" businessName={workspaceBusiness?.name}>
-      <div className="mx-auto max-w-6xl space-y-6 p-4 md:p-8">
+      <div className="mx-auto flex min-h-full max-w-6xl flex-col space-y-6 p-4 md:p-8">
         {workspaceBusiness && (
           <BusinessTabs businessId={workspaceBusiness.id} businessName={workspaceBusiness.name} active="social-media" />
         )}
@@ -650,8 +650,8 @@ export default function SocialMedia() {
               </Card>
             </section>
 
-            <section className="grid gap-6 lg:grid-cols-[0.8fr_1.2fr]">
-              <Card>
+            <section className="grid flex-1 items-stretch gap-6 lg:grid-cols-[0.8fr_1.2fr]">
+              <Card className="h-full">
                 <CardHeader><CardTitle className="flex items-center gap-2 text-xl"><MessageSquare className="h-4 w-4 text-primary" /> Public conversations</CardTitle><CardDescription className="mt-1">Import comments from a post, then reply without leaving the workspace.</CardDescription></CardHeader>
                 <CardContent className="space-y-4">
                   <div className="space-y-2"><Label htmlFor="comment-post">Post to review</Label><Select value={selectedPostId} onValueChange={setSelectedPostId}><SelectTrigger id="comment-post" data-testid="select-comment-post"><SelectValue placeholder={posts.length ? "Choose a post" : "Create a post first"} /></SelectTrigger><SelectContent>{posts.map((post) => <SelectItem key={post.id} value={post.id} data-testid={`option-comment-post-${post.id}`}>{post.title || (post.caption || "Untitled post").slice(0, 42)}</SelectItem>)}</SelectContent></Select></div>
@@ -659,7 +659,7 @@ export default function SocialMedia() {
                   {!selectedPostId && <div className="rounded-xl bg-secondary/60 p-4 text-center text-xs leading-relaxed text-muted-foreground">Choose a recent post to see its imported comments here.</div>}
                 </CardContent>
               </Card>
-              <Card>
+              <Card className="h-full">
                 <CardHeader className="flex-row items-start justify-between gap-4 space-y-0"><div><CardTitle className="text-xl">Reply desk</CardTitle><CardDescription className="mt-1">{selectedPostId ? "Keep replies direct, useful, and on-brand." : "Select a post to load its conversation."}</CardDescription></div>{commentsQuery.isFetching && <RefreshCw className="h-4 w-4 animate-spin text-muted-foreground" />}</CardHeader>
                 <CardContent className="space-y-3">
                   {commentsQuery.isLoading ? [0, 1].map((item) => <div key={item} className="space-y-3 rounded-xl border border-border p-4"><Skeleton className="h-4 w-36" /><Skeleton className="h-12 w-full" /><Skeleton className="h-9 w-full" /></div>) :

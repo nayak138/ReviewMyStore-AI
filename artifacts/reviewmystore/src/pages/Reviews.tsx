@@ -720,7 +720,7 @@ export default function Reviews() {
         }}
         onRetry={() => {
           setCallbackStage("idle");
-          startConnection.mutate({ data: { businessId: workspaceBusiness?.id } });
+          startConnection.mutate();
         }}
         isConfirming={selectLocation.isPending}
       />
@@ -774,7 +774,7 @@ export default function Reviews() {
               size="lg"
               className="mt-6 shadow-md"
               disabled={startConnection.isPending}
-               onClick={() => startConnection.mutate({ data: { businessId: workspaceBusiness?.id } })}
+               onClick={() => startConnection.mutate()}
             >
               {startConnection.isPending ? (
                 <RefreshCw className="w-5 h-5 mr-2 animate-spin" />
@@ -833,7 +833,7 @@ export default function Reviews() {
                 size="lg"
                 className="shadow-sm"
                 disabled={startConnection.isPending}
-                onClick={() => startConnection.mutate({ data: { businessId: workspaceBusiness?.id } })}
+                onClick={() => startConnection.mutate()}
               >
                 Retry Connection
               </Button>
