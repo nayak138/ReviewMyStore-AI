@@ -145,7 +145,7 @@ function AuthLayout({ children }: { children: ReactNode }) {
   );
 }
 
-function SignInPage() {
+export function SignInPage() {
   const searchParams = new URLSearchParams(window.location.search);
   const returnTo = safeReturnPath(searchParams.get("redirect_url"));
   const sessionExpired = searchParams.get("session_expired") === "1";
