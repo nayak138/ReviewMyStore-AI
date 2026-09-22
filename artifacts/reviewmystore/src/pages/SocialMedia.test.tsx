@@ -227,10 +227,12 @@ describe("workspace layout", () => {
     });
 
     expect(screen.getByTestId("social-content-grid")).toBeInTheDocument();
+    expect(screen.getByTestId("social-channel-grid")).toHaveClass("lg:grid-cols-2");
     expect(screen.getByTestId("social-reply-desk")).toBeInTheDocument();
-    expect(screen.getByTestId("social-composer")).toHaveClass("xl:col-start-2", "xl:row-start-1");
-    expect(screen.getByTestId("social-recent-queue")).toHaveClass("xl:col-start-1", "xl:row-start-1");
-    expect(screen.getByTestId("social-reply-desk")).toHaveClass("xl:col-start-1", "xl:row-start-2");
+    expect(screen.getByTestId("social-content-grid")).toHaveClass("lg:grid-cols-2", "items-stretch");
+    expect(screen.getByTestId("social-composer")).toHaveClass("lg:col-start-2", "lg:row-start-1", "lg:row-span-2");
+    expect(screen.getByTestId("social-recent-queue")).toHaveClass("lg:col-start-1", "lg:row-start-1");
+    expect(screen.getByTestId("social-reply-desk")).toHaveClass("lg:col-start-1", "lg:row-start-2");
     expect(screen.getByTestId("social-content-grid")).toHaveClass("min-w-0");
     expect(screen.queryByText("Public conversations")).not.toBeInTheDocument();
     expect(screen.getByText("Publish a post first to bring its public comments into this desk.")).toBeInTheDocument();

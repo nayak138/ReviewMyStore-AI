@@ -578,7 +578,7 @@ export default function SocialMedia() {
 
         {selectedBusinessId && (
           <>
-            <section className="grid min-w-0 items-stretch gap-6 lg:grid-cols-2">
+             <section className="grid min-w-0 items-stretch gap-6 lg:grid-cols-2" data-testid="social-channel-grid">
               <Card className="flex h-full min-w-0 flex-col overflow-hidden border-primary/15 bg-primary/[0.035]">
                 <CardHeader className="border-b border-border/70 pb-4">
                   <div className="flex items-start justify-between gap-4">
@@ -691,12 +691,12 @@ export default function SocialMedia() {
               </Card>
             </section>
 
-             <section
-                className="grid min-w-0 items-start gap-6 xl:grid-cols-[minmax(0,1.05fr)_minmax(22rem,0.95fr)]"
+              <section
+                 className="grid min-w-0 items-stretch gap-6 lg:grid-cols-2"
                data-testid="social-content-grid"
              >
                <div className="contents">
-                <Card className="min-w-0 border-primary/20 shadow-md shadow-primary/5 xl:col-start-2 xl:row-start-1" data-testid="social-composer">
+                 <Card className="order-3 flex h-full min-w-0 flex-col border-primary/20 shadow-md shadow-primary/5 lg:col-start-2 lg:row-span-2 lg:row-start-1" data-testid="social-composer">
                 <CardHeader>
                    <div className="flex flex-wrap items-start justify-between gap-4"><div className="min-w-0"><CardTitle className="flex items-center gap-2 text-xl"><Send className="h-4 w-4 shrink-0 text-primary" /> Compose a post</CardTitle><CardDescription className="mt-1">Write once, attach media when needed, and choose where it goes.</CardDescription></div><Badge variant="secondary" className="shrink-0">Media-ready</Badge></div>
                 </CardHeader>
@@ -713,7 +713,7 @@ export default function SocialMedia() {
                 </CardContent>
               </Card>
 
-                <Card className="min-w-0 xl:col-start-1 xl:row-start-1" data-testid="social-recent-queue">
+                 <Card className="order-1 min-w-0 lg:col-start-1 lg:row-start-1" data-testid="social-recent-queue">
                 <CardHeader className="flex-row items-start justify-between gap-4 space-y-0">
                   <div><CardTitle className="text-xl">Recent queue</CardTitle><CardDescription className="mt-1">See what is moving through this business.</CardDescription></div>
                   <Button variant="ghost" size="icon" onClick={() => postsQuery.refetch()} disabled={postsQuery.isFetching} aria-label="Refresh post queue" data-testid="button-refresh-posts"><RefreshCw className={cn("h-4 w-4", postsQuery.isFetching && "animate-spin")} /></Button>
@@ -740,7 +740,7 @@ export default function SocialMedia() {
                </div>
 
              <div className="contents">
-                <Card className="flex min-h-0 min-w-0 flex-col xl:col-start-1 xl:row-start-2" data-testid="social-reply-desk">
+                 <Card className="order-2 flex min-h-0 min-w-0 flex-col lg:col-start-1 lg:row-start-2" data-testid="social-reply-desk">
                 <CardHeader className="flex-row items-start justify-between gap-4 space-y-0"><div><CardTitle className="text-xl">Reply desk</CardTitle><CardDescription className="mt-1">{selectedPostId ? "Keep replies direct, useful, and on-brand." : "Select a post to load its conversation."}</CardDescription></div>{commentsQuery.isFetching && <RefreshCw className="h-4 w-4 animate-spin text-muted-foreground" />}</CardHeader>
                   <CardContent className="min-h-0 min-w-0 flex-1 space-y-4">
                    <div className="space-y-2">
