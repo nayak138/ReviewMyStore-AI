@@ -5,6 +5,7 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { BusinessUsageSummaryItem } from './businessUsageSummaryItem';
 import type { SocialMediaAccount } from './socialMediaAccount';
 import type { SocialMediaAvailableAccount } from './socialMediaAvailableAccount';
 
@@ -12,4 +13,5 @@ export interface SocialMediaDashboardResult {
   teamId: string;
   accounts: SocialMediaAccount[];
   availableAccounts: SocialMediaAvailableAccount[];
+  usage: BusinessUsageSummaryItem[];
 }

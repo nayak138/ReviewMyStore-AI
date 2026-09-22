@@ -8,5 +8,5 @@
 
 export interface ReviewProviderConnectionInput {
   /** Business workspace to return to after Google authorization */
-  businessId?: string;
+  businessId: string;
 }

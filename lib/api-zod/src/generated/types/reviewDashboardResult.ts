@@ -5,6 +5,7 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { BusinessUsageSummaryItem } from './businessUsageSummaryItem';
 import type { ReviewInboxSummary } from './reviewInboxSummary';
 import type { ReviewLocation } from './reviewLocation';
 import type { ReviewProviderConnection } from './reviewProviderConnection';
@@ -13,4 +14,5 @@ export interface ReviewDashboardResult {
   connection: ReviewProviderConnection;
   locations: ReviewLocation[];
   summary: ReviewInboxSummary;
+  usage: BusinessUsageSummaryItem[];
 }

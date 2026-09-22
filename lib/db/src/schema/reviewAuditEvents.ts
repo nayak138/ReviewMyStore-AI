@@ -16,9 +16,12 @@ export const reviewAuditEventsTable = pgTable(
     organizationId: text("organization_id")
       .notNull()
       .references(() => organizationsTable.id, { onDelete: "cascade" }),
-    managedReviewId: text("managed_review_id")
-      .notNull()
-      .references(() => managedReviewsTable.id, { onDelete: "cascade" }),
+    // Provider-linked reviews can be removed when a business replaces its
+    // Google location. Keep the immutable audit event even after that cleanup.
+    managedReviewId: text("managed_review_id").references(
+      () => managedReviewsTable.id,
+      { onDelete: "set null" },
+    ),
     actorUserId: text("actor_user_id").references(() => usersTable.id, {
       onDelete: "set null",
     }),

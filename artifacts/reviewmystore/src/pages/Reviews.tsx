@@ -454,6 +454,7 @@ export default function Reviews() {
   const workspaceTabs = workspaceBusiness ? (
     <BusinessTabs businessId={workspaceBusiness.id} businessName={workspaceBusiness.name} active="reviews" />
   ) : null;
+  const businessId = workspaceBusiness?.id ?? "";
 
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 500);
@@ -482,9 +483,9 @@ export default function Reviews() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const dashboardKey = getGetReviewDashboardQueryKey();
-  const { data: dashboard, isLoading: dashboardLoading } = useGetReviewDashboard({
-    query: { enabled: !!isSignedIn, queryKey: dashboardKey }
+  const dashboardKey = getGetReviewDashboardQueryKey({ businessId });
+  const { data: dashboard, isLoading: dashboardLoading } = useGetReviewDashboard({ businessId }, {
+    query: { enabled: !!isSignedIn && !!businessId, queryKey: dashboardKey }
   });
 
   const matchingReviewLocation = workspaceBusiness
@@ -499,6 +500,7 @@ export default function Reviews() {
   const reviewLocationId = matchingReviewLocation?.id ?? (dashboard?.locations.length === 1 ? dashboard.locations[0].id : undefined);
 
   const listParams = {
+    businessId,
     locationId: reviewLocationId,
     rating: rating === "all" ? undefined : Number(rating),
     responseStatus: responseStatus === "all" ? undefined : (responseStatus as ReviewResponseStatus),
@@ -538,7 +540,7 @@ export default function Reviews() {
       if (matchingLocation) {
         setSelectedLocationId(matchingLocation.id);
         setCallbackStage("connecting");
-        selectLocation.mutate({ data: { locationId: matchingLocation.id } });
+        selectLocation.mutate({ data: { businessId, locationId: matchingLocation.id } });
       } else {
         setPickerLocations(locations);
         setCallbackStage("picker");
@@ -546,7 +548,7 @@ export default function Reviews() {
     } else if (stage === "READY") {
       setCallbackStage("idle");
       queryClient.invalidateQueries({ queryKey: dashboardKey });
-      syncProvider.mutate();
+      syncProvider.mutate({ params: { businessId } });
     } else if (stage === "NO_LOCATIONS_FOUND") {
       setCallbackStage("no_locations");
     } else {
@@ -606,10 +608,10 @@ export default function Reviews() {
     }
   });
 
-  const locationsQuery = useGetReviewProviderLocations({
+  const locationsQuery = useGetReviewProviderLocations({ businessId }, {
     query: {
-      enabled: callbackStage === "checking",
-      queryKey: getGetReviewProviderLocationsQueryKey(),
+      enabled: callbackStage === "checking" && !!businessId,
+      queryKey: getGetReviewProviderLocationsQueryKey({ businessId }),
     },
   });
 
@@ -682,7 +684,7 @@ export default function Reviews() {
     if (dashboard?.connection.status !== "PENDING") return;
     const trySync = () => {
       if (document.visibilityState === "visible" && !syncProvider.isPending) {
-        syncProvider.mutate();
+         syncProvider.mutate({ params: { businessId } });
       }
     };
     window.addEventListener("focus", trySync);
@@ -722,11 +724,11 @@ export default function Reviews() {
         onSelectLocation={setSelectedLocationId}
         onConfirm={() => {
           if (!selectedLocationId) return;
-          selectLocation.mutate({ data: { locationId: selectedLocationId } });
+          selectLocation.mutate({ data: { businessId, locationId: selectedLocationId } });
         }}
         onRetry={() => {
           setCallbackStage("idle");
-          startConnection.mutate({ data: {} });
+          startConnection.mutate({ data: { businessId } });
         }}
         isConfirming={selectLocation.isPending}
       />
@@ -780,7 +782,7 @@ export default function Reviews() {
               size="lg"
               className="mt-6 shadow-md"
               disabled={startConnection.isPending}
-               onClick={() => startConnection.mutate({ data: {} })}
+               onClick={() => startConnection.mutate({ data: { businessId } })}
             >
               {startConnection.isPending ? (
                 <RefreshCw className="w-5 h-5 mr-2 animate-spin" />
@@ -825,7 +827,7 @@ export default function Reviews() {
                 size="lg"
                 className="shadow-sm"
                 disabled={syncProvider.isPending}
-                onClick={() => syncProvider.mutate()}
+                onClick={() => syncProvider.mutate({ params: { businessId } })}
               >
                 {syncProvider.isPending ? (
                   <RefreshCw className="w-5 h-5 mr-2 animate-spin" />
@@ -839,7 +841,7 @@ export default function Reviews() {
                 size="lg"
                 className="shadow-sm"
                 disabled={startConnection.isPending}
-                onClick={() => startConnection.mutate({ data: {} })}
+                 onClick={() => startConnection.mutate({ data: { businessId } })}
               >
                 Retry Connection
               </Button>
@@ -869,7 +871,7 @@ export default function Reviews() {
               variant="outline" 
               size="sm" 
               className="bg-background shadow-sm"
-              onClick={() => syncProvider.mutate()} 
+               onClick={() => syncProvider.mutate({ params: { businessId } })}
               disabled={syncProvider.isPending}
             >
               <RefreshCw className={`w-4 h-4 mr-2 ${syncProvider.isPending ? 'animate-spin' : ''}`} />
@@ -959,6 +961,36 @@ export default function Reviews() {
             </CardContent>
           </Card>
         </div>
+        {dashboard?.usage?.length ? (
+          <section className="rounded-xl border border-border bg-card p-4 shadow-sm" data-testid="review-usage">
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <div>
+                <h3 className="text-sm font-semibold">Business usage</h3>
+                <p className="mt-1 text-xs text-muted-foreground">Review and AI allowances for this business are preserved when you reconnect Google.</p>
+              </div>
+              <span className="text-xs text-muted-foreground">₹200/month plan</span>
+            </div>
+            <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+              {dashboard.usage
+                .filter((item) => ["GOOGLE_REVIEW_IMPORTS", "AI_REVIEW_REPLIES", "PUBLIC_AI_GENERATIONS"].includes(item.metric))
+                .map((item) => (
+                  <div key={item.metric} className="rounded-lg border border-border bg-secondary/30 p-3">
+                    <div className="flex items-center justify-between gap-2 text-xs">
+                      <span className="font-medium">{item.label}</span>
+                      <span className="text-muted-foreground">{item.window === "DAILY" ? "daily" : "monthly"}</span>
+                    </div>
+                    <div className="mt-2 flex items-end justify-between gap-2">
+                      <span className="text-lg font-semibold">{item.remaining}</span>
+                      <span className="text-xs text-muted-foreground">of {item.limit} remaining</span>
+                    </div>
+                    <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-muted">
+                      <div className="h-full rounded-full bg-primary" style={{ width: `${Math.min(100, (item.used + item.reserved) / item.limit * 100)}%` }} />
+                    </div>
+                  </div>
+                ))}
+            </div>
+          </section>
+        ) : null}
 
         <div className="bg-card p-4 rounded-xl border border-border shadow-sm flex flex-col gap-3 md:flex-row">
           <div className="relative w-full md:flex-1">
@@ -1045,10 +1077,10 @@ export default function Reviews() {
                 disabled={disconnectProvider.isPending || startConnection.isPending}
                 onClick={(event) => {
                   event.preventDefault();
-                  disconnectProvider.mutate(undefined, {
+                  disconnectProvider.mutate({ params: { businessId } }, {
                     onSuccess: () => {
                       if (disconnectAction === "switch") {
-                        startConnection.mutate({ data: {} });
+                         startConnection.mutate({ data: { businessId } });
                       }
                     },
                   });

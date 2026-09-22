@@ -21,6 +21,12 @@ import {
   ObjectPermission,
 } from "../lib/objectAcl";
 import { logger } from "../lib/logger";
+import {
+  completeBusinessUsageReservation,
+  getBusinessUsageSummary,
+  releaseBusinessUsageReservation,
+  reserveBusinessUsage,
+} from "./businessUsageService";
 
 type JsonRecord = Record<string, unknown>;
 type Platform = "FACEBOOK" | "INSTAGRAM" | "THREADS";
@@ -577,6 +583,7 @@ export async function getSocialMediaDashboard(
     teamId,
     accounts: readyLocalAccounts.map(toAccountPayload),
     availableAccounts,
+    usage: await getBusinessUsageSummary(organizationId, businessId),
   };
 }
 
@@ -918,6 +925,12 @@ export async function createSocialMediaPost(
     input.title?.trim() ||
     input.caption.trim().replace(/\s+/g, " ").slice(0, 80) ||
     "Social media post";
+  const usageReservation = await reserveBusinessUsage({
+    organizationId,
+    businessId: input.businessId,
+    metric: "SOCIAL_POSTS",
+    amount: input.platforms.length,
+  });
   let created: JsonRecord;
   try {
     created = await bndleRequest("post", {
@@ -935,6 +948,7 @@ export async function createSocialMediaPost(
       }),
     });
   } catch (error) {
+    await releaseBusinessUsageReservation(usageReservation.id);
     if (error instanceof ReviewProviderError && error.upstreamStatus === 400) {
       const providerMessage = error.providerMessage?.toLowerCase() ?? "";
       if (
@@ -970,6 +984,7 @@ export async function createSocialMediaPost(
     }
     throw error;
   }
+  await completeBusinessUsageReservation(usageReservation.id);
   if (mediaPaths.length) {
     await removePublishedMedia(mediaPaths, clerkUserId);
   }
@@ -1028,14 +1043,26 @@ export async function importSocialMediaComments(
       "Choose one published post to import comments from.",
     );
   }
-  const result = await bndleRequest("comment/import", {
-    method: "POST",
-    body: JSON.stringify({
-      teamId,
-      socialAccountType: input.platform,
-      ...(input.postId ? { postId: input.postId } : { importedPostId: input.importedPostId }),
-    }),
+  const usageReservation = await reserveBusinessUsage({
+    organizationId,
+    businessId: input.businessId,
+    metric: "SOCIAL_COMMENT_IMPORTS",
   });
+  let result: JsonRecord;
+  try {
+    result = await bndleRequest("comment/import", {
+      method: "POST",
+      body: JSON.stringify({
+        teamId,
+        socialAccountType: input.platform,
+        ...(input.postId ? { postId: input.postId } : { importedPostId: input.importedPostId }),
+      }),
+    });
+  } catch (error) {
+    await releaseBusinessUsageReservation(usageReservation.id);
+    throw error;
+  }
+  await completeBusinessUsageReservation(usageReservation.id);
   return {
     importId: valueString(result.importId) ?? valueString(result.id),
     status: valueString(result.status) ?? "FETCHING",
@@ -1066,13 +1093,25 @@ export async function replyToSocialMediaComment(
   text: string,
 ) {
   const { teamId } = await getBusinessTeam(organizationId, businessId);
-  const result = await bndleRequest("comment", {
-    method: "POST",
-    body: JSON.stringify({
-      teamId,
-      fetchedParentCommentId: commentId,
-      text: text.trim(),
-    }),
+  const usageReservation = await reserveBusinessUsage({
+    organizationId,
+    businessId,
+    metric: "SOCIAL_COMMENT_REPLIES",
   });
+  let result: JsonRecord;
+  try {
+    result = await bndleRequest("comment", {
+      method: "POST",
+      body: JSON.stringify({
+        teamId,
+        fetchedParentCommentId: commentId,
+        text: text.trim(),
+      }),
+    });
+  } catch (error) {
+    await releaseBusinessUsageReservation(usageReservation.id);
+    throw error;
+  }
+  await completeBusinessUsageReservation(usageReservation.id);
   return commentPayload(result);
 }

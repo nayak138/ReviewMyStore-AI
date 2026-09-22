@@ -99,6 +99,43 @@ const sections = [
     ),
   },
   {
+    title: "Business usage limits",
+    body: (
+      <>
+        <p>
+          Usage allowances are tracked separately for each business in your
+          account and are not reset when you reconnect or replace a Google
+          Business location, Facebook Page, Instagram account, or other social
+          channel. Reconnecting keeps the business, billing history, audit
+          records, and usage ledger intact. Provider-linked reviews and
+          channel data may be removed after a replacement is successfully
+          confirmed.
+        </p>
+        <p>
+          The ₹200/month agency plan currently includes, per business, up to
+          200 Google review imports per calendar month, 100 AI-generated Google
+          review reply drafts per calendar month, 50 social post destinations
+          per UTC day, 5,000 social comment import requests per calendar
+          month, and 50 social comment replies per UTC day. Public AI review
+          generation also has a 50-generation monthly business allowance.
+          Failed provider requests release their reserved allowance; accepted
+          scheduled or published actions count, and deleting a scheduled
+          action does not refund its allowance.
+        </p>
+        <p>
+          These are 5-Star.AI application allowances, not guarantees of
+          provider capacity. bundle.social Pro has its own limits, including
+          50 Facebook/Instagram posts per account per day, 50 Facebook/Instagram
+          comments per account per day, 20 Google Business posts per account
+          per day, 200 Google review or Facebook recommendation imports per
+          account per month, and separate API throttles. The stricter limit
+          applies, and bundle.social may change its limits under its own
+          terms.
+        </p>
+      </>
+    ),
+  },
+  {
     title: "Intellectual property",
     body: (
       <>

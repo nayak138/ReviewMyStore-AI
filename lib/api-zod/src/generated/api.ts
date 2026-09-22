@@ -11,6 +11,10 @@ import * as zod from 'zod';
 /**
  * @summary Get the caller's provider connection, locations, and review inbox summary
  */
+export const GetReviewDashboardQueryParams = zod.object({
+  "businessId": zod.uuid()
+})
+
 export const GetReviewDashboardResponse = zod.object({
   "connection": zod.object({
   "status": zod.enum(['DISCONNECTED', 'PENDING', 'CONNECTED', 'ERROR']),
@@ -31,7 +35,18 @@ export const GetReviewDashboardResponse = zod.object({
   "totalReviews": zod.int(),
   "needsReply": zod.int(),
   "replied": zod.int()
-})
+}),
+  "usage": zod.array(zod.object({
+  "metric": zod.enum(['GOOGLE_REVIEW_IMPORTS', 'AI_REVIEW_REPLIES', 'PUBLIC_AI_GENERATIONS', 'SOCIAL_POSTS', 'SOCIAL_COMMENT_IMPORTS', 'SOCIAL_COMMENT_REPLIES']),
+  "label": zod.string(),
+  "window": zod.enum(['DAILY', 'MONTHLY']),
+  "used": zod.int(),
+  "reserved": zod.int(),
+  "limit": zod.int(),
+  "remaining": zod.int(),
+  "periodStart": zod.coerce.date(),
+  "periodEnd": zod.coerce.date()
+}))
 })
 
 
@@ -39,7 +54,7 @@ export const GetReviewDashboardResponse = zod.object({
  * @summary Start the BNDLE-hosted Google Business authorization flow
  */
 export const StartReviewProviderConnectionBody = zod.object({
-  "businessId": zod.string().optional().describe('Business workspace to return to after Google authorization')
+  "businessId": zod.string().describe('Business workspace to return to after Google authorization')
 })
 
 export const StartReviewProviderConnectionResponse = zod.object({
@@ -63,6 +78,10 @@ export const StartReviewProviderConnectionResponse = zod.object({
 /**
  * @summary Disconnect the caller's Google Business review connection
  */
+export const DisconnectReviewProviderQueryParams = zod.object({
+  "businessId": zod.uuid()
+})
+
 export const DisconnectReviewProviderResponse = zod.object({
   "connection": zod.object({
   "status": zod.enum(['DISCONNECTED', 'PENDING', 'CONNECTED', 'ERROR']),
@@ -83,13 +102,28 @@ export const DisconnectReviewProviderResponse = zod.object({
   "totalReviews": zod.int(),
   "needsReply": zod.int(),
   "replied": zod.int()
-})
+}),
+  "usage": zod.array(zod.object({
+  "metric": zod.enum(['GOOGLE_REVIEW_IMPORTS', 'AI_REVIEW_REPLIES', 'PUBLIC_AI_GENERATIONS', 'SOCIAL_POSTS', 'SOCIAL_COMMENT_IMPORTS', 'SOCIAL_COMMENT_REPLIES']),
+  "label": zod.string(),
+  "window": zod.enum(['DAILY', 'MONTHLY']),
+  "used": zod.int(),
+  "reserved": zod.int(),
+  "limit": zod.int(),
+  "remaining": zod.int(),
+  "periodStart": zod.coerce.date(),
+  "periodEnd": zod.coerce.date()
+}))
 })
 
 
 /**
  * @summary Check the in-progress Google OAuth attempt and list selectable business locations once bundle.social confirms access
  */
+export const GetReviewProviderLocationsQueryParams = zod.object({
+  "businessId": zod.uuid()
+})
+
 export const GetReviewProviderLocationsResponse = zod.object({
   "stage": zod.enum(['NOT_CONNECTED', 'NEEDS_LOCATION', 'NO_LOCATIONS_FOUND', 'READY']).describe('NOT_CONNECTED: the Google OAuth step hasn\'t completed yet (or was cancelled\/failed) — no business account is attached. NEEDS_LOCATION: Google access is granted; pick one of `locations` to finish connecting. NO_LOCATIONS_FOUND: Google access is granted but no eligible business locations were found on that account. READY: a location is already selected and syncing is starting.'),
   "locations": zod.array(zod.object({
@@ -104,7 +138,8 @@ export const GetReviewProviderLocationsResponse = zod.object({
  * @summary Pick the Google Business location for the in-progress connection and finish connecting (imports locations and reviews)
  */
 export const SelectReviewProviderLocationBody = zod.object({
-  "locationId": zod.string()
+  "locationId": zod.string(),
+  "businessId": zod.uuid()
 })
 
 export const SelectReviewProviderLocationResponse = zod.object({
@@ -127,13 +162,28 @@ export const SelectReviewProviderLocationResponse = zod.object({
   "totalReviews": zod.int(),
   "needsReply": zod.int(),
   "replied": zod.int()
-})
+}),
+  "usage": zod.array(zod.object({
+  "metric": zod.enum(['GOOGLE_REVIEW_IMPORTS', 'AI_REVIEW_REPLIES', 'PUBLIC_AI_GENERATIONS', 'SOCIAL_POSTS', 'SOCIAL_COMMENT_IMPORTS', 'SOCIAL_COMMENT_REPLIES']),
+  "label": zod.string(),
+  "window": zod.enum(['DAILY', 'MONTHLY']),
+  "used": zod.int(),
+  "reserved": zod.int(),
+  "limit": zod.int(),
+  "remaining": zod.int(),
+  "periodStart": zod.coerce.date(),
+  "periodEnd": zod.coerce.date()
+}))
 })
 
 
 /**
  * @summary Synchronize Google Business locations and reviews from BNDLE
  */
+export const SyncReviewProviderQueryParams = zod.object({
+  "businessId": zod.uuid()
+})
+
 export const SyncReviewProviderResponse = zod.object({
   "connection": zod.object({
   "status": zod.enum(['DISCONNECTED', 'PENDING', 'CONNECTED', 'ERROR']),
@@ -154,7 +204,18 @@ export const SyncReviewProviderResponse = zod.object({
   "totalReviews": zod.int(),
   "needsReply": zod.int(),
   "replied": zod.int()
-})
+}),
+  "usage": zod.array(zod.object({
+  "metric": zod.enum(['GOOGLE_REVIEW_IMPORTS', 'AI_REVIEW_REPLIES', 'PUBLIC_AI_GENERATIONS', 'SOCIAL_POSTS', 'SOCIAL_COMMENT_IMPORTS', 'SOCIAL_COMMENT_REPLIES']),
+  "label": zod.string(),
+  "window": zod.enum(['DAILY', 'MONTHLY']),
+  "used": zod.int(),
+  "reserved": zod.int(),
+  "limit": zod.int(),
+  "remaining": zod.int(),
+  "periodStart": zod.coerce.date(),
+  "periodEnd": zod.coerce.date()
+}))
 })
 
 
@@ -168,6 +229,7 @@ export const listManagedReviewsQuerySearchMax = 200;
 
 
 export const ListManagedReviewsQueryParams = zod.object({
+  "businessId": zod.uuid(),
   "locationId": zod.uuid().optional(),
   "rating": zod.coerce.number().int().min(1).max(listManagedReviewsQueryRatingMax).optional(),
   "responseStatus": zod.enum(['PENDING', 'DRAFT', 'PUBLISHED']).optional(),
@@ -340,6 +402,17 @@ export const GetSocialMediaDashboardResponse = zod.object({
   "username": zod.string().nullable(),
   "profileUrl": zod.url().nullable(),
   "connected": zod.boolean()
+})),
+  "usage": zod.array(zod.object({
+  "metric": zod.enum(['GOOGLE_REVIEW_IMPORTS', 'AI_REVIEW_REPLIES', 'PUBLIC_AI_GENERATIONS', 'SOCIAL_POSTS', 'SOCIAL_COMMENT_IMPORTS', 'SOCIAL_COMMENT_REPLIES']),
+  "label": zod.string(),
+  "window": zod.enum(['DAILY', 'MONTHLY']),
+  "used": zod.int(),
+  "reserved": zod.int(),
+  "limit": zod.int(),
+  "remaining": zod.int(),
+  "periodStart": zod.coerce.date(),
+  "periodEnd": zod.coerce.date()
 }))
 })
 

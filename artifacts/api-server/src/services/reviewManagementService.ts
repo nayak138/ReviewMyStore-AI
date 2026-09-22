@@ -1,6 +1,18 @@
-import { and, count, desc, eq, ilike, lte, ne, or, sql } from "drizzle-orm";
+import {
+  and,
+  count,
+  desc,
+  eq,
+  ilike,
+  isNull,
+  lte,
+  ne,
+  or,
+  sql,
+} from "drizzle-orm";
 import {
   db,
+  businessesTable,
   managedReviewsTable,
   providerConnectionsTable,
   reviewAuditEventsTable,
@@ -10,6 +22,13 @@ import {
 } from "@workspace/db";
 import { randomUUID } from "node:crypto";
 import { generateReviewReplyDraft } from "./aiService";
+import {
+  BusinessUsageLimitError,
+  completeBusinessUsageReservation,
+  getBusinessUsageSummary,
+  releaseBusinessUsageReservation,
+  reserveBusinessUsage,
+} from "./businessUsageService";
 import { logger } from "../lib/logger";
 
 // bundle.social REST API. All endpoints live under /api/v1 and authenticate
@@ -306,14 +325,20 @@ async function createProviderTeam(teamName: string): Promise<string> {
 }
 
 /**
- * Review management remains organization-scoped. Social publishing uses
- * createProviderTeam directly and persists its business mapping separately.
+ * Review management is business-scoped. The optional argument keeps the
+ * helper compatible with older administrative callers while all user-facing
+ * flows pass a business id.
  */
 export async function getOrCreateProviderTeam(
   organizationId: string,
+  businessId?: string,
 ): Promise<string> {
-  const teamName = `5-STAR.AI ${organizationId}`;
-  const legacyTeamName = `ReviewMyStore ${organizationId}`;
+  const teamName = businessId
+    ? `5-STAR.AI Reviews ${organizationId} ${businessId}`
+    : `5-STAR.AI ${organizationId}`;
+  const legacyTeamName = businessId
+    ? undefined
+    : `ReviewMyStore ${organizationId}`;
   const organization = await bndleRequest("organization/");
   const teams = asArray(organization.teams);
   const existing = teams.find((team) => {
@@ -335,6 +360,7 @@ export async function createSocialMediaProviderTeam(
 
 async function getConnection(
   organizationId: string,
+  businessId?: string,
 ): Promise<ProviderConnection | null> {
   const [connection] = await db
     .select()
@@ -343,14 +369,17 @@ async function getConnection(
       and(
         eq(providerConnectionsTable.organizationId, organizationId),
         eq(providerConnectionsTable.provider, "BNDLE"),
+        ...(businessId
+          ? [eq(providerConnectionsTable.businessId, businessId)]
+          : []),
       ),
     )
     .limit(1);
   return connection ?? null;
 }
 
-async function getRequiredConnection(organizationId: string) {
-  const connection = await getConnection(organizationId);
+async function getRequiredConnection(organizationId: string, businessId?: string) {
+  const connection = await getConnection(organizationId, businessId);
   if (!connection || connection.status === "DISCONNECTED") {
     throw new ReviewProviderError(
       "Connect your Google Business Profile before syncing reviews.",
@@ -359,6 +388,29 @@ async function getRequiredConnection(organizationId: string) {
     );
   }
   return connection;
+}
+
+export async function assertReviewBusiness(
+  organizationId: string,
+  businessId: string,
+) {
+  const [business] = await db
+    .select({ id: businessesTable.id })
+    .from(businessesTable)
+    .where(
+      and(
+        eq(businessesTable.id, businessId),
+        eq(businessesTable.organizationId, organizationId),
+      ),
+    )
+    .limit(1);
+  if (!business) {
+    throw new ReviewProviderError(
+      "That business was not found in this organization.",
+      404,
+      "REVIEW_BUSINESS_NOT_FOUND",
+    );
+  }
 }
 
 function connectionResult(connection: ProviderConnection | null) {
@@ -602,31 +654,65 @@ async function startReviewProviderConnectionUnlocked(
   appOrigin?: string,
   businessId?: string,
 ) {
-  const previousConnection = await getConnection(organizationId);
-  const teamId = await getOrCreateProviderTeam(organizationId);
-  const [connection] = await db
-    .insert(providerConnectionsTable)
-    .values({
-      organizationId,
-      provider: "BNDLE",
-      externalProfileId: teamId,
-      status: "PENDING",
-      lastError: null,
-      updatedAt: new Date(),
-    })
-    .onConflictDoUpdate({
-      target: [
-        providerConnectionsTable.organizationId,
-        providerConnectionsTable.provider,
-      ],
-      set: {
-        externalProfileId: teamId,
-        status: "PENDING",
-        lastError: null,
-        updatedAt: new Date(),
-      },
-    })
-    .returning();
+  const [business] = businessId
+    ? await db
+        .select({ id: businessesTable.id })
+        .from(businessesTable)
+        .where(
+          and(
+            eq(businessesTable.id, businessId),
+            eq(businessesTable.organizationId, organizationId),
+          ),
+        )
+        .limit(1)
+    : [];
+  // Older internal callers may omit a business row while they only exercise
+  // the provider-connect handshake. User-facing routes validate the business
+  // before calling this service; real connections always persist the owner.
+  const persistedBusinessId = business?.id ?? null;
+  const previousConnection = await getConnection(
+    organizationId,
+    persistedBusinessId ?? undefined,
+  );
+  const teamId = await getOrCreateProviderTeam(organizationId, businessId);
+  const connectionScope = businessId
+    ? eq(providerConnectionsTable.businessId, businessId)
+    : isNull(providerConnectionsTable.businessId);
+  const [existingConnection] = await db
+    .select({ id: providerConnectionsTable.id })
+    .from(providerConnectionsTable)
+    .where(
+      and(
+        eq(providerConnectionsTable.organizationId, organizationId),
+        eq(providerConnectionsTable.provider, "BNDLE"),
+        connectionScope,
+      ),
+    )
+    .limit(1);
+  const [connection] = existingConnection
+    ? await db
+        .update(providerConnectionsTable)
+        .set({
+          businessId: businessId ?? null,
+          externalProfileId: teamId,
+          status: "PENDING",
+          lastError: null,
+          updatedAt: new Date(),
+        })
+        .where(eq(providerConnectionsTable.id, existingConnection.id))
+        .returning()
+    : await db
+        .insert(providerConnectionsTable)
+        .values({
+          organizationId,
+          businessId: persistedBusinessId,
+          provider: "BNDLE",
+          externalProfileId: teamId,
+          status: "PENDING",
+          lastError: null,
+          updatedAt: new Date(),
+        })
+        .returning();
 
   // bundle.social rejects a second `connect` call for a team that already
   // has a Google Business account attached (e.g. a previous attempt was
@@ -760,8 +846,9 @@ function resolveLocationStage(account: JsonRecord | null) {
  */
 export async function getReviewProviderConnectionLocations(
   organizationId: string,
+  businessId?: string,
 ) {
-  const connection = await getRequiredConnection(organizationId);
+  const connection = await getRequiredConnection(organizationId, businessId);
   const account = await findGoogleBusinessSocialAccount(
     connection.externalProfileId,
   );
@@ -775,18 +862,26 @@ export async function getReviewProviderConnectionLocations(
  */
 export async function selectReviewProviderLocation(
   organizationId: string,
-  locationId: string,
+  businessIdOrLocationId: string,
+  maybeLocationId?: string,
 ) {
+  const businessId = maybeLocationId ? businessIdOrLocationId : undefined;
+  const locationId = maybeLocationId ?? businessIdOrLocationId;
   return withProviderOperationLock(organizationId, () =>
-    selectReviewProviderLocationUnlocked(organizationId, locationId),
+    selectReviewProviderLocationUnlocked(
+      organizationId,
+      businessId,
+      locationId,
+    ),
   );
 }
 
 async function selectReviewProviderLocationUnlocked(
   organizationId: string,
+  businessId: string | undefined,
   locationId: string,
 ) {
-  const connection = await getRequiredConnection(organizationId);
+  const connection = await getRequiredConnection(organizationId, businessId);
   await bndleRequest("social-account/set-channel", {
     method: "POST",
     body: JSON.stringify({
@@ -795,7 +890,23 @@ async function selectReviewProviderLocationUnlocked(
       channelId: locationId,
     }),
   });
-  return syncReviewProviderUnlocked(organizationId);
+  if (businessId) {
+    await db.transaction(async (tx) => {
+      await tx
+        .delete(reviewLocationsTable)
+        .where(
+          and(
+            eq(reviewLocationsTable.organizationId, organizationId),
+            eq(reviewLocationsTable.businessId, businessId),
+          ),
+        );
+      await tx
+        .update(providerConnectionsTable)
+        .set({ businessId, updatedAt: new Date() })
+        .where(eq(providerConnectionsTable.id, connection.id));
+    });
+  }
+  return syncReviewProviderUnlocked(organizationId, businessId);
 }
 
 /**
@@ -804,14 +915,20 @@ async function selectReviewProviderLocationUnlocked(
  * The provider credentials remain isolated to this organization's team and
  * are not used again while the local connection is DISCONNECTED.
  */
-export async function disconnectReviewProvider(organizationId: string) {
+export async function disconnectReviewProvider(
+  organizationId: string,
+  businessId?: string,
+) {
   return withProviderOperationLock(organizationId, () =>
-    disconnectReviewProviderUnlocked(organizationId),
+    disconnectReviewProviderUnlocked(organizationId, businessId),
   );
 }
 
-async function disconnectReviewProviderUnlocked(organizationId: string) {
-  const connection = await getConnection(organizationId);
+async function disconnectReviewProviderUnlocked(
+  organizationId: string,
+  businessId?: string,
+) {
+  const connection = await getConnection(organizationId, businessId);
   if (connection) {
     await disconnectProviderSocialAccount(
       connection.externalProfileId,
@@ -826,7 +943,7 @@ async function disconnectReviewProviderUnlocked(organizationId: string) {
       })
       .where(eq(providerConnectionsTable.id, connection.id));
   }
-  return getReviewDashboard(organizationId);
+  return getReviewDashboard(organizationId, businessId);
 }
 
 /**
@@ -838,6 +955,7 @@ async function upsertLocationFromAccount(
   organizationId: string,
   connectionId: string,
   account: JsonRecord,
+  businessId?: string,
 ) {
   const socialAccountId = valueString(account.id);
   if (!socialAccountId) return null;
@@ -857,6 +975,7 @@ async function upsertLocationFromAccount(
     .values({
       organizationId,
       providerConnectionId: connectionId,
+      businessId: businessId ?? null,
       externalAccountId: socialAccountId,
       externalLocationId: selectedExternalId ?? socialAccountId,
       name,
@@ -914,44 +1033,81 @@ function parseRemainingQuota(message: string | null): number | null {
   return null;
 }
 
-async function startReviewImport(teamId: string): Promise<string | null> {
+async function startReviewImport(
+  teamId: string,
+  organizationId?: string,
+  businessId?: string,
+): Promise<string | null> {
+  let reservationId: string | null = null;
+  const reserve = async (amount: number) => {
+    if (!organizationId || !businessId) return;
+    const reservation = await reserveBusinessUsage({
+      organizationId,
+      businessId,
+      metric: "GOOGLE_REVIEW_IMPORTS",
+      amount,
+    });
+    reservationId = reservation.id;
+  };
+  const complete = async () => {
+    if (reservationId) await completeBusinessUsageReservation(reservationId);
+    reservationId = null;
+  };
+  const release = async () => {
+    if (reservationId) await releaseBusinessUsageReservation(reservationId);
+    reservationId = null;
+  };
+
   try {
+    await reserve(IMPORT_BATCH_COUNT);
     await requestImport(teamId, IMPORT_BATCH_COUNT);
+    await complete();
     return null;
   } catch (error) {
     if (error instanceof ReviewProviderError) {
-      if (error.upstreamStatus === 409) return null; // already running
+      if (error.upstreamStatus === 409) {
+        await release();
+        return null; // already running
+      }
       if (error.code === "REVIEW_PROVIDER_NOT_CONFIGURED") throw error;
 
       if (error.upstreamStatus === 400) {
         const remaining = parseRemainingQuota(error.providerMessage);
         if (remaining && remaining > 0) {
           try {
+            await release();
+            await reserve(remaining);
             await requestImport(teamId, remaining);
+            await complete();
             return null;
           } catch (retryError) {
             if (
               retryError instanceof ReviewProviderError &&
               retryError.upstreamStatus === 409
             ) {
+              await release();
               return null; // already running
             }
+            await release();
             logger.warn(
               { remaining },
               "Review import retry at clamped quota also failed",
             );
           }
         } else if (remaining === 0) {
+          await release();
           return "You've used all of this month's review imports. Previously imported reviews are still shown — upgrade on bundle.social or wait for next month to import more.";
         }
       }
 
+      await release();
       logger.warn(
         { upstreamStatus: error.upstreamStatus },
         "Review import could not start; serving previously imported reviews",
       );
       return "New reviews could not be imported right now (import limit or provider issue). Showing previously imported reviews.";
     }
+    await release();
     throw error;
   }
 }
@@ -1066,8 +1222,20 @@ export async function syncReviewProvider(organizationId: string) {
   );
 }
 
-async function syncReviewProviderUnlocked(organizationId: string) {
-  const connection = await getRequiredConnection(organizationId);
+export async function syncReviewProviderForBusiness(
+  organizationId: string,
+  businessId: string,
+) {
+  return withProviderOperationLock(organizationId, () =>
+    syncReviewProviderUnlocked(organizationId, businessId),
+  );
+}
+
+async function syncReviewProviderUnlocked(
+  organizationId: string,
+  businessId?: string,
+) {
+  const connection = await getRequiredConnection(organizationId, businessId);
   const teamId = connection.externalProfileId;
   const syncStartedAt = new Date();
 
@@ -1095,7 +1263,7 @@ async function syncReviewProviderUnlocked(organizationId: string) {
           "Skipped stale review provider sync status update",
         );
       }
-      return getReviewDashboard(organizationId);
+      return getReviewDashboard(organizationId, businessId);
     }
 
     const locationsByAccountId = new Map<
@@ -1107,12 +1275,14 @@ async function syncReviewProviderUnlocked(organizationId: string) {
         organizationId,
         connection.id,
         account,
+        businessId,
       );
       if (saved) locationsByAccountId.set(saved.externalAccountId, saved);
     }
 
     const importNote =
-      (await startReviewImport(teamId)) ?? (await waitForReviewImport(teamId));
+      (await startReviewImport(teamId, organizationId, businessId)) ??
+      (await waitForReviewImport(teamId));
 
     const { reviews: rawReviews, remainingCapacity } =
       await fetchAllReviews(teamId);
@@ -1192,38 +1362,67 @@ async function syncReviewProviderUnlocked(organizationId: string) {
     throw error;
   }
 
-  return getReviewDashboard(organizationId);
+  return getReviewDashboard(organizationId, businessId);
 }
 
-export async function getReviewDashboard(organizationId: string) {
-  const connection = await getConnection(organizationId);
+export async function getReviewDashboard(
+  organizationId: string,
+  businessId?: string,
+) {
+  const connection = await getConnection(organizationId, businessId);
+  const businessConditions = businessId
+    ? [eq(reviewLocationsTable.businessId, businessId)]
+    : [];
+  const reviewBusinessConditions = businessId
+    ? [eq(reviewLocationsTable.businessId, businessId)]
+    : [];
   const locations = await db
     .select()
     .from(reviewLocationsTable)
-    .where(eq(reviewLocationsTable.organizationId, organizationId))
+    .where(and(
+      eq(reviewLocationsTable.organizationId, organizationId),
+      ...businessConditions,
+    ))
     .orderBy(desc(reviewLocationsTable.isSelected), reviewLocationsTable.name);
   const [counts] = await db
     .select({
       total: count(),
     })
     .from(managedReviewsTable)
-    .where(eq(managedReviewsTable.organizationId, organizationId));
+    .innerJoin(
+      reviewLocationsTable,
+      eq(managedReviewsTable.reviewLocationId, reviewLocationsTable.id),
+    )
+    .where(and(
+      eq(managedReviewsTable.organizationId, organizationId),
+      ...reviewBusinessConditions,
+    ));
   const [needsReply] = await db
     .select({ total: count() })
     .from(managedReviewsTable)
+    .innerJoin(
+      reviewLocationsTable,
+      eq(managedReviewsTable.reviewLocationId, reviewLocationsTable.id),
+    )
     .where(
       and(
         eq(managedReviewsTable.organizationId, organizationId),
         eq(managedReviewsTable.responseStatus, "PENDING"),
+        ...reviewBusinessConditions,
       ),
     );
   const [published] = await db
     .select({ total: count() })
     .from(managedReviewsTable)
+    .innerJoin(
+      reviewLocationsTable,
+      eq(managedReviewsTable.reviewLocationId, reviewLocationsTable.id),
+    )
     .where(
       and(
         eq(managedReviewsTable.organizationId, organizationId),
         eq(managedReviewsTable.responseStatus, "PUBLISHED"),
+        ...reviewBusinessConditions,
       ),
     );
   return {
@@ -1234,12 +1433,16 @@ export async function getReviewDashboard(organizationId: string) {
       needsReply: needsReply?.total ?? 0,
       replied: published?.total ?? 0,
     },
+    usage: businessId
+      ? await getBusinessUsageSummary(organizationId, businessId)
+      : [],
   };
 }
 
 export async function listManagedReviews(
   organizationId: string,
   filters: {
+    businessId?: string;
     locationId?: string;
     rating?: number;
     responseStatus?: "PENDING" | "DRAFT" | "PUBLISHED";
@@ -1247,6 +1450,11 @@ export async function listManagedReviews(
   },
 ) {
   const conditions = [eq(managedReviewsTable.organizationId, organizationId)];
+  if (filters.businessId) {
+    conditions.push(
+      eq(reviewLocationsTable.businessId, filters.businessId) as never,
+    );
+  }
   if (filters.locationId) {
     conditions.push(
       eq(managedReviewsTable.reviewLocationId, filters.locationId),
@@ -1321,31 +1529,44 @@ export async function generateManagedReviewDraft(
     organizationId,
     managedReviewId,
   );
-  const draftReplyText = await generateReviewReplyDraft({
-    businessName: location.name,
-    reviewerName: review.reviewerName,
-    rating: review.rating,
-    reviewText: review.comment,
-    organizationId,
-  });
-  const sensitiveReason = reviewSensitivity(review.rating, review.comment);
-  const [updated] = await db
-    .update(managedReviewsTable)
-    .set({
-      draftReplyText,
-      draftGeneratedAt: new Date(),
-      responseStatus: "DRAFT",
+  const reservation = location.businessId
+    ? await reserveBusinessUsage({
+        organizationId,
+        businessId: location.businessId,
+        metric: "AI_REVIEW_REPLIES",
+      })
+    : null;
+  try {
+    const draftReplyText = await generateReviewReplyDraft({
+      businessName: location.name,
+      reviewerName: review.reviewerName,
+      rating: review.rating,
+      reviewText: review.comment,
+      organizationId,
+    });
+    const sensitiveReason = reviewSensitivity(review.rating, review.comment);
+    const [updated] = await db
+      .update(managedReviewsTable)
+      .set({
+        draftReplyText,
+        draftGeneratedAt: new Date(),
+        responseStatus: "DRAFT",
+        requiresApproval: true,
+        sensitiveReason,
+        updatedAt: new Date(),
+      })
+      .where(eq(managedReviewsTable.id, review.id))
+      .returning();
+    await recordAudit(organizationId, review.id, actorUserId, "DRAFT_GENERATED", {
+      rating: review.rating,
       requiresApproval: true,
-      sensitiveReason,
-      updatedAt: new Date(),
-    })
-    .where(eq(managedReviewsTable.id, review.id))
-    .returning();
-  await recordAudit(organizationId, review.id, actorUserId, "DRAFT_GENERATED", {
-    rating: review.rating,
-    requiresApproval: true,
-  });
-  return { review: toReviewPayload(updated, location.name) };
+    });
+    if (reservation) await completeBusinessUsageReservation(reservation.id);
+    return { review: toReviewPayload(updated, location.name) };
+  } catch (error) {
+    if (reservation) await releaseBusinessUsageReservation(reservation.id);
+    throw error;
+  }
 }
 
 export async function publishManagedReviewReply(

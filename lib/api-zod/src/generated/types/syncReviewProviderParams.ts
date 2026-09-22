@@ -6,7 +6,6 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface SelectReviewProviderLocationRequest {
-  locationId: string;
-  businessId: string;
-}
+export type SyncReviewProviderParams = {
+businessId: string;
+};

@@ -40,6 +40,7 @@ import {
   SocialMediaNotFoundError,
   startSocialMediaConnection,
 } from "../services/socialMediaService";
+import { BusinessUsageLimitError } from "../services/businessUsageService";
 import { publicOrigin } from "../lib/publicOrigin";
 
 const router: IRouter = Router();
@@ -78,6 +79,14 @@ function sendError(res: Response, error: unknown) {
     res.status(404).json({
       success: false,
       code: "NOT_FOUND",
+      message: error.message,
+    });
+    return;
+  }
+  if (error instanceof BusinessUsageLimitError) {
+    res.status(error.status).json({
+      success: false,
+      code: error.code,
       message: error.message,
     });
     return;

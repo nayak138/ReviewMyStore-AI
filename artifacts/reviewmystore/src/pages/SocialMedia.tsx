@@ -660,6 +660,36 @@ export default function SocialMedia() {
 
         {selectedBusinessId && (
           <>
+            {dashboard?.usage?.length ? (
+              <section className="rounded-2xl border border-border bg-card p-4 shadow-sm" data-testid="social-usage">
+                <div className="mb-3 flex items-center justify-between gap-3">
+                  <div>
+                    <h2 className="text-sm font-semibold">Business usage</h2>
+                    <p className="mt-1 text-xs text-muted-foreground">Allowances are shared across this business's connected channels.</p>
+                  </div>
+                  <Badge variant="secondary">₹200/month plan</Badge>
+                </div>
+                <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                  {dashboard.usage
+                    .filter((item) => ["SOCIAL_POSTS", "SOCIAL_COMMENT_IMPORTS", "SOCIAL_COMMENT_REPLIES"].includes(item.metric))
+                    .map((item) => (
+                      <div key={item.metric} className="rounded-xl border border-border bg-secondary/30 p-3" data-testid={`usage-${item.metric.toLowerCase()}`}>
+                        <div className="flex items-center justify-between gap-2 text-xs">
+                          <span className="font-medium">{item.label}</span>
+                          <span className="text-muted-foreground">{item.window === "DAILY" ? "daily" : "monthly"}</span>
+                        </div>
+                        <div className="mt-2 flex items-end justify-between gap-2">
+                          <span className="text-lg font-semibold">{item.remaining}</span>
+                          <span className="text-xs text-muted-foreground">of {item.limit} remaining</span>
+                        </div>
+                        <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-muted">
+                          <div className="h-full rounded-full bg-primary" style={{ width: `${Math.min(100, (item.used + item.reserved) / item.limit * 100)}%` }} />
+                        </div>
+                      </div>
+                    ))}
+                </div>
+              </section>
+            ) : null}
              <section className="grid min-w-0 items-stretch gap-6 lg:grid-cols-2" data-testid="social-channel-grid">
               <Card className="flex h-full min-w-0 flex-col overflow-hidden border-primary/15 bg-primary/[0.035]">
                 <CardHeader className="border-b border-border/70 pb-4">

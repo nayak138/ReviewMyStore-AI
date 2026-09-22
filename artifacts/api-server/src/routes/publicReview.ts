@@ -24,6 +24,7 @@ import {
 import { requestMeta } from "../services/scanEventService";
 import { AIGenerationError } from "../services/aiService";
 import { rateLimit } from "../middlewares/rateLimit";
+import { BusinessUsageLimitError } from "../services/businessUsageService";
 
 const router: IRouter = Router();
 
@@ -126,6 +127,14 @@ router.post(
           success: false,
           code: "AI_QUOTA_EXHAUSTED",
           message: "This review service is temporarily unavailable.",
+        });
+        return;
+      }
+      if (err instanceof BusinessUsageLimitError) {
+        res.status(err.status).json({
+          success: false,
+          code: err.code,
+          message: err.message,
         });
         return;
       }

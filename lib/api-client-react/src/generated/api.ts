@@ -56,12 +56,15 @@ import type {
   DemoRequestInput,
   DemoRequestResult,
   DemoRequestStatusUpdate,
+  DisconnectReviewProviderParams,
   EmailPreferences,
   EmailPreferencesUpdate,
   ErrorResponse,
   FinalizeUploadRequest,
   GetBusinessAnalyticsParams,
   GetPlacePhotoParams,
+  GetReviewDashboardParams,
+  GetReviewProviderLocationsParams,
   GetSocialMediaDashboardParams,
   HealthStatus,
   Keyword,
@@ -112,6 +115,7 @@ import type {
   SocialMediaPost,
   SocialMediaPostInput,
   SocialMediaPostListResult,
+  SyncReviewProviderParams,
   UpdatePrivateFeedbackStatusInput,
   UploadFinalizeResult,
   UploadUrlRequest,
@@ -145,20 +149,27 @@ const withQueryKey = <T extends object, K>(query: T, queryKey: K): T & { queryKe
   return result;
 };
 
-export const getGetReviewDashboardUrl = () => {
+export const getGetReviewDashboardUrl = (params: GetReviewDashboardParams,) => {
+  const normalizedParams = new URLSearchParams();
 
+  Object.entries(params || {}).forEach(([key, value]) => {
 
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
 
+  const stringifiedParams = normalizedParams.toString();
 
-  return `/api/v1/review-management`
+  return stringifiedParams.length > 0 ? `/api/v1/review-management?${stringifiedParams}` : `/api/v1/review-management`
 }
 
 /**
  * @summary Get the caller's provider connection, locations, and review inbox summary
  */
-export const getReviewDashboard = async ( options?: Parameters<typeof customFetch>[1]): Promise<ReviewDashboardResult> => {
+export const getReviewDashboard = async (params: GetReviewDashboardParams, options?: Parameters<typeof customFetch>[1]): Promise<ReviewDashboardResult> => {
 
-  return customFetch<ReviewDashboardResult>(getGetReviewDashboardUrl(),
+  return customFetch<ReviewDashboardResult>(getGetReviewDashboardUrl(params),
   {
     ...options,
     method: 'GET'
@@ -171,23 +182,23 @@ export const getReviewDashboard = async ( options?: Parameters<typeof customFetc
 
 
 
-export const getGetReviewDashboardQueryKey = () => {
+export const getGetReviewDashboardQueryKey = (params?: GetReviewDashboardParams,) => {
     return [
-    `/api/v1/review-management`
+    `/api/v1/review-management`, ...(params ? [params] : [])
     ] as const;
     }
 
 
-export const getGetReviewDashboardQueryOptions = <TData = Awaited<ReturnType<typeof getReviewDashboard>>, TError = ErrorType<ErrorResponse>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getReviewDashboard>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getGetReviewDashboardQueryOptions = <TData = Awaited<ReturnType<typeof getReviewDashboard>>, TError = ErrorType<ErrorResponse>>(params: GetReviewDashboardParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getReviewDashboard>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
 
-  const queryKey =  queryOptions?.queryKey ?? getGetReviewDashboardQueryKey();
+  const queryKey =  queryOptions?.queryKey ?? getGetReviewDashboardQueryKey(params);
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof getReviewDashboard>>> = ({ signal }) => getReviewDashboard({ signal, ...requestOptions });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getReviewDashboard>>> = ({ signal }) => getReviewDashboard(params, { signal, ...requestOptions });
 
 
 
@@ -205,11 +216,11 @@ export type GetReviewDashboardQueryError = ErrorType<ErrorResponse>
  */
 
 export function useGetReviewDashboard<TData = Awaited<ReturnType<typeof getReviewDashboard>>, TError = ErrorType<ErrorResponse>>(
-  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getReviewDashboard>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+ params: GetReviewDashboardParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getReviewDashboard>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
-  const queryOptions = getGetReviewDashboardQueryOptions(options)
+  const queryOptions = getGetReviewDashboardQueryOptions(params,options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 
@@ -293,20 +304,27 @@ export const useStartReviewProviderConnection = <TError = ErrorType<ErrorRespons
       return useMutation(getStartReviewProviderConnectionMutationOptions(options));
     }
 
-export const getDisconnectReviewProviderUrl = () => {
+export const getDisconnectReviewProviderUrl = (params: DisconnectReviewProviderParams,) => {
+  const normalizedParams = new URLSearchParams();
 
+  Object.entries(params || {}).forEach(([key, value]) => {
 
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
 
+  const stringifiedParams = normalizedParams.toString();
 
-  return `/api/v1/review-management/connection`
+  return stringifiedParams.length > 0 ? `/api/v1/review-management/connection?${stringifiedParams}` : `/api/v1/review-management/connection`
 }
 
 /**
  * @summary Disconnect the caller's Google Business review connection
  */
-export const disconnectReviewProvider = async ( options?: Parameters<typeof customFetch>[1]): Promise<ReviewDashboardResult> => {
+export const disconnectReviewProvider = async (params: DisconnectReviewProviderParams, options?: Parameters<typeof customFetch>[1]): Promise<ReviewDashboardResult> => {
 
-  return customFetch<ReviewDashboardResult>(getDisconnectReviewProviderUrl(),
+  return customFetch<ReviewDashboardResult>(getDisconnectReviewProviderUrl(params),
   {
     ...options,
     method: 'DELETE'
@@ -320,8 +338,8 @@ export const disconnectReviewProvider = async ( options?: Parameters<typeof cust
 
 
 export const getDisconnectReviewProviderMutationOptions = <TError = ErrorType<ErrorResponse>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof disconnectReviewProvider>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
-): UseMutationOptions<Awaited<ReturnType<typeof disconnectReviewProvider>>, TError,void, TContext> => {
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof disconnectReviewProvider>>, TError,{params: DisconnectReviewProviderParams}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof disconnectReviewProvider>>, TError,{params: DisconnectReviewProviderParams}, TContext> => {
 
 const mutationKey = ['disconnectReviewProvider'];
 const {mutation: mutationOptions, request: requestOptions} = options ?
@@ -333,10 +351,10 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof disconnectReviewProvider>>, void> = () => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof disconnectReviewProvider>>, {params: DisconnectReviewProviderParams}> = (props) => {
+          const {params} = props ?? {};
 
-
-          return  disconnectReviewProvider(requestOptions)
+          return  disconnectReviewProvider(params,requestOptions)
         }
 
 
@@ -354,30 +372,37 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
  * @summary Disconnect the caller's Google Business review connection
  */
 export const useDisconnectReviewProvider = <TError = ErrorType<ErrorResponse>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof disconnectReviewProvider>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof disconnectReviewProvider>>, TError,{params: DisconnectReviewProviderParams}, TContext>, request?: SecondParameter<typeof customFetch>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof disconnectReviewProvider>>,
         TError,
-        void,
+        {params: DisconnectReviewProviderParams},
         TContext
       > => {
       return useMutation(getDisconnectReviewProviderMutationOptions(options));
     }
 
-export const getGetReviewProviderLocationsUrl = () => {
+export const getGetReviewProviderLocationsUrl = (params: GetReviewProviderLocationsParams,) => {
+  const normalizedParams = new URLSearchParams();
 
+  Object.entries(params || {}).forEach(([key, value]) => {
 
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
 
+  const stringifiedParams = normalizedParams.toString();
 
-  return `/api/v1/review-management/connection/locations`
+  return stringifiedParams.length > 0 ? `/api/v1/review-management/connection/locations?${stringifiedParams}` : `/api/v1/review-management/connection/locations`
 }
 
 /**
  * @summary Check the in-progress Google OAuth attempt and list selectable business locations once bundle.social confirms access
  */
-export const getReviewProviderLocations = async ( options?: Parameters<typeof customFetch>[1]): Promise<ReviewProviderLocationsResult> => {
+export const getReviewProviderLocations = async (params: GetReviewProviderLocationsParams, options?: Parameters<typeof customFetch>[1]): Promise<ReviewProviderLocationsResult> => {
 
-  return customFetch<ReviewProviderLocationsResult>(getGetReviewProviderLocationsUrl(),
+  return customFetch<ReviewProviderLocationsResult>(getGetReviewProviderLocationsUrl(params),
   {
     ...options,
     method: 'GET'
@@ -390,23 +415,23 @@ export const getReviewProviderLocations = async ( options?: Parameters<typeof cu
 
 
 
-export const getGetReviewProviderLocationsQueryKey = () => {
+export const getGetReviewProviderLocationsQueryKey = (params?: GetReviewProviderLocationsParams,) => {
     return [
-    `/api/v1/review-management/connection/locations`
+    `/api/v1/review-management/connection/locations`, ...(params ? [params] : [])
     ] as const;
     }
 
 
-export const getGetReviewProviderLocationsQueryOptions = <TData = Awaited<ReturnType<typeof getReviewProviderLocations>>, TError = ErrorType<ErrorResponse>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getReviewProviderLocations>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getGetReviewProviderLocationsQueryOptions = <TData = Awaited<ReturnType<typeof getReviewProviderLocations>>, TError = ErrorType<ErrorResponse>>(params: GetReviewProviderLocationsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getReviewProviderLocations>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
 
-  const queryKey =  queryOptions?.queryKey ?? getGetReviewProviderLocationsQueryKey();
+  const queryKey =  queryOptions?.queryKey ?? getGetReviewProviderLocationsQueryKey(params);
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof getReviewProviderLocations>>> = ({ signal }) => getReviewProviderLocations({ signal, ...requestOptions });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getReviewProviderLocations>>> = ({ signal }) => getReviewProviderLocations(params, { signal, ...requestOptions });
 
 
 
@@ -424,11 +449,11 @@ export type GetReviewProviderLocationsQueryError = ErrorType<ErrorResponse>
  */
 
 export function useGetReviewProviderLocations<TData = Awaited<ReturnType<typeof getReviewProviderLocations>>, TError = ErrorType<ErrorResponse>>(
-  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getReviewProviderLocations>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+ params: GetReviewProviderLocationsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getReviewProviderLocations>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
-  const queryOptions = getGetReviewProviderLocationsQueryOptions(options)
+  const queryOptions = getGetReviewProviderLocationsQueryOptions(params,options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 
@@ -512,20 +537,27 @@ export const useSelectReviewProviderLocation = <TError = ErrorType<ErrorResponse
       return useMutation(getSelectReviewProviderLocationMutationOptions(options));
     }
 
-export const getSyncReviewProviderUrl = () => {
+export const getSyncReviewProviderUrl = (params: SyncReviewProviderParams,) => {
+  const normalizedParams = new URLSearchParams();
 
+  Object.entries(params || {}).forEach(([key, value]) => {
 
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
 
+  const stringifiedParams = normalizedParams.toString();
 
-  return `/api/v1/review-management/sync`
+  return stringifiedParams.length > 0 ? `/api/v1/review-management/sync?${stringifiedParams}` : `/api/v1/review-management/sync`
 }
 
 /**
  * @summary Synchronize Google Business locations and reviews from BNDLE
  */
-export const syncReviewProvider = async ( options?: Parameters<typeof customFetch>[1]): Promise<ReviewDashboardResult> => {
+export const syncReviewProvider = async (params: SyncReviewProviderParams, options?: Parameters<typeof customFetch>[1]): Promise<ReviewDashboardResult> => {
 
-  return customFetch<ReviewDashboardResult>(getSyncReviewProviderUrl(),
+  return customFetch<ReviewDashboardResult>(getSyncReviewProviderUrl(params),
   {
     ...options,
     method: 'POST'
@@ -539,8 +571,8 @@ export const syncReviewProvider = async ( options?: Parameters<typeof customFetc
 
 
 export const getSyncReviewProviderMutationOptions = <TError = ErrorType<ErrorResponse>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof syncReviewProvider>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
-): UseMutationOptions<Awaited<ReturnType<typeof syncReviewProvider>>, TError,void, TContext> => {
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof syncReviewProvider>>, TError,{params: SyncReviewProviderParams}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof syncReviewProvider>>, TError,{params: SyncReviewProviderParams}, TContext> => {
 
 const mutationKey = ['syncReviewProvider'];
 const {mutation: mutationOptions, request: requestOptions} = options ?
@@ -552,10 +584,10 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof syncReviewProvider>>, void> = () => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof syncReviewProvider>>, {params: SyncReviewProviderParams}> = (props) => {
+          const {params} = props ?? {};
 
-
-          return  syncReviewProvider(requestOptions)
+          return  syncReviewProvider(params,requestOptions)
         }
 
 
@@ -573,17 +605,17 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
  * @summary Synchronize Google Business locations and reviews from BNDLE
  */
 export const useSyncReviewProvider = <TError = ErrorType<ErrorResponse>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof syncReviewProvider>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof syncReviewProvider>>, TError,{params: SyncReviewProviderParams}, TContext>, request?: SecondParameter<typeof customFetch>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof syncReviewProvider>>,
         TError,
-        void,
+        {params: SyncReviewProviderParams},
         TContext
       > => {
       return useMutation(getSyncReviewProviderMutationOptions(options));
     }
 
-export const getListManagedReviewsUrl = (params?: ListManagedReviewsParams,) => {
+export const getListManagedReviewsUrl = (params: ListManagedReviewsParams,) => {
   const normalizedParams = new URLSearchParams();
 
   Object.entries(params || {}).forEach(([key, value]) => {
@@ -601,7 +633,7 @@ export const getListManagedReviewsUrl = (params?: ListManagedReviewsParams,) => 
 /**
  * @summary List synchronized Google reviews with inbox filters
  */
-export const listManagedReviews = async (params?: ListManagedReviewsParams, options?: Parameters<typeof customFetch>[1]): Promise<ManagedReviewListResult> => {
+export const listManagedReviews = async (params: ListManagedReviewsParams, options?: Parameters<typeof customFetch>[1]): Promise<ManagedReviewListResult> => {
 
   return customFetch<ManagedReviewListResult>(getListManagedReviewsUrl(params),
   {
@@ -623,7 +655,7 @@ export const getListManagedReviewsQueryKey = (params?: ListManagedReviewsParams,
     }
 
 
-export const getListManagedReviewsQueryOptions = <TData = Awaited<ReturnType<typeof listManagedReviews>>, TError = ErrorType<ErrorResponse>>(params?: ListManagedReviewsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listManagedReviews>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getListManagedReviewsQueryOptions = <TData = Awaited<ReturnType<typeof listManagedReviews>>, TError = ErrorType<ErrorResponse>>(params: ListManagedReviewsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listManagedReviews>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -650,7 +682,7 @@ export type ListManagedReviewsQueryError = ErrorType<ErrorResponse>
  */
 
 export function useListManagedReviews<TData = Awaited<ReturnType<typeof listManagedReviews>>, TError = ErrorType<ErrorResponse>>(
- params?: ListManagedReviewsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listManagedReviews>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+ params: ListManagedReviewsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listManagedReviews>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 

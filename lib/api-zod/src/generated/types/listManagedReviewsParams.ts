@@ -8,6 +8,7 @@
 import type { ReviewResponseStatus } from './reviewResponseStatus';
 
 export type ListManagedReviewsParams = {
+businessId: string;
 locationId?: string;
 /**
  * @minimum 1

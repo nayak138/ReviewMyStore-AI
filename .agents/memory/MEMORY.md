@@ -36,3 +36,4 @@
 - [Browser regression checks](browser-regression-checks.md) — the authenticated browser tester may be unavailable in Free mode; keep deterministic UI-state coverage in the artifact tests.
 - [Social comment identifiers](social-comment-identifiers.md) — replies must use bundle.social's stored fetched-comment ID, not the platform's external comment ID.
 - [Meta target selection](meta-target-selection.md) — reject stale, duplicate, and incomplete provider targets without clearing the current channel first.
+- [Business usage accounting](business-usage-accounting.md) — reserve and settle app allowances by internal business, independent of reconnectable provider identities.

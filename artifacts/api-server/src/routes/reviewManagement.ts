@@ -2,9 +2,12 @@ import { Router, type IRouter, type Request, type Response } from "express";
 import {
   DeleteManagedReviewReplyParams,
   DeleteManagedReviewReplyResponse,
+  DisconnectReviewProviderQueryParams,
   GenerateManagedReviewDraftParams,
   GenerateManagedReviewDraftResponse,
   GetReviewDashboardResponse,
+  GetReviewDashboardQueryParams,
+  GetReviewProviderLocationsQueryParams,
   GetReviewProviderLocationsResponse,
   ListManagedReviewsQueryParams,
   ListManagedReviewsResponse,
@@ -16,6 +19,7 @@ import {
   StartReviewProviderConnectionBody,
   StartReviewProviderConnectionResponse,
   SyncReviewProviderResponse,
+  SyncReviewProviderQueryParams,
 } from "@workspace/api-zod";
 import { requireAuth } from "../middlewares/requireAuth";
 import {
@@ -29,10 +33,13 @@ import {
   publishManagedReviewReply,
   ReviewProviderError,
   ReviewProviderOperationInProgressError,
+  assertReviewBusiness,
   selectReviewProviderLocation,
   startReviewProviderConnection,
   syncReviewProvider,
+  syncReviewProviderForBusiness,
 } from "../services/reviewManagementService";
+import { BusinessUsageLimitError } from "../services/businessUsageService";
 import { publicOrigin } from "../lib/publicOrigin";
 
 const router: IRouter = Router();
@@ -75,6 +82,14 @@ function sendServiceError(res: Response, error: unknown) {
     });
     return;
   }
+  if (error instanceof BusinessUsageLimitError) {
+    res.status(error.status).json({
+      success: false,
+      code: error.code,
+      message: error.message,
+    });
+    return;
+  }
   throw error;
 }
 
@@ -84,7 +99,23 @@ router.get(
   async (req, res): Promise<void> => {
     const organizationId = requireOrganization(req, res);
     if (!organizationId) return;
-    const dashboard = await getReviewDashboard(organizationId);
+    const businessId =
+      typeof req.query.businessId === "string" ? req.query.businessId : undefined;
+    const parsed = businessId
+      ? GetReviewDashboardQueryParams.safeParse(req.query)
+      : null;
+    if (parsed && !parsed.success) {
+      res.status(400).json({
+        success: false,
+        code: "INVALID_QUERY",
+        message: parsed.error.message,
+      });
+      return;
+    }
+    const dashboard = await getReviewDashboard(
+      organizationId,
+      parsed?.data.businessId,
+    );
     res.json(GetReviewDashboardResponse.parse(dashboard));
   },
 );
@@ -105,6 +136,7 @@ router.post(
       return;
     }
     try {
+      await assertReviewBusiness(organizationId, body.data.businessId);
       const result = await startReviewProviderConnection(
         organizationId,
         publicOrigin(req),
@@ -128,7 +160,19 @@ router.get(
     const organizationId = requireOrganization(req, res);
     if (!organizationId) return;
     try {
-      const result = await getReviewProviderConnectionLocations(organizationId);
+      const parsed = GetReviewProviderLocationsQueryParams.safeParse(req.query);
+      if (!parsed.success) {
+        res.status(400).json({
+          success: false,
+          code: "INVALID_QUERY",
+          message: parsed.error.message,
+        });
+        return;
+      }
+      const result = await getReviewProviderConnectionLocations(
+        organizationId,
+        parsed.data.businessId,
+      );
       res.json(GetReviewProviderLocationsResponse.parse(result));
     } catch (error) {
       req.log.warn(
@@ -158,6 +202,7 @@ router.post(
     try {
       const result = await selectReviewProviderLocation(
         organizationId,
+        body.data.businessId,
         body.data.locationId,
       );
       res.json(SelectReviewProviderLocationResponse.parse(result));
@@ -174,8 +219,20 @@ router.delete(
   async (req, res): Promise<void> => {
     const organizationId = requireOrganization(req, res);
     if (!organizationId) return;
+    const parsed = DisconnectReviewProviderQueryParams.safeParse(req.query);
+    if (!parsed.success) {
+      res.status(400).json({
+        success: false,
+        code: "INVALID_QUERY",
+        message: parsed.error.message,
+      });
+      return;
+    }
     try {
-      const result = await disconnectReviewProvider(organizationId);
+      const result = await disconnectReviewProvider(
+        organizationId,
+        parsed.data.businessId,
+      );
       res.json(GetReviewDashboardResponse.parse(result));
     } catch (error) {
       req.log.warn({ err: error }, "Unable to disconnect review provider");
@@ -190,8 +247,23 @@ router.post(
   async (req, res): Promise<void> => {
     const organizationId = requireOrganization(req, res);
     if (!organizationId) return;
+    const businessId =
+      typeof req.query.businessId === "string" ? req.query.businessId : undefined;
+    const parsed = businessId
+      ? SyncReviewProviderQueryParams.safeParse(req.query)
+      : null;
+    if (parsed && !parsed.success) {
+      res.status(400).json({
+        success: false,
+        code: "INVALID_QUERY",
+        message: parsed.error.message,
+      });
+      return;
+    }
     try {
-      const result = await syncReviewProvider(organizationId);
+      const result = businessId
+        ? await syncReviewProviderForBusiness(organizationId, businessId)
+        : await syncReviewProvider(organizationId);
       res.json(SyncReviewProviderResponse.parse(result));
     } catch (error) {
       req.log.warn({ err: error }, "Review provider sync failed");

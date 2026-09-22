@@ -11,6 +11,7 @@ import { sql } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 import { organizationsTable } from "./organizations";
+import { businessesTable } from "./businesses";
 
 export const reviewProviderEnum = pgEnum("review_provider", ["BNDLE"]);
 export const reviewConnectionStatusEnum = pgEnum("review_connection_status", [
@@ -31,6 +32,10 @@ export const providerConnectionsTable = pgTable(
     organizationId: text("organization_id")
       .notNull()
       .references(() => organizationsTable.id, { onDelete: "cascade" }),
+    /** Business whose Google location is attached to this connection. */
+    businessId: text("business_id").references(() => businessesTable.id, {
+      onDelete: "set null",
+    }),
     provider: reviewProviderEnum("provider").notNull().default("BNDLE"),
     externalProfileId: text("external_profile_id").notNull(),
     status: reviewConnectionStatusEnum("status").notNull().default("PENDING"),
@@ -47,11 +52,12 @@ export const providerConnectionsTable = pgTable(
       .defaultNow(),
   },
   (table) => [
-    uniqueIndex("provider_connections_org_provider_idx").on(
-      table.organizationId,
+    uniqueIndex("provider_connections_business_provider_idx").on(
+      table.businessId,
       table.provider,
     ),
     index("provider_connections_organization_id_idx").on(table.organizationId),
+    index("provider_connections_business_id_idx").on(table.businessId),
   ],
 );
 
@@ -59,6 +65,7 @@ export const insertProviderConnectionSchema = createInsertSchema(
   providerConnectionsTable,
 ).omit({
   id: true,
+  businessId: true,
   createdAt: true,
   updatedAt: true,
   lastSyncedAt: true,

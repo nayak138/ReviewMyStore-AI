@@ -42,6 +42,13 @@ paths:
       operationId: getReviewDashboard
       tags: [review-management]
       summary: Get the caller's provider connection, locations, and review inbox summary
+      parameters:
+        - name: businessId
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
       responses:
         "200":
           description: Review-management dashboard data
@@ -96,6 +103,13 @@ paths:
       operationId: disconnectReviewProvider
       tags: [review-management]
       summary: Disconnect the caller's Google Business review connection
+      parameters:
+        - name: businessId
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
       responses:
         "200":
           description: Updated review-management dashboard
@@ -123,6 +137,13 @@ paths:
       summary: >-
         Check the in-progress Google OAuth attempt and list selectable
         business locations once bundle.social confirms access
+      parameters:
+        - name: businessId
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
       responses:
         "200":
           description: Current stage of the custom connect flow
@@ -181,6 +202,13 @@ paths:
       operationId: syncReviewProvider
       tags: [review-management]
       summary: Synchronize Google Business locations and reviews from BNDLE
+      parameters:
+        - name: businessId
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
       responses:
         "200":
           description: Refreshed dashboard data
@@ -207,6 +235,12 @@ paths:
       tags: [review-management]
       summary: List synchronized Google reviews with inbox filters
       parameters:
+        - name: businessId
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
         - name: locationId
           in: query
           required: false
@@ -4739,10 +4773,15 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/SocialMediaAvailableAccount"
+        usage:
+          type: array
+          items:
+            $ref: "#/components/schemas/BusinessUsageSummaryItem"
       required:
         - teamId
         - accounts
         - availableAccounts
+        - usage
 
     SocialMediaConnectionInput:
       type: object
@@ -5046,7 +5085,56 @@ components:
             $ref: "#/components/schemas/ReviewLocation"
         summary:
           $ref: "#/components/schemas/ReviewInboxSummary"
-      required: [connection, locations, summary]
+        usage:
+          type: array
+          items:
+            $ref: "#/components/schemas/BusinessUsageSummaryItem"
+      required: [connection, locations, summary, usage]
+
+    BusinessUsageMetric:
+      type: string
+      enum:
+        - GOOGLE_REVIEW_IMPORTS
+        - AI_REVIEW_REPLIES
+        - PUBLIC_AI_GENERATIONS
+        - SOCIAL_POSTS
+        - SOCIAL_COMMENT_IMPORTS
+        - SOCIAL_COMMENT_REPLIES
+
+    BusinessUsageSummaryItem:
+      type: object
+      properties:
+        metric:
+          $ref: "#/components/schemas/BusinessUsageMetric"
+        label:
+          type: string
+        window:
+          type: string
+          enum: [DAILY, MONTHLY]
+        used:
+          type: integer
+        reserved:
+          type: integer
+        limit:
+          type: integer
+        remaining:
+          type: integer
+        periodStart:
+          type: string
+          format: date-time
+        periodEnd:
+          type: string
+          format: date-time
+      required:
+        - metric
+        - label
+        - window
+        - used
+        - reserved
+        - limit
+        - remaining
+        - periodStart
+        - periodEnd
 
     ReviewProviderConnectionStartResult:
       type: object
@@ -5077,7 +5165,7 @@ components:
         businessId:
           type: string
           description: Business workspace to return to after Google authorization
-      required: []
+      required: [businessId]
 
     ReviewProviderLocationStage:
       type: string
@@ -5118,7 +5206,10 @@ components:
       properties:
         locationId:
           type: string
-      required: [locationId]
+        businessId:
+          type: string
+          format: uuid
+      required: [businessId, locationId]
 
     ManagedReview:
       type: object

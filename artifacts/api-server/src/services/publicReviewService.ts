@@ -17,6 +17,11 @@ import {
 import { logger } from "../lib/logger";
 import { logScanEvent, type RequestMeta } from "./scanEventService";
 import { getPlaceDetails } from "./googleBusinessService";
+import {
+  completeBusinessUsageReservation,
+  releaseBusinessUsageReservation,
+  reserveBusinessUsage,
+} from "./businessUsageService";
 
 export class PublicCampaignNotFoundError extends Error {
   constructor(businessSlug: string, campaignSlug: string) {
@@ -319,9 +324,15 @@ export async function generatePublicReview(
     campaignSlug,
   );
   const language = options.language ?? business.defaultLanguage ?? "en";
+  const businessUsageReservation = await reserveBusinessUsage({
+    organizationId: business.organizationId,
+    businessId: business.id,
+    metric: "PUBLIC_AI_GENERATIONS",
+  });
 
   const reservationId = randomUUID();
-  await db.transaction(async (tx) => {
+  try {
+    await db.transaction(async (tx) => {
     const [existingSession] = await tx
       .select()
       .from(reviewSessionsTable)
@@ -332,6 +343,10 @@ export async function generatePublicReview(
       throw new SessionCampaignMismatchError();
     }
 
+    // Keep the legacy organization allowance as a compatibility guard and
+    // billing counter. The business-scoped reservation above is the plan
+    // allowance that prevents one business from consuming another business's
+    // capacity.
     const [organization] = await tx
       .update(organizationsTable)
       .set({ aiQuota: sql`${organizationsTable.aiQuota} - 1` })
@@ -400,7 +415,11 @@ export async function generatePublicReview(
     });
 
     return generationCount;
-  });
+    });
+  } catch (error) {
+    await releaseBusinessUsageReservation(businessUsageReservation.id);
+    throw error;
+  }
 
   try {
     const reviewText = await generateReviewText({
@@ -454,6 +473,7 @@ export async function generatePublicReview(
 
       return updatedSession.generationCount;
     });
+    await completeBusinessUsageReservation(businessUsageReservation.id);
 
     try {
       await logScanEvent({
@@ -493,6 +513,14 @@ export async function generatePublicReview(
       logger.error(
         { reservationId, err: releaseError },
         "Failed to release public review generation reservation",
+      );
+    }
+    try {
+      await releaseBusinessUsageReservation(businessUsageReservation.id);
+    } catch (releaseError) {
+      logger.error(
+        { reservationId: businessUsageReservation.id, err: releaseError },
+        "Failed to release business AI usage reservation",
       );
     }
     throw error;

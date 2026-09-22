@@ -20,3 +20,4 @@ export * from "./socialMediaAccounts";
 export * from "./socialMediaProviderTeams";
 export * from "./accountDataExports";
 export * from "./accountDeactivationRequests";
+export * from "./businessUsage";

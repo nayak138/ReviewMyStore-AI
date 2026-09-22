@@ -1163,10 +1163,43 @@ export interface SocialMediaAvailableAccount {
   connected: boolean;
 }
 
+export type BusinessUsageMetric = typeof BusinessUsageMetric[keyof typeof BusinessUsageMetric];
+
+
+export const BusinessUsageMetric = {
+  GOOGLE_REVIEW_IMPORTS: 'GOOGLE_REVIEW_IMPORTS',
+  AI_REVIEW_REPLIES: 'AI_REVIEW_REPLIES',
+  PUBLIC_AI_GENERATIONS: 'PUBLIC_AI_GENERATIONS',
+  SOCIAL_POSTS: 'SOCIAL_POSTS',
+  SOCIAL_COMMENT_IMPORTS: 'SOCIAL_COMMENT_IMPORTS',
+  SOCIAL_COMMENT_REPLIES: 'SOCIAL_COMMENT_REPLIES',
+} as const;
+
+export type BusinessUsageSummaryItemWindow = typeof BusinessUsageSummaryItemWindow[keyof typeof BusinessUsageSummaryItemWindow];
+
+
+export const BusinessUsageSummaryItemWindow = {
+  DAILY: 'DAILY',
+  MONTHLY: 'MONTHLY',
+} as const;
+
+export interface BusinessUsageSummaryItem {
+  metric: BusinessUsageMetric;
+  label: string;
+  window: BusinessUsageSummaryItemWindow;
+  used: number;
+  reserved: number;
+  limit: number;
+  remaining: number;
+  periodStart: string;
+  periodEnd: string;
+}
+
 export interface SocialMediaDashboardResult {
   teamId: string;
   accounts: SocialMediaAccount[];
   availableAccounts: SocialMediaAvailableAccount[];
+  usage: BusinessUsageSummaryItem[];
 }
 
 export interface SocialMediaConnectionInput {
@@ -1361,6 +1394,7 @@ export interface ReviewDashboardResult {
   connection: ReviewProviderConnection;
   locations: ReviewLocation[];
   summary: ReviewInboxSummary;
+  usage: BusinessUsageSummaryItem[];
 }
 
 /**
@@ -1396,7 +1430,7 @@ export interface ReviewProviderConnectionStartResult {
 
 export interface ReviewProviderConnectionInput {
   /** Business workspace to return to after Google authorization */
-  businessId?: string;
+  businessId: string;
 }
 
 export interface ReviewProviderLocationsResult {
@@ -1406,6 +1440,7 @@ export interface ReviewProviderLocationsResult {
 
 export interface SelectReviewProviderLocationRequest {
   locationId: string;
+  businessId: string;
 }
 
 export interface ManagedReview {
@@ -1456,7 +1491,24 @@ export interface ManagedReviewReplyInput {
   comment: string;
 }
 
+export type GetReviewDashboardParams = {
+businessId: string;
+};
+
+export type DisconnectReviewProviderParams = {
+businessId: string;
+};
+
+export type GetReviewProviderLocationsParams = {
+businessId: string;
+};
+
+export type SyncReviewProviderParams = {
+businessId: string;
+};
+
 export type ListManagedReviewsParams = {
+businessId: string;
 locationId?: string;
 /**
  * @minimum 1
