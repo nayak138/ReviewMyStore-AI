@@ -79,7 +79,7 @@ export function AppLayout({ children, title, businessName }: AppLayoutProps) {
   };
 
   return (
-    <div className="min-h-[100dvh] flex bg-background">
+    <div className="flex h-[100dvh] overflow-hidden bg-background">
       {/* Mobile Menu Overlay */}
       {mobileMenuOpen && (
         <div className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm md:hidden" onClick={() => setMobileMenuOpen(false)} />
@@ -143,7 +143,7 @@ export function AppLayout({ children, title, businessName }: AppLayoutProps) {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col min-w-0 h-[100dvh] overflow-hidden bg-background">
+      <main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-background">
         <header className="h-16 shrink-0 flex items-center justify-between pl-14 pr-4 md:px-8 border-b border-border bg-card/50 backdrop-blur-md sticky top-0 z-10">
           <div className="flex items-center gap-3">
             {businessName ? (
@@ -164,7 +164,7 @@ export function AppLayout({ children, title, businessName }: AppLayoutProps) {
           </div>
         </header>
 
-        <div className="flex-1 overflow-y-auto">
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
           {children}
         </div>
       </main>

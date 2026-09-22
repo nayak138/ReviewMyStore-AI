@@ -4858,12 +4858,15 @@ components:
         businessId:
           type: string
           format: uuid
+        platform:
+          $ref: "#/components/schemas/SocialMediaPlatform"
         postId:
           type: ["string", "null"]
         importedPostId:
           type: ["string", "null"]
       required:
         - businessId
+        - platform
 
     SocialMediaCommentImportResult:
       type: object

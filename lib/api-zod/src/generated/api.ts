@@ -507,6 +507,7 @@ export const ListSocialMediaCommentsResponse = zod.object({
  */
 export const ImportSocialMediaCommentsBody = zod.object({
   "businessId": zod.uuid(),
+  "platform": zod.enum(['FACEBOOK', 'INSTAGRAM', 'THREADS']),
   "postId": zod.string().nullish(),
   "importedPostId": zod.string().nullish()
 })

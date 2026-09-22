@@ -21,6 +21,8 @@ The review provider behind the `BNDLE_SOCIAL_API` secret is **bundle.social** (d
 - Replies: `PUT/DELETE /misc/google-business/reviews/:reviewId/reply` with `teamId` in the JSON body (yes, DELETE takes a body).
 - Social post media must be registered first: `POST /upload/from-url` accepts a publicly reachable asset URL plus `teamId` and returns an upload ID; provide those IDs in the platform payload's `uploadIds`. Instagram feed posts require at least one image or video upload ID.
 - Social post requests require a non-empty top-level `title`, even when the app treats the internal title as optional; derive a short fallback from the caption.
+- `POST /post` accepts only `DRAFT` or `SCHEDULED` as create-time statuses. `POSTED`/`PUBLISHED` are provider-managed result states; send `SCHEDULED` with the current publish time for an immediate post.
+- `POST /comment/import` requires `teamId`, exactly one of `postId`/`importedPostId`, and the singular `socialAccountType`; a post with multiple channels needs an explicit channel choice.
 - Channel replacement requires `POST /social-account/unset-channel` before `POST /social-account/set-channel`; bundle.social allows one active Page/account per team and rejects a direct switch.
 
 **Why:** bundle.social cannot publish an App Storage path directly; it needs a provider-side upload record before the post request.

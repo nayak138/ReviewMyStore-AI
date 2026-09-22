@@ -117,6 +117,11 @@ function PlatformBadge({ platform }: { platform: SocialMediaPlatform }) {
   );
 }
 
+function isPublishedPost(post: Pick<SocialMediaPost, "status" | "publishedAt">) {
+  const status = post.status.toUpperCase();
+  return Boolean(post.publishedAt) || status === "POSTED" || status === "PUBLISHED";
+}
+
 function AccountRow({
   account,
   onDetach,
@@ -155,6 +160,7 @@ function AccountRow({
 
 function PostCard({ post, onImportComments, importing }: { post: SocialMediaPost; onImportComments: (post: SocialMediaPost) => void; importing: boolean }) {
   const status = post.status.toUpperCase();
+  const canImportComments = isPublishedPost(post);
   const statusClass =
     status.includes("PUBLISH") ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-700" :
       status.includes("SCHEDUL") ? "border-sky-500/20 bg-sky-500/10 text-sky-700" :
@@ -177,7 +183,14 @@ function PostCard({ post, onImportComments, importing }: { post: SocialMediaPost
       </p>
       <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-border pt-3 text-xs text-muted-foreground">
         <span>{post.publishedAt ? `Published ${formatDate(post.publishedAt, true)}` : post.scheduledAt ? `Scheduled ${formatDate(post.scheduledAt, true)}` : "Created recently"}</span>
-        <Button variant="outline" size="sm" onClick={() => onImportComments(post)} disabled={importing} data-testid={`button-import-comments-${post.id}`}>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => onImportComments(post)}
+          disabled={importing || !canImportComments}
+          title={canImportComments ? undefined : "Comments can be imported after this post is live."}
+          data-testid={`button-import-comments-${post.id}`}
+        >
           {importing ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <MessageCircle className="mr-1.5 h-3.5 w-3.5" />}
           Import comments
         </Button>
@@ -205,6 +218,7 @@ export default function SocialMedia() {
   const [scheduleEnabled, setScheduleEnabled] = useState(false);
   const [scheduledAt, setScheduledAt] = useState("");
   const [selectedPostId, setSelectedPostId] = useState<string>("");
+  const [selectedCommentPlatform, setSelectedCommentPlatform] = useState<SocialMediaPlatform | "">("");
   const [replyDrafts, setReplyDrafts] = useState<Record<string, string>>({});
   const [accountToDetach, setAccountToDetach] = useState<SocialMediaAccount | null>(null);
   const [connectingPlatform, setConnectingPlatform] = useState<SocialMediaPlatform | null>(null);
@@ -260,6 +274,8 @@ export default function SocialMedia() {
   });
   const posts = postsQuery.data?.posts ?? [];
   const shouldBoundPostQueue = posts.length > 3;
+  const publishedPosts = useMemo(() => posts.filter(isPublishedPost), [posts]);
+  const selectedCommentPost = publishedPosts.find((post) => post.id === selectedPostId);
   const commentsParams = { businessId: selectedBusinessId ?? "", postId: selectedPostId || undefined };
   const commentsKey = getListSocialMediaCommentsQueryKey(commentsParams);
   const commentsQuery = useListSocialMediaComments(commentsParams, {
@@ -286,9 +302,21 @@ export default function SocialMedia() {
   );
 
   useEffect(() => {
-    if (!selectedPostId && posts[0]) setSelectedPostId(posts[0].id);
-    if (selectedPostId && posts.length > 0 && !posts.some((post) => post.id === selectedPostId)) setSelectedPostId(posts[0].id);
-  }, [posts, selectedPostId]);
+    if (!selectedPostId && publishedPosts[0]) setSelectedPostId(publishedPosts[0].id);
+    if (selectedPostId && !publishedPosts.some((post) => post.id === selectedPostId)) {
+      setSelectedPostId(publishedPosts[0]?.id ?? "");
+    }
+  }, [publishedPosts, selectedPostId]);
+
+  useEffect(() => {
+    const platforms = selectedCommentPost?.platforms ?? [];
+    if (
+      !selectedCommentPlatform ||
+      !platforms.includes(selectedCommentPlatform)
+    ) {
+      setSelectedCommentPlatform(platforms[0] ?? "");
+    }
+  }, [selectedCommentPlatform, selectedCommentPost]);
 
   useEffect(() => {
     setSelectedPlatforms((current) => current.filter((platform) => connectedPlatforms.has(platform)));
@@ -464,9 +492,31 @@ export default function SocialMedia() {
   };
   const handleImportComments = (post: SocialMediaPost) => {
     if (!selectedBusinessId) return;
+    if (!isPublishedPost(post)) {
+      toast({
+        title: "Post isn't live yet",
+        description: "Comments can be imported after the post has published.",
+        variant: "destructive",
+      });
+      return;
+    }
+    const platform = selectedCommentPlatform && post.platforms.includes(selectedCommentPlatform)
+      ? selectedCommentPlatform
+      : post.platforms[0];
+    if (!platform) {
+      toast({
+        title: "Choose a channel first",
+        description: "This post does not include a connected channel to import comments from.",
+        variant: "destructive",
+      });
+      return;
+    }
     setSelectedPostId(post.id);
+    setSelectedCommentPlatform(platform);
     setImportingPostId(post.id);
-    importComments.mutate({ data: { businessId: selectedBusinessId, postId: post.id } });
+    importComments.mutate({
+      data: { businessId: selectedBusinessId, postId: post.id, platform },
+    });
   };
   const togglePlatform = (platform: SocialMediaPlatform) => {
     setSelectedPlatforms((current) => current.includes(platform) ? current.filter((item) => item !== platform) : [...current, platform]);
@@ -674,18 +724,29 @@ export default function SocialMedia() {
               <Card className="h-full">
                 <CardHeader><CardTitle className="flex items-center gap-2 text-xl"><MessageSquare className="h-4 w-4 text-primary" /> Public conversations</CardTitle><CardDescription className="mt-1">Import comments from a post, then reply without leaving the workspace.</CardDescription></CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="space-y-2"><Label htmlFor="comment-post">Post to review</Label><Select value={selectedPostId} onValueChange={setSelectedPostId}><SelectTrigger id="comment-post" data-testid="select-comment-post"><SelectValue placeholder={posts.length ? "Choose a post" : "Create a post first"} /></SelectTrigger><SelectContent>{posts.map((post) => <SelectItem key={post.id} value={post.id} data-testid={`option-comment-post-${post.id}`}>{post.title || (post.caption || "Untitled post").slice(0, 42)}</SelectItem>)}</SelectContent></Select></div>
-                  {selectedPostId && <Button variant="outline" className="w-full" onClick={() => { const post = posts.find((item) => item.id === selectedPostId); if (post) handleImportComments(post); }} disabled={!!importingPostId} data-testid="button-import-selected-comments"><MessageCircle className="mr-2 h-4 w-4" />Import latest comments</Button>}
-                  {!selectedPostId && <div className="rounded-xl bg-secondary/60 p-4 text-center text-xs leading-relaxed text-muted-foreground">Choose a recent post to see its imported comments here.</div>}
+                  <div className="space-y-2"><Label htmlFor="comment-post">Live post to review</Label><Select value={selectedPostId} onValueChange={setSelectedPostId}><SelectTrigger id="comment-post" data-testid="select-comment-post"><SelectValue placeholder={publishedPosts.length ? "Choose a live post" : "Publish a post first"} /></SelectTrigger><SelectContent>{publishedPosts.map((post) => <SelectItem key={post.id} value={post.id} data-testid={`option-comment-post-${post.id}`}>{post.title || (post.caption || "Untitled post").slice(0, 42)}</SelectItem>)}</SelectContent></Select></div>
+                  {selectedCommentPost && selectedCommentPost.platforms.length > 1 && <div className="space-y-2"><Label htmlFor="comment-platform">Channel to review</Label><Select value={selectedCommentPlatform} onValueChange={(value) => setSelectedCommentPlatform(value as SocialMediaPlatform)}><SelectTrigger id="comment-platform" data-testid="select-comment-platform"><SelectValue placeholder="Choose a channel" /></SelectTrigger><SelectContent>{selectedCommentPost.platforms.map((platform) => <SelectItem key={platform} value={platform} data-testid={`option-comment-platform-${platform.toLowerCase()}`}>{PLATFORM_META[platform].label}</SelectItem>)}</SelectContent></Select></div>}
+                  {selectedPostId && <Button variant="outline" className="w-full" onClick={() => { if (selectedCommentPost) handleImportComments(selectedCommentPost); }} disabled={!!importingPostId || !selectedCommentPlatform} data-testid="button-import-selected-comments"><MessageCircle className="mr-2 h-4 w-4" />Import latest comments</Button>}
+                  {!selectedPostId && <div className="rounded-xl bg-secondary/60 p-4 text-center text-xs leading-relaxed text-muted-foreground">{posts.length ? "Scheduled posts will be available here once they are live." : "Publish a post first to bring its public comments into this desk."}</div>}
                 </CardContent>
               </Card>
               <Card className="h-full">
                 <CardHeader className="flex-row items-start justify-between gap-4 space-y-0"><div><CardTitle className="text-xl">Reply desk</CardTitle><CardDescription className="mt-1">{selectedPostId ? "Keep replies direct, useful, and on-brand." : "Select a post to load its conversation."}</CardDescription></div>{commentsQuery.isFetching && <RefreshCw className="h-4 w-4 animate-spin text-muted-foreground" />}</CardHeader>
                 <CardContent className="space-y-3">
-                  {commentsQuery.isLoading ? <div data-testid="state-comments-loading" className="space-y-3">{[0, 1].map((item) => <div key={item} className="space-y-3 rounded-xl border border-border p-4"><Skeleton className="h-4 w-36" /><Skeleton className="h-12 w-full" /><Skeleton className="h-9 w-full" /></div>)}</div> :
-                    commentsQuery.isError ? <div className="rounded-xl border border-destructive/20 bg-destructive/5 p-4 text-sm" role="alert" data-testid="state-comments-error"><p className="font-semibold">Comments could not load</p><p className="mt-1 text-xs text-muted-foreground">{errorMessage(commentsQuery.error, "Try importing the comments again.")}</p></div> :
-                      comments.length ? comments.map((comment) => <CommentRow key={comment.id} comment={comment} draft={replyDrafts[comment.id] ?? ""} onDraftChange={(value) => setReplyDrafts((current) => ({ ...current, [comment.id]: value }))} onReply={() => selectedBusinessId && replyComment.mutate({ id: comment.id, data: { businessId: selectedBusinessId, text: (replyDrafts[comment.id] ?? "").trim() } })} isReplying={replyComment.isPending} />) :
-                        <div className="rounded-2xl border border-dashed border-border px-5 py-12 text-center" data-testid="state-no-comments"><div className="mx-auto mb-3 flex h-11 w-11 items-center justify-center rounded-xl bg-secondary text-muted-foreground"><MessageSquare className="h-5 w-5" /></div><p className="text-sm font-semibold">No imported comments yet</p><p className="mx-auto mt-1 max-w-sm text-xs leading-relaxed text-muted-foreground">Import a post's latest public comments to bring the conversation into this desk.</p></div>}
+                  <div
+                    className={cn(
+                      comments.length > 3 && "max-h-[min(36rem,calc(100dvh-16rem))] overflow-y-auto overscroll-contain pr-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+                    )}
+                    data-testid="comment-desk-scroll"
+                    tabIndex={comments.length > 3 ? 0 : undefined}
+                    role={comments.length > 3 ? "region" : undefined}
+                    aria-label={comments.length > 3 ? "Scrollable reply desk" : undefined}
+                  >
+                    {commentsQuery.isLoading ? <div data-testid="state-comments-loading" className="space-y-3">{[0, 1].map((item) => <div key={item} className="space-y-3 rounded-xl border border-border p-4"><Skeleton className="h-4 w-36" /><Skeleton className="h-12 w-full" /><Skeleton className="h-9 w-full" /></div>)}</div> :
+                      commentsQuery.isError ? <div className="rounded-xl border border-destructive/20 bg-destructive/5 p-4 text-sm" role="alert" data-testid="state-comments-error"><p className="font-semibold">Comments could not load</p><p className="mt-1 text-xs text-muted-foreground">{errorMessage(commentsQuery.error, "Try importing the comments again.")}</p></div> :
+                        comments.length ? <div className="space-y-3">{comments.map((comment) => <CommentRow key={comment.id} comment={comment} draft={replyDrafts[comment.id] ?? ""} onDraftChange={(value) => setReplyDrafts((current) => ({ ...current, [comment.id]: value }))} onReply={() => selectedBusinessId && replyComment.mutate({ id: comment.id, data: { businessId: selectedBusinessId, text: (replyDrafts[comment.id] ?? "").trim() } })} isReplying={replyComment.isPending} />)}</div> :
+                          <div className="rounded-2xl border border-dashed border-border px-5 py-12 text-center" data-testid="state-no-comments"><div className="mx-auto mb-3 flex h-11 w-11 items-center justify-center rounded-xl bg-secondary text-muted-foreground"><MessageSquare className="h-5 w-5" /></div><p className="text-sm font-semibold">No imported comments yet</p><p className="mx-auto mt-1 max-w-sm text-xs leading-relaxed text-muted-foreground">Import a post's latest public comments to bring the conversation into this desk.</p></div>}
+                  </div>
                 </CardContent>
               </Card>
             </section>

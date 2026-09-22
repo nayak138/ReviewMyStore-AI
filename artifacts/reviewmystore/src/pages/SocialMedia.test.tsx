@@ -24,6 +24,7 @@ const mocks = vi.hoisted(() => ({
   }>,
   postsLoading: false,
   commentsLoading: false,
+  importCommentsMutate: vi.fn(),
 }));
 
 vi.mock("@workspace/api-client-react", () => {
@@ -83,7 +84,7 @@ vi.mock("@workspace/api-client-react", () => {
     useAttachSocialMediaAccount: () => ({ mutate: vi.fn(), isPending: false }),
     useCreateSocialMediaPost: () => ({ mutate: vi.fn(), isPending: false }),
     useDetachSocialMediaAccount: () => ({ mutate: vi.fn(), isPending: false }),
-    useImportSocialMediaComments: () => ({ mutate: vi.fn(), isPending: false }),
+    useImportSocialMediaComments: () => ({ mutate: mocks.importCommentsMutate, isPending: false }),
     useReplyToSocialMediaComment: () => ({ mutate: vi.fn(), isPending: false }),
     useRequestSocialMediaMediaUploadUrl: () => ({
       mutateAsync: vi.fn(),
@@ -135,6 +136,7 @@ beforeEach(() => {
   mocks.posts.length = 0;
   mocks.postsLoading = false;
   mocks.commentsLoading = false;
+  mocks.importCommentsMutate.mockClear();
 });
 
 afterEach(() => {
@@ -211,7 +213,7 @@ describe("workspace layout", () => {
     });
 
     expect(screen.getByTestId("social-conversations")).toBeInTheDocument();
-    expect(screen.getByText("Choose a recent post to see its imported comments here.")).toBeInTheDocument();
+    expect(screen.getByText("Publish a post first to bring its public comments into this desk.")).toBeInTheDocument();
   });
 
   it("renders the post loading state without leaving an empty workspace", async () => {
@@ -362,6 +364,33 @@ describe("workspace layout", () => {
     });
 
     expect(screen.getByTestId("text-comment-comment-1")).toHaveTextContent("This is useful.");
+  });
+
+  it("sends the selected post channel when importing comments", async () => {
+    mocks.posts.push({
+      id: "multi-channel-post",
+      status: "POSTED",
+      platforms: ["FACEBOOK", "INSTAGRAM"],
+      title: "A live multi-channel post",
+      caption: "Caption",
+      publishedAt: "2026-09-22T00:00:00.000Z",
+      scheduledAt: null,
+    });
+
+    renderSocialMedia();
+
+    await waitFor(() => {
+      expect(screen.getByTestId("button-import-selected-comments")).toBeInTheDocument();
+    });
+
+    await screen.getByTestId("button-import-selected-comments").click();
+    expect(mocks.importCommentsMutate).toHaveBeenCalledWith({
+      data: {
+        businessId: "business-1",
+        postId: "multi-channel-post",
+        platform: "FACEBOOK",
+      },
+    });
   });
 
   it("keeps a short post queue in the regular page flow", async () => {

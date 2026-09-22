@@ -15,6 +15,7 @@ import {
 import { ObjectStorageService } from "../lib/objectStorage";
 import {
   createSocialMediaPost,
+  importSocialMediaComments,
   SocialMediaBadRequestError,
 } from "./socialMediaService";
 
@@ -125,6 +126,12 @@ before(async () => {
     if (path === "post" && postResponse) {
       return new Response(JSON.stringify(postResponse.body), {
         status: postResponse.status,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+    if (path === "comment/import") {
+      return new Response(JSON.stringify({ id: "comment-import-test", status: "FETCHING" }), {
+        status: 202,
         headers: { "Content-Type": "application/json" },
       });
     }
@@ -398,6 +405,8 @@ test("supplies the provider-required title when the internal title is omitted", 
     postCall?.body.title,
     "A text-only Facebook update with extra spacing",
   );
+  assert.equal(postCall?.body.status, "SCHEDULED");
+  assert.match(String(postCall?.body.postDate), /^\d{4}-\d{2}-\d{2}T/);
 });
 
 test("uses the same fallback title for scheduled text posts", async () => {
@@ -466,4 +475,23 @@ test("uses an isolated provider team for each business in one organization", asy
   );
   assert.equal(teamCalls.at(-1)?.path, `team/team-second-${runId}`);
   assert.equal(postCall?.body.teamId, `team-second-${runId}`);
+});
+
+test("includes the selected social account type when importing comments", async () => {
+  const imported = await importSocialMediaComments(organizationId, {
+    businessId,
+    platform: "INSTAGRAM",
+    postId: "post-live-test",
+  });
+
+  const commentImportCall = providerCalls.find(
+    (call) => call.path === "comment/import",
+  );
+  assert.equal(commentImportCall?.body.teamId, `team-${runId}`);
+  assert.equal(commentImportCall?.body.postId, "post-live-test");
+  assert.equal(commentImportCall?.body.socialAccountType, "INSTAGRAM");
+  assert.deepEqual(imported, {
+    importId: "comment-import-test",
+    status: "FETCHING",
+  });
 });

@@ -5,9 +5,11 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { SocialMediaPlatform } from './socialMediaPlatform';
 
 export interface SocialMediaCommentImportInput {
   businessId: string;
+  platform: SocialMediaPlatform;
   /** @nullable */
   postId?: string | null;
   /** @nullable */

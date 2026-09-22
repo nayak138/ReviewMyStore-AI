@@ -1254,6 +1254,7 @@ export interface SocialMediaPostListResult {
 
 export interface SocialMediaCommentImportInput {
   businessId: string;
+  platform: SocialMediaPlatform;
   /** @nullable */
   postId?: string | null;
   /** @nullable */

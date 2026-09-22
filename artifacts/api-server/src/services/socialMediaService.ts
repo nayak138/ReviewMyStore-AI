@@ -841,7 +841,10 @@ export async function createSocialMediaPost(
         teamId,
         title: postTitle,
         postDate: scheduledDate.toISOString(),
-        status: isScheduled ? "SCHEDULED" : "PUBLISHED",
+        // The provider only accepts DRAFT or SCHEDULED when creating a post.
+        // A SCHEDULED post dated now is picked up for immediate publishing;
+        // PUBLISHED is a provider-managed result state, not a create input.
+        status: "SCHEDULED",
         socialAccountTypes: input.platforms,
         data,
       }),
@@ -920,7 +923,12 @@ function commentPayload(raw: JsonRecord) {
 
 export async function importSocialMediaComments(
   organizationId: string,
-  input: { businessId: string; postId?: string | null; importedPostId?: string | null },
+  input: {
+    businessId: string;
+    platform: Platform;
+    postId?: string | null;
+    importedPostId?: string | null;
+  },
 ) {
   const { teamId } = await getBusinessTeam(organizationId, input.businessId);
   if (Boolean(input.postId) === Boolean(input.importedPostId)) {
@@ -932,6 +940,7 @@ export async function importSocialMediaComments(
     method: "POST",
     body: JSON.stringify({
       teamId,
+      socialAccountType: input.platform,
       ...(input.postId ? { postId: input.postId } : { importedPostId: input.importedPostId }),
     }),
   });
