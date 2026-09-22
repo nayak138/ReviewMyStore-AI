@@ -146,9 +146,9 @@ function AuthLayout({ children }: { children: ReactNode }) {
 }
 
 function SignInPage() {
-  const returnTo = safeReturnPath(
-    new URLSearchParams(window.location.search).get("redirect_url"),
-  );
+  const searchParams = new URLSearchParams(window.location.search);
+  const returnTo = safeReturnPath(searchParams.get("redirect_url"));
+  const sessionExpired = searchParams.get("session_expired") === "1";
   const { isLoaded, isSignedIn } = useAuth();
 
   if (stripBase(window.location.pathname) === "/sign-in/create") {
@@ -180,6 +180,15 @@ function SignInPage() {
           </div>
         </div>
         <div className="pt-6">
+          {sessionExpired && (
+            <div
+              className="mb-6 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-950"
+              role="status"
+              aria-live="polite"
+            >
+              Your session expired. Please sign in again.
+            </div>
+          )}
           <SignIn
             routing="path"
             path={`${basePath}/sign-in`}

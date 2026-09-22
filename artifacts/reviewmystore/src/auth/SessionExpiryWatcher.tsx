@@ -45,7 +45,11 @@ export function SessionExpiryWatcher() {
     if (handlingRef.current || !isSignedInRef.current) return;
     handlingRef.current = true;
     queryClient.clear();
-    void signOut({ redirectUrl: signInRedirectFor(locationRef.current) });
+    void signOut({
+      redirectUrl: signInRedirectFor(locationRef.current, {
+        sessionExpired: true,
+      }),
+    });
   }, [queryClient, signOut]);
 
   useEffect(() => onSessionExpired(handleExpiry), [handleExpiry]);

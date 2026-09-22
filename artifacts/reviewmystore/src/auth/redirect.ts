@@ -32,8 +32,12 @@ export function safeReturnPath(value: string | null): string {
 
 /** Builds the sign-in URL for an unauthenticated visit, preserving `location`
  * as the `redirect_url` so the user returns there after authenticating. */
-export function signInRedirectFor(location: string): string {
+export function signInRedirectFor(
+  location: string,
+  options: { sessionExpired?: boolean } = {},
+): string {
   const [pathname, search = ""] = location.split("?", 2);
   const returnTo = `${pathname || "/"}${search ? `?${search}` : ""}`;
-  return `${basePath}/sign-in?redirect_url=${encodeURIComponent(returnTo)}`;
+  const expiryNotice = options.sessionExpired ? "&session_expired=1" : "";
+  return `${basePath}/sign-in?redirect_url=${encodeURIComponent(returnTo)}${expiryNotice}`;
 }

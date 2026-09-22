@@ -70,6 +70,7 @@ describe("SessionExpiryWatcher", () => {
     expect(redirectUrl).toContain(
       encodeURIComponent("/businesses?tab=reviews"),
     );
+    expect(redirectUrl).toContain("session_expired=1");
   });
 
   it("does not sign out when already signed out", () => {
