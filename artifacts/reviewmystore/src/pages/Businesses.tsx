@@ -397,7 +397,7 @@ export default function Businesses() {
         </div>
 
         {/* Business List */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 gap-3">
           {isLoading ? (
             Array.from({ length: 3 }).map((_, i) => (
               <div key={i} className="rounded-xl border border-border bg-card p-6 shadow-sm space-y-4">
@@ -441,121 +441,117 @@ export default function Businesses() {
             </div>
           ) : (
             filteredBusinesses.map((business) => (
-              <div 
-                key={business.id} 
-                className={cn(
-                  "group cursor-pointer rounded-xl border bg-card p-0 shadow-sm overflow-hidden flex flex-col transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
-                  business.archivedAt ? "opacity-70 border-dashed" : "border-border hover:border-primary/30"
-                )}
-                role="link"
-                tabIndex={0}
-                aria-label={`Open ${business.name} workspace`}
-                onClick={() => setLocation(`/campaigns?businessId=${encodeURIComponent(business.id)}`)}
-                onKeyDown={(event) => {
-                  if (event.key === "Enter" || event.key === " ") {
-                    event.preventDefault();
-                    setLocation(`/campaigns?businessId=${encodeURIComponent(business.id)}`);
-                  }
-                }}
-              >
-                {/* Generic business header */}
-                <div className="h-24 w-full bg-secondary relative overflow-hidden shrink-0">
-                  <div className="absolute top-3 right-3">
-                    {business.archivedAt ? (
-                      <Badge variant="secondary" className="bg-background/80 backdrop-blur">Archived</Badge>
-                    ) : business.status === "ACTIVE" ? (
-                      <Badge variant="outline" className="bg-emerald-500/10 text-emerald-600 border-emerald-500/20 backdrop-blur">Active</Badge>
-                    ) : business.status === "SUSPENDED" ? (
-                      <Badge variant="outline" className="bg-amber-500/10 text-amber-600 border-amber-500/20 backdrop-blur">Suspended</Badge>
-                    ) : (
-                      <Badge variant="secondary" className="bg-background/80 backdrop-blur">{business.status}</Badge>
-                    )}
-                  </div>
-                </div>
-
-                <div className="p-5 pt-0 flex-1 flex flex-col">
-                  {/* Generic business icon intersecting the header */}
-                  <div className="relative z-10 flex justify-between items-start -mt-8 mb-3">
-                    <div className="w-16 h-16 rounded-xl border-4 border-card bg-background flex items-center justify-center overflow-hidden shadow-sm">
-                      <Store className="w-6 h-6 text-muted-foreground" />
+                <div
+                  key={business.id}
+                  className={cn(
+                    "group flex min-w-0 cursor-pointer flex-wrap items-center gap-3 rounded-xl border bg-card px-4 py-3 shadow-sm transition-colors duration-200 hover:border-primary/30 hover:bg-card/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary sm:flex-nowrap sm:gap-4",
+                    business.archivedAt ? "border-dashed opacity-70" : "border-border",
+                  )}
+                  role="link"
+                  tabIndex={0}
+                  aria-label={`Open ${business.name} workspace`}
+                  onClick={() => setLocation(`/campaigns?businessId=${encodeURIComponent(business.id)}`)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                      event.preventDefault();
+                      setLocation(`/campaigns?businessId=${encodeURIComponent(business.id)}`);
+                    }
+                  }}
+                >
+                  <div className="flex min-w-0 flex-1 items-center gap-3">
+                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-border bg-secondary text-muted-foreground">
+                      <Store className="h-5 w-5" />
                     </div>
-                    
-                    <div className="mt-10">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" onClick={(event) => event.stopPropagation()} className="h-8 w-8 text-muted-foreground opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
-                            <MoreVertical className="w-4 h-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                         <DropdownMenuContent
-                           align="end"
-                           className="w-48"
-                           onPointerDown={(event) => event.stopPropagation()}
-                           onClick={(event) => event.stopPropagation()}
-                         >
-                          <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                          <DropdownMenuItem onClick={() => handleOpenEdit(business)}>
-                            <Pencil className="w-4 h-4 mr-2" /> Edit Details
-                          </DropdownMenuItem>
-                          
-                          <DropdownMenuSeparator />
-                          
-                          {!business.archivedAt && (
-                            <DropdownMenuItem 
-                              onClick={() => setBusinessStatus.mutate({ 
-                                id: business.id, 
-                                data: { status: business.status === "ACTIVE" ? "SUSPENDED" : "ACTIVE" } 
-                              })}
-                            >
-                              {business.status === "ACTIVE" ? (
-                                <><Ban className="w-4 h-4 mr-2" /> Suspend Location</>
-                              ) : (
-                                <><CheckCircle2 className="w-4 h-4 mr-2" /> Activate Location</>
-                              )}
-                            </DropdownMenuItem>
-                          )}
-                          
-                          {business.archivedAt ? (
-                            <DropdownMenuItem onClick={() => restoreBusiness.mutate({ id: business.id })}>
-                              <ArchiveRestore className="w-4 h-4 mr-2" /> Restore
-                            </DropdownMenuItem>
-                          ) : (
-                            <DropdownMenuItem onClick={() => handleArchiveClick(business)}>
-                              <Archive className="w-4 h-4 mr-2" /> Archive
-                            </DropdownMenuItem>
-                          )}
-                          
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem 
-                            className="text-destructive focus:text-destructive" 
-                            onClick={() => handleDeleteClick(business)}
-                          >
-                            <Trash2 className="w-4 h-4 mr-2" /> Delete
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                    <div className="min-w-0">
+                      <div className="flex min-w-0 flex-wrap items-center gap-2">
+                        <h3 className="truncate text-sm font-semibold leading-tight" title={business.name}>
+                          {business.name}
+                        </h3>
+                        {business.archivedAt ? (
+                          <Badge variant="secondary" className="shrink-0">Archived</Badge>
+                        ) : business.status === "ACTIVE" ? (
+                          <Badge variant="outline" className="shrink-0 border-emerald-500/20 bg-emerald-500/10 text-emerald-600">Active</Badge>
+                        ) : business.status === "SUSPENDED" ? (
+                          <Badge variant="outline" className="shrink-0 border-amber-500/20 bg-amber-500/10 text-amber-600">Suspended</Badge>
+                        ) : (
+                          <Badge variant="secondary" className="shrink-0">{business.status}</Badge>
+                        )}
+                      </div>
+                      <p className="mt-1 flex items-center truncate text-xs text-muted-foreground">
+                        <MapPin className="mr-1 h-3.5 w-3.5 shrink-0" />
+                        {business.category}
+                      </p>
                     </div>
                   </div>
 
-                  <div>
-                    <h3 className="font-semibold text-lg leading-tight truncate" title={business.name}>
-                      {business.name}
-                    </h3>
-                    <p className="text-sm text-muted-foreground flex items-center mt-1">
-                      <MapPin className="w-3.5 h-3.5 mr-1" />
-                      {business.category}
-                    </p>
-                  </div>
-                  
-                  <div className="mt-auto pt-6 flex items-center justify-between text-xs text-muted-foreground">
-                    <span className="flex items-center">
-                      <ExternalLink className="w-3 h-3 mr-1" />
-                      /{business.slug}
+                  <div className="flex w-full min-w-0 items-center justify-between gap-3 border-t border-border/70 pt-2.5 text-xs sm:w-auto sm:flex-1 sm:border-t-0 sm:pt-0">
+                    <span className="flex min-w-0 items-center truncate text-muted-foreground" title={`/${business.slug}`}>
+                      <ExternalLink className="mr-1 h-3 w-3 shrink-0" />
+                      <span className="truncate">/{business.slug}</span>
                     </span>
-                    <span className="font-medium text-primary">Open workspace →</span>
+                    <span className="shrink-0 font-medium text-primary">Open workspace →</span>
                   </div>
+
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        aria-label={`Actions for ${business.name}`}
+                        onClick={(event) => event.stopPropagation()}
+                        className="h-8 w-8 shrink-0 text-muted-foreground"
+                      >
+                        <MoreVertical className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent
+                      align="end"
+                      className="w-48"
+                      onPointerDown={(event) => event.stopPropagation()}
+                      onClick={(event) => event.stopPropagation()}
+                    >
+                      <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                      <DropdownMenuItem onClick={() => handleOpenEdit(business)}>
+                        <Pencil className="mr-2 h-4 w-4" /> Edit Details
+                      </DropdownMenuItem>
+
+                      <DropdownMenuSeparator />
+
+                      {!business.archivedAt && (
+                        <DropdownMenuItem
+                          onClick={() => setBusinessStatus.mutate({
+                            id: business.id,
+                            data: { status: business.status === "ACTIVE" ? "SUSPENDED" : "ACTIVE" },
+                          })}
+                        >
+                          {business.status === "ACTIVE" ? (
+                            <><Ban className="mr-2 h-4 w-4" /> Suspend Location</>
+                          ) : (
+                            <><CheckCircle2 className="mr-2 h-4 w-4" /> Activate Location</>
+                          )}
+                        </DropdownMenuItem>
+                      )}
+
+                      {business.archivedAt ? (
+                        <DropdownMenuItem onClick={() => restoreBusiness.mutate({ id: business.id })}>
+                          <ArchiveRestore className="mr-2 h-4 w-4" /> Restore
+                        </DropdownMenuItem>
+                      ) : (
+                        <DropdownMenuItem onClick={() => handleArchiveClick(business)}>
+                          <Archive className="mr-2 h-4 w-4" /> Archive
+                        </DropdownMenuItem>
+                      )}
+
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        className="text-destructive focus:text-destructive"
+                        onClick={() => handleDeleteClick(business)}
+                      >
+                        <Trash2 className="mr-2 h-4 w-4" /> Delete
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
-              </div>
             ))
           )}
         </div>
