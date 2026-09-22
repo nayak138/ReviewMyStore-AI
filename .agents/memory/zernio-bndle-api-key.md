@@ -25,3 +25,4 @@ The review provider behind the `BNDLE_SOCIAL_API` secret is **bundle.social** (d
 **Why:** bundle.social cannot publish an App Storage path directly; it needs a provider-side upload record before the post request.
 
 **How to apply:** When debugging this integration, verify against these endpoints/headers before suspecting the user's key. For a social asset, expose it through the ACL-checked public asset route only for the handoff and preserve the returned upload ID. Never store or print the key; probe with shell using the env var.
+

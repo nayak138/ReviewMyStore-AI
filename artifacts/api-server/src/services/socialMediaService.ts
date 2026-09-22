@@ -810,9 +810,20 @@ export async function createSocialMediaPost(
   const data = Object.fromEntries(
     input.platforms.map((platform) => [
       platform,
-      platform === "INSTAGRAM"
-        ? { type: "POST", text: input.caption, uploadIds }
-        : { text: input.caption, ...(uploadIds.length ? { uploadIds } : {}) },
+      {
+        // bundle.social validates a platform-specific post type for Facebook
+        // and Instagram. Facebook was the one omission here: although some
+        // provider versions default it to POST, the current validation
+        // rejects a combined Facebook + Instagram payload without it. Threads
+        // has a different payload shape and must not receive this field.
+        ...(
+          platform === "FACEBOOK" || platform === "INSTAGRAM"
+            ? { type: "POST" }
+            : {}
+        ),
+        text: input.caption,
+        ...(uploadIds.length ? { uploadIds } : {}),
+      },
     ]),
   );
   let created: JsonRecord;

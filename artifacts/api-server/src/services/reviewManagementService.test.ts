@@ -26,6 +26,7 @@ import {
   ManagedReviewNotFoundError,
   ReviewProviderError,
   deleteManagedReviewReply,
+  bndleRequest,
   generateManagedReviewDraft,
   getReviewDashboard,
   getReviewProviderConnectionLocations,
@@ -227,6 +228,28 @@ test("a provider 401 (our API key) maps to NOT_CONFIGURED and does not blame the
     "CONNECTED",
     "an invalid platform key must not flip the owner's connection to ERROR",
   );
+});
+
+test("keeps nested provider validation details available for safe post error mapping", async () => {
+  providerFetch.handler = () => ({
+    status: 400,
+    body: {
+      errors: [{ field: "data.FACEBOOK.type", message: "type is required" }],
+    },
+  });
+  try {
+    await assert.rejects(
+      () => bndleRequest("post", { method: "POST", body: "{}" }),
+      (error: unknown) => {
+        assert.ok(error instanceof ReviewProviderError);
+        assert.equal(error.upstreamStatus, 400);
+        assert.equal(error.providerMessage, "type is required");
+        return true;
+      },
+    );
+  } finally {
+    providerFetch.handler = () => ({ body: {} });
+  }
 });
 
 test("provider 5xx maps to a generic 502, marks the connection ERROR, and leaks nothing", async () => {

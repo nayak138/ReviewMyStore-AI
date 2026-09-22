@@ -97,6 +97,40 @@ function valueString(value: unknown): string | null {
   return typeof value === "string" && value.trim() ? value : null;
 }
 
+/**
+ * bundle.social has returned validation details as a top-level `message`, an
+ * `error`, and nested `errors` objects at different times. Extract a concise
+ * diagnostic string for internal branching only; the unmodified body stays in
+ * the server log and neither value is sent to the browser.
+ */
+function providerErrorMessage(payload: JsonRecord): string | null {
+  const directKeys = ["message", "error", "detail", "details", "reason"];
+  for (const key of directKeys) {
+    const value = valueString(payload[key]);
+    if (value) return value;
+  }
+  const nested = payload.errors ?? payload.issues;
+  if (Array.isArray(nested)) {
+    const messages = nested
+      .flatMap((item) => {
+        if (typeof item === "string") return [item];
+        const error = asRecord(item);
+        return directKeys
+          .map((key) => valueString(error[key]))
+          .filter((value): value is string => Boolean(value));
+      })
+      .filter(Boolean);
+    if (messages.length) return messages.join("; ");
+  }
+  if (nested && typeof nested === "object") {
+    const values = Object.values(asRecord(nested))
+      .map(valueString)
+      .filter((value): value is string => Boolean(value));
+    if (values.length) return values.join("; ");
+  }
+  return null;
+}
+
 function valueNumber(value: unknown): number | null {
   return typeof value === "number" && Number.isFinite(value) ? value : null;
 }
@@ -186,13 +220,22 @@ export async function bndleRequest<T extends JsonRecord = JsonRecord>(
   try {
     payload = asRecord(bodyText ? JSON.parse(bodyText) : {});
   } catch {
-    // The upstream response body is not returned or logged; only its status
-    // travels across this boundary so provider internals remain private.
+    // Retain the non-JSON response in the structured server log below. It is
+    // never included in a browser/API response.
   }
 
   if (!response.ok) {
     logger.warn(
-      { providerStatus: response.status, path: path.split("?")[0] },
+      {
+        providerStatus: response.status,
+        path: path.split("?")[0],
+        // Post validation is the only flow where its upstream explanation is
+        // necessary for our social-post diagnostics. Keep other provider
+        // responses terse to avoid widening operational log retention.
+        ...(path.split("?")[0] === "post"
+          ? { providerResponseBody: bodyText }
+          : {}),
+      },
       "bundle.social review provider request failed",
     );
     // 401 = our platform credential is missing/rejected outright. This is
@@ -216,7 +259,7 @@ export async function bndleRequest<T extends JsonRecord = JsonRecord>(
         503,
         "REVIEW_PROVIDER_NOT_CONFIGURED",
         response.status,
-        valueString(payload.message),
+        providerErrorMessage(payload),
       );
     }
     if (response.status === 429) {
@@ -232,7 +275,7 @@ export async function bndleRequest<T extends JsonRecord = JsonRecord>(
       response.status >= 500 ? 502 : 400,
       "REVIEW_PROVIDER_ERROR",
       response.status,
-      valueString(payload.message),
+      providerErrorMessage(payload),
     );
   }
   return payload as T;

@@ -29,6 +29,8 @@ let organizationId: string;
 let businessId: string;
 let secondBusinessId: string;
 let providerCalls: Array<{ path: string; body: Record<string, unknown> }> = [];
+let postResponse: { status: number; body: Record<string, unknown> } | null =
+  null;
 const originalFetch = globalThis.fetch;
 const originalGetObject = ObjectStorageService.prototype.getObjectEntityFile;
 
@@ -86,6 +88,20 @@ before(async () => {
         JSON.stringify({
           socialAccounts: [
             {
+              id: `threads-provider-${isSecondBusinessTeam ? "second" : "primary"}-${runId}`,
+              type: "THREADS",
+              externalId: isSecondBusinessTeam
+                ? `threads-second-${runId}`
+                : `threads-${runId}`,
+            },
+            {
+              id: `facebook-provider-${isSecondBusinessTeam ? "second" : "primary"}-${runId}`,
+              type: "FACEBOOK",
+              externalId: isSecondBusinessTeam
+                ? `facebook-second-${runId}`
+                : `facebook-${runId}`,
+            },
+            {
               id: `instagram-provider-${isSecondBusinessTeam ? "second" : "primary"}-${runId}`,
               type: "INSTAGRAM",
               externalId: isSecondBusinessTeam
@@ -103,6 +119,12 @@ before(async () => {
       ).length;
       return new Response(JSON.stringify({ id: `upload-${uploadNumber}` }), {
         status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+    if (path === "post" && postResponse) {
+      return new Response(JSON.stringify(postResponse.body), {
+        status: postResponse.status,
         headers: { "Content-Type": "application/json" },
       });
     }
@@ -153,6 +175,22 @@ before(async () => {
   await db.insert(socialMediaAccountsTable).values({
     organizationId,
     businessId,
+    platform: "THREADS",
+    externalAccountId: `threads-${runId}`,
+    displayName: "Media test Threads",
+    status: "CONNECTED",
+  });
+  await db.insert(socialMediaAccountsTable).values({
+    organizationId,
+    businessId,
+    platform: "FACEBOOK",
+    externalAccountId: `facebook-${runId}`,
+    displayName: "Media test Facebook",
+    status: "CONNECTED",
+  });
+  await db.insert(socialMediaAccountsTable).values({
+    organizationId,
+    businessId,
     platform: "INSTAGRAM",
     externalAccountId: `instagram-${runId}`,
     displayName: "Media test Instagram",
@@ -182,6 +220,7 @@ before(async () => {
 
 beforeEach(async () => {
   providerCalls = [];
+  postResponse = null;
   objectMetadata.clear();
   deletedObjectPaths = [];
   await db
@@ -303,12 +342,83 @@ test("registers finalized owner image and video media before publishing to Insta
   assert.equal(providerCalls[3]?.body.teamId, `team-${runId}`);
   const postData = providerCalls[3]?.body.data as Record<string, Record<string, unknown>>;
   assert.deepEqual(postData.INSTAGRAM.uploadIds, ["upload-1", "upload-2"]);
+  assert.equal(postData.INSTAGRAM.type, "POST");
   assert.deepEqual(deletedObjectPaths, [imagePath, videoPath]);
   const remainingUploads = await db
     .select()
     .from(objectUploadsTable)
     .where(eq(objectUploadsTable.ownerClerkUserId, ownerId));
   assert.equal(remainingUploads.length, 0);
+});
+
+test("includes a POST type for both Facebook and Instagram in a combined post", async () => {
+  const imagePath = `/objects/uploads/facebook-instagram-${runId}`;
+  await addUpload(imagePath, ownerId);
+
+  await createSocialMediaPost(organizationId, ownerId, {
+    businessId,
+    caption: "Post to both Meta channels",
+    platforms: ["FACEBOOK", "INSTAGRAM"],
+    media: [imagePath],
+  });
+
+  const postCall = providerCalls.find((call) => call.path === "post");
+  const postData = postCall?.body.data as Record<string, Record<string, unknown>>;
+  assert.deepEqual(postCall?.body.socialAccountTypes, ["FACEBOOK", "INSTAGRAM"]);
+  assert.equal(postData.FACEBOOK.type, "POST");
+  assert.equal(postData.FACEBOOK.text, "Post to both Meta channels");
+  assert.deepEqual(postData.FACEBOOK.uploadIds, ["upload-1"]);
+  assert.equal(postData.INSTAGRAM.type, "POST");
+  assert.deepEqual(postData.INSTAGRAM.uploadIds, ["upload-1"]);
+});
+
+test("keeps the Threads payload free of Facebook and Instagram fields", async () => {
+  await createSocialMediaPost(organizationId, ownerId, {
+    businessId,
+    caption: "Threads post",
+    platforms: ["THREADS"],
+  });
+
+  const postCall = providerCalls.find((call) => call.path === "post");
+  const postData = postCall?.body.data as Record<string, Record<string, unknown>>;
+  assert.equal(postData.THREADS.text, "Threads post");
+  assert.equal("type" in postData.THREADS, false);
+  assert.equal("uploadIds" in postData.THREADS, false);
+});
+
+test("maps nested provider media validation to a safe owner-facing message", async () => {
+  const imagePath = `/objects/uploads/provider-media-error-${runId}`;
+  await addUpload(imagePath, ownerId);
+  postResponse = {
+    status: 400,
+    body: {
+      errors: [
+        {
+          field: "data.INSTAGRAM.uploadIds",
+          detail: "The image dimensions are unsupported by Instagram.",
+        },
+      ],
+    },
+  };
+
+  await assert.rejects(
+    () =>
+      createSocialMediaPost(organizationId, ownerId, {
+        businessId,
+        caption: "Media validation failure",
+        platforms: ["INSTAGRAM"],
+        media: [imagePath],
+      }),
+    (error: unknown) => {
+      assert.ok(error instanceof SocialMediaBadRequestError);
+      assert.equal(
+        error.message,
+        "The social provider rejected the selected media. Use a supported image or video and try again.",
+      );
+      assert.equal(error.message.includes("dimensions"), false);
+      return true;
+    },
+  );
 });
 
 test("uses an isolated provider team for each business in one organization", async () => {
