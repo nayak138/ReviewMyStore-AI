@@ -38,6 +38,7 @@ let providerCalls: Array<{ path: string; body: Record<string, unknown> }> = [];
 let postResponse: { status: number; body: Record<string, unknown> } | null =
   null;
 let facebookProviderExternalId = `facebook-${runId}`;
+let providerSocialAccountsOverride: unknown[] | null = null;
 const originalFetch = globalThis.fetch;
 const originalGetObject = ObjectStorageService.prototype.getObjectEntityFile;
 
@@ -93,7 +94,7 @@ before(async () => {
       const isSecondBusinessTeam = teamId === `team-second-${runId}`;
       return new Response(
         JSON.stringify({
-          socialAccounts: [
+          socialAccounts: providerSocialAccountsOverride ?? [
             {
               id: `threads-provider-${isSecondBusinessTeam ? "second" : "primary"}-${runId}`,
               type: "THREADS",
@@ -273,6 +274,7 @@ beforeEach(async () => {
   providerCalls = [];
   postResponse = null;
   facebookProviderExternalId = `facebook-${runId}`;
+  providerSocialAccountsOverride = null;
   objectMetadata.clear();
   deletedObjectPaths = [];
   await db
@@ -597,6 +599,130 @@ test("completes Meta Page selection and preserves the selected Page after reload
       (account) => account.externalAccountId === `facebook-page-new-${runId}`,
     )?.connected,
     true,
+  );
+  assert.equal(
+    providerCalls.some((call) => call.path === "social-account/unset-channel"),
+    false,
+  );
+});
+
+test("rejects a stale Page without changing the existing local attachment", async () => {
+  const beforeAccounts = await db
+    .select()
+    .from(socialMediaAccountsTable)
+    .where(eq(socialMediaAccountsTable.businessId, businessId));
+  const existingFacebookAccount = beforeAccounts.find(
+    (account) => account.platform === "FACEBOOK",
+  );
+  providerSocialAccountsOverride = [
+    {
+      id: `facebook-provider-${runId}`,
+      type: "FACEBOOK",
+      channels: [],
+    },
+  ];
+
+  await assert.rejects(
+    () =>
+      attachSocialMediaAccount(
+        organizationId,
+        businessId,
+        `facebook-page-removed-${runId}`,
+      ),
+    (error: unknown) => {
+      assert.ok(error instanceof Error);
+      assert.equal(
+        error.message,
+        "That Page or account is no longer available. Refresh the available Meta targets and choose again.",
+      );
+      return true;
+    },
+  );
+
+  const accounts = await db
+    .select()
+    .from(socialMediaAccountsTable)
+    .where(eq(socialMediaAccountsTable.businessId, businessId));
+  assert.equal(
+    accounts.find((account) => account.platform === "FACEBOOK")
+      ?.externalAccountId,
+    existingFacebookAccount?.externalAccountId,
+  );
+  assert.equal(
+    providerCalls.some((call) =>
+      ["social-account/set-channel", "social-account/unset-channel"].includes(
+        call.path,
+      ),
+    ),
+    false,
+  );
+});
+
+test("rejects duplicate provider Page ids instead of choosing the first account", async () => {
+  providerSocialAccountsOverride = [
+    {
+      id: `facebook-provider-one-${runId}`,
+      type: "FACEBOOK",
+      channels: [{ id: `duplicate-page-${runId}`, displayName: "Page One" }],
+    },
+    {
+      id: `facebook-provider-two-${runId}`,
+      type: "FACEBOOK",
+      channels: [{ id: `duplicate-page-${runId}`, displayName: "Page Two" }],
+    },
+  ];
+
+  await assert.rejects(
+    () =>
+      attachSocialMediaAccount(
+        organizationId,
+        businessId,
+        `duplicate-page-${runId}`,
+      ),
+    (error: unknown) => {
+      assert.ok(error instanceof SocialMediaBadRequestError);
+      assert.equal(
+        error.message,
+        "The provider returned more than one Facebook Page with that id. Refresh Meta access and choose again.",
+      );
+      return true;
+    },
+  );
+  const dashboard = await getSocialMediaDashboard(organizationId, businessId);
+  assert.equal(
+    dashboard.availableAccounts.some(
+      (account) => account.externalAccountId === `duplicate-page-${runId}`,
+    ),
+    false,
+  );
+  assert.equal(
+    providerCalls.some((call) => call.path === "social-account/set-channel"),
+    false,
+  );
+});
+
+test("ignores incomplete provider targets instead of attaching a malformed Page", async () => {
+  providerSocialAccountsOverride = [
+    {
+      type: "FACEBOOK",
+      channels: [{ id: `malformed-page-${runId}`, displayName: "Malformed Page" }],
+    },
+  ];
+
+  await assert.rejects(
+    () =>
+      attachSocialMediaAccount(
+        organizationId,
+        businessId,
+        `malformed-page-${runId}`,
+      ),
+    (error: unknown) => {
+      assert.equal(
+        (error as Error).message,
+        "That Page or account is no longer available. Refresh the available Meta targets and choose again.",
+      );
+      return true;
+    },
   );
 });
 

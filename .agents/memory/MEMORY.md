@@ -35,3 +35,4 @@
 - [Drizzle push and legacy schema drift](drizzle-push-legacy-drift.md) — full pushes are blocked by old QR/NFC drift; do not assume `--force` makes reconciliation non-interactive.
 - [Browser regression checks](browser-regression-checks.md) — the authenticated browser tester may be unavailable in Free mode; keep deterministic UI-state coverage in the artifact tests.
 - [Social comment identifiers](social-comment-identifiers.md) — replies must use bundle.social's stored fetched-comment ID, not the platform's external comment ID.
+- [Meta target selection](meta-target-selection.md) — reject stale, duplicate, and incomplete provider targets without clearing the current channel first.

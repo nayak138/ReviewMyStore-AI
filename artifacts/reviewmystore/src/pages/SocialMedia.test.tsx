@@ -27,6 +27,9 @@ const mocks = vi.hoisted(() => ({
   importCommentsMutate: vi.fn(),
   replyMutate: vi.fn(),
   attachMutate: vi.fn(),
+  attachMutationOptions: undefined as
+    | { onError?: (error: unknown, variables: unknown) => void }
+    | undefined,
   disconnectMutate: vi.fn(),
   startConnectionMutate: vi.fn(),
   dashboardData: {
@@ -94,7 +97,12 @@ vi.mock("@workspace/api-client-react", () => {
       isLoading: mocks.commentsLoading,
       data: commentsData,
     }),
-    useAttachSocialMediaAccount: () => ({ mutate: mocks.attachMutate, isPending: false }),
+    useAttachSocialMediaAccount: (options?: {
+      mutation?: { onError?: (error: unknown, variables: unknown) => void };
+    }) => {
+      mocks.attachMutationOptions = options?.mutation;
+      return { mutate: mocks.attachMutate, isPending: false };
+    },
     useDisconnectSocialMediaConnection: () => ({ mutate: mocks.disconnectMutate, isPending: false }),
     useCreateSocialMediaPost: () => ({ mutate: vi.fn(), isPending: false }),
     useDetachSocialMediaAccount: () => ({ mutate: vi.fn(), isPending: false }),
@@ -153,6 +161,7 @@ beforeEach(() => {
   mocks.importCommentsMutate.mockClear();
   mocks.replyMutate.mockClear();
   mocks.attachMutate.mockClear();
+  mocks.attachMutationOptions = undefined;
   mocks.disconnectMutate.mockClear();
   mocks.startConnectionMutate.mockClear();
 });
@@ -254,6 +263,73 @@ describe("Meta callback recovery", () => {
         externalAccountId: "facebook-page-new",
       },
     });
+  });
+
+  it("shows recoverable feedback when the selected Page disappeared", async () => {
+    mocks.dashboardData.availableAccounts.push({
+      externalAccountId: "facebook-page-removed",
+      platform: "FACEBOOK",
+      displayName: "Removed Facebook Page",
+      username: null,
+      profileUrl: null,
+      connected: false,
+    });
+    mocks.attachMutate.mockImplementation((input) => {
+      mocks.attachMutationOptions?.onError?.(
+        new Error(
+          "That Page or account is no longer available. Refresh the available Meta targets and choose again.",
+        ),
+        input,
+      );
+    });
+
+    renderSocialMedia();
+    await waitFor(() => {
+      expect(screen.getByTestId("select-account-facebook")).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByTestId("select-account-facebook"));
+    await waitFor(() => {
+      expect(screen.getByTestId("option-account-facebook-page-removed")).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByTestId("option-account-facebook-page-removed"));
+
+    await waitFor(() => {
+      expect(mocks.toast).toHaveBeenCalledWith({
+        title: "That Page is no longer available",
+        description:
+          "That Page or account is no longer available. Refresh the available Meta targets and choose again.",
+        variant: "destructive",
+      });
+    });
+  });
+
+  it("keeps the current channel while opening a replacement chooser", async () => {
+    mocks.dashboardData.accounts.push({
+      id: "connected-facebook",
+      platform: "FACEBOOK",
+      displayName: "Current Facebook Page",
+      username: "current-page",
+    });
+    mocks.dashboardData.availableAccounts.push({
+      externalAccountId: "replacement-facebook-page",
+      platform: "FACEBOOK",
+      displayName: "Replacement Facebook Page",
+      username: "replacement-page",
+      profileUrl: null,
+      connected: false,
+    });
+
+    renderSocialMedia();
+    await waitFor(() => {
+      expect(screen.getByTestId("button-switch-account-connected-facebook")).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByTestId("button-switch-account-connected-facebook"));
+
+    expect(mocks.disconnectMutate).not.toHaveBeenCalled();
+    expect(mocks.startConnectionMutate).toHaveBeenCalledWith({
+      data: { businessId: "business-1", platform: "FACEBOOK" },
+    });
+    expect(screen.getByTestId("select-account-facebook")).toBeInTheDocument();
   });
 });
 

@@ -353,6 +353,7 @@ export default function SocialMedia() {
     if (callbackFailed && selectedBusinessId) {
       queryClient.invalidateQueries({ queryKey: getGetSocialMediaDashboardQueryKey({ businessId: selectedBusinessId }) });
       setCallbackFailed(false);
+      setSwitchingPlatform(null);
       toast({
         title: "Social authorization wasn't completed",
         description: "No account was connected. You can try again when you're ready.",
@@ -385,6 +386,7 @@ export default function SocialMedia() {
       },
       onError: (error) => {
         setConnectingPlatform(null);
+        setSwitchingPlatform(null);
         const message = errorMessage(error, "Please try again.");
         toast({
           title: message.includes("provider could not complete")
@@ -400,8 +402,19 @@ export default function SocialMedia() {
   });
   const attachAccount = useAttachSocialMediaAccount({
     mutation: {
-      onSuccess: () => { invalidateSocial(); toast({ title: "Publishing account selected", description: "This business will publish to the account you chose." }); },
-      onError: (error) => toast({ title: "Unable to attach account", description: errorMessage(error, "Please try again."), variant: "destructive" }),
+      onSuccess: () => { setSwitchingPlatform(null); invalidateSocial(); toast({ title: "Publishing account selected", description: "This business will publish to the account you chose." }); },
+      onError: (error) => {
+        const message = errorMessage(error, "Please try again.");
+        setSelectedAvailableAccounts({});
+        invalidateSocial();
+        toast({
+          title: message.includes("no longer available")
+            ? "That Page is no longer available"
+            : "Unable to attach account",
+          description: message,
+          variant: "destructive",
+        });
+      },
     },
   });
   const detachAccount = useDetachSocialMediaAccount({
@@ -502,17 +515,10 @@ export default function SocialMedia() {
   };
   const handleSwitchAccount = (platform: SocialMediaPlatform) => {
     if (!selectedBusinessId || switchingPlatform || connectingPlatform) return;
+    // Keep the current local/provider channel until the replacement is
+    // selected successfully. The attach mutation performs the replacement.
     setSwitchingPlatform(platform);
-    disconnectSocialAccount.mutate(
-      { data: { businessId: selectedBusinessId, platform } },
-      {
-        onSuccess: () => {
-          invalidateSocial();
-          setSwitchingPlatform(null);
-          handleConnect(platform);
-        },
-      },
-    );
+    handleConnect(platform);
   };
   const handlePublish = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -703,7 +709,9 @@ export default function SocialMedia() {
                      {PLATFORMS.map((platform) => {
                        const meta = PLATFORM_META[platform];
                        const connected = connectedPlatforms.has(platform);
+                      const switching = switchingPlatform === platform;
                        const availableAccounts = availableAccountsByPlatform[platform];
+                      const canChooseAccount = availableAccounts.length > 0 && (!connected || switching);
                        const authorized = authorizedPlatforms.has(platform);
                        const selectedAccountId = selectedAvailableAccounts[platform] ?? "";
                        return (
@@ -712,17 +720,19 @@ export default function SocialMedia() {
                              <RadioGroupItem
                                value={platform}
                                id={`social-platform-${platform.toLowerCase()}`}
-                               disabled={connected || availableAccounts.length === 0}
+                              disabled={!canChooseAccount}
                                 className="mt-1"
                                data-testid={`radio-platform-${platform.toLowerCase()}`}
                              />
-                              <label htmlFor={`social-platform-${platform.toLowerCase()}`} className={cn("flex min-w-0 flex-1 items-start gap-3", !connected && availableAccounts.length === 0 && "cursor-default opacity-60")}>
+                             <label htmlFor={`social-platform-${platform.toLowerCase()}`} className={cn("flex min-w-0 flex-1 items-start gap-3", !canChooseAccount && "cursor-default opacity-60")}>
                                <div className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-lg", meta.tint)}><PlatformMark platform={platform} /></div>
                                 <span className="min-w-0">
                                   <span className="block text-sm font-semibold">{meta.label}</span>
                                   <span className="mt-0.5 block text-xs text-muted-foreground">
-                                    {connected
-                                      ? "Attached to this business"
+                                    {switching
+                                      ? "Choose a replacement publishing account"
+                                      : connected
+                                        ? "Attached to this business"
                                       : availableAccounts.length
                                         ? "Choose the publishing account"
                                         : authorized
@@ -731,13 +741,13 @@ export default function SocialMedia() {
                                   </span>
                                 </span>
                              </label>
-                             {connected ? (
+                             {connected && !switching ? (
                                 <Badge variant="outline" className="shrink-0 gap-1 border-emerald-500/20 bg-emerald-500/10 text-emerald-700"><CheckCircle2 className="h-3.5 w-3.5" /> Attached</Badge>
                               ) : null}
                             </div>
-                            {!connected && (
+                           {(!connected || switching) && (
                               <div className="mt-3 flex min-w-0 flex-col gap-2 pl-8 sm:flex-row sm:items-center">
-                                {availableAccounts.length > 0 ? (
+                                {canChooseAccount ? (
                                   <>
                                  <Select
                                    value={selectedAccountId}
@@ -785,7 +795,7 @@ export default function SocialMedia() {
                      })}
                    </RadioGroup>
                      <p className="pt-1 text-xs leading-relaxed text-muted-foreground">
-                       Select an available Page or profile to attach it. To replace an attached account, use Switch in Connected channels; it clears the old Meta login before opening the account chooser.
+                       Select an available Page or profile to attach it. To replace an attached account, use Switch in Connected channels; the current channel stays active until the replacement is confirmed.
                    </p>
                 </CardContent>
               </Card>

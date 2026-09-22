@@ -101,6 +101,13 @@ function providerChannels(account: JsonRecord): JsonRecord[] {
   return asArray(account.channels);
 }
 
+type ProviderTargetMatch = {
+  account: JsonRecord;
+  channel: JsonRecord | null;
+  platform: Platform;
+  externalAccountId: string;
+};
+
 function requiresChannelSelection(account: JsonRecord): boolean {
   const platform = providerPlatform(account.type);
   if (platform === "FACEBOOK") return true;
@@ -108,6 +115,54 @@ function requiresChannelSelection(account: JsonRecord): boolean {
     platform === "INSTAGRAM" &&
     valueString(account.instagramConnectionMethod)?.toUpperCase() !== "INSTAGRAM"
   );
+}
+
+function providerTargetMatches(
+  providerAccounts: JsonRecord[],
+): ProviderTargetMatch[] {
+  const matches: ProviderTargetMatch[] = [];
+  for (const account of providerAccounts) {
+    const platform = providerPlatform(account.type);
+    if (!platform) continue;
+
+    if (requiresChannelSelection(account)) {
+      // A channel is only safe to attach when the provider returned the
+      // parent account identity as well as the channel id. Without it, a
+      // stale/incomplete provider record must not be guessed at.
+      if (!providerAccountId(account)) continue;
+      const channelMatches = providerChannels(account).flatMap((channel) => {
+        const externalAccountId = valueString(channel.id);
+        return externalAccountId
+          ? [{ account, channel, platform, externalAccountId }]
+          : [];
+      });
+      if (channelMatches.length > 0) {
+        matches.push(...channelMatches);
+      } else if (platform === "INSTAGRAM") {
+        // Instagram's direct connection mode can return an account-level
+        // externalId without any channels. Preserve that valid provider shape.
+        const externalAccountId = providerTargetId(account);
+        if (externalAccountId) {
+          matches.push({ account, channel: null, platform, externalAccountId });
+        }
+      }
+      continue;
+    }
+
+    const externalAccountId = providerTargetId(account);
+    if (externalAccountId) {
+      matches.push({ account, channel: null, platform, externalAccountId });
+    }
+  }
+  return matches;
+}
+
+function targetLabel(platform: Platform): string {
+  return platform === "FACEBOOK"
+    ? "Facebook Page"
+    : platform === "INSTAGRAM"
+      ? "Instagram account"
+      : "social account";
 }
 
 function getAppOrigin(): string | null {
@@ -471,18 +526,24 @@ export async function getSocialMediaDashboard(
       ),
   ]);
   const providerAccounts = await getProviderAccounts(teamId);
+  const providerTargets = providerTargetMatches(providerAccounts);
+  const targetCounts = new Map<string, number>();
+  for (const target of providerTargets) {
+    const key = `${target.platform}:${target.externalAccountId}`;
+    targetCounts.set(key, (targetCounts.get(key) ?? 0) + 1);
+  }
   const readyTargets = new Set(
-    providerAccounts
+    providerTargets
       .filter(
-        (account) =>
-          !requiresChannelSelection(account) || Boolean(valueString(account.externalId)),
+        (target) =>
+          !requiresChannelSelection(target.account) ||
+          Boolean(valueString(target.account.externalId)),
       )
-      .map((account) => {
-        const platform = providerPlatform(account.type);
-        const targetId = providerTargetId(account);
-        return platform && targetId ? `${platform}:${targetId}` : null;
-      })
-      .filter((target): target is string => Boolean(target)),
+      .filter(
+        (target) =>
+          targetCounts.get(`${target.platform}:${target.externalAccountId}`) === 1,
+      )
+      .map((target) => `${target.platform}:${target.externalAccountId}`),
   );
   const readyLocalAccounts = localAccounts.filter((account) =>
     readyTargets.has(`${account.platform}:${account.externalAccountId}`),
@@ -492,29 +553,24 @@ export async function getSocialMediaDashboard(
       (account) => `${account.platform}:${account.externalAccountId}`,
     ),
   );
-  const availableAccounts = providerAccounts
-    .flatMap((account) => {
-      const platform = providerPlatform(account.type);
-      if (!platform) return [];
-      if (requiresChannelSelection(account)) {
-        const selectedTargetId = valueString(account.externalId);
-        return providerChannels(account).map((channel) =>
-          providerChannelPayload(
-            account,
-            channel,
-            selectedTargetId === valueString(channel.id) &&
-              connectedIds.has(`${platform}:${valueString(channel.id)}`),
+  const availableAccounts = providerTargets
+    .filter(
+      (target) =>
+        targetCounts.get(`${target.platform}:${target.externalAccountId}`) === 1,
+    )
+    .map((target) =>
+      target.channel
+        ? providerChannelPayload(
+            target.account,
+            target.channel,
+            valueString(target.account.externalId) === target.externalAccountId &&
+              connectedIds.has(`${target.platform}:${target.externalAccountId}`),
+          )
+        : providerAccountPayload(
+            target.account,
+            connectedIds.has(`${target.platform}:${target.externalAccountId}`),
           ),
-        );
-      }
-      const targetId = providerTargetId(account);
-      return [
-        providerAccountPayload(
-          account,
-          Boolean(targetId && connectedIds.has(`${platform}:${targetId}`)),
-        ),
-      ];
-    })
+    )
     .filter((account): account is NonNullable<typeof account> => Boolean(account));
 
   return {
@@ -589,52 +645,40 @@ export async function attachSocialMediaAccount(
   await getBusiness(organizationId, businessId);
   const teamId = await getOrCreateBusinessTeam(organizationId, businessId);
   const providerAccounts = await getProviderAccounts(teamId);
-  const channelMatch = providerAccounts
-    .map((account) => ({
-      account,
-      channel: providerChannels(account).find(
-        (channel) => valueString(channel.id) === externalAccountId,
-      ),
-    }))
-    .find((match) => match.channel);
-  const account =
-    channelMatch?.account ??
-    providerAccounts.find(
-      (candidate) =>
-        providerAccountId(candidate) === externalAccountId ||
-        valueString(candidate.externalId) === externalAccountId,
-    );
-  const payload =
-    account && channelMatch?.channel
-      ? providerChannelPayload(account, channelMatch.channel, true)
-      : account
-        ? providerAccountPayload(account, true)
-        : null;
-  if (!payload) {
-    throw new SocialMediaNotFoundError(
-      "That connected social account is no longer available.",
+  const normalizedExternalAccountId = valueString(externalAccountId);
+  if (!normalizedExternalAccountId) {
+    throw new SocialMediaBadRequestError(
+      "Choose a valid Page or social account before attaching it.",
     );
   }
-  if (
-    account &&
-    requiresChannelSelection(account) &&
-    !channelMatch?.channel &&
-    !valueString(account.externalId)
-  ) {
+  const matches = providerTargetMatches(providerAccounts).filter(
+    (target) => target.externalAccountId === normalizedExternalAccountId,
+  );
+  if (matches.length === 0) {
+    throw new SocialMediaNotFoundError(
+      "That Page or account is no longer available. Refresh the available Meta targets and choose again.",
+    );
+  }
+  if (matches.length > 1) {
     throw new SocialMediaBadRequestError(
-      `Choose the ${payload.platform === "FACEBOOK" ? "Facebook Page" : "Instagram account"} you want to publish to.`,
+      `The provider returned more than one ${targetLabel(matches[0].platform)} with that id. Refresh Meta access and choose again.`,
     );
   }
 
-  if (channelMatch?.channel) {
-    if (account && requiresChannelSelection(account)) {
-      // bundle.social keeps one active Page/account per team. Re-selecting a
-      // different target requires clearing the previous target first.
-      await bndleRequest("social-account/unset-channel", {
-        method: "POST",
-        body: JSON.stringify({ type: payload.platform, teamId }),
-      });
-    }
+  const [match] = matches;
+  const payload = match.channel
+    ? providerChannelPayload(match.account, match.channel, true)
+    : providerAccountPayload(match.account, true);
+  if (!payload) {
+    throw new SocialMediaBadRequestError(
+      "The provider returned incomplete details for that Page or account. Refresh Meta access and choose again.",
+    );
+  }
+
+  if (match.channel) {
+    // Set the replacement first. The provider keeps the current channel in
+    // place if this validation or provider request fails, so a stale choice
+    // cannot disconnect an otherwise working business channel.
     await bndleRequest("social-account/set-channel", {
       method: "POST",
       body: JSON.stringify({
@@ -756,18 +800,24 @@ async function getReadyBusinessAccounts(
   accounts: typeof socialMediaAccountsTable.$inferSelect[],
 ) {
   const providerAccounts = await getProviderAccounts(teamId);
+  const providerTargets = providerTargetMatches(providerAccounts);
+  const targetCounts = new Map<string, number>();
+  for (const target of providerTargets) {
+    const key = `${target.platform}:${target.externalAccountId}`;
+    targetCounts.set(key, (targetCounts.get(key) ?? 0) + 1);
+  }
   const readyTargets = new Set(
-    providerAccounts
+    providerTargets
       .filter(
-        (account) =>
-          !requiresChannelSelection(account) || Boolean(valueString(account.externalId)),
+        (target) =>
+          !requiresChannelSelection(target.account) ||
+          Boolean(valueString(target.account.externalId)),
       )
-      .map((account) => {
-        const platform = providerPlatform(account.type);
-        const targetId = providerTargetId(account);
-        return platform && targetId ? `${platform}:${targetId}` : null;
-      })
-      .filter((target): target is string => Boolean(target)),
+      .filter(
+        (target) =>
+          targetCounts.get(`${target.platform}:${target.externalAccountId}`) === 1,
+      )
+      .map((target) => `${target.platform}:${target.externalAccountId}`),
   );
   return accounts.filter((account) =>
     readyTargets.has(`${account.platform}:${account.externalAccountId}`),
