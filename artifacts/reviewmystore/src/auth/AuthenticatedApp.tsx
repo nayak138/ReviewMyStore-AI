@@ -350,7 +350,7 @@ function AuthPageLoader() {
   );
 }
 
-function AuthenticatedRoutes() {
+export function AuthenticatedRoutes() {
   const { isLoaded, isSignedIn } = useAuth();
   const [location] = useLocation();
   const path = location.split("?")[0];

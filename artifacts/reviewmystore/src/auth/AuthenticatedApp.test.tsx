@@ -1,8 +1,11 @@
-import { act, render, screen } from "@testing-library/react";
+import { act, render, screen, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { Router } from "wouter";
+import { memoryLocation } from "wouter/memory-location";
 import { signInRedirectFor } from "./redirect";
 import {
+  AuthenticatedRoutes,
   ClerkQueryClientCacheInvalidator,
   SignInPage,
 } from "./AuthenticatedApp";
@@ -43,6 +46,10 @@ vi.mock("@workspace/api-client-react", () => ({
 
 vi.mock("@/components/book-demo-dialog", () => ({
   BookDemoDialog: ({ children }: { children: React.ReactNode }) => children,
+}));
+
+vi.mock("@/pages/Businesses", () => ({
+  default: () => <div>Private workspace content</div>,
 }));
 
 describe("SignInPage session-expiry notice", () => {
@@ -89,6 +96,34 @@ describe("SignInPage session-expiry notice", () => {
     expect(
       screen.queryByText("Your session expired. Please sign in again."),
     ).not.toBeInTheDocument();
+  });
+});
+
+describe("AuthenticatedRoutes", () => {
+  beforeEach(() => {
+    mocks.isLoaded = true;
+    mocks.isSignedIn = true;
+  });
+
+  it("redirects a mounted private route to sign-in without showing stale workspace content after sign-out", async () => {
+    const location = memoryLocation({ path: "/businesses", record: true });
+    const renderRoutes = () => (
+      <Router hook={location.hook}>
+        <AuthenticatedRoutes />
+      </Router>
+    );
+    const { rerender } = render(renderRoutes());
+
+    expect(await screen.findByText("Private workspace content")).toBeInTheDocument();
+
+    mocks.isSignedIn = false;
+    rerender(renderRoutes());
+
+    await waitFor(() => {
+      expect(location.history.at(-1)).toBe(signInRedirectFor("/businesses"));
+    });
+    expect(screen.queryByText("Private workspace content")).not.toBeInTheDocument();
+    expect(screen.getByRole("form", { name: "Sign-in form" })).toBeInTheDocument();
   });
 });
 
