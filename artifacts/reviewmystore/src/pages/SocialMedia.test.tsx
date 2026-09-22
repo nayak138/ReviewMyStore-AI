@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { cleanup, render, waitFor } from "@testing-library/react";
+import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import SocialMedia from "./SocialMedia";
 
@@ -175,5 +175,24 @@ describe("Meta callback recovery", () => {
     expect(params.get("businessId")).toBe("business-1");
     expect(params.has("socialConnect")).toBe(false);
     expect(params.has("error")).toBe(false);
+  });
+});
+
+describe("workspace layout", () => {
+  it("gives the conversation area the remaining desktop workspace height", async () => {
+    renderSocialMedia();
+
+    await waitFor(() => {
+      expect(screen.getByTestId("social-workspace")).toBeInTheDocument();
+      expect(screen.getByTestId("social-conversations")).toBeInTheDocument();
+    });
+
+    expect(screen.getByTestId("social-workspace")).toHaveClass(
+      "lg:min-h-[calc(100dvh-4rem)]",
+    );
+    expect(screen.getByTestId("social-conversations")).toHaveClass(
+      "flex-1",
+      "lg:min-h-0",
+    );
   });
 });

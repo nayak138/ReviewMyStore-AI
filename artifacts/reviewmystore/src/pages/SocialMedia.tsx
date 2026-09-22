@@ -476,7 +476,10 @@ export default function SocialMedia() {
 
   return (
     <AppLayout title="Social Media" businessName={workspaceBusiness?.name}>
-      <div className="mx-auto flex min-h-full max-w-6xl flex-col space-y-6 p-4 md:p-8">
+      <div
+        className="mx-auto flex min-h-full max-w-6xl flex-col space-y-6 p-4 md:p-8 lg:min-h-[calc(100dvh-4rem)]"
+        data-testid="social-workspace"
+      >
         {workspaceBusiness && (
           <BusinessTabs businessId={workspaceBusiness.id} businessName={workspaceBusiness.name} active="social-media" />
         )}
@@ -650,7 +653,10 @@ export default function SocialMedia() {
               </Card>
             </section>
 
-            <section className="grid flex-1 items-stretch gap-6 lg:grid-cols-[0.8fr_1.2fr]">
+            <section
+              className="grid flex-1 items-stretch gap-6 lg:min-h-0 lg:grid-cols-[0.8fr_1.2fr]"
+              data-testid="social-conversations"
+            >
               <Card className="h-full">
                 <CardHeader><CardTitle className="flex items-center gap-2 text-xl"><MessageSquare className="h-4 w-4 text-primary" /> Public conversations</CardTitle><CardDescription className="mt-1">Import comments from a post, then reply without leaving the workspace.</CardDescription></CardHeader>
                 <CardContent className="space-y-4">
