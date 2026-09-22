@@ -228,7 +228,7 @@ describe("workspace layout", () => {
     expect(screen.queryByTestId("state-no-posts")).not.toBeInTheDocument();
   });
 
-  it("gives the conversation area the remaining desktop workspace height", async () => {
+  it("lets the workspace size to its content instead of forcing full-viewport height", async () => {
     renderSocialMedia();
 
     await waitFor(() => {
@@ -236,10 +236,14 @@ describe("workspace layout", () => {
       expect(screen.getByTestId("social-conversations")).toBeInTheDocument();
     });
 
-    expect(screen.getByTestId("social-workspace")).toHaveClass(
+    // The parent app shell owns the single page-level scroll container. The
+    // workspace and its sections must not force extra height (which used to
+    // leave blank scrollable space below the content).
+    expect(screen.getByTestId("social-workspace")).not.toHaveClass(
+      "min-h-full",
       "lg:min-h-[calc(100dvh-4rem)]",
     );
-    expect(screen.getByTestId("social-conversations")).toHaveClass(
+    expect(screen.getByTestId("social-conversations")).not.toHaveClass(
       "flex-1",
       "lg:min-h-0",
     );

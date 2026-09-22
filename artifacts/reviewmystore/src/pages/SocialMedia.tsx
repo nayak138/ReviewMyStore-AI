@@ -478,7 +478,7 @@ export default function SocialMedia() {
   return (
     <AppLayout title="Social Media" businessName={workspaceBusiness?.name}>
       <div
-        className="mx-auto flex min-h-full max-w-6xl flex-col space-y-6 p-4 md:p-8 lg:min-h-[calc(100dvh-4rem)]"
+        className="mx-auto flex max-w-6xl flex-col space-y-6 p-4 md:p-8"
         data-testid="social-workspace"
       >
         {workspaceBusiness && (
@@ -668,7 +668,7 @@ export default function SocialMedia() {
             </section>
 
             <section
-              className="grid flex-1 items-stretch gap-6 lg:min-h-0 lg:grid-cols-[0.8fr_1.2fr]"
+              className="grid items-stretch gap-6 lg:grid-cols-[0.8fr_1.2fr]"
               data-testid="social-conversations"
             >
               <Card className="h-full">
