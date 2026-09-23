@@ -209,7 +209,10 @@ function AgencyCard({
   onLinkCreated,
 }: {
   agency: AdminAgency;
-  onLinkCreated: (path: string) => void;
+  onLinkCreated: (
+    path: string,
+    delivery: { sent: boolean; error?: string | null },
+  ) => void;
 }) {
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -244,8 +247,21 @@ function AgencyCard({
     mutation: {
       onSuccess: (data) => {
         void invalidate();
-        onLinkCreated(data.signupPath);
-        toast({ title: "Signup link created", description: "Copy it and send it to the agency owner." });
+        onLinkCreated(data.signupPath, data.delivery);
+        toast(
+          data.delivery.sent
+            ? {
+                title: "Invitation email sent",
+                description: "The agency owner can use the signup link from the invitation record.",
+              }
+            : {
+                title: "Signup link created, but email failed",
+                description:
+                  data.delivery.error ??
+                  "Copy the signup link and send it to the agency owner manually.",
+                variant: "destructive",
+              },
+        );
       },
       onError: (error) =>
         toast({
@@ -429,7 +445,10 @@ export default function AdminPortal() {
   const [createOpen, setCreateOpen] = useState(false);
   const [resetOpen, setResetOpen] = useState(false);
   const [resetConfirmation, setResetConfirmation] = useState("");
-  const [latestLink, setLatestLink] = useState<string | null>(null);
+  const [latestInvite, setLatestInvite] = useState<{
+    path: string;
+    delivery: { sent: boolean; error?: string | null };
+  } | null>(null);
   const [newAgency, setNewAgency] = useState({
     name: "",
     email: "",
@@ -457,10 +476,26 @@ export default function AdminPortal() {
     mutation: {
       onSuccess: (result) => {
         void queryClient.invalidateQueries({ queryKey: getGetAdminPortalQueryKey() });
-        setLatestLink(result.invitation.signupPath);
+        setLatestInvite({
+          path: result.invitation.signupPath,
+          delivery: result.invitation.delivery,
+        });
         setCreateOpen(false);
         setNewAgency({ name: "", email: "", plan: "STARTER", subscriptionStatus: "TRIALING", aiQuota: "50", businessesLimit: "1" });
-        toast({ title: "Agency created", description: "Copy the signup link and send it to the agency owner." });
+        toast(
+          result.invitation.delivery.sent
+            ? {
+                title: "Agency created and invitation sent",
+                description: "The agency owner can use the invitation email to sign up.",
+              }
+            : {
+                title: "Agency created, but email failed",
+                description:
+                  result.invitation.delivery.error ??
+                  "Copy the signup link below and send it to the agency owner manually.",
+                variant: "destructive",
+              },
+        );
       },
       onError: (error) =>
         toast({
@@ -586,7 +621,17 @@ export default function AdminPortal() {
           filteredAgencies.length === 0 ? (
             <Card><CardContent className="py-16 text-center text-sm text-muted-foreground">No agencies match your search.</CardContent></Card>
           ) : (
-            <div className="space-y-4">{filteredAgencies.map((agency) => <AgencyCard key={agency.id} agency={agency} onLinkCreated={setLatestLink} />)}</div>
+            <div className="space-y-4">
+              {filteredAgencies.map((agency) => (
+                <AgencyCard
+                  key={agency.id}
+                  agency={agency}
+                  onLinkCreated={(path, delivery) =>
+                    setLatestInvite({ path, delivery })
+                  }
+                />
+              ))}
+            </div>
           )
         ) : view === "businesses" ? (
           <Card className="border-border shadow-sm">
@@ -668,11 +713,52 @@ export default function AdminPortal() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={!!latestLink} onOpenChange={(open) => !open && setLatestLink(null)}>
+      <Dialog
+        open={!!latestInvite}
+        onOpenChange={(open) => !open && setLatestInvite(null)}
+      >
         <DialogContent>
-          <DialogHeader><DialogTitle>Signup link ready</DialogTitle><DialogDescription>This link expires in 14 days and can be used once by the invited owner.</DialogDescription></DialogHeader>
-          <div className="flex gap-2"><Input readOnly value={latestLink ? signupUrl(latestLink) : ""} /><Button onClick={() => { if (latestLink) void navigator.clipboard.writeText(signupUrl(latestLink)); toast({ title: "Link copied" }); }}><Copy className="mr-2 h-4 w-4" /> Copy</Button></div>
-          <DialogFooter><Button onClick={() => setLatestLink(null)}><Check className="mr-2 h-4 w-4" /> Done</Button></DialogFooter>
+          <DialogHeader>
+            <DialogTitle>
+              {latestInvite?.delivery.sent
+                ? "Invitation sent"
+                : "Signup link ready"}
+            </DialogTitle>
+            <DialogDescription>
+              This link expires in 14 days and can be used once by the invited
+              owner.
+            </DialogDescription>
+          </DialogHeader>
+          {!latestInvite?.delivery.sent && (
+            <div className="rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive">
+              The invitation was created, but the email was not sent. Copy this
+              link and send it manually.
+              {latestInvite?.delivery.error && (
+                <div className="mt-1 text-xs">{latestInvite.delivery.error}</div>
+              )}
+            </div>
+          )}
+          <div className="flex gap-2">
+            <Input
+              readOnly
+              value={latestInvite ? signupUrl(latestInvite.path) : ""}
+            />
+            <Button
+              onClick={() => {
+                if (latestInvite) {
+                  void navigator.clipboard.writeText(signupUrl(latestInvite.path));
+                  toast({ title: "Link copied" });
+                }
+              }}
+            >
+              <Copy className="mr-2 h-4 w-4" /> Copy
+            </Button>
+          </div>
+          <DialogFooter>
+            <Button onClick={() => setLatestInvite(null)}>
+              <Check className="mr-2 h-4 w-4" /> Done
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 
