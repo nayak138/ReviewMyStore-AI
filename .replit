@@ -26,6 +26,7 @@ SUPER_ADMIN_EMAILS = "nayak138@gmail.com"
 DEMO_ALERT_EMAILS = "nayak138@gmail.com"
 CORS_ALLOWED_ORIGINS = "https://5-star.ai"
 VITE_SITE_URL = "https://5-star.ai"
+RESEND_FROM_EMAIL = "Try sending it through clerk ask again if it is not possible."
 
 [objectStorage]
 defaultBucketID = "replit-objstore-080439cc-c0ba-4318-831d-1f07982e68b1"
