@@ -30,6 +30,11 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock('@workspace/api-client-react', () => ({
+  getGetCurrentUserQueryKey: () => ['/api/auth/me'],
+  useGetCurrentUser: () => ({
+    data: { user: { role: 'OWNER' }, teamAccess: [] },
+    isLoading: false,
+  }),
   useGetReviewDashboard: () => ({
     data: {
       connection: {

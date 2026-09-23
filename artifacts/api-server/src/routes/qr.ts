@@ -12,6 +12,11 @@ import {
 import { generateQrAsset, type QrFormat } from "../services/qrService";
 import { db, businessesTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
+import {
+  BusinessAccessDeniedError,
+  BusinessResourceNotFoundError,
+  requireCampaignAccess,
+} from "../services/businessAccessService";
 
 const router: IRouter = Router();
 
@@ -71,6 +76,7 @@ router.get("/campaigns/:id/qr", requireAuth, async (req, res) => {
   if (!organizationId) return;
 
   try {
+    await requireCampaignAccess(req.appUser!, param(req, "id"), "VIEW");
     const { campaign, business, link } = await loadQrContext(
       organizationId,
       param(req, "id"),
@@ -89,6 +95,14 @@ router.get("/campaigns/:id/qr", requireAuth, async (req, res) => {
       res
         .status(404)
         .json({ success: false, code: "NOT_FOUND", message: err.message });
+      return;
+    }
+    if (err instanceof BusinessAccessDeniedError) {
+      res.status(403).json({ success: false, code: "FORBIDDEN", message: err.message });
+      return;
+    }
+    if (err instanceof BusinessResourceNotFoundError) {
+      res.status(404).json({ success: false, code: "NOT_FOUND", message: err.message });
       return;
     }
     throw err;
@@ -113,6 +127,7 @@ router.get(
     }
 
     try {
+      await requireCampaignAccess(req.appUser!, param(req, "id"), "MANAGE");
       const { campaign, business, link } = await loadQrContext(
         organizationId,
         param(req, "id"),
@@ -136,6 +151,14 @@ router.get(
         res
           .status(404)
           .json({ success: false, code: "NOT_FOUND", message: err.message });
+        return;
+      }
+      if (err instanceof BusinessAccessDeniedError) {
+        res.status(403).json({ success: false, code: "FORBIDDEN", message: err.message });
+        return;
+      }
+      if (err instanceof BusinessResourceNotFoundError) {
+        res.status(404).json({ success: false, code: "NOT_FOUND", message: err.message });
         return;
       }
       req.log?.error({ err, campaignId: param(req, "id"), format }, "QR asset generation failed");

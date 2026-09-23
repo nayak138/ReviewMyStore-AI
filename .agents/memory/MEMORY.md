@@ -37,3 +37,4 @@
 - [Social comment identifiers](social-comment-identifiers.md) — replies must use bundle.social's stored fetched-comment ID, not the platform's external comment ID.
 - [Meta target selection](meta-target-selection.md) — reject stale, duplicate, and incomplete provider targets without clearing the current channel first.
 - [Business usage accounting](business-usage-accounting.md) — reserve and settle app allowances by internal business, independent of reconnectable provider identities.
+- [Owner authorization compatibility](owner-authorization-compatibility.md) — owner-scoped access checks must not query additive team-membership tables, so legacy databases keep existing owner flows working during rollout.

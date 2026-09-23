@@ -52,6 +52,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { cn } from "@/lib/utils";
 import { facebookUrlSchema, instagramUrlSchema, websiteUrlSchema } from "@/lib/urlValidation";
+import { useTeamAccess } from "@/hooks/use-team-access";
 
 const businessSchema = z.object({
   name: z.string().min(2, "Name is required"),
@@ -102,6 +103,7 @@ export default function Businesses() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { isOwner, isTeamMember } = useTeamAccess();
   
   const [searchQuery, setSearchQuery] = useState("");
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -375,7 +377,9 @@ export default function Businesses() {
               {isLoading
                 ? "Loading your businesses…"
                 : businesses.length === 0
-                  ? "Add your first business to start collecting reviews."
+                  ? isTeamMember
+                    ? "No businesses are currently assigned to your account. Contact the business owner if you think this is a mistake."
+                    : "Add your first business to start collecting reviews."
                   : `${businesses.length} business${businesses.length === 1 ? "" : "es"} · ${activeCount} active`}
             </p>
           </div>
@@ -389,10 +393,12 @@ export default function Businesses() {
                 className="pl-9 bg-card shadow-sm"
               />
             </div>
-            <Button onClick={handleOpenCreate} className="shrink-0 shadow-sm">
-              <Plus className="w-4 h-4 mr-2" />
-              Add Business
-            </Button>
+            {isOwner && (
+              <Button onClick={handleOpenCreate} className="shrink-0 shadow-sm">
+                <Plus className="w-4 h-4 mr-2" />
+                Add Business
+              </Button>
+            )}
           </div>
         </div>
 
@@ -430,9 +436,13 @@ export default function Businesses() {
               </div>
               <h3 className="text-xl font-semibold text-foreground">No businesses found</h3>
               <p className="text-muted-foreground mt-2 max-w-md">
-                {searchQuery ? "Try adjusting your search terms." : "You haven't added any businesses yet. Add your first business to start collecting reviews."}
+                {searchQuery
+                  ? "Try adjusting your search terms."
+                  : isTeamMember
+                    ? "Your business access may have been removed. Contact the business owner for help."
+                    : "You haven't added any businesses yet. Add your first business to start collecting reviews."}
               </p>
-              {!searchQuery && (
+              {!searchQuery && isOwner && (
                 <Button onClick={handleOpenCreate} className="mt-6">
                   <Plus className="w-4 h-4 mr-2" />
                   Add Business
@@ -497,7 +507,7 @@ export default function Businesses() {
                     </div>
                   </div>
 
-                  <DropdownMenu>
+                  {isOwner && <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button
                         variant="ghost"
@@ -555,7 +565,7 @@ export default function Businesses() {
                         <Trash2 className="mr-2 h-4 w-4" /> Delete
                       </DropdownMenuItem>
                     </DropdownMenuContent>
-                  </DropdownMenu>
+                  </DropdownMenu>}
                 </div>
             ))
           )}

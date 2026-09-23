@@ -4,7 +4,11 @@ import { z } from "zod/v4";
 import { sql } from "drizzle-orm";
 import { organizationsTable } from "./organizations";
 
-export const userRoleEnum = pgEnum("user_role", ["SUPER_ADMIN", "OWNER"]);
+export const userRoleEnum = pgEnum("user_role", [
+  "SUPER_ADMIN",
+  "OWNER",
+  "TEAM_MEMBER",
+]);
 
 export const userStatusEnum = pgEnum("user_status", ["ACTIVE", "SUSPENDED"]);
 
@@ -15,7 +19,8 @@ export const userStatusEnum = pgEnum("user_status", ["ACTIVE", "SUSPENDED"]);
 //
 // organizationId is null for SUPER_ADMIN accounts, which are platform-wide
 // and not scoped to a single tenant. Every OWNER must belong to exactly one
-// Organization, auto-provisioned on their first authenticated request.
+// Organization. TEAM_MEMBER accounts belong to exactly one agency but receive
+// business access only through business_memberships.
 export const usersTable = pgTable("users", {
   id: text("id")
     .primaryKey()

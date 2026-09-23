@@ -1,12 +1,15 @@
-import { and, desc, eq, gt, lt, sql } from "drizzle-orm";
-import { randomUUID } from "node:crypto";
+import { and, desc, eq, gt, isNull, lt, sql } from "drizzle-orm";
+import { createHash, randomUUID } from "node:crypto";
 import { clerkClient } from "@clerk/express";
 import {
   accountDataExportsTable,
   accountDeactivationRequestsTable,
   agencyInvitationsTable,
+  businessMembershipsTable,
+  businessesTable,
   db,
   organizationsTable,
+  teamInvitationsTable,
   usersTable,
   type User,
 } from "@workspace/db";
@@ -29,6 +32,10 @@ export class VerifiedEmailRequiredError extends Error {
     super("A verified primary email address is required to create an account");
     this.name = "VerifiedEmailRequiredError";
   }
+}
+
+function hashInvitationToken(token: string) {
+  return createHash("sha256").update(token).digest("hex");
 }
 
 const ACCOUNT_EXPORT_EXCLUDED_DATA = [
@@ -278,6 +285,7 @@ export async function generateUniqueOrgSlug(
  */
 export async function getOrCreateUserForClerkId(
   clerkUserId: string,
+  options: { teamInvitationToken?: string } = {},
 ): Promise<User> {
   const existing = await findUserByClerkId(clerkUserId);
   if (existing) return touchLastLogin(existing);
@@ -372,6 +380,58 @@ export async function getOrCreateUserForClerkId(
           return created;
         }
 
+        // The explicit team acceptance request carries its opaque token in
+        // the request body. Prefer that exact invitation before the agency
+        // email lookup so a user who happens to have both invitations cannot
+        // be provisioned as an OWNER by an unrelated invitation.
+        if (options.teamInvitationToken) {
+          const [tokenInvitation] = await tx
+            .select({
+              organizationId: teamInvitationsTable.organizationId,
+            })
+            .from(teamInvitationsTable)
+            .innerJoin(
+              organizationsTable,
+              eq(teamInvitationsTable.organizationId, organizationsTable.id),
+            )
+            .innerJoin(
+              businessesTable,
+              eq(businessesTable.id, teamInvitationsTable.businessId),
+            )
+            .where(
+              and(
+                eq(
+                  teamInvitationsTable.tokenHash,
+                  hashInvitationToken(options.teamInvitationToken),
+                ),
+                eq(teamInvitationsTable.email, normalizedEmail),
+                eq(teamInvitationsTable.status, "PENDING"),
+                gt(teamInvitationsTable.expiresAt, new Date()),
+                eq(organizationsTable.status, "ACTIVE"),
+                eq(businessesTable.status, "ACTIVE"),
+                isNull(businessesTable.archivedAt),
+                isNull(businessesTable.deletedAt),
+              ),
+            )
+            .limit(1);
+
+          if (tokenInvitation) {
+            const [created] = await tx
+              .insert(usersTable)
+              .values({
+                organizationId: tokenInvitation.organizationId,
+                clerkUserId,
+                name,
+                email,
+                role: "TEAM_MEMBER",
+                status: "ACTIVE",
+                lastLoginAt: new Date(),
+              })
+              .returning();
+            return created;
+          }
+        }
+
         const [invitation] = await tx
           .select({
             id: agencyInvitationsTable.id,
@@ -452,6 +512,32 @@ export async function getOrganizationById(id: string) {
     .where(eq(organizationsTable.id, id))
     .limit(1);
   return organization ?? null;
+}
+
+export async function getUserTeamAccess(userId: string, organizationId: string | null) {
+  if (!organizationId) return [];
+  return db
+    .select({
+      businessId: businessMembershipsTable.businessId,
+      businessName: businessesTable.name,
+      campaignsPermission: businessMembershipsTable.campaignsPermission,
+      reviewInboxPermission: businessMembershipsTable.reviewInboxPermission,
+      feedbackPermission: businessMembershipsTable.feedbackPermission,
+      socialMediaPermission: businessMembershipsTable.socialMediaPermission,
+      analyticsPermission: businessMembershipsTable.analyticsPermission,
+    })
+    .from(businessMembershipsTable)
+    .innerJoin(businessesTable, eq(businessesTable.id, businessMembershipsTable.businessId))
+    .where(
+      and(
+        eq(businessMembershipsTable.userId, userId),
+        eq(businessMembershipsTable.organizationId, organizationId),
+        isNull(businessMembershipsTable.removedAt),
+        isNull(businessesTable.deletedAt),
+        eq(businessesTable.status, "ACTIVE"),
+        isNull(businessesTable.archivedAt),
+      ),
+    );
 }
 
 export async function getEmailPreferences(userId: string) {

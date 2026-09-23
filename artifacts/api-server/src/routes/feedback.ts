@@ -8,9 +8,14 @@ import {
 import { requireAuth } from "../middlewares/requireAuth";
 import {
   FeedbackNotFoundError,
-  listPrivateFeedback,
+  listPrivateFeedbackForUser,
   updatePrivateFeedbackStatus,
 } from "../services/privateFeedbackService";
+import {
+  BusinessAccessDeniedError,
+  BusinessResourceNotFoundError,
+  requireFeedbackAccess,
+} from "../services/businessAccessService";
 
 const router: IRouter = Router();
 
@@ -48,7 +53,7 @@ router.get("/feedback", requireAuth, async (req, res) => {
     return;
   }
 
-  const feedback = await listPrivateFeedback(organizationId, parsed.data);
+  const feedback = await listPrivateFeedbackForUser(req.appUser!, parsed.data);
   res.json(ListPrivateFeedbackResponse.parse({ feedback }));
 });
 
@@ -67,6 +72,7 @@ router.patch("/feedback/:id", requireAuth, async (req, res) => {
   }
 
   try {
+    await requireFeedbackAccess(req.appUser!, idParam(req), "MANAGE");
     const updated = await updatePrivateFeedbackStatus(
       organizationId,
       idParam(req),
@@ -80,6 +86,14 @@ router.patch("/feedback/:id", requireAuth, async (req, res) => {
         code: "NOT_FOUND",
         message: err.message,
       });
+      return;
+    }
+    if (err instanceof BusinessAccessDeniedError) {
+      res.status(403).json({ success: false, code: "FORBIDDEN", message: err.message });
+      return;
+    }
+    if (err instanceof BusinessResourceNotFoundError) {
+      res.status(404).json({ success: false, code: "NOT_FOUND", message: err.message });
       return;
     }
     throw err;

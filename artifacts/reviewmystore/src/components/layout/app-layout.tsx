@@ -35,6 +35,11 @@ const NAV_ITEMS: NavItem[] = [
   { name: "Settings", icon: Settings, href: "/settings", ready: true },
 ];
 
+const TEAM_MEMBER_NAV_ITEMS: NavItem[] = [
+  { name: "Businesses", icon: Store, href: "/businesses", ready: true },
+  { name: "Settings", icon: Settings, href: "/settings", ready: true },
+];
+
 const ADMIN_NAV_ITEMS: NavItem[] = [
   { name: "Admin Portal", icon: ShieldCheck, href: "/admin/portal", ready: true },
   { name: "Settings", icon: Settings, href: "/settings", ready: true },
@@ -70,6 +75,8 @@ export function AppLayout({ children, title, businessName }: AppLayoutProps) {
   const navItems =
     session?.user.role === "SUPER_ADMIN"
       ? ADMIN_NAV_ITEMS
+      : session?.user.role === "TEAM_MEMBER"
+        ? TEAM_MEMBER_NAV_ITEMS
       : session
         ? NAV_ITEMS
         : [];

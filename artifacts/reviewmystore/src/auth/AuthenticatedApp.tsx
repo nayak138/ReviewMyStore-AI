@@ -20,8 +20,10 @@ import { useQueryClient } from "@tanstack/react-query";
 import {
   getGetCurrentUserQueryKey,
   getGetPublicAgencyInvitationQueryKey,
+  getGetPublicTeamInvitationQueryKey,
   useGetCurrentUser,
   useGetPublicAgencyInvitation,
+  useGetPublicTeamInvitation,
 } from "@workspace/api-client-react";
 import {
   BRAND_LOGO_LIGHT,
@@ -34,6 +36,9 @@ import {
   resolveInvitationToken,
 } from "./invitation-token";
 import {
+  resolveTeamInvitationToken,
+} from "./team-invitation-token";
+import {
   basePath,
   safeReturnPath,
   signInRedirectFor,
@@ -43,6 +48,11 @@ import {
 import { SessionExpiryWatcher } from "./SessionExpiryWatcher";
 
 const AgencyJoin = lazy(() => import("@/pages/AgencyJoin"));
+const TeamJoin = lazy(() => import("@/pages/TeamJoin"));
+const TeamAccept = lazy(async () => {
+  const module = await import("@/pages/TeamJoin");
+  return { default: module.TeamAccept };
+});
 const Onboarding = lazy(() => import("@/pages/Onboarding"));
 const Businesses = lazy(() => import("@/pages/Businesses"));
 const Campaigns = lazy(() => import("@/pages/Campaigns"));
@@ -208,6 +218,10 @@ export function SignInPage() {
 
 function SignUpPage() {
   const { isLoaded, isSignedIn } = useAuth();
+  const teamInviteToken = resolveTeamInvitationToken(
+    window.location.search,
+    window.sessionStorage,
+  );
   const [inviteToken] = useState(() =>
     resolveInvitationToken(window.location.search, window.sessionStorage),
   );
@@ -215,16 +229,23 @@ function SignUpPage() {
     new URLSearchParams(window.location.search).get("redirect_url"),
   );
   const { data: invitation, isLoading } = useGetPublicAgencyInvitation(
-    inviteToken,
+    teamInviteToken ? "" : inviteToken,
     {
       query: {
-        enabled: isLoaded && !isSignedIn && !!inviteToken,
-        queryKey: getGetPublicAgencyInvitationQueryKey(inviteToken),
+        enabled: isLoaded && !isSignedIn && !teamInviteToken && !!inviteToken,
+        queryKey: getGetPublicAgencyInvitationQueryKey(teamInviteToken ? "" : inviteToken),
       },
     },
   );
+  const { data: teamInvitation, isLoading: isTeamInvitationLoading } =
+    useGetPublicTeamInvitation(teamInviteToken, {
+      query: {
+        enabled: isLoaded && !isSignedIn && !!teamInviteToken,
+        queryKey: getGetPublicTeamInvitationQueryKey(teamInviteToken),
+      },
+    });
 
-  if (!isLoaded || isLoading) {
+  if (!isLoaded || isLoading || isTeamInvitationLoading) {
     return <AuthPageLoader />;
   }
 
@@ -232,7 +253,11 @@ function SignUpPage() {
     return <Redirect to="/post-sign-in" />;
   }
 
-  if (!invitation) {
+  if (teamInviteToken && !teamInvitation) {
+    return <Redirect to="/sign-in" />;
+  }
+
+  if (!teamInviteToken && !invitation) {
     return <Redirect to="/sign-in" />;
   }
 
@@ -241,13 +266,15 @@ function SignUpPage() {
       <div className="auth-form-section w-full">
         <div className="border-b border-slate-200 pb-6">
           <p className="mb-2 text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-            Agency invitation
+            {teamInviteToken ? "Business team invitation" : "Agency invitation"}
           </p>
           <h1 className="font-sans text-2xl font-semibold tracking-tight text-slate-950">
-            Create your owner account
+            {teamInviteToken ? "Create your teammate account" : "Create your owner account"}
           </h1>
           <p className="mt-3 text-sm leading-relaxed text-slate-600">
-            Invitation for {invitation.organizationName}
+            {teamInviteToken
+              ? `Invitation for ${teamInvitation?.businessName}`
+              : `Invitation for ${invitation?.organizationName}`}
           </p>
         </div>
         <div className="pt-6">
@@ -255,7 +282,11 @@ function SignUpPage() {
             routing="path"
             path={`${basePath}/sign-up`}
             signInUrl={`${basePath}/sign-in`}
-            initialValues={{ emailAddress: invitation.email }}
+            initialValues={{
+              emailAddress: teamInviteToken
+                ? teamInvitation!.email
+                : invitation!.email,
+            }}
              fallbackRedirectUrl={withBasePath(returnTo)}
           />
         </div>
@@ -332,6 +363,8 @@ function RoleAwareRedirect() {
       to={
         session.user.role === "SUPER_ADMIN"
           ? "/admin/portal"
+          : session.user.role === "TEAM_MEMBER"
+            ? "/team/accept"
           : "/businesses"
       }
     />
@@ -359,7 +392,9 @@ export function AuthenticatedRoutes() {
     path.startsWith("/sign-in/") ||
     path === "/sign-up" ||
     path.startsWith("/sign-up/") ||
-    path.startsWith("/agency/join/");
+    path.startsWith("/agency/join/") ||
+    path.startsWith("/team/join/");
+    path.startsWith("/team/join/");
 
   if (!isLoaded) return <AuthPageLoader />;
   if (!isSignedIn && !publicAuthRoute) {
@@ -372,6 +407,8 @@ export function AuthenticatedRoutes() {
         <Route path="/sign-in/*?" component={SignInPage} />
         <Route path="/sign-up/*?" component={SignUpPage} />
         <Route path="/agency/join/:token" component={AgencyJoin} />
+        <Route path="/team/join/:token" component={TeamJoin} />
+        <Route path="/team/accept" component={TeamAccept} />
         <Route path="/post-sign-in" component={RoleAwareRedirect} />
         <Route path="/dashboard" component={RoleAwareRedirect} />
         <Route path="/onboarding" component={Onboarding} />

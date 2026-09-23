@@ -38,7 +38,11 @@ export async function requireAuth(
   }
 
   try {
-    const appUser = await getOrCreateUserForClerkId(auth.userId);
+    const teamInvitationToken =
+      typeof req.body?.token === "string" ? req.body.token : undefined;
+    const appUser = await getOrCreateUserForClerkId(auth.userId, {
+      teamInvitationToken,
+    });
     if (appUser.status !== "ACTIVE") {
       res.status(403).json({
         success: false,

@@ -164,6 +164,18 @@ vi.mock("@workspace/api-client-react", () => ({
   useRequestAccountDataExport: () => mocks.accountDataExportMutation,
   useRequestAccountDeactivation: () => mocks.accountDeactivationMutation,
   useListBusinesses: () => ({ data: { businesses: mocks.businesses }, isLoading: false }),
+  getListBusinessTeamQueryKey: (params: unknown) => ["business-team", params],
+  useListBusinessTeam: () => ({
+    data: { seatLimit: 5, seatsUsed: 0, members: [], invitations: [] },
+    isLoading: false,
+    isError: false,
+  }),
+  useCreateTeamInvitation: mocks.mutation,
+  useUpdatePendingTeamInvitation: mocks.mutation,
+  useResendTeamInvitation: mocks.mutation,
+  useRevokeTeamInvitation: mocks.mutation,
+  useUpdateTeamMember: mocks.mutation,
+  useRemoveTeamMember: mocks.mutation,
   useListCampaigns: () => ({ data: { campaigns: mocks.campaigns }, isLoading: false }),
   useListCampaignTemplates: () => ({ data: { templates: [] }, isLoading: false }),
   useGetCampaignQr: () => ({

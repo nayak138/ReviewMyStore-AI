@@ -18,6 +18,7 @@ import {
 } from '../lib/objectAcl';
 import { and, eq, gt, isNull } from 'drizzle-orm';
 import { db, objectUploadsTable } from '@workspace/db';
+import { BusinessAccessDeniedError, requireOwner } from '../services/businessAccessService';
 
 const router: IRouter = Router();
 const objectStorageService = new ObjectStorageService();
@@ -59,6 +60,7 @@ router.post(
     }
 
     try {
+      await requireOwner(req.appUser!);
       const { name, size, contentType } = parsed.data;
 
       // Generic uploads are deliberately small. Larger social media files use
@@ -88,6 +90,10 @@ router.post(
         }),
       );
     } catch (error) {
+      if (error instanceof BusinessAccessDeniedError) {
+        res.status(403).json({ error: 'Forbidden' });
+        return;
+      }
       req.log.error({ err: error }, 'Error generating upload URL');
       res.status(500).json({ error: 'Failed to generate upload URL' });
     }
@@ -129,6 +135,7 @@ router.post(
     }
 
     try {
+      await requireOwner(req.appUser!);
       await objectStorageService.trySetObjectEntityAclPolicy(
         pending.objectPath,
         {
@@ -142,6 +149,10 @@ router.post(
         .where(eq(objectUploadsTable.id, pending.id));
       res.json({ objectPath: pending.objectPath });
     } catch (error) {
+      if (error instanceof BusinessAccessDeniedError) {
+        res.status(403).json({ error: 'Forbidden' });
+        return;
+      }
       if (error instanceof ObjectNotFoundError) {
         res.status(404).json({ error: 'Uploaded object not found.' });
         return;
@@ -237,6 +248,7 @@ router.get(
  */
 router.get('/storage/objects/*path', requireAuth, async (req: Request, res: Response) => {
   try {
+    await requireOwner(req.appUser!);
     const raw = req.params.path;
     const wildcardPath = Array.isArray(raw) ? raw.join('/') : raw;
     const objectPath = `/objects/${wildcardPath}`;
@@ -257,6 +269,10 @@ router.get('/storage/objects/*path', requireAuth, async (req: Request, res: Resp
     }
     await streamObject(req, res, objectFile);
   } catch (error) {
+    if (error instanceof BusinessAccessDeniedError) {
+      res.status(403).json({ error: 'Forbidden' });
+      return;
+    }
     if (error instanceof ObjectNotFoundError) {
       req.log.warn({ err: error }, 'Object not found');
       res.status(404).json({ error: 'Object not found' });

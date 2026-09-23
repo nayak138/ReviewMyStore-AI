@@ -71,6 +71,7 @@ import type {
   KeywordCreateInput,
   KeywordListResult,
   KeywordUpdateInput,
+  ListBusinessTeamParams,
   ListBusinessesParams,
   ListCampaignsParams,
   ListDemoRequestsResult,
@@ -92,6 +93,7 @@ import type {
   PublicGenerateReviewInput,
   PublicGenerateReviewResult,
   PublicReviewPageResult,
+  PublicTeamInvitation,
   RedirectResolveRequest,
   RedirectResolveResult,
   ReviewDashboardResult,
@@ -116,6 +118,14 @@ import type {
   SocialMediaPostInput,
   SocialMediaPostListResult,
   SyncReviewProviderParams,
+  TeamInvitation,
+  TeamInvitationAcceptInput,
+  TeamInvitationCreateInput,
+  TeamInvitationResult,
+  TeamListResult,
+  TeamMember,
+  TeamMemberActionResult,
+  TeamPermissionsInput,
   UpdatePrivateFeedbackStatusInput,
   UploadFinalizeResult,
   UploadUrlRequest,
@@ -148,6 +158,666 @@ const withQueryKey = <T extends object, K>(query: T, queryKey: K): T & { queryKe
   }
   return result;
 };
+
+export const getListBusinessTeamUrl = (params: ListBusinessTeamParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/teams?${stringifiedParams}` : `/api/v1/teams`
+}
+
+/**
+ * @summary List active members and pending invitations for a business
+ */
+export const listBusinessTeam = async (params: ListBusinessTeamParams, options?: Parameters<typeof customFetch>[1]): Promise<TeamListResult> => {
+
+  return customFetch<TeamListResult>(getListBusinessTeamUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListBusinessTeamQueryKey = (params?: ListBusinessTeamParams,) => {
+    return [
+    `/api/v1/teams`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getListBusinessTeamQueryOptions = <TData = Awaited<ReturnType<typeof listBusinessTeam>>, TError = ErrorType<void>>(params: ListBusinessTeamParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listBusinessTeam>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListBusinessTeamQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listBusinessTeam>>> = ({ signal }) => listBusinessTeam(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listBusinessTeam>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListBusinessTeamQueryResult = NonNullable<Awaited<ReturnType<typeof listBusinessTeam>>>
+export type ListBusinessTeamQueryError = ErrorType<void>
+
+
+/**
+ * @summary List active members and pending invitations for a business
+ */
+
+export function useListBusinessTeam<TData = Awaited<ReturnType<typeof listBusinessTeam>>, TError = ErrorType<void>>(
+ params: ListBusinessTeamParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listBusinessTeam>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListBusinessTeamQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getCreateTeamInvitationUrl = () => {
+
+
+
+
+  return `/api/v1/teams/invitations`
+}
+
+/**
+ * @summary Invite a teammate to a business
+ */
+export const createTeamInvitation = async (teamInvitationCreateInput: TeamInvitationCreateInput, options?: Parameters<typeof customFetch>[1]): Promise<TeamInvitationResult> => {
+
+  return customFetch<TeamInvitationResult>(getCreateTeamInvitationUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(teamInvitationCreateInput)
+  }
+);}
+
+
+
+
+
+export const getCreateTeamInvitationMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createTeamInvitation>>, TError,{data: BodyType<TeamInvitationCreateInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createTeamInvitation>>, TError,{data: BodyType<TeamInvitationCreateInput>}, TContext> => {
+
+const mutationKey = ['createTeamInvitation'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createTeamInvitation>>, {data: BodyType<TeamInvitationCreateInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createTeamInvitation(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateTeamInvitationMutationResult = NonNullable<Awaited<ReturnType<typeof createTeamInvitation>>>
+    export type CreateTeamInvitationMutationBody = BodyType<TeamInvitationCreateInput>
+    export type CreateTeamInvitationMutationError = ErrorType<void>
+
+    /**
+ * @summary Invite a teammate to a business
+ */
+export const useCreateTeamInvitation = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createTeamInvitation>>, TError,{data: BodyType<TeamInvitationCreateInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createTeamInvitation>>,
+        TError,
+        {data: BodyType<TeamInvitationCreateInput>},
+        TContext
+      > => {
+      return useMutation(getCreateTeamInvitationMutationOptions(options));
+    }
+
+export const getUpdatePendingTeamInvitationUrl = (id: string,) => {
+
+
+
+
+  return `/api/v1/teams/invitations/${id}`
+}
+
+/**
+ * @summary Update permissions on a pending invitation
+ */
+export const updatePendingTeamInvitation = async (id: string,
+    teamPermissionsInput: TeamPermissionsInput, options?: Parameters<typeof customFetch>[1]): Promise<TeamInvitation> => {
+
+  return customFetch<TeamInvitation>(getUpdatePendingTeamInvitationUrl(id),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(teamPermissionsInput)
+  }
+);}
+
+
+
+
+
+export const getUpdatePendingTeamInvitationMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updatePendingTeamInvitation>>, TError,{id: string;data: BodyType<TeamPermissionsInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updatePendingTeamInvitation>>, TError,{id: string;data: BodyType<TeamPermissionsInput>}, TContext> => {
+
+const mutationKey = ['updatePendingTeamInvitation'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updatePendingTeamInvitation>>, {id: string;data: BodyType<TeamPermissionsInput>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  updatePendingTeamInvitation(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdatePendingTeamInvitationMutationResult = NonNullable<Awaited<ReturnType<typeof updatePendingTeamInvitation>>>
+    export type UpdatePendingTeamInvitationMutationBody = BodyType<TeamPermissionsInput>
+    export type UpdatePendingTeamInvitationMutationError = ErrorType<void>
+
+    /**
+ * @summary Update permissions on a pending invitation
+ */
+export const useUpdatePendingTeamInvitation = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updatePendingTeamInvitation>>, TError,{id: string;data: BodyType<TeamPermissionsInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updatePendingTeamInvitation>>,
+        TError,
+        {id: string;data: BodyType<TeamPermissionsInput>},
+        TContext
+      > => {
+      return useMutation(getUpdatePendingTeamInvitationMutationOptions(options));
+    }
+
+export const getRevokeTeamInvitationUrl = (id: string,) => {
+
+
+
+
+  return `/api/v1/teams/invitations/${id}`
+}
+
+/**
+ * @summary Revoke a pending team invitation
+ */
+export const revokeTeamInvitation = async (id: string, options?: Parameters<typeof customFetch>[1]): Promise<TeamMemberActionResult> => {
+
+  return customFetch<TeamMemberActionResult>(getRevokeTeamInvitationUrl(id),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+
+export const getRevokeTeamInvitationMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof revokeTeamInvitation>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof revokeTeamInvitation>>, TError,{id: string}, TContext> => {
+
+const mutationKey = ['revokeTeamInvitation'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof revokeTeamInvitation>>, {id: string}> = (props) => {
+          const {id} = props ?? {};
+
+          return  revokeTeamInvitation(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RevokeTeamInvitationMutationResult = NonNullable<Awaited<ReturnType<typeof revokeTeamInvitation>>>
+
+    export type RevokeTeamInvitationMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Revoke a pending team invitation
+ */
+export const useRevokeTeamInvitation = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof revokeTeamInvitation>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof revokeTeamInvitation>>,
+        TError,
+        {id: string},
+        TContext
+      > => {
+      return useMutation(getRevokeTeamInvitationMutationOptions(options));
+    }
+
+export const getResendTeamInvitationUrl = (id: string,) => {
+
+
+
+
+  return `/api/v1/teams/invitations/${id}/resend`
+}
+
+/**
+ * @summary Rotate and resend a pending invitation
+ */
+export const resendTeamInvitation = async (id: string, options?: Parameters<typeof customFetch>[1]): Promise<TeamInvitationResult> => {
+
+  return customFetch<TeamInvitationResult>(getResendTeamInvitationUrl(id),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getResendTeamInvitationMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof resendTeamInvitation>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof resendTeamInvitation>>, TError,{id: string}, TContext> => {
+
+const mutationKey = ['resendTeamInvitation'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof resendTeamInvitation>>, {id: string}> = (props) => {
+          const {id} = props ?? {};
+
+          return  resendTeamInvitation(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ResendTeamInvitationMutationResult = NonNullable<Awaited<ReturnType<typeof resendTeamInvitation>>>
+
+    export type ResendTeamInvitationMutationError = ErrorType<void>
+
+    /**
+ * @summary Rotate and resend a pending invitation
+ */
+export const useResendTeamInvitation = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof resendTeamInvitation>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof resendTeamInvitation>>,
+        TError,
+        {id: string},
+        TContext
+      > => {
+      return useMutation(getResendTeamInvitationMutationOptions(options));
+    }
+
+export const getUpdateTeamMemberUrl = (id: string,) => {
+
+
+
+
+  return `/api/v1/teams/members/${id}`
+}
+
+/**
+ * @summary Update an active teammate's permissions
+ */
+export const updateTeamMember = async (id: string,
+    teamPermissionsInput: TeamPermissionsInput, options?: Parameters<typeof customFetch>[1]): Promise<TeamMember> => {
+
+  return customFetch<TeamMember>(getUpdateTeamMemberUrl(id),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(teamPermissionsInput)
+  }
+);}
+
+
+
+
+
+export const getUpdateTeamMemberMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateTeamMember>>, TError,{id: string;data: BodyType<TeamPermissionsInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateTeamMember>>, TError,{id: string;data: BodyType<TeamPermissionsInput>}, TContext> => {
+
+const mutationKey = ['updateTeamMember'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateTeamMember>>, {id: string;data: BodyType<TeamPermissionsInput>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  updateTeamMember(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateTeamMemberMutationResult = NonNullable<Awaited<ReturnType<typeof updateTeamMember>>>
+    export type UpdateTeamMemberMutationBody = BodyType<TeamPermissionsInput>
+    export type UpdateTeamMemberMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Update an active teammate's permissions
+ */
+export const useUpdateTeamMember = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateTeamMember>>, TError,{id: string;data: BodyType<TeamPermissionsInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateTeamMember>>,
+        TError,
+        {id: string;data: BodyType<TeamPermissionsInput>},
+        TContext
+      > => {
+      return useMutation(getUpdateTeamMemberMutationOptions(options));
+    }
+
+export const getRemoveTeamMemberUrl = (id: string,) => {
+
+
+
+
+  return `/api/v1/teams/members/${id}`
+}
+
+/**
+ * @summary Remove a teammate's access to this business
+ */
+export const removeTeamMember = async (id: string, options?: Parameters<typeof customFetch>[1]): Promise<TeamMemberActionResult> => {
+
+  return customFetch<TeamMemberActionResult>(getRemoveTeamMemberUrl(id),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+
+export const getRemoveTeamMemberMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof removeTeamMember>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof removeTeamMember>>, TError,{id: string}, TContext> => {
+
+const mutationKey = ['removeTeamMember'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof removeTeamMember>>, {id: string}> = (props) => {
+          const {id} = props ?? {};
+
+          return  removeTeamMember(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RemoveTeamMemberMutationResult = NonNullable<Awaited<ReturnType<typeof removeTeamMember>>>
+
+    export type RemoveTeamMemberMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Remove a teammate's access to this business
+ */
+export const useRemoveTeamMember = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof removeTeamMember>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof removeTeamMember>>,
+        TError,
+        {id: string},
+        TContext
+      > => {
+      return useMutation(getRemoveTeamMemberMutationOptions(options));
+    }
+
+export const getGetPublicTeamInvitationUrl = (token: string,) => {
+
+
+
+
+  return `/api/v1/public/team-invitations/${token}`
+}
+
+/**
+ * @summary Preview a team invitation
+ */
+export const getPublicTeamInvitation = async (token: string, options?: Parameters<typeof customFetch>[1]): Promise<PublicTeamInvitation> => {
+
+  return customFetch<PublicTeamInvitation>(getGetPublicTeamInvitationUrl(token),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetPublicTeamInvitationQueryKey = (token: string,) => {
+    return [
+    `/api/v1/public/team-invitations/${token}`
+    ] as const;
+    }
+
+
+export const getGetPublicTeamInvitationQueryOptions = <TData = Awaited<ReturnType<typeof getPublicTeamInvitation>>, TError = ErrorType<void>>(token: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getPublicTeamInvitation>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetPublicTeamInvitationQueryKey(token);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getPublicTeamInvitation>>> = ({ signal }) => getPublicTeamInvitation(token, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: token !== null && token !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getPublicTeamInvitation>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetPublicTeamInvitationQueryResult = NonNullable<Awaited<ReturnType<typeof getPublicTeamInvitation>>>
+export type GetPublicTeamInvitationQueryError = ErrorType<void>
+
+
+/**
+ * @summary Preview a team invitation
+ */
+
+export function useGetPublicTeamInvitation<TData = Awaited<ReturnType<typeof getPublicTeamInvitation>>, TError = ErrorType<void>>(
+ token: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getPublicTeamInvitation>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetPublicTeamInvitationQueryOptions(token,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getAcceptTeamInvitationUrl = () => {
+
+
+
+
+  return `/api/v1/teams/accept`
+}
+
+/**
+ * @summary Accept a team invitation for the signed-in invited user
+ */
+export const acceptTeamInvitation = async (teamInvitationAcceptInput: TeamInvitationAcceptInput, options?: Parameters<typeof customFetch>[1]): Promise<TeamMemberActionResult> => {
+
+  return customFetch<TeamMemberActionResult>(getAcceptTeamInvitationUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(teamInvitationAcceptInput)
+  }
+);}
+
+
+
+
+
+export const getAcceptTeamInvitationMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof acceptTeamInvitation>>, TError,{data: BodyType<TeamInvitationAcceptInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof acceptTeamInvitation>>, TError,{data: BodyType<TeamInvitationAcceptInput>}, TContext> => {
+
+const mutationKey = ['acceptTeamInvitation'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof acceptTeamInvitation>>, {data: BodyType<TeamInvitationAcceptInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  acceptTeamInvitation(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AcceptTeamInvitationMutationResult = NonNullable<Awaited<ReturnType<typeof acceptTeamInvitation>>>
+    export type AcceptTeamInvitationMutationBody = BodyType<TeamInvitationAcceptInput>
+    export type AcceptTeamInvitationMutationError = ErrorType<void>
+
+    /**
+ * @summary Accept a team invitation for the signed-in invited user
+ */
+export const useAcceptTeamInvitation = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof acceptTeamInvitation>>, TError,{data: BodyType<TeamInvitationAcceptInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof acceptTeamInvitation>>,
+        TError,
+        {data: BodyType<TeamInvitationAcceptInput>},
+        TContext
+      > => {
+      return useMutation(getAcceptTeamInvitationMutationOptions(options));
+    }
 
 export const getGetReviewDashboardUrl = (params: GetReviewDashboardParams,) => {
   const normalizedParams = new URLSearchParams();

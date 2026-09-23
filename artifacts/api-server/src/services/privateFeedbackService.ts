@@ -1,11 +1,13 @@
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, inArray, isNull } from "drizzle-orm";
 import {
   db,
   businessesTable,
   campaignsTable,
+  businessMembershipsTable,
   privateFeedbackTable,
   usersTable,
   type PrivateFeedback,
+  type User,
 } from "@workspace/db";
 import { findActivePublicCampaign } from "./publicReviewService";
 import { sendPrivateFeedbackAlert } from "./notificationService";
@@ -148,8 +150,12 @@ const MAX_LIST_LIMIT = 200;
 export async function listPrivateFeedback(
   organizationId: string,
   filters: ListPrivateFeedbackFilters,
+  businessIds?: string[],
 ): Promise<PrivateFeedbackListItem[]> {
   const conditions = [eq(privateFeedbackTable.organizationId, organizationId)];
+  if (businessIds) {
+    conditions.push(inArray(privateFeedbackTable.businessId, businessIds));
+  }
   if (filters.businessId) {
     conditions.push(eq(privateFeedbackTable.businessId, filters.businessId));
   }
@@ -188,6 +194,31 @@ export async function listPrivateFeedback(
     .limit(limit);
 
   return rows;
+}
+
+export async function listPrivateFeedbackForUser(
+  user: User,
+  filters: ListPrivateFeedbackFilters,
+) {
+  if (user.role === "OWNER" && user.organizationId) {
+    return listPrivateFeedback(user.organizationId, filters);
+  }
+  if (user.role !== "TEAM_MEMBER" || !user.organizationId) return [];
+  const memberships = await db
+    .select({ businessId: businessMembershipsTable.businessId })
+    .from(businessMembershipsTable)
+    .where(
+      and(
+        eq(businessMembershipsTable.userId, user.id),
+        eq(businessMembershipsTable.organizationId, user.organizationId),
+        isNull(businessMembershipsTable.removedAt),
+      ),
+    );
+  return listPrivateFeedback(
+    user.organizationId,
+    filters,
+    memberships.map((membership) => membership.businessId),
+  );
 }
 
 export async function updatePrivateFeedbackStatus(

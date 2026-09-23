@@ -9,6 +9,262 @@ import * as zod from 'zod';
 
 
 /**
+ * @summary List active members and pending invitations for a business
+ */
+export const ListBusinessTeamQueryParams = zod.object({
+  "businessId": zod.uuid()
+})
+
+export const ListBusinessTeamResponse = zod.object({
+  "businessId": zod.uuid(),
+  "seatLimit": zod.int(),
+  "seatsUsed": zod.int(),
+  "members": zod.array(zod.object({
+  "id": zod.uuid(),
+  "userId": zod.uuid(),
+  "name": zod.string(),
+  "email": zod.email(),
+  "campaignsPermission": zod.enum(['NONE', 'VIEW', 'MANAGE']),
+  "reviewInboxPermission": zod.enum(['NONE', 'VIEW', 'MANAGE']),
+  "feedbackPermission": zod.enum(['NONE', 'VIEW', 'MANAGE']),
+  "socialMediaPermission": zod.enum(['NONE', 'VIEW', 'MANAGE']),
+  "analyticsPermission": zod.enum(['NONE', 'VIEW']),
+  "createdAt": zod.coerce.date()
+})),
+  "invitations": zod.array(zod.object({
+  "id": zod.uuid(),
+  "businessId": zod.uuid(),
+  "email": zod.email(),
+  "invitedName": zod.string().nullable(),
+  "status": zod.enum(['PENDING', 'ACCEPTED', 'REVOKED', 'EXPIRED']),
+  "campaignsPermission": zod.enum(['NONE', 'VIEW', 'MANAGE']),
+  "reviewInboxPermission": zod.enum(['NONE', 'VIEW', 'MANAGE']),
+  "feedbackPermission": zod.enum(['NONE', 'VIEW', 'MANAGE']),
+  "socialMediaPermission": zod.enum(['NONE', 'VIEW', 'MANAGE']),
+  "analyticsPermission": zod.enum(['NONE', 'VIEW']),
+  "expiresAt": zod.coerce.date(),
+  "createdAt": zod.coerce.date(),
+  "deliveryStatus": zod.string(),
+  "deliveryError": zod.string().nullable()
+}))
+})
+
+
+/**
+ * @summary Invite a teammate to a business
+ */
+export const createTeamInvitationBodyTwoInvitedNameMax = 160;
+
+export const createTeamInvitationBodyTwoExpiresInDaysMax = 90;
+
+
+
+export const CreateTeamInvitationBody = zod.object({
+  "campaignsPermission": zod.enum(['NONE', 'VIEW', 'MANAGE']),
+  "reviewInboxPermission": zod.enum(['NONE', 'VIEW', 'MANAGE']),
+  "feedbackPermission": zod.enum(['NONE', 'VIEW', 'MANAGE']),
+  "socialMediaPermission": zod.enum(['NONE', 'VIEW', 'MANAGE']),
+  "analyticsPermission": zod.enum(['NONE', 'VIEW'])
+}).and(zod.object({
+  "businessId": zod.uuid(),
+  "email": zod.email(),
+  "invitedName": zod.string().max(createTeamInvitationBodyTwoInvitedNameMax).optional(),
+  "expiresInDays": zod.int().min(1).max(createTeamInvitationBodyTwoExpiresInDaysMax).optional()
+}))
+
+export const CreateTeamInvitationResponse = zod.object({
+  "invitation": zod.object({
+  "id": zod.uuid(),
+  "businessId": zod.uuid(),
+  "email": zod.email(),
+  "invitedName": zod.string().nullable(),
+  "status": zod.enum(['PENDING', 'ACCEPTED', 'REVOKED', 'EXPIRED']),
+  "campaignsPermission": zod.enum(['NONE', 'VIEW', 'MANAGE']),
+  "reviewInboxPermission": zod.enum(['NONE', 'VIEW', 'MANAGE']),
+  "feedbackPermission": zod.enum(['NONE', 'VIEW', 'MANAGE']),
+  "socialMediaPermission": zod.enum(['NONE', 'VIEW', 'MANAGE']),
+  "analyticsPermission": zod.enum(['NONE', 'VIEW']),
+  "expiresAt": zod.coerce.date(),
+  "createdAt": zod.coerce.date(),
+  "deliveryStatus": zod.string(),
+  "deliveryError": zod.string().nullable()
+}),
+  "delivery": zod.object({
+  "sent": zod.boolean(),
+  "error": zod.string().nullish()
+}),
+  "joinPath": zod.string().optional()
+})
+
+
+/**
+ * @summary Update permissions on a pending invitation
+ */
+export const UpdatePendingTeamInvitationParams = zod.object({
+  "id": zod.uuid()
+})
+
+export const UpdatePendingTeamInvitationBody = zod.object({
+  "campaignsPermission": zod.enum(['NONE', 'VIEW', 'MANAGE']),
+  "reviewInboxPermission": zod.enum(['NONE', 'VIEW', 'MANAGE']),
+  "feedbackPermission": zod.enum(['NONE', 'VIEW', 'MANAGE']),
+  "socialMediaPermission": zod.enum(['NONE', 'VIEW', 'MANAGE']),
+  "analyticsPermission": zod.enum(['NONE', 'VIEW'])
+})
+
+export const UpdatePendingTeamInvitationResponse = zod.object({
+  "id": zod.uuid(),
+  "businessId": zod.uuid(),
+  "email": zod.email(),
+  "invitedName": zod.string().nullable(),
+  "status": zod.enum(['PENDING', 'ACCEPTED', 'REVOKED', 'EXPIRED']),
+  "campaignsPermission": zod.enum(['NONE', 'VIEW', 'MANAGE']),
+  "reviewInboxPermission": zod.enum(['NONE', 'VIEW', 'MANAGE']),
+  "feedbackPermission": zod.enum(['NONE', 'VIEW', 'MANAGE']),
+  "socialMediaPermission": zod.enum(['NONE', 'VIEW', 'MANAGE']),
+  "analyticsPermission": zod.enum(['NONE', 'VIEW']),
+  "expiresAt": zod.coerce.date(),
+  "createdAt": zod.coerce.date(),
+  "deliveryStatus": zod.string(),
+  "deliveryError": zod.string().nullable()
+})
+
+
+/**
+ * @summary Revoke a pending team invitation
+ */
+export const RevokeTeamInvitationParams = zod.object({
+  "id": zod.uuid()
+})
+
+export const RevokeTeamInvitationResponse = zod.object({
+  "id": zod.uuid(),
+  "status": zod.string(),
+  "businessId": zod.uuid().optional()
+})
+
+
+/**
+ * @summary Rotate and resend a pending invitation
+ */
+export const ResendTeamInvitationParams = zod.object({
+  "id": zod.uuid()
+})
+
+export const ResendTeamInvitationResponse = zod.object({
+  "invitation": zod.object({
+  "id": zod.uuid(),
+  "businessId": zod.uuid(),
+  "email": zod.email(),
+  "invitedName": zod.string().nullable(),
+  "status": zod.enum(['PENDING', 'ACCEPTED', 'REVOKED', 'EXPIRED']),
+  "campaignsPermission": zod.enum(['NONE', 'VIEW', 'MANAGE']),
+  "reviewInboxPermission": zod.enum(['NONE', 'VIEW', 'MANAGE']),
+  "feedbackPermission": zod.enum(['NONE', 'VIEW', 'MANAGE']),
+  "socialMediaPermission": zod.enum(['NONE', 'VIEW', 'MANAGE']),
+  "analyticsPermission": zod.enum(['NONE', 'VIEW']),
+  "expiresAt": zod.coerce.date(),
+  "createdAt": zod.coerce.date(),
+  "deliveryStatus": zod.string(),
+  "deliveryError": zod.string().nullable()
+}),
+  "delivery": zod.object({
+  "sent": zod.boolean(),
+  "error": zod.string().nullish()
+}),
+  "joinPath": zod.string().optional()
+})
+
+
+/**
+ * @summary Update an active teammate's permissions
+ */
+export const UpdateTeamMemberParams = zod.object({
+  "id": zod.uuid()
+})
+
+export const UpdateTeamMemberBody = zod.object({
+  "campaignsPermission": zod.enum(['NONE', 'VIEW', 'MANAGE']),
+  "reviewInboxPermission": zod.enum(['NONE', 'VIEW', 'MANAGE']),
+  "feedbackPermission": zod.enum(['NONE', 'VIEW', 'MANAGE']),
+  "socialMediaPermission": zod.enum(['NONE', 'VIEW', 'MANAGE']),
+  "analyticsPermission": zod.enum(['NONE', 'VIEW'])
+})
+
+export const UpdateTeamMemberResponse = zod.object({
+  "id": zod.uuid(),
+  "userId": zod.uuid(),
+  "name": zod.string(),
+  "email": zod.email(),
+  "campaignsPermission": zod.enum(['NONE', 'VIEW', 'MANAGE']),
+  "reviewInboxPermission": zod.enum(['NONE', 'VIEW', 'MANAGE']),
+  "feedbackPermission": zod.enum(['NONE', 'VIEW', 'MANAGE']),
+  "socialMediaPermission": zod.enum(['NONE', 'VIEW', 'MANAGE']),
+  "analyticsPermission": zod.enum(['NONE', 'VIEW']),
+  "createdAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Remove a teammate's access to this business
+ */
+export const RemoveTeamMemberParams = zod.object({
+  "id": zod.uuid()
+})
+
+export const RemoveTeamMemberResponse = zod.object({
+  "id": zod.uuid(),
+  "status": zod.string(),
+  "businessId": zod.uuid().optional()
+})
+
+
+/**
+ * @summary Preview a team invitation
+ */
+export const getPublicTeamInvitationPathTokenMin = 20;
+
+
+
+export const GetPublicTeamInvitationParams = zod.object({
+  "token": zod.coerce.string().min(getPublicTeamInvitationPathTokenMin)
+})
+
+export const GetPublicTeamInvitationResponse = zod.object({
+  "id": zod.uuid(),
+  "email": zod.email(),
+  "businessId": zod.uuid(),
+  "businessName": zod.string(),
+  "organizationName": zod.string(),
+  "invitedName": zod.string().nullable(),
+  "campaignsPermission": zod.enum(['NONE', 'VIEW', 'MANAGE']),
+  "reviewInboxPermission": zod.enum(['NONE', 'VIEW', 'MANAGE']),
+  "feedbackPermission": zod.enum(['NONE', 'VIEW', 'MANAGE']),
+  "socialMediaPermission": zod.enum(['NONE', 'VIEW', 'MANAGE']),
+  "analyticsPermission": zod.enum(['NONE', 'VIEW']),
+  "expiresAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Accept a team invitation for the signed-in invited user
+ */
+export const acceptTeamInvitationBodyTokenMin = 20;
+
+
+
+export const AcceptTeamInvitationBody = zod.object({
+  "token": zod.string().min(acceptTeamInvitationBodyTokenMin)
+})
+
+export const AcceptTeamInvitationResponse = zod.object({
+  "id": zod.uuid(),
+  "status": zod.string(),
+  "businessId": zod.uuid().optional()
+})
+
+
+/**
  * @summary Get the caller's provider connection, locations, and review inbox summary
  */
 export const GetReviewDashboardQueryParams = zod.object({
@@ -709,7 +965,7 @@ export const GetCurrentUserResponse = zod.object({
   "organizationId": zod.uuid().nullable(),
   "name": zod.string(),
   "email": zod.email(),
-  "role": zod.enum(['SUPER_ADMIN', 'OWNER']),
+  "role": zod.enum(['SUPER_ADMIN', 'OWNER', 'TEAM_MEMBER']),
   "status": zod.enum(['ACTIVE', 'SUSPENDED']),
   "lastLoginAt": zod.coerce.date().nullable(),
   "createdAt": zod.coerce.date()
@@ -728,7 +984,16 @@ export const GetCurrentUserResponse = zod.object({
   "expiryDate": zod.coerce.date().nullable(),
   "createdAt": zod.coerce.date(),
   "updatedAt": zod.coerce.date()
-}),zod.null()])
+}),zod.null()]),
+  "teamAccess": zod.array(zod.object({
+  "businessId": zod.uuid(),
+  "businessName": zod.string(),
+  "campaignsPermission": zod.enum(['NONE', 'VIEW', 'MANAGE']),
+  "reviewInboxPermission": zod.enum(['NONE', 'VIEW', 'MANAGE']),
+  "feedbackPermission": zod.enum(['NONE', 'VIEW', 'MANAGE']),
+  "socialMediaPermission": zod.enum(['NONE', 'VIEW', 'MANAGE']),
+  "analyticsPermission": zod.enum(['NONE', 'VIEW'])
+}))
 })
 
 
@@ -774,7 +1039,7 @@ export const RequestAccountDataExportResponse = zod.object({
   "id": zod.uuid(),
   "name": zod.string(),
   "email": zod.email(),
-  "role": zod.enum(['SUPER_ADMIN', 'OWNER']),
+  "role": zod.enum(['SUPER_ADMIN', 'OWNER', 'TEAM_MEMBER']),
   "status": zod.enum(['ACTIVE', 'SUSPENDED']),
   "lastLoginAt": zod.coerce.date().nullable(),
   "createdAt": zod.coerce.date()
@@ -980,7 +1245,11 @@ export const CreateAdminAgencyResponse = zod.object({
   "status": zod.enum(['PENDING', 'ACCEPTED', 'REVOKED']),
   "expiresAt": zod.coerce.date(),
   "createdAt": zod.coerce.date(),
-  "signupPath": zod.string()
+  "signupPath": zod.string(),
+  "delivery": zod.object({
+  "sent": zod.boolean(),
+  "error": zod.string().nullish()
+})
 })
 })
 
@@ -1046,7 +1315,11 @@ export const CreateAdminAgencyInvitationResponse = zod.object({
   "status": zod.enum(['PENDING', 'ACCEPTED', 'REVOKED']),
   "expiresAt": zod.coerce.date(),
   "createdAt": zod.coerce.date(),
-  "signupPath": zod.string()
+  "signupPath": zod.string(),
+  "delivery": zod.object({
+  "sent": zod.boolean(),
+  "error": zod.string().nullish()
+})
 })
 
 

@@ -15,6 +15,7 @@ import {
   createAccountDeactivationRequest,
   getEmailPreferences,
   getOrganizationById,
+  getUserTeamAccess,
   updateEmailPreferences,
 } from "../services/authService";
 
@@ -33,6 +34,7 @@ router.get("/auth/me", requireAuth, async (req, res) => {
   const organization = user.organizationId
     ? await getOrganizationById(user.organizationId)
     : null;
+  const teamAccess = await getUserTeamAccess(user.id, user.organizationId);
 
   const data = GetCurrentUserResponse.parse({
     user: {
@@ -46,6 +48,7 @@ router.get("/auth/me", requireAuth, async (req, res) => {
       createdAt: user.createdAt,
     },
     organization,
+    teamAccess,
   });
   res.json(data);
 });

@@ -42,6 +42,12 @@ import {
 } from "../services/socialMediaService";
 import { BusinessUsageLimitError } from "../services/businessUsageService";
 import { publicOrigin } from "../lib/publicOrigin";
+import {
+  BusinessAccessDeniedError,
+  BusinessResourceNotFoundError,
+  requireBusinessAccess,
+  requireOwner,
+} from "../services/businessAccessService";
 
 const router: IRouter = Router();
 
@@ -91,6 +97,14 @@ function sendError(res: Response, error: unknown) {
     });
     return;
   }
+  if (error instanceof BusinessAccessDeniedError) {
+    res.status(403).json({ success: false, code: "FORBIDDEN", message: error.message });
+    return;
+  }
+  if (error instanceof BusinessResourceNotFoundError) {
+    res.status(404).json({ success: false, code: "NOT_FOUND", message: error.message });
+    return;
+  }
   throw error;
 }
 
@@ -124,6 +138,7 @@ router.get(
     const organizationId = requireOrganization(req, res);
     if (!organizationId) return;
     try {
+      await requireBusinessAccess(req.appUser!, businessId, "socialMedia", "VIEW");
       const result = await getSocialMediaDashboard(
         organizationId,
         businessId,
@@ -152,6 +167,7 @@ router.post(
     const organizationId = requireOrganization(req, res);
     if (!organizationId) return;
     try {
+      await requireOwner(req.appUser!);
       const result = await startSocialMediaConnection(
         organizationId,
         parsed.data.businessId,
@@ -182,6 +198,7 @@ router.delete(
     const organizationId = requireOrganization(req, res);
     if (!organizationId) return;
     try {
+      await requireOwner(req.appUser!);
       await disconnectSocialMediaConnection(
         organizationId,
         parsed.data.businessId,
@@ -211,6 +228,7 @@ router.post(
     const organizationId = requireOrganization(req, res);
     if (!organizationId) return;
     try {
+      await requireOwner(req.appUser!);
       const result = await attachSocialMediaAccount(
         organizationId,
         parsed.data.businessId,
@@ -231,6 +249,7 @@ router.delete(
     const organizationId = requireOrganization(req, res);
     if (!organizationId) return;
     try {
+      await requireOwner(req.appUser!);
       await detachSocialMediaAccount(
         organizationId,
         Array.isArray(req.params.id) ? req.params.id[0] : req.params.id,
@@ -256,6 +275,7 @@ router.get(
     const organizationId = requireOrganization(req, res);
     if (!organizationId) return;
     try {
+      await requireBusinessAccess(req.appUser!, businessId, "socialMedia", "VIEW");
       const result = await listSocialMediaPosts(
         organizationId,
         businessId,
@@ -284,6 +304,7 @@ router.post(
     const organizationId = requireOrganization(req, res);
     if (!organizationId) return;
     try {
+      await requireBusinessAccess(req.appUser!, parsed.data.businessId, "socialMedia", "MANAGE");
       const result = await createSocialMediaPost(
         organizationId,
         req.appUser!.clerkUserId,
@@ -314,6 +335,7 @@ router.post(
     const organizationId = requireOrganization(req, res);
     if (!organizationId) return;
     try {
+      await requireBusinessAccess(req.appUser!, parsed.data.businessId, "socialMedia", "MANAGE");
       const result = await requestSocialMediaMediaUploadUrl(
         organizationId,
         req.appUser!.clerkUserId,
@@ -340,6 +362,7 @@ router.get(
     const organizationId = requireOrganization(req, res);
     if (!organizationId) return;
     try {
+      await requireBusinessAccess(req.appUser!, businessId, "socialMedia", "VIEW");
       const result = await listSocialMediaComments(
         organizationId,
         businessId,
@@ -369,6 +392,7 @@ router.post(
     const organizationId = requireOrganization(req, res);
     if (!organizationId) return;
     try {
+      await requireBusinessAccess(req.appUser!, parsed.data.businessId, "socialMedia", "MANAGE");
       const result = await importSocialMediaComments(
         organizationId,
         parsed.data,
@@ -400,6 +424,7 @@ router.post(
     const organizationId = requireOrganization(req, res);
     if (!organizationId) return;
     try {
+      await requireBusinessAccess(req.appUser!, body.data.businessId, "socialMedia", "MANAGE");
       const result = await replyToSocialMediaComment(
         organizationId,
         body.data.businessId,

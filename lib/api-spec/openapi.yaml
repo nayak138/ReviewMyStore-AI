@@ -36,7 +36,121 @@ tags:
     description: Authenticated management of customer private feedback submissions
   - name: social-media
     description: Business-scoped social account connections, publishing, and comments
+  - name: teams
+    description: Business teammate invitations, memberships, and permissions
 paths:
+  /v1/teams:
+    get:
+      operationId: listBusinessTeam
+      tags: [teams]
+      summary: List active members and pending invitations for a business
+      parameters:
+        - name: businessId
+          in: query
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Business team
+          content: { application/json: { schema: { $ref: "#/components/schemas/TeamListResult" } } }
+        "401": { description: Not authenticated }
+        "403": { description: Owner access required }
+  /v1/teams/invitations:
+    post:
+      operationId: createTeamInvitation
+      tags: [teams]
+      summary: Invite a teammate to a business
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/TeamInvitationCreateInput" }
+      responses:
+        "201":
+          description: Created invitation and email delivery status
+          content: { application/json: { schema: { $ref: "#/components/schemas/TeamInvitationResult" } } }
+        "400": { description: Invalid permissions or request }
+        "403": { description: Owner access required }
+        "409": { description: Duplicate invitation or full team }
+  /v1/teams/invitations/{id}:
+    patch:
+      operationId: updatePendingTeamInvitation
+      tags: [teams]
+      summary: Update permissions on a pending invitation
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/TeamPermissionsInput" }
+      responses:
+        "200": { description: Updated invitation, content: { application/json: { schema: { $ref: "#/components/schemas/TeamInvitation" } } } }
+        "404": { description: Invitation not found }
+    delete:
+      operationId: revokeTeamInvitation
+      tags: [teams]
+      summary: Revoke a pending team invitation
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "200": { description: Revoked invitation, content: { application/json: { schema: { $ref: "#/components/schemas/TeamMemberActionResult" } } } }
+  /v1/teams/invitations/{id}/resend:
+    post:
+      operationId: resendTeamInvitation
+      tags: [teams]
+      summary: Rotate and resend a pending invitation
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "200": { description: Rotated invitation, content: { application/json: { schema: { $ref: "#/components/schemas/TeamInvitationResult" } } } }
+        "404": { description: Invitation not found }
+  /v1/teams/members/{id}:
+    patch:
+      operationId: updateTeamMember
+      tags: [teams]
+      summary: Update an active teammate's permissions
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/TeamPermissionsInput" }
+      responses:
+        "200": { description: Updated member, content: { application/json: { schema: { $ref: "#/components/schemas/TeamMember" } } } }
+    delete:
+      operationId: removeTeamMember
+      tags: [teams]
+      summary: Remove a teammate's access to this business
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "200": { description: Removed member, content: { application/json: { schema: { $ref: "#/components/schemas/TeamMemberActionResult" } } } }
+  /v1/public/team-invitations/{token}:
+    get:
+      operationId: getPublicTeamInvitation
+      tags: [teams]
+      summary: Preview a team invitation
+      parameters:
+        - { name: token, in: path, required: true, schema: { type: string, minLength: 20 } }
+      responses:
+        "200": { description: Invitation preview, content: { application/json: { schema: { $ref: "#/components/schemas/PublicTeamInvitation" } } } }
+        "404": { description: Invitation not found or expired }
+  /v1/teams/accept:
+    post:
+      operationId: acceptTeamInvitation
+      tags: [teams]
+      summary: Accept a team invitation for the signed-in invited user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/TeamInvitationAcceptInput" }
+      responses:
+        "200": { description: Membership created, content: { application/json: { schema: { $ref: "#/components/schemas/TeamMemberActionResult" } } } }
+        "403": { description: Email mismatch or unavailable account }
+        "404": { description: Invitation not found or expired }
   /v1/review-management:
     get:
       operationId: getReviewDashboard
@@ -2938,7 +3052,7 @@ components:
 
     UserRole:
       type: string
-      enum: [SUPER_ADMIN, OWNER]
+      enum: [SUPER_ADMIN, OWNER, TEAM_MEMBER]
 
     OrganizationStatus:
       type: string
@@ -3241,9 +3355,26 @@ components:
           oneOf:
             - $ref: "#/components/schemas/Organization"
             - type: "null"
+        teamAccess:
+          type: array
+          items:
+            $ref: "#/components/schemas/TeamBusinessAccess"
       required:
         - user
         - organization
+        - teamAccess
+
+    TeamBusinessAccess:
+      type: object
+      properties:
+        businessId: { type: string, format: uuid }
+        businessName: { type: string }
+        campaignsPermission: { $ref: "#/components/schemas/TeamPermission" }
+        reviewInboxPermission: { $ref: "#/components/schemas/TeamPermission" }
+        feedbackPermission: { $ref: "#/components/schemas/TeamPermission" }
+        socialMediaPermission: { $ref: "#/components/schemas/TeamPermission" }
+        analyticsPermission: { $ref: "#/components/schemas/AnalyticsPermission" }
+      required: [businessId, businessName, campaignsPermission, reviewInboxPermission, feedbackPermission, socialMediaPermission, analyticsPermission]
 
     AdminOverview:
       type: object
@@ -3551,6 +3682,12 @@ components:
           format: date-time
         signupPath:
           type: string
+        delivery:
+          type: object
+          properties:
+            sent: { type: boolean }
+            error: { type: ["string", "null"] }
+          required: [sent]
       required:
         - id
         - email
@@ -3558,6 +3695,7 @@ components:
         - expiresAt
         - createdAt
         - signupPath
+        - delivery
 
     AdminInvitationMutationResult:
       type: object
@@ -5349,3 +5487,110 @@ components:
           minLength: 1
           maxLength: 4000
       required: [comment]
+
+    TeamPermission:
+      type: string
+      enum: [NONE, VIEW, MANAGE]
+    AnalyticsPermission:
+      type: string
+      enum: [NONE, VIEW]
+    TeamPermissionsInput:
+      type: object
+      properties:
+        campaignsPermission: { $ref: "#/components/schemas/TeamPermission" }
+        reviewInboxPermission: { $ref: "#/components/schemas/TeamPermission" }
+        feedbackPermission: { $ref: "#/components/schemas/TeamPermission" }
+        socialMediaPermission: { $ref: "#/components/schemas/TeamPermission" }
+        analyticsPermission: { $ref: "#/components/schemas/AnalyticsPermission" }
+      required: [campaignsPermission, reviewInboxPermission, feedbackPermission, socialMediaPermission, analyticsPermission]
+    TeamInvitationCreateInput:
+      allOf:
+        - $ref: "#/components/schemas/TeamPermissionsInput"
+        - type: object
+          properties:
+            businessId: { type: string, format: uuid }
+            email: { type: string, format: email }
+            invitedName: { type: string, maxLength: 160 }
+            expiresInDays: { type: integer, minimum: 1, maximum: 90 }
+          required: [businessId, email]
+    TeamInvitationAcceptInput:
+      type: object
+      properties:
+        token: { type: string, minLength: 20 }
+      required: [token]
+    TeamMember:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        userId: { type: string, format: uuid }
+        name: { type: string }
+        email: { type: string, format: email }
+        campaignsPermission: { $ref: "#/components/schemas/TeamPermission" }
+        reviewInboxPermission: { $ref: "#/components/schemas/TeamPermission" }
+        feedbackPermission: { $ref: "#/components/schemas/TeamPermission" }
+        socialMediaPermission: { $ref: "#/components/schemas/TeamPermission" }
+        analyticsPermission: { $ref: "#/components/schemas/AnalyticsPermission" }
+        createdAt: { type: string, format: date-time }
+      required: [id, userId, name, email, campaignsPermission, reviewInboxPermission, feedbackPermission, socialMediaPermission, analyticsPermission, createdAt]
+    TeamInvitation:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        businessId: { type: string, format: uuid }
+        email: { type: string, format: email }
+        invitedName: { type: ["string", "null"] }
+        status: { type: string, enum: [PENDING, ACCEPTED, REVOKED, EXPIRED] }
+        campaignsPermission: { $ref: "#/components/schemas/TeamPermission" }
+        reviewInboxPermission: { $ref: "#/components/schemas/TeamPermission" }
+        feedbackPermission: { $ref: "#/components/schemas/TeamPermission" }
+        socialMediaPermission: { $ref: "#/components/schemas/TeamPermission" }
+        analyticsPermission: { $ref: "#/components/schemas/AnalyticsPermission" }
+        expiresAt: { type: string, format: date-time }
+        createdAt: { type: string, format: date-time }
+        deliveryStatus: { type: string }
+        deliveryError: { type: ["string", "null"] }
+      required: [id, businessId, email, invitedName, status, campaignsPermission, reviewInboxPermission, feedbackPermission, socialMediaPermission, analyticsPermission, expiresAt, createdAt, deliveryStatus, deliveryError]
+    TeamInvitationResult:
+      type: object
+      properties:
+        invitation: { allOf: [{ $ref: "#/components/schemas/TeamInvitation" }] }
+        delivery:
+          type: object
+          properties:
+            sent: { type: boolean }
+            error: { type: ["string", "null"] }
+          required: [sent]
+        joinPath: { type: string }
+      required: [invitation, delivery]
+    TeamListResult:
+      type: object
+      properties:
+        businessId: { type: string, format: uuid }
+        seatLimit: { type: integer }
+        seatsUsed: { type: integer }
+        members: { type: array, items: { $ref: "#/components/schemas/TeamMember" } }
+        invitations: { type: array, items: { $ref: "#/components/schemas/TeamInvitation" } }
+      required: [businessId, seatLimit, seatsUsed, members, invitations]
+    PublicTeamInvitation:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        email: { type: string, format: email }
+        businessId: { type: string, format: uuid }
+        businessName: { type: string }
+        organizationName: { type: string }
+        invitedName: { type: ["string", "null"] }
+        campaignsPermission: { $ref: "#/components/schemas/TeamPermission" }
+        reviewInboxPermission: { $ref: "#/components/schemas/TeamPermission" }
+        feedbackPermission: { $ref: "#/components/schemas/TeamPermission" }
+        socialMediaPermission: { $ref: "#/components/schemas/TeamPermission" }
+        analyticsPermission: { $ref: "#/components/schemas/AnalyticsPermission" }
+        expiresAt: { type: string, format: date-time }
+      required: [id, email, businessId, businessName, organizationName, invitedName, campaignsPermission, reviewInboxPermission, feedbackPermission, socialMediaPermission, analyticsPermission, expiresAt]
+    TeamMemberActionResult:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        status: { type: string }
+        businessId: { type: string, format: uuid }
+      required: [id, status]

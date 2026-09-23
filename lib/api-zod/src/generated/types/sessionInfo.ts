@@ -6,9 +6,11 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { Organization } from './organization';
+import type { TeamBusinessAccess } from './teamBusinessAccess';
 import type { UserProfile } from './userProfile';
 
 export interface SessionInfo {
   user: UserProfile;
   organization: Organization | null;
+  teamAccess: TeamBusinessAccess[];
 }

@@ -24,6 +24,113 @@ function configuredSender(): string | null {
   return null;
 }
 
+export type InvitationDeliveryResult = {
+  sent: boolean;
+  error?: string;
+};
+
+export type TeamInvitationEmailData = {
+  to: string;
+  agencyName: string;
+  businessName: string;
+  inviterName: string;
+  invitedEmail: string;
+  expiresAt: string;
+  joinUrl: string;
+  grants: Record<string, string>;
+};
+
+async function sendInvitationEmail(input: {
+  to: string;
+  subject: string;
+  title: string;
+  intro: string;
+  rows: Array<[string, string]>;
+  buttonLabel: string;
+  joinUrl: string;
+  text: string;
+}): Promise<InvitationDeliveryResult> {
+  try {
+    const sender = configuredSender();
+    if (!sender) return { sent: false, error: "Email sender is not configured." };
+    const rowsHtml = input.rows
+      .map(
+        ([label, value]) =>
+          `<tr><td style="padding:8px 12px;font-weight:600;color:#475569;white-space:nowrap;">${esc(label)}</td><td style="padding:8px 12px;color:#0f172a;">${esc(value)}</td></tr>`,
+      )
+      .join("");
+    const safeUrl = esc(input.joinUrl);
+    const html = `<!doctype html><html lang="en"><body style="margin:0;padding:32px 16px;background:#f1f5f9;font-family:Arial,sans-serif;color:#0f172a;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td align="center"><table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;background:#fff;border-radius:12px;overflow:hidden;"><tr><td style="padding:22px 28px;background:#0f172a;color:#fff;font-size:20px;font-weight:700;">5-Star.AI</td></tr><tr><td style="padding:32px 28px;"><h1 style="margin:0 0 14px;font-size:24px;">${esc(input.title)}</h1><p style="margin:0 0 22px;color:#475569;line-height:1.6;">${esc(input.intro)}</p><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;background:#f8fafc;border-radius:8px;">${rowsHtml}</table><p style="margin:28px 0;text-align:center;"><a href="${safeUrl}" style="display:inline-block;padding:13px 22px;border-radius:8px;background:#0f172a;color:#fff;text-decoration:none;font-weight:700;">${esc(input.buttonLabel)}</a></p><p style="margin:0;color:#64748b;font-size:12px;line-height:1.6;">If the button does not work, copy and paste this link:<br><span style="word-break:break-all;">${safeUrl}</span></p></td></tr></table></td></tr></table></body></html>`;
+    const response = await new ReplitConnectors().proxy("resend", "/emails", {
+      method: "POST",
+      body: JSON.stringify({
+        from: sender,
+        to: [input.to],
+        subject: escSubject(input.subject),
+        html,
+        text: input.text,
+      }),
+    });
+    if (!response.ok) {
+      return {
+        sent: false,
+        error: `Email provider returned ${response.status}.`,
+      };
+    }
+    return { sent: true };
+  } catch (error) {
+    console.error("[notificationService] Invitation email submission failed:", error);
+    return { sent: false, error: "Invitation email could not be submitted." };
+  }
+}
+
+export async function sendTeamInvitationEmail(
+  data: TeamInvitationEmailData,
+): Promise<InvitationDeliveryResult> {
+  const permissions = Object.entries(data.grants)
+    .filter(([, value]) => value !== "NONE")
+    .map(([key, value]) => `${key.replace(/Permission$/, "")}: ${value}`)
+    .join(", ");
+  return sendInvitationEmail({
+    to: data.to,
+    subject: `Join ${data.businessName} on 5-Star.AI`,
+    title: `You’re invited to join ${data.businessName}`,
+    intro: `${data.inviterName} invited you to collaborate with ${data.agencyName}.`,
+    rows: [
+      ["Agency", data.agencyName],
+      ["Business", data.businessName],
+      ["Invited email", data.invitedEmail],
+      ["Feature access", permissions],
+      ["Expires", data.expiresAt],
+    ],
+    buttonLabel: "Join your team",
+    joinUrl: data.joinUrl,
+    text: `You’re invited to join ${data.businessName} on 5-Star.AI.\n\nAgency: ${data.agencyName}\nInvited by: ${data.inviterName}\nInvited email: ${data.invitedEmail}\nFeature access: ${permissions}\nExpires: ${data.expiresAt}\n\nJoin your team: ${data.joinUrl}`,
+  });
+}
+
+export async function sendAgencyOwnerInvitationEmail(data: {
+  to: string;
+  agencyName: string;
+  expiresAt: string;
+  joinUrl: string;
+}): Promise<InvitationDeliveryResult> {
+  return sendInvitationEmail({
+    to: data.to,
+    subject: `Set up your ${data.agencyName} agency`,
+    title: `Welcome to ${data.agencyName}`,
+    intro: "Your agency workspace is ready. Set up your owner account to begin managing your businesses.",
+    rows: [
+      ["Agency", data.agencyName],
+      ["Invited email", data.to],
+      ["Expires", data.expiresAt],
+    ],
+    buttonLabel: "Set up your agency",
+    joinUrl: data.joinUrl,
+    text: `Your ${data.agencyName} agency workspace is ready.\n\nInvited email: ${data.to}\nExpires: ${data.expiresAt}\n\nSet up your agency: ${data.joinUrl}`,
+  });
+}
+
 /** Send a new-demo-request alert email to all configured recipients.
  *  Failures are caught and logged so they never break the calling request. */
 export async function sendDemoRequestAlert(data: {

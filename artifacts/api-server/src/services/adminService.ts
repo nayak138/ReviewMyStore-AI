@@ -18,6 +18,7 @@ import {
   usersTable,
 } from "@workspace/db";
 import { generateUniqueOrgSlug } from "./authService";
+import { sendAgencyOwnerInvitationEmail } from "./notificationService";
 
 const DEFAULT_INVITATION_DAYS = 14;
 
@@ -429,6 +430,7 @@ export async function createAgency(input: {
   businessesLimit: number;
   createdByUserId: string;
   expiresInDays?: number;
+  publicOrigin?: string;
 }) {
   const email = input.email.trim().toLowerCase();
   const [existingOwner] = await db
@@ -438,7 +440,7 @@ export async function createAgency(input: {
     .limit(1);
   if (existingOwner) throw new AdminOwnerAlreadyExistsError(email);
 
-  return db.transaction(async (tx) => {
+  const result = await db.transaction(async (tx) => {
     const slug = await generateUniqueOrgSlug(input.name, tx);
     const [organization] = await tx
       .insert(organizationsTable)
@@ -484,6 +486,18 @@ export async function createAgency(input: {
       },
     };
   });
+  const delivery = input.publicOrigin
+    ? await sendAgencyOwnerInvitationEmail({
+        to: result.invitation.email,
+        agencyName: result.organization.name,
+        expiresAt: result.invitation.expiresAt,
+        joinUrl: `${input.publicOrigin}${result.invitation.signupPath}`,
+      })
+    : { sent: false, error: "Public app origin is unavailable." };
+  return {
+    ...result,
+    invitation: { ...result.invitation, delivery },
+  };
 }
 
 export async function updateAgency(
@@ -517,9 +531,14 @@ export async function createAgencyInvitation(
   createdByUserId: string,
   email: string,
   expiresInDays?: number,
+  publicOrigin?: string,
 ) {
   const [organization] = await db
-    .select({ id: organizationsTable.id, status: organizationsTable.status })
+    .select({
+      id: organizationsTable.id,
+      status: organizationsTable.status,
+      name: organizationsTable.name,
+    })
     .from(organizationsTable)
     .where(eq(organizationsTable.id, organizationId))
     .limit(1);
@@ -536,12 +555,21 @@ export async function createAgencyInvitation(
         eq(agencyInvitationsTable.status, "PENDING"),
       ),
     );
-  return createInvitation(
+  const invitation = await createInvitation(
     organizationId,
     createdByUserId,
     normalizedEmail,
     expiresInDays,
   );
+  const delivery = publicOrigin
+    ? await sendAgencyOwnerInvitationEmail({
+        to: invitation.email,
+        agencyName: organization.name,
+        expiresAt: invitation.expiresAt,
+        joinUrl: `${publicOrigin}${invitation.signupPath}`,
+      })
+    : { sent: false, error: "Public app origin is unavailable." };
+  return { ...invitation, delivery };
 }
 
 export async function revokeAgencyInvitation(id: string) {

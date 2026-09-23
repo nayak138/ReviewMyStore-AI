@@ -22,7 +22,6 @@ import {
   createBusiness,
   generateUniqueBusinessSlug,
   getBusiness,
-  listBusinesses,
   restoreBusiness,
   setBusinessStatus,
   softDeleteBusiness,
@@ -30,6 +29,13 @@ import {
 } from "../services/businessService";
 import { getDashboardSummary } from "../services/dashboardService";
 import { getBusinessAnalytics } from "../services/businessAnalyticsService";
+import {
+  BusinessAccessDeniedError,
+  BusinessResourceNotFoundError,
+  listAccessibleBusinesses,
+  requireBusinessAccess,
+  requireOwner,
+} from "../services/businessAccessService";
 
 const router: IRouter = Router();
 
@@ -63,12 +69,20 @@ function notFound(res: Response, err: BusinessNotFoundError) {
   });
 }
 
+function resourceNotFound(res: Response, err: BusinessResourceNotFoundError) {
+  res.status(404).json({
+    success: false,
+    code: "NOT_FOUND",
+    message: err.message,
+  });
+}
+
 router.get("/businesses", requireAuth, async (req, res) => {
   const organizationId = requireOrganization(req, res);
   if (!organizationId) return;
 
   const includeArchived = req.query.includeArchived !== "false";
-  const businesses = await listBusinesses(organizationId, includeArchived);
+  const businesses = await listAccessibleBusinesses(req.appUser!, includeArchived);
   res.json(ListBusinessesResponse.parse({ businesses }));
 });
 
@@ -97,6 +111,7 @@ router.get("/businesses/analytics", requireAuth, async (req, res) => {
   }
 
   try {
+    await requireBusinessAccess(req.appUser!, businessId, "analytics", "VIEW");
     const analytics = await getBusinessAnalytics(
       organizationId,
       businessId,
@@ -105,6 +120,11 @@ router.get("/businesses/analytics", requireAuth, async (req, res) => {
     res.json(GetBusinessAnalyticsResponse.parse(analytics));
   } catch (err) {
     if (err instanceof BusinessNotFoundError) return notFound(res, err);
+    if (err instanceof BusinessAccessDeniedError) {
+      res.status(403).json({ success: false, code: "FORBIDDEN", message: err.message });
+      return;
+    }
+    if (err instanceof BusinessResourceNotFoundError) return resourceNotFound(res, err);
     throw err;
   }
 });
@@ -112,6 +132,16 @@ router.get("/businesses/analytics", requireAuth, async (req, res) => {
 router.post("/businesses", requireAuth, async (req, res) => {
   const organizationId = requireOrganization(req, res);
   if (!organizationId) return;
+  try {
+    await requireOwner(req.appUser!);
+  } catch (err) {
+    if (err instanceof BusinessAccessDeniedError) {
+      res.status(403).json({ success: false, code: "FORBIDDEN", message: err.message });
+      return;
+    }
+    if (err instanceof BusinessResourceNotFoundError) return resourceNotFound(res, err);
+    throw err;
+  }
 
   const parsed = CreateBusinessBody.safeParse(req.body);
   if (!parsed.success) {
@@ -148,10 +178,15 @@ router.get("/businesses/:id", requireAuth, async (req, res) => {
   if (!organizationId) return;
 
   try {
+    await requireBusinessAccess(req.appUser!, idParam(req));
     const business = await getBusiness(organizationId, idParam(req));
     res.json(GetBusinessResponse.parse(business));
   } catch (err) {
     if (err instanceof BusinessNotFoundError) return notFound(res, err);
+    if (err instanceof BusinessAccessDeniedError) {
+      res.status(403).json({ success: false, code: "FORBIDDEN", message: err.message });
+      return;
+    }
     throw err;
   }
 });
@@ -159,6 +194,15 @@ router.get("/businesses/:id", requireAuth, async (req, res) => {
 router.patch("/businesses/:id", requireAuth, async (req, res) => {
   const organizationId = requireOrganization(req, res);
   if (!organizationId) return;
+  try {
+    await requireOwner(req.appUser!);
+  } catch (err) {
+    if (err instanceof BusinessAccessDeniedError) {
+      res.status(403).json({ success: false, code: "FORBIDDEN", message: err.message });
+      return;
+    }
+    throw err;
+  }
 
   const parsed = UpdateBusinessBody.safeParse(req.body);
   if (!parsed.success) {
@@ -194,6 +238,15 @@ router.patch("/businesses/:id", requireAuth, async (req, res) => {
 router.delete("/businesses/:id", requireAuth, async (req, res) => {
   const organizationId = requireOrganization(req, res);
   if (!organizationId) return;
+  try {
+    await requireOwner(req.appUser!);
+  } catch (err) {
+    if (err instanceof BusinessAccessDeniedError) {
+      res.status(403).json({ success: false, code: "FORBIDDEN", message: err.message });
+      return;
+    }
+    throw err;
+  }
 
   try {
     await softDeleteBusiness(organizationId, idParam(req));
@@ -207,6 +260,15 @@ router.delete("/businesses/:id", requireAuth, async (req, res) => {
 router.post("/businesses/:id/archive", requireAuth, async (req, res) => {
   const organizationId = requireOrganization(req, res);
   if (!organizationId) return;
+  try {
+    await requireOwner(req.appUser!);
+  } catch (err) {
+    if (err instanceof BusinessAccessDeniedError) {
+      res.status(403).json({ success: false, code: "FORBIDDEN", message: err.message });
+      return;
+    }
+    throw err;
+  }
 
   try {
     const business = await archiveBusiness(organizationId, idParam(req));
@@ -220,6 +282,15 @@ router.post("/businesses/:id/archive", requireAuth, async (req, res) => {
 router.post("/businesses/:id/restore", requireAuth, async (req, res) => {
   const organizationId = requireOrganization(req, res);
   if (!organizationId) return;
+  try {
+    await requireOwner(req.appUser!);
+  } catch (err) {
+    if (err instanceof BusinessAccessDeniedError) {
+      res.status(403).json({ success: false, code: "FORBIDDEN", message: err.message });
+      return;
+    }
+    throw err;
+  }
 
   try {
     const business = await restoreBusiness(organizationId, idParam(req));
@@ -233,6 +304,15 @@ router.post("/businesses/:id/restore", requireAuth, async (req, res) => {
 router.patch("/businesses/:id/status", requireAuth, async (req, res) => {
   const organizationId = requireOrganization(req, res);
   if (!organizationId) return;
+  try {
+    await requireOwner(req.appUser!);
+  } catch (err) {
+    if (err instanceof BusinessAccessDeniedError) {
+      res.status(403).json({ success: false, code: "FORBIDDEN", message: err.message });
+      return;
+    }
+    throw err;
+  }
 
   const parsed = SetBusinessStatusBody.safeParse(req.body);
   if (!parsed.success) {
@@ -260,6 +340,14 @@ router.patch("/businesses/:id/status", requireAuth, async (req, res) => {
 router.get("/dashboard/summary", requireAuth, async (req, res) => {
   const organizationId = requireOrganization(req, res);
   if (!organizationId) return;
+  if (req.appUser!.role !== "OWNER") {
+    res.status(403).json({
+      success: false,
+      code: "OWNER_ONLY",
+      message: "Agency insights are available to owners only.",
+    });
+    return;
+  }
 
   const summary = await getDashboardSummary(organizationId);
   res.json(GetDashboardSummaryResponse.parse(summary));

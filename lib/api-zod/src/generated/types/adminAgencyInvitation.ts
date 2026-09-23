@@ -5,6 +5,7 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { AdminAgencyInvitationDelivery } from './adminAgencyInvitationDelivery';
 import type { AdminAgencyInvitationStatus } from './adminAgencyInvitationStatus';
 
 export interface AdminAgencyInvitation {
@@ -14,4 +15,5 @@ export interface AdminAgencyInvitation {
   expiresAt: Date;
   createdAt: Date;
   signupPath: string;
+  delivery: AdminAgencyInvitationDelivery;
 }

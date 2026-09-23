@@ -22,6 +22,7 @@ import {
   ResetAdminPlatformDataResponse,
 } from "@workspace/api-zod";
 import { requireAuth, requireRole } from "../middlewares/requireAuth";
+import { publicOrigin } from "../lib/publicOrigin";
 import {
   AdminAgencyNotFoundError,
   AdminInvitationNotFoundError,
@@ -166,6 +167,7 @@ router.post(
       const result = await createAgency({
         ...parsed.data,
         createdByUserId: req.appUser!.id,
+        publicOrigin: publicOrigin(req),
       });
       res.status(201).json(CreateAdminAgencyResponse.parse(result));
     } catch (error) {
@@ -251,6 +253,7 @@ router.post(
         req.appUser!.id,
         parsed.data.email,
         parsed.data.expiresInDays,
+        publicOrigin(req),
       );
       res.status(201).json(CreateAdminAgencyInvitationResponse.parse(result));
     } catch (error) {

@@ -2,6 +2,7 @@ import { AtSign, BarChart3, Megaphone, MessageCircleWarning, MessageSquare, Stor
 import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useTeamAccess, type TeamFeature } from "@/hooks/use-team-access";
 
 export type BusinessWorkspaceTab = "campaigns" | "reviews" | "feedback" | "analytics" | "social-media";
 
@@ -13,6 +14,14 @@ const tabs: Array<{ id: BusinessWorkspaceTab; label: string; icon: typeof Store;
   { id: "social-media", label: "Social Media", icon: AtSign, href: "/social-media" },
 ];
 
+const featureForTab: Record<BusinessWorkspaceTab, TeamFeature> = {
+  campaigns: "campaignsPermission",
+  reviews: "reviewInboxPermission",
+  feedback: "feedbackPermission",
+  analytics: "analyticsPermission",
+  "social-media": "socialMediaPermission",
+};
+
 export function BusinessTabs({
   businessId,
   businessName,
@@ -23,15 +32,26 @@ export function BusinessTabs({
   active: BusinessWorkspaceTab;
 }) {
   const [, setLocation] = useLocation();
+  const { isTeamMember, canView } = useTeamAccess();
+  const visibleTabs = tabs.filter(
+    ({ id }) => !isTeamMember || canView(businessId, featureForTab[id]),
+  );
   const query = `?businessId=${encodeURIComponent(businessId)}&businessName=${encodeURIComponent(businessName)}`;
 
   return (
     <>
+      {isTeamMember && visibleTabs.length === 0 ? (
+        <div className="mx-auto w-full max-w-5xl rounded-xl border border-destructive/20 bg-destructive/5 p-5 text-sm text-muted-foreground" role="status">
+          You no longer have access to this business. Contact the business owner if you think this is a mistake.
+        </div>
+      ) : (
+      <>
       <nav
-        className="mx-auto hidden w-full max-w-5xl gap-1 rounded-xl border border-border bg-card p-1 shadow-sm sm:grid sm:grid-cols-5"
+        className="mx-auto hidden w-full max-w-5xl gap-1 rounded-xl border border-border bg-card p-1 shadow-sm sm:grid"
+        style={{ gridTemplateColumns: `repeat(${visibleTabs.length}, minmax(0, 1fr))` }}
         aria-label={`${businessName} workspace`}
       >
-        {tabs.map(({ id, label, icon: Icon, href }) => (
+        {visibleTabs.map(({ id, label, icon: Icon, href }) => (
           <Link
             key={id}
             href={`${href}${query}`}
@@ -61,7 +81,7 @@ export function BusinessTabs({
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            {tabs.map(({ id, label, icon: Icon }) => (
+            {visibleTabs.map(({ id, label, icon: Icon }) => (
               <SelectItem key={id} value={id}>
                 <span className="flex items-center gap-2">
                   <Icon className="h-4 w-4" />
@@ -72,6 +92,8 @@ export function BusinessTabs({
           </SelectContent>
         </Select>
       </div>
+      </>
+      )}
     </>
   );
 }

@@ -41,6 +41,13 @@ import {
 } from "../services/reviewManagementService";
 import { BusinessUsageLimitError } from "../services/businessUsageService";
 import { publicOrigin } from "../lib/publicOrigin";
+import {
+  BusinessAccessDeniedError,
+  BusinessResourceNotFoundError,
+  requireBusinessAccess,
+  requireOwner,
+  requireReviewAccess,
+} from "../services/businessAccessService";
 
 const router: IRouter = Router();
 
@@ -90,6 +97,14 @@ function sendServiceError(res: Response, error: unknown) {
     });
     return;
   }
+  if (error instanceof BusinessAccessDeniedError) {
+    res.status(403).json({ success: false, code: "FORBIDDEN", message: error.message });
+    return;
+  }
+  if (error instanceof BusinessResourceNotFoundError) {
+    res.status(404).json({ success: false, code: "NOT_FOUND", message: error.message });
+    return;
+  }
   throw error;
 }
 
@@ -110,6 +125,17 @@ router.get(
         code: "INVALID_QUERY",
         message: parsed.error.message,
       });
+      return;
+    }
+    if (parsed?.data.businessId) {
+      try {
+        await requireBusinessAccess(req.appUser!, parsed.data.businessId, "reviewInbox", "VIEW");
+      } catch (error) {
+        sendServiceError(res, error);
+        return;
+      }
+    } else if (req.appUser!.role !== "OWNER") {
+      res.status(403).json({ success: false, code: "FORBIDDEN", message: "Choose an assigned business to view reviews." });
       return;
     }
     const dashboard = await getReviewDashboard(
@@ -136,6 +162,7 @@ router.post(
       return;
     }
     try {
+      await requireOwner(req.appUser!);
       await assertReviewBusiness(organizationId, body.data.businessId);
       const result = await startReviewProviderConnection(
         organizationId,
@@ -160,6 +187,7 @@ router.get(
     const organizationId = requireOrganization(req, res);
     if (!organizationId) return;
     try {
+      await requireOwner(req.appUser!);
       const parsed = GetReviewProviderLocationsQueryParams.safeParse(req.query);
       if (!parsed.success) {
         res.status(400).json({
@@ -200,6 +228,7 @@ router.post(
       return;
     }
     try {
+      await requireOwner(req.appUser!);
       const result = await selectReviewProviderLocation(
         organizationId,
         body.data.businessId,
@@ -229,6 +258,7 @@ router.delete(
       return;
     }
     try {
+      await requireOwner(req.appUser!);
       const result = await disconnectReviewProvider(
         organizationId,
         parsed.data.businessId,
@@ -261,6 +291,7 @@ router.post(
       return;
     }
     try {
+      await requireOwner(req.appUser!);
       const result = businessId
         ? await syncReviewProviderForBusiness(organizationId, businessId)
         : await syncReviewProvider(organizationId);
@@ -287,6 +318,17 @@ router.get(
       });
       return;
     }
+    if (parsed.data.businessId) {
+      try {
+        await requireBusinessAccess(req.appUser!, parsed.data.businessId, "reviewInbox", "VIEW");
+      } catch (error) {
+        sendServiceError(res, error);
+        return;
+      }
+    } else if (req.appUser!.role !== "OWNER") {
+      res.status(403).json({ success: false, code: "FORBIDDEN", message: "Choose an assigned business to view reviews." });
+      return;
+    }
     const result = await listManagedReviews(organizationId, parsed.data);
     res.json(ListManagedReviewsResponse.parse(result));
   },
@@ -308,6 +350,7 @@ router.post(
       return;
     }
     try {
+      await requireReviewAccess(req.appUser!, params.data.id, "MANAGE");
       const result = await generateManagedReviewDraft(
         organizationId,
         req.appUser!.id,
@@ -340,6 +383,7 @@ router.post(
       return;
     }
     try {
+      await requireReviewAccess(req.appUser!, params.data.id, "MANAGE");
       const result = await publishManagedReviewReply(
         organizationId,
         req.appUser!.id,
@@ -370,6 +414,7 @@ router.delete(
       return;
     }
     try {
+      await requireReviewAccess(req.appUser!, params.data.id, "MANAGE");
       const result = await deleteManagedReviewReply(
         organizationId,
         req.appUser!.id,

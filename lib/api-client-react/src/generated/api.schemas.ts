@@ -115,6 +115,7 @@ export type UserRole = typeof UserRole[keyof typeof UserRole];
 export const UserRole = {
   SUPER_ADMIN: 'SUPER_ADMIN',
   OWNER: 'OWNER',
+  TEAM_MEMBER: 'TEAM_MEMBER',
 } as const;
 
 export type OrganizationStatus = typeof OrganizationStatus[keyof typeof OrganizationStatus];
@@ -300,9 +301,37 @@ export interface AdminDeactivationRequestReviewInput {
   reviewerNote?: string;
 }
 
+export type TeamPermission = typeof TeamPermission[keyof typeof TeamPermission];
+
+
+export const TeamPermission = {
+  NONE: 'NONE',
+  VIEW: 'VIEW',
+  MANAGE: 'MANAGE',
+} as const;
+
+export type AnalyticsPermission = typeof AnalyticsPermission[keyof typeof AnalyticsPermission];
+
+
+export const AnalyticsPermission = {
+  NONE: 'NONE',
+  VIEW: 'VIEW',
+} as const;
+
+export interface TeamBusinessAccess {
+  businessId: string;
+  businessName: string;
+  campaignsPermission: TeamPermission;
+  reviewInboxPermission: TeamPermission;
+  feedbackPermission: TeamPermission;
+  socialMediaPermission: TeamPermission;
+  analyticsPermission: AnalyticsPermission;
+}
+
 export interface SessionInfo {
   user: UserProfile;
   organization: Organization | null;
+  teamAccess: TeamBusinessAccess[];
 }
 
 export interface AdminOverview {
@@ -435,6 +464,12 @@ export const AdminAgencyInvitationStatus = {
   REVOKED: 'REVOKED',
 } as const;
 
+export type AdminAgencyInvitationDelivery = {
+  sent: boolean;
+  /** @nullable */
+  error?: string | null;
+};
+
 export interface AdminAgencyInvitation {
   id: string;
   email: string;
@@ -442,6 +477,7 @@ export interface AdminAgencyInvitation {
   expiresAt: string;
   createdAt: string;
   signupPath: string;
+  delivery: AdminAgencyInvitationDelivery;
 }
 
 export interface AdminAgencyCreateResult {
@@ -1522,6 +1558,119 @@ export interface ManagedReviewReplyInput {
      */
   comment: string;
 }
+
+export interface TeamPermissionsInput {
+  campaignsPermission: TeamPermission;
+  reviewInboxPermission: TeamPermission;
+  feedbackPermission: TeamPermission;
+  socialMediaPermission: TeamPermission;
+  analyticsPermission: AnalyticsPermission;
+}
+
+export type TeamInvitationCreateInput = TeamPermissionsInput & {
+  businessId: string;
+  email: string;
+  /** @maxLength 160 */
+  invitedName?: string;
+  /**
+     * @minimum 1
+     * @maximum 90
+     */
+  expiresInDays?: number;
+};
+
+export interface TeamInvitationAcceptInput {
+  /** @minLength 20 */
+  token: string;
+}
+
+export interface TeamMember {
+  id: string;
+  userId: string;
+  name: string;
+  email: string;
+  campaignsPermission: TeamPermission;
+  reviewInboxPermission: TeamPermission;
+  feedbackPermission: TeamPermission;
+  socialMediaPermission: TeamPermission;
+  analyticsPermission: AnalyticsPermission;
+  createdAt: string;
+}
+
+export type TeamInvitationStatus = typeof TeamInvitationStatus[keyof typeof TeamInvitationStatus];
+
+
+export const TeamInvitationStatus = {
+  PENDING: 'PENDING',
+  ACCEPTED: 'ACCEPTED',
+  REVOKED: 'REVOKED',
+  EXPIRED: 'EXPIRED',
+} as const;
+
+export interface TeamInvitation {
+  id: string;
+  businessId: string;
+  email: string;
+  /** @nullable */
+  invitedName: string | null;
+  status: TeamInvitationStatus;
+  campaignsPermission: TeamPermission;
+  reviewInboxPermission: TeamPermission;
+  feedbackPermission: TeamPermission;
+  socialMediaPermission: TeamPermission;
+  analyticsPermission: AnalyticsPermission;
+  expiresAt: string;
+  createdAt: string;
+  deliveryStatus: string;
+  /** @nullable */
+  deliveryError: string | null;
+}
+
+export type TeamInvitationResultDelivery = {
+  sent: boolean;
+  /** @nullable */
+  error?: string | null;
+};
+
+export interface TeamInvitationResult {
+  invitation: TeamInvitation;
+  delivery: TeamInvitationResultDelivery;
+  joinPath?: string;
+}
+
+export interface TeamListResult {
+  businessId: string;
+  seatLimit: number;
+  seatsUsed: number;
+  members: TeamMember[];
+  invitations: TeamInvitation[];
+}
+
+export interface PublicTeamInvitation {
+  id: string;
+  email: string;
+  businessId: string;
+  businessName: string;
+  organizationName: string;
+  /** @nullable */
+  invitedName: string | null;
+  campaignsPermission: TeamPermission;
+  reviewInboxPermission: TeamPermission;
+  feedbackPermission: TeamPermission;
+  socialMediaPermission: TeamPermission;
+  analyticsPermission: AnalyticsPermission;
+  expiresAt: string;
+}
+
+export interface TeamMemberActionResult {
+  id: string;
+  status: string;
+  businessId?: string;
+}
+
+export type ListBusinessTeamParams = {
+businessId: string;
+};
 
 export type GetReviewDashboardParams = {
 businessId: string;
