@@ -11,6 +11,7 @@ import {
   type User,
 } from "@workspace/db";
 import { sendTeamInvitationEmail } from "./notificationService";
+import { assertTeamSchemaReady } from "./teamSchemaReadiness";
 
 export type TeamPermission = "NONE" | "VIEW" | "MANAGE";
 export type AnalyticsPermission = "NONE" | "VIEW";
@@ -83,6 +84,7 @@ function serializeInvitation(row: typeof teamInvitationsTable.$inferSelect, toke
 
 export async function listTeam(businessId: string, owner: User) {
   assertOwner(owner);
+  await assertTeamSchemaReady();
   const [business] = await db
     .select({ id: businessesTable.id })
     .from(businessesTable)
@@ -170,6 +172,7 @@ export async function createTeamInvitation(input: {
   publicOrigin: string;
 }) {
   assertOwner(input.owner);
+  await assertTeamSchemaReady();
   if (!hasGrant(input.grants)) {
     throw new TeamInvitationConflictError("Select at least one feature permission.");
   }
@@ -307,6 +310,7 @@ export async function createTeamInvitation(input: {
 }
 
 export async function getPublicTeamInvitation(token: string) {
+  await assertTeamSchemaReady();
   const [row] = await db
     .select({
       invitation: teamInvitationsTable,
@@ -345,6 +349,7 @@ export async function acceptTeamInvitation(token: string, user: User) {
   if (!user.organizationId || user.role !== "TEAM_MEMBER") {
     throw new TeamForbiddenError("This account cannot join a business team.");
   }
+  await assertTeamSchemaReady();
   const organizationId = user.organizationId;
   return db.transaction(async (tx) => {
     await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${token}))`);
@@ -423,6 +428,7 @@ export async function updateTeamMember(
   grants: TeamGrants,
 ) {
   assertOwner(owner);
+  await assertTeamSchemaReady();
   if (!hasGrant(grants)) throw new TeamInvitationConflictError("Select at least one feature permission.");
   const [member] = await db
     .update(businessMembershipsTable)
@@ -449,6 +455,7 @@ export async function updateTeamMember(
 
 export async function removeTeamMember(membershipId: string, owner: User) {
   assertOwner(owner);
+  await assertTeamSchemaReady();
   const [member] = await db
     .update(businessMembershipsTable)
     .set({ removedAt: new Date(), updatedAt: new Date() })
@@ -473,6 +480,7 @@ export async function removeTeamMember(membershipId: string, owner: User) {
 
 export async function revokeTeamInvitation(invitationId: string, owner: User) {
   assertOwner(owner);
+  await assertTeamSchemaReady();
   const [invite] = await db
     .update(teamInvitationsTable)
     .set({ status: "REVOKED", revokedAt: new Date(), updatedAt: new Date() })
@@ -501,6 +509,7 @@ export async function updatePendingInvitation(
   grants: TeamGrants,
 ) {
   assertOwner(owner);
+  await assertTeamSchemaReady();
   if (!hasGrant(grants)) throw new TeamInvitationConflictError("Select at least one feature permission.");
   const [invite] = await db
     .update(teamInvitationsTable)
@@ -531,6 +540,7 @@ export async function resendTeamInvitation(
   publicOrigin: string,
 ) {
   assertOwner(owner);
+  await assertTeamSchemaReady();
   const token = randomBytes(32).toString("base64url");
   const result = await db.transaction(async (tx) => {
     const [invite] = await tx

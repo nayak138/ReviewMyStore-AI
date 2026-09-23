@@ -30,10 +30,22 @@ import {
   updatePendingInvitation,
   updateTeamMember,
 } from "../services/teamService";
+import {
+  TEAM_SCHEMA_NOT_READY_CODE,
+  TeamSchemaNotReadyError,
+} from "../services/teamSchemaReadiness";
 
 const router: IRouter = Router();
 
 function sendError(res: Response, error: unknown) {
+  if (error instanceof TeamSchemaNotReadyError) {
+    res.status(503).json({
+      success: false,
+      code: TEAM_SCHEMA_NOT_READY_CODE,
+      message: error.message,
+    });
+    return;
+  }
   if (error instanceof TeamForbiddenError) {
     res.status(403).json({ success: false, code: "FORBIDDEN", message: error.message });
     return;
@@ -181,12 +193,16 @@ router.get("/public/team-invitations/:token", async (req, res) => {
     res.status(404).json({ success: false, code: "NOT_FOUND", message: "Invitation not found or expired." });
     return;
   }
-  const result = await getPublicTeamInvitation(params.data.token);
-  if (!result) {
-    res.status(404).json({ success: false, code: "NOT_FOUND", message: "Invitation not found or expired." });
-    return;
+  try {
+    const result = await getPublicTeamInvitation(params.data.token);
+    if (!result) {
+      res.status(404).json({ success: false, code: "NOT_FOUND", message: "Invitation not found or expired." });
+      return;
+    }
+    res.json(GetPublicTeamInvitationResponse.parse(result));
+  } catch (error) {
+    sendError(res, error);
   }
-  res.json(GetPublicTeamInvitationResponse.parse(result));
 });
 
 router.post("/teams/accept", requireAuth, async (req, res) => {

@@ -34,7 +34,11 @@ router.get("/auth/me", requireAuth, async (req, res) => {
   const organization = user.organizationId
     ? await getOrganizationById(user.organizationId)
     : null;
-  const teamAccess = await getUserTeamAccess(user.id, user.organizationId);
+  const teamAccess = await getUserTeamAccess(
+    user.id,
+    user.organizationId,
+    user.role,
+  );
 
   const data = GetCurrentUserResponse.parse({
     user: {

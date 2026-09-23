@@ -8,6 +8,7 @@ import {
   db,
   organizationsTable,
   pool,
+  type User,
   usersTable,
 } from "@workspace/db";
 import {
@@ -20,9 +21,15 @@ import {
   AgencyInvitationRequiredError,
   getEmailPreferences,
   getOrCreateUserForClerkId,
+  getUserTeamAccess,
   updateEmailPreferences,
   VerifiedEmailRequiredError,
 } from "./authService.ts";
+import {
+  setTeamSchemaReadinessProbeForTests,
+  TeamSchemaNotReadyError,
+} from "./teamSchemaReadiness.ts";
+import { createTeamInvitation } from "./teamService.ts";
 
 /**
  * Coverage for the invitation-only provisioning model: a brand-new Clerk
@@ -426,6 +433,90 @@ test("uninvited first login is blocked instead of creating a new organization", 
     .from(usersTable)
     .where(eq(usersTable.clerkUserId, clerkUserId));
   assert.equal(user, undefined);
+});
+
+test("team invitation login is blocked without provisioning when team schema is unavailable", async () => {
+  const clerkUserId = `user_team_schema_unavailable_${runId}`;
+  const email = `team-schema-unavailable-${runId}@example.com`;
+  registerFakeClerkUser(clerkUserId, "Unavailable Teammate", email);
+  setTeamSchemaReadinessProbeForTests(async () => false);
+
+  try {
+    await assert.rejects(
+      () =>
+        getOrCreateUserForClerkId(clerkUserId, {
+          teamInvitationToken: "invitation-token",
+        }),
+      TeamSchemaNotReadyError,
+    );
+  } finally {
+    setTeamSchemaReadinessProbeForTests(undefined);
+  }
+
+  const [user] = await db
+    .select()
+    .from(usersTable)
+    .where(eq(usersTable.clerkUserId, clerkUserId));
+  assert.equal(user, undefined);
+});
+
+test("owner access does not depend on team schema readiness", async () => {
+  setTeamSchemaReadinessProbeForTests(async () => false);
+  try {
+    assert.deepEqual(
+      await getEmailPreferences(testAdminId),
+      {
+        productUpdates: true,
+        releaseAnnouncements: true,
+        securityMessages: true,
+        accountServiceMessages: true,
+      },
+      "existing owner account services remain available",
+    );
+    assert.deepEqual(
+      await getUserTeamAccess("owner-without-team-schema", "org-owner", "OWNER"),
+      [],
+    );
+  } finally {
+    setTeamSchemaReadinessProbeForTests(undefined);
+  }
+});
+
+test("owner invitation mutations fail closed with an operator-safe readiness response", async () => {
+  const owner = {
+    id: "owner-without-team-schema",
+    organizationId: "org-owner",
+    role: "OWNER",
+  } as User;
+  setTeamSchemaReadinessProbeForTests(async () => false);
+
+  try {
+    await assert.rejects(
+      () =>
+        createTeamInvitation({
+          owner,
+          businessId: "business-without-team-schema",
+          email: "teammate@example.com",
+          grants: {
+            campaignsPermission: "VIEW",
+            reviewInboxPermission: "NONE",
+            feedbackPermission: "NONE",
+            socialMediaPermission: "NONE",
+            analyticsPermission: "NONE",
+          },
+          publicOrigin: "https://example.com",
+        }),
+      (error: unknown) => {
+        assert.ok(error instanceof TeamSchemaNotReadyError);
+        assert.equal(error.status, 503);
+        assert.equal(error.code, "TEAM_SCHEMA_NOT_READY");
+        assert.match(error.message, /platform administrator/i);
+        return true;
+      },
+    );
+  } finally {
+    setTeamSchemaReadinessProbeForTests(undefined);
+  }
 });
 
 test("email preferences default to enabled and persist optional changes", async () => {

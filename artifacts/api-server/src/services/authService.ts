@@ -13,6 +13,7 @@ import {
   usersTable,
   type User,
 } from "@workspace/db";
+import { assertTeamSchemaReady } from "./teamSchemaReadiness";
 
 /** Postgres error code for a unique-constraint violation. */
 const UNIQUE_VIOLATION = "23505";
@@ -288,7 +289,15 @@ export async function getOrCreateUserForClerkId(
   options: { teamInvitationToken?: string } = {},
 ): Promise<User> {
   const existing = await findUserByClerkId(clerkUserId);
-  if (existing) return touchLastLogin(existing);
+  if (existing) {
+    const isAllowlistedSuperAdmin = getSuperAdminEmails().has(
+      existing.email.trim().toLowerCase(),
+    );
+    if (existing.role === "TEAM_MEMBER" && !isAllowlistedSuperAdmin) {
+      await assertTeamSchemaReady();
+    }
+    return touchLastLogin(existing);
+  }
 
   const clerkUser = await clerkClient.users.getUser(clerkUserId);
   const primaryEmail = clerkUser.emailAddresses.find(
@@ -385,6 +394,7 @@ export async function getOrCreateUserForClerkId(
         // email lookup so a user who happens to have both invitations cannot
         // be provisioned as an OWNER by an unrelated invitation.
         if (options.teamInvitationToken) {
+          await assertTeamSchemaReady();
           const [tokenInvitation] = await tx
             .select({
               organizationId: teamInvitationsTable.organizationId,
@@ -514,8 +524,13 @@ export async function getOrganizationById(id: string) {
   return organization ?? null;
 }
 
-export async function getUserTeamAccess(userId: string, organizationId: string | null) {
-  if (!organizationId) return [];
+export async function getUserTeamAccess(
+  userId: string,
+  organizationId: string | null,
+  role: User["role"] = "TEAM_MEMBER",
+) {
+  if (!organizationId || role !== "TEAM_MEMBER") return [];
+  await assertTeamSchemaReady();
   return db
     .select({
       businessId: businessMembershipsTable.businessId,

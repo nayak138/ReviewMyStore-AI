@@ -6,6 +6,10 @@ import {
   getOrganizationById,
   VerifiedEmailRequiredError,
 } from "../services/authService";
+import {
+  TEAM_SCHEMA_NOT_READY_CODE,
+  TeamSchemaNotReadyError,
+} from "../services/teamSchemaReadiness";
 import type { User } from "@workspace/db/schema";
 
 declare global {
@@ -71,8 +75,17 @@ export async function requireAuth(
     req.log?.error({ err }, "Failed to resolve authenticated user");
     if (
       err instanceof AgencyInvitationRequiredError ||
-      err instanceof VerifiedEmailRequiredError
+      err instanceof VerifiedEmailRequiredError ||
+      err instanceof TeamSchemaNotReadyError
     ) {
+      if (err instanceof TeamSchemaNotReadyError) {
+        res.status(503).json({
+          success: false,
+          code: TEAM_SCHEMA_NOT_READY_CODE,
+          message: err.message,
+        });
+        return;
+      }
       res.status(403).json({
         success: false,
         code:
