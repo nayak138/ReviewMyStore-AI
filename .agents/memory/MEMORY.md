@@ -38,3 +38,4 @@
 - [Meta target selection](meta-target-selection.md) — reject stale, duplicate, and incomplete provider targets without clearing the current channel first.
 - [Business usage accounting](business-usage-accounting.md) — reserve and settle app allowances by internal business, independent of reconnectable provider identities.
 - [Owner authorization compatibility](owner-authorization-compatibility.md) — owner-scoped access checks must not query additive team-membership tables, so legacy databases keep existing owner flows working during rollout.
+- [Replit feedback widget](replit-feedback-widget.md) — the published-app feedback panel and badge are platform-injected, not application source.
