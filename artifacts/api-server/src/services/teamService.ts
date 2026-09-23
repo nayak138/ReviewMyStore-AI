@@ -346,11 +346,7 @@ export async function getPublicTeamInvitation(token: string) {
 }
 
 export async function acceptTeamInvitation(token: string, user: User) {
-  if (!user.organizationId || user.role !== "TEAM_MEMBER") {
-    throw new TeamForbiddenError("This account cannot join a business team.");
-  }
   await assertTeamSchemaReady();
-  const organizationId = user.organizationId;
   return db.transaction(async (tx) => {
     await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${token}))`);
     const [invite] = await tx
@@ -363,7 +359,6 @@ export async function acceptTeamInvitation(token: string, user: User) {
           eq(teamInvitationsTable.tokenHash, hashToken(token)),
           eq(teamInvitationsTable.status, "PENDING"),
           gt(teamInvitationsTable.expiresAt, new Date()),
-          eq(teamInvitationsTable.organizationId, organizationId),
           eq(organizationsTable.status, "ACTIVE"),
           eq(businessesTable.status, "ACTIVE"),
           isNull(businessesTable.archivedAt),
@@ -374,6 +369,17 @@ export async function acceptTeamInvitation(token: string, user: User) {
     if (!invite) throw new TeamInvitationNotFoundError("This invitation is invalid, expired, revoked, or unavailable.");
     if (normalizeEmail(user.email) !== normalizeEmail(invite.team_invitations.email)) {
       throw new TeamInvitationEmailMismatchError("Sign in with the invited email address to accept this invitation.");
+    }
+    const belongsToInvitedOrganization =
+      user.organizationId === invite.team_invitations.organizationId;
+    const isTeammate =
+      user.role === "TEAM_MEMBER" && belongsToInvitedOrganization;
+    const isOwnerAlreadyWithAccess =
+      user.role === "OWNER" && belongsToInvitedOrganization;
+    if (!isTeammate && !isOwnerAlreadyWithAccess) {
+      throw new TeamForbiddenError(
+        "This signed-in account belongs to a different agency. Sign out, then continue with the account invited to this business.",
+      );
     }
     const [existing] = await tx
       .select({ id: businessMembershipsTable.id })
@@ -386,7 +392,7 @@ export async function acceptTeamInvitation(token: string, user: User) {
         ),
       )
       .limit(1);
-    if (!existing) {
+    if (!existing && isTeammate) {
       const [memberCount] = await tx
         .select({ value: count() })
         .from(businessMembershipsTable)

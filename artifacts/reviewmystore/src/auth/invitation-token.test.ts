@@ -3,6 +3,11 @@ import {
   clearInvitationToken,
   resolveInvitationToken,
 } from "./invitation-token";
+import {
+  clearTeamInvitationToken,
+  resolveTeamInvitationToken,
+  storeTeamInvitationToken,
+} from "./team-invitation-token";
 
 function createStorage() {
   const values = new Map<string, string>();
@@ -33,5 +38,28 @@ describe("invitation token persistence", () => {
 
     clearInvitationToken(storage);
     expect(resolveInvitationToken("", storage)).toBe("");
+  });
+});
+
+describe("team invitation token persistence", () => {
+  it("keeps a direct join-link token through Clerk's queryless return", () => {
+    const storage = createStorage();
+
+    expect(storeTeamInvitationToken("secure-team-token", storage)).toBe(
+      "secure-team-token",
+    );
+    expect(resolveTeamInvitationToken("", storage)).toBe("secure-team-token");
+  });
+
+  it("prefers a newly supplied team token and clears it after acceptance", () => {
+    const storage = createStorage();
+
+    resolveTeamInvitationToken("?teamInvite=old-team-token", storage);
+    expect(resolveTeamInvitationToken("?teamInvite=new-team-token", storage)).toBe(
+      "new-team-token",
+    );
+
+    clearTeamInvitationToken(storage);
+    expect(resolveTeamInvitationToken("", storage)).toBe("");
   });
 });

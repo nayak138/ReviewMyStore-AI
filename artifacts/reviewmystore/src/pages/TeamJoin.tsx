@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import {
   clearTeamInvitationToken,
   resolveTeamInvitationToken,
+  storeTeamInvitationToken,
 } from "@/auth/team-invitation-token";
 
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -48,6 +49,12 @@ export default function TeamJoin() {
   });
   const accept = useAcceptTeamInvitation();
 
+  useEffect(() => {
+    if (token) {
+      storeTeamInvitationToken(token, window.sessionStorage);
+    }
+  }, [token]);
+
   if (!token) return <ErrorCard message="This invitation link is missing its token." />;
   if (!preview.isLoading && !preview.data) {
     return (
@@ -67,7 +74,7 @@ export default function TeamJoin() {
 
   const join = () => {
     if (!isSignedIn) {
-      window.sessionStorage.setItem("reviewmystore.teamInvitationToken", token);
+      storeTeamInvitationToken(token, window.sessionStorage);
       const redirect = `${basePath}/team/join/${encodeURIComponent(token)}`;
       setLocation(
         `${basePath}/sign-up?teamInvite=${encodeURIComponent(token)}&redirect_url=${encodeURIComponent(redirect)}`,

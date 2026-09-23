@@ -1,13 +1,16 @@
 import assert from "node:assert/strict";
 import { after, before, test } from "node:test";
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { clerkClient } from "@clerk/express";
 import { eq } from "drizzle-orm";
 import {
   agencyInvitationsTable,
+  businessesTable,
+  businessMembershipsTable,
   db,
   organizationsTable,
   pool,
+  teamInvitationsTable,
   type User,
   usersTable,
 } from "@workspace/db";
@@ -36,7 +39,7 @@ import {
   type TeamSchemaCatalog,
   TeamSchemaNotReadyError,
 } from "./teamSchemaReadiness.ts";
-import { createTeamInvitation } from "./teamService.ts";
+import { acceptTeamInvitation, createTeamInvitation } from "./teamService.ts";
 
 /**
  * Coverage for the invitation-only provisioning model: a brand-new Clerk
@@ -198,6 +201,11 @@ after(async () => {
     await db
       .delete(agencyInvitationsTable)
       .where(eq(agencyInvitationsTable.organizationId, organizationId));
+  }
+  for (const organizationId of createdOrganizationIds) {
+    await db
+      .delete(teamInvitationsTable)
+      .where(eq(teamInvitationsTable.organizationId, organizationId));
   }
   for (const userId of createdUserIds) {
     await db.delete(usersTable).where(eq(usersTable.id, userId));
@@ -653,6 +661,71 @@ test("owner invitation mutations fail closed with an operator-safe readiness res
   } finally {
     setTeamSchemaReadinessProbeForTests(undefined);
   }
+});
+
+test("an owner can accept their own same-agency business invitation without changing roles", async () => {
+  const fixture = await createAgencyFixture(testAdminId, "owner-team-accept");
+  const [owner] = await db
+    .insert(usersTable)
+    .values({
+      organizationId: fixture.organization.id,
+      clerkUserId: `user_owner_team_accept_${runId}`,
+      name: "Same Agency Owner",
+      email: `owner-team-accept-${runId}@example.com`,
+      role: "OWNER",
+      status: "ACTIVE",
+    })
+    .returning();
+  createdUserIds.push(owner.id);
+  const [business] = await db
+    .insert(businessesTable)
+    .values({
+      organizationId: fixture.organization.id,
+      name: `Owner Team Test Business ${runId}`,
+      category: "Professional services",
+      slug: `owner-team-test-${runId}`,
+      status: "ACTIVE",
+    })
+    .returning();
+  const token = `owner-team-token-${runId}`;
+  const [invitation] = await db
+    .insert(teamInvitationsTable)
+    .values({
+      organizationId: fixture.organization.id,
+      businessId: business.id,
+      invitedByUserId: owner.id,
+      email: owner.email,
+      tokenHash: createHash("sha256").update(token).digest("hex"),
+      expiresAt: new Date(Date.now() + 60 * 60 * 1000),
+      campaignsPermission: "VIEW",
+      reviewInboxPermission: "NONE",
+      feedbackPermission: "NONE",
+      socialMediaPermission: "NONE",
+      analyticsPermission: "NONE",
+    })
+    .returning();
+
+  setTeamSchemaReadinessProbeForTests(async () => true);
+  try {
+    assert.deepEqual(await acceptTeamInvitation(token, owner), {
+      businessId: business.id,
+    });
+  } finally {
+    setTeamSchemaReadinessProbeForTests(undefined);
+  }
+
+  const [accepted] = await db
+    .select()
+    .from(teamInvitationsTable)
+    .where(eq(teamInvitationsTable.id, invitation.id));
+  assert.equal(accepted.status, "ACCEPTED");
+  assert.ok(accepted.acceptedAt);
+
+  const memberships = await db
+    .select()
+    .from(businessMembershipsTable)
+    .where(eq(businessMembershipsTable.userId, owner.id));
+  assert.equal(memberships.length, 0);
 });
 
 test("email preferences default to enabled and persist optional changes", async () => {

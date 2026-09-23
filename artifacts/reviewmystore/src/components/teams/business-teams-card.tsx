@@ -205,7 +205,7 @@ export function BusinessTeamsCard() {
           result.delivery.sent
             ? {
                 tone: "success",
-                text: `Clerk accepted the invitation request for ${result.invitation.email}. Email delivery is not confirmed here.`,
+                text: `Invitation requested for ${result.invitation.email}. Ask them to check Primary, Promotions, and Spam for the Clerk email.`,
               }
             : {
                 tone: "error",
@@ -247,7 +247,7 @@ export function BusinessTeamsCard() {
           result.delivery.sent
             ? {
                 tone: "success",
-                text: `Clerk accepted a fresh invitation request for ${result.invitation.email}. Email delivery is not confirmed here.`,
+                text: `A fresh invitation was requested for ${result.invitation.email}. Ask them to check Primary, Promotions, and Spam for the Clerk email.`,
               }
             : { tone: "error", text: "The invitation link was rotated, but email delivery failed. Try again." },
         );
@@ -409,8 +409,8 @@ export function BusinessTeamsCard() {
                 </div>
               )}
 
-              <div className="grid gap-6 xl:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
-                <div className="space-y-4 rounded-xl border border-border/80 p-4">
+              <div className="grid gap-6 xl:grid-cols-[minmax(20rem,0.82fr)_minmax(0,1.18fr)]">
+                <div className="space-y-5 rounded-2xl border border-border/80 bg-secondary/10 p-4 sm:p-5">
                   <div className="flex items-center gap-2">
                     <UserPlus className="h-4 w-4 text-primary" aria-hidden="true" />
                     <div>
@@ -418,9 +418,11 @@ export function BusinessTeamsCard() {
                       <p className="text-xs text-muted-foreground">They’ll receive a secure 14-day join link.</p>
                     </div>
                   </div>
-                  <div className="space-y-3">
-                    <Input type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="teammate@example.com" aria-label="Teammate email" data-testid="teams-invite-email" />
-                    <Input value={invitedName} onChange={(event) => setInvitedName(event.target.value)} placeholder="Name (optional)" aria-label="Teammate name" data-testid="teams-invite-name" />
+                  <div className="space-y-4">
+                    <div className="grid gap-3 sm:grid-cols-[minmax(0,1.35fr)_minmax(0,0.85fr)] xl:grid-cols-1">
+                      <Input type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="teammate@example.com" aria-label="Teammate email" data-testid="teams-invite-email" />
+                      <Input value={invitedName} onChange={(event) => setInvitedName(event.target.value)} placeholder="Name (optional)" aria-label="Teammate name" data-testid="teams-invite-name" />
+                    </div>
                     <PermissionEditor grants={grants} onChange={(field, value) => setGrants((current) => ({ ...current, [field]: value }))} disabled={isBusy} />
                     <Button type="button" className="w-full" onClick={submitInvitation} disabled={!canInvite || isBusy} data-testid="teams-invite-submit">
                       {createInvitation.isPending ? <RefreshCcw className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" /> : <Mail className="mr-2 h-4 w-4" aria-hidden="true" />}
@@ -483,8 +485,10 @@ export function BusinessTeamsCard() {
                   )}
 
                   <div className="border-t border-border/80 pt-5">
-                    <h4 className="text-sm font-semibold">Pending invitations</h4>
-                    <p className="mt-1 text-xs text-muted-foreground">Pending invitations reserve a seat until they expire or are revoked.</p>
+                    <div className="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between">
+                      <h4 className="text-sm font-semibold">Pending invitations</h4>
+                      <p className="text-xs text-muted-foreground">They reserve a seat until they expire or are revoked.</p>
+                    </div>
                     <div className="mt-3 space-y-3">
                       {team?.invitations.length ? team.invitations.map((invite) => (
                         <div key={invite.id} className="rounded-xl border border-border/80 p-3.5" data-testid={`team-invitation-${invite.id}`}>
@@ -503,7 +507,7 @@ export function BusinessTeamsCard() {
                                 <p className="truncate text-sm font-semibold">{invite.email}</p>
                                 <p className="mt-1 text-xs text-muted-foreground">Expires {new Date(invite.expiresAt).toLocaleDateString()}</p>
                                 <p className={cn("mt-1 text-xs", invite.deliveryStatus === "SENT" ? "text-muted-foreground" : "text-destructive")}>
-                                  {invite.deliveryStatus === "SENT" ? "Clerk accepted the invitation request — email delivery is not confirmed here" : "Clerk could not accept the invitation request — send again to retry"}
+                                  {invite.deliveryStatus === "SENT" ? "Invitation requested through Clerk — recipients may find it in Promotions or Spam" : "Clerk could not accept the invitation request — send again to retry"}
                                 </p>
                                 <p className="mt-1 text-xs leading-5 text-muted-foreground">{accessSummary(invite) || "No feature access"}</p>
                               </div>

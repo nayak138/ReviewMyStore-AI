@@ -394,7 +394,6 @@ export function AuthenticatedRoutes() {
     path.startsWith("/sign-up/") ||
     path.startsWith("/agency/join/") ||
     path.startsWith("/team/join/");
-    path.startsWith("/team/join/");
 
   if (!isLoaded) return <AuthPageLoader />;
   if (!isSignedIn && !publicAuthRoute) {
