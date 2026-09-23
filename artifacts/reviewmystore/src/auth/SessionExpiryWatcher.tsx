@@ -5,6 +5,8 @@ import { useLocation } from "wouter";
 import { signInRedirectFor } from "./redirect";
 import { onSessionExpired } from "./session-expiry";
 
+export const SESSION_REVALIDATION_INTERVAL_MS = 30_000;
+
 /**
  * Mounted once inside the Clerk-authenticated app tree (see
  * `AuthenticatedApp`). Catches two paths to an expired session that would
@@ -73,9 +75,11 @@ export function SessionExpiryWatcher() {
 
     document.addEventListener("visibilitychange", revalidate);
     window.addEventListener("focus", revalidate);
+    const intervalId = window.setInterval(revalidate, SESSION_REVALIDATION_INTERVAL_MS);
     return () => {
       document.removeEventListener("visibilitychange", revalidate);
       window.removeEventListener("focus", revalidate);
+      window.clearInterval(intervalId);
     };
   }, [isLoaded, getToken, handleExpiry]);
 

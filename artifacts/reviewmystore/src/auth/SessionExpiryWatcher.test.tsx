@@ -152,6 +152,19 @@ describe("SessionExpiryWatcher", () => {
     expect(mocks.signOut).not.toHaveBeenCalled();
   });
 
+  it("signs out during an active session when periodic revalidation finds no token", async () => {
+    mocks.getToken.mockResolvedValue(null);
+    renderWatcher(queryClient);
+
+    act(() => {
+      vi.advanceTimersByTime(30_000);
+    });
+
+    await waitFor(() => {
+      expect(mocks.signOut).toHaveBeenCalledTimes(1);
+    });
+  });
+
   it("does not treat a failed token refresh (offline/network error) as expiry", async () => {
     mocks.getToken.mockRejectedValue(new TypeError("Failed to fetch"));
     renderWatcher(queryClient);
