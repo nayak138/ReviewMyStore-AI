@@ -32,7 +32,10 @@ export default defineConfig({
       ],
     },
     setupFiles: ["./src/test/setup.ts"],
-    include: ["src/pages/SocialMedia.viewport.test.tsx"],
+    include: [
+      "src/pages/SocialMedia.viewport.test.tsx",
+      "src/auth/SessionExpiryWatcher.browser.test.tsx",
+    ],
     css: true,
   },
 });
