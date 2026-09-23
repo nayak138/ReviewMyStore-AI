@@ -3,7 +3,7 @@ name: Browser regression checks
 description: Availability and fallback for authenticated browser-level regression checks in this workspace
 ---
 
-The supported authenticated browser tester is not guaranteed to be available in every workspace mode. When available here, Vitest browser mode can use the system Chromium executable with Playwright; otherwise preserve the requested user-visible states and responsive layout contracts in deterministic UI tests.
+The supported authenticated browser tester is not guaranteed to be available in every workspace mode. When available here, Vitest browser mode can use the system Chromium executable with Playwright; otherwise preserve the requested user-visible states and responsive layout contracts in deterministic UI tests. Route-level auth checks should mock the API client's runtime exports and use a recorded `memoryLocation` so the real authenticated route switch can be exercised without credentials.
 
 **Why:** Browser-mode dependencies are not part of the existing web artifact, but this workspace has a system Chromium binary that supports real computed-layout checks when launched with container-safe flags.
 

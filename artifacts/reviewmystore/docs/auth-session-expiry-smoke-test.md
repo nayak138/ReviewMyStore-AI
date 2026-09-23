@@ -6,9 +6,12 @@ transition that cannot be driven reliably with a production Clerk account:
 
 1. It seeds a signed-in protected-page fixture with representative private
    React Query data.
-2. It simulates Clerk's refreshed token becoming empty while the page is
+2. It visits each main protected route group through the real authenticated
+   route switch: onboarding, workspace, customer feedback, social, analytics,
+   settings, and admin pages.
+3. It simulates Clerk's refreshed token becoming empty while the page is
    active.
-3. It confirms that the private query cache is cleared, protected content is
+4. It confirms that the private query cache is cleared, protected content is
    removed, and the sign-out redirect includes the encoded current return path
    plus the expired-session marker.
 
