@@ -107,8 +107,10 @@ try {
       ON "team_invitations" ("organization_id");
     CREATE INDEX IF NOT EXISTS "team_invitations_email_idx"
       ON "team_invitations" ("email");
-    CREATE UNIQUE INDEX IF NOT EXISTS "team_invitations_pending_email_business_uidx"
-      ON "team_invitations" ("business_id", "email", "status");
+    DROP INDEX IF EXISTS "team_invitations_pending_email_business_uidx";
+    CREATE UNIQUE INDEX "team_invitations_pending_email_business_uidx"
+      ON "team_invitations" ("business_id", "email")
+      WHERE "status" = 'PENDING';
 
     CREATE TABLE IF NOT EXISTS "team_audit_events" (
       "id" text PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,

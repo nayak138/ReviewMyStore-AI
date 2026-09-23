@@ -151,11 +151,12 @@ function completeTeamSchemaCatalog(): TeamSchemaCatalog {
       }),
     ),
     indexes: expectedIndexes.map(
-      ([table_name, index_name, is_unique, columns]) => ({
+      ([table_name, index_name, is_unique, columns, requiredPredicate]) => ({
         table_name,
         index_name,
         is_unique,
         columns,
+        predicate: requiredPredicate ? `status = '${requiredPredicate}'` : null,
       }),
     ),
     constraints: [

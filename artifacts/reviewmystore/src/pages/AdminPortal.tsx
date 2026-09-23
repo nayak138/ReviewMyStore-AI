@@ -251,8 +251,8 @@ function AgencyCard({
         toast(
           data.delivery.sent
             ? {
-                title: "Invitation email sent",
-                description: "The agency owner can use the signup link from the invitation record.",
+                title: "Invitation request accepted by Clerk",
+                description: "Email delivery is handled by Clerk and is not confirmed here. The signup link remains available in the invitation record.",
               }
             : {
                 title: "Signup link created, but email failed",
@@ -485,8 +485,8 @@ export default function AdminPortal() {
         toast(
           result.invitation.delivery.sent
             ? {
-                title: "Agency created and invitation sent",
-                description: "The agency owner can use the invitation email to sign up.",
+                title: "Agency created and invitation accepted by Clerk",
+                description: "Email delivery is handled by Clerk and is not confirmed here. The signup link is available below.",
               }
             : {
                 title: "Agency created, but email failed",
@@ -721,7 +721,7 @@ export default function AdminPortal() {
           <DialogHeader>
             <DialogTitle>
               {latestInvite?.delivery.sent
-                ? "Invitation sent"
+                ? "Invitation request accepted by Clerk"
                 : "Signup link ready"}
             </DialogTitle>
             <DialogDescription>

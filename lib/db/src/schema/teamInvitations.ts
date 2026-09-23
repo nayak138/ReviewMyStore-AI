@@ -70,8 +70,7 @@ export const teamInvitationsTable = pgTable(
     uniqueIndex("team_invitations_pending_email_business_uidx").on(
       table.businessId,
       table.email,
-      table.status,
-    ),
+    ).where(sql`${table.status} = 'PENDING'`),
   ],
 );
 

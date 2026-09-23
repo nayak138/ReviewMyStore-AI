@@ -203,7 +203,10 @@ export function BusinessTeamsCard() {
         setGrants(EMPTY_GRANTS);
         setMessage(
           result.delivery.sent
-            ? { tone: "success", text: `Invitation sent to ${result.invitation.email}.` }
+            ? {
+                tone: "success",
+                text: `Clerk accepted the invitation request for ${result.invitation.email}. Email delivery is not confirmed here.`,
+              }
             : {
                 tone: "error",
                 text: `Invitation created, but email delivery failed. Use Send again below to try again.`,
@@ -242,7 +245,10 @@ export function BusinessTeamsCard() {
         refresh();
         setMessage(
           result.delivery.sent
-            ? { tone: "success", text: `A fresh invitation was sent to ${result.invitation.email}.` }
+            ? {
+                tone: "success",
+                text: `Clerk accepted a fresh invitation request for ${result.invitation.email}. Email delivery is not confirmed here.`,
+              }
             : { tone: "error", text: "The invitation link was rotated, but email delivery failed. Try again." },
         );
       },
@@ -496,8 +502,8 @@ export function BusinessTeamsCard() {
                               <div className="min-w-0">
                                 <p className="truncate text-sm font-semibold">{invite.email}</p>
                                 <p className="mt-1 text-xs text-muted-foreground">Expires {new Date(invite.expiresAt).toLocaleDateString()}</p>
-                                <p className={cn("mt-1 text-xs", invite.deliveryStatus === "SENT" ? "text-success" : "text-destructive")}>
-                                  {invite.deliveryStatus === "SENT" ? "Email submitted" : "Email delivery failed — send again to retry"}
+                                <p className={cn("mt-1 text-xs", invite.deliveryStatus === "SENT" ? "text-muted-foreground" : "text-destructive")}>
+                                  {invite.deliveryStatus === "SENT" ? "Clerk accepted the invitation request — email delivery is not confirmed here" : "Clerk could not accept the invitation request — send again to retry"}
                                 </p>
                                 <p className="mt-1 text-xs leading-5 text-muted-foreground">{accessSummary(invite) || "No feature access"}</p>
                               </div>

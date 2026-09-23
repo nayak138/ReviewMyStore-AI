@@ -18,6 +18,7 @@ type IndexRow = {
   index_name: string;
   is_unique: boolean;
   columns: readonly string[];
+  predicate: string | null;
 };
 
 type ConstraintRow = {
@@ -97,7 +98,7 @@ export const expectedIndexes = [
   ["team_invitations", "team_invitations_business_idx", false, ["business_id"]],
   ["team_invitations", "team_invitations_organization_idx", false, ["organization_id"]],
   ["team_invitations", "team_invitations_email_idx", false, ["email"]],
-  ["team_invitations", "team_invitations_pending_email_business_uidx", true, ["business_id", "email", "status"]],
+  ["team_invitations", "team_invitations_pending_email_business_uidx", true, ["business_id", "email"], "PENDING"],
   ["team_audit_events", "team_audit_events_business_created_idx", false, ["business_id", "created_at"]],
   ["team_audit_events", "team_audit_events_organization_idx", false, ["organization_id"]],
 ] as const;
@@ -181,12 +182,13 @@ export function isTeamSchemaCatalogReady(catalog: TeamSchemaCatalog): boolean {
   const indexes = new Map(
     catalog.indexes.map((row) => [`${row.table_name}.${row.index_name}`, row]),
   );
-  for (const [table, name, unique, columns] of expectedIndexes) {
+  for (const [table, name, unique, columns, requiredPredicate] of expectedIndexes) {
     const row = indexes.get(`${table}.${name}`);
     if (
       !row ||
       row.is_unique !== unique ||
-      JSON.stringify(row.columns) !== JSON.stringify(columns)
+      JSON.stringify(row.columns) !== JSON.stringify(columns) ||
+      (requiredPredicate && !row.predicate?.includes(requiredPredicate))
     ) {
       return false;
     }
@@ -249,7 +251,8 @@ async function queryTeamSchemaReadiness(): Promise<boolean> {
       SELECT t.relname AS table_name,
              i.relname AS index_name,
              ix.indisunique AS is_unique,
-             json_agg(a.attname ORDER BY key.ordinality) AS columns
+             json_agg(a.attname ORDER BY key.ordinality) AS columns,
+             pg_get_expr(ix.indpred, ix.indrelid) AS predicate
       FROM pg_class t
       JOIN pg_namespace n ON n.oid = t.relnamespace
       JOIN pg_index ix ON ix.indrelid = t.oid
@@ -258,7 +261,7 @@ async function queryTeamSchemaReadiness(): Promise<boolean> {
       JOIN pg_attribute a ON a.attrelid = t.oid AND a.attnum = key.attnum
       WHERE n.nspname = 'public'
         AND t.relname IN ('business_memberships', 'team_invitations', 'team_audit_events')
-      GROUP BY t.relname, i.relname, ix.indisunique
+      GROUP BY t.relname, i.relname, ix.indisunique, ix.indpred, ix.indrelid
     `);
 
     const constraintResult = await pool.query<ConstraintRow>(`
