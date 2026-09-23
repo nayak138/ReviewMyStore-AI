@@ -16,7 +16,7 @@ Multi-tenant SaaS that helps local businesses collect more Google Reviews using 
 - Required secrets: `CLERK_SECRET_KEY`, `CLERK_PUBLISHABLE_KEY`, `VITE_CLERK_PUBLISHABLE_KEY` (Replit-managed Clerk)
 - Optional env: `SUPER_ADMIN_EMAILS` — comma-separated emails that get provisioned as platform SUPER_ADMIN on first sign-in instead of getting their own Organization
 - Optional env: `DEMO_ALERT_EMAILS` — comma-separated recipients for demo-request alerts
-- Optional env: `RESEND_FROM_EMAIL` — verified Resend sender used for demo and private-feedback alerts; notifications stay disabled until this is configured
+- Clerk handles authentication and application email delivery through its configured sender (`notifications@5-star.ai`)
 - Optional env: `CORS_ALLOWED_ORIGINS` — comma-separated exact frontend origins allowed to make credentialed cross-origin requests; same-origin requests remain supported, and unknown browser origins are rejected for preflight/state-changing requests
 - Required for object storage: `PRIVATE_OBJECT_DIR` and `PUBLIC_OBJECT_SEARCH_PATHS` — private uploads are finalized by the authenticated uploader, while branding uploads use an explicit public ACL and are served through the ACL-gated public-asset route
 

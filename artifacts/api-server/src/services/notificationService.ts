@@ -1,4 +1,6 @@
-import { ReplitConnectors } from "@replit/connectors-sdk";
+import { clerkClient } from "@clerk/express";
+
+const CLERK_FROM_EMAIL = "notifications@5-star.ai";
 
 /** Escape a string for safe use inside HTML content and attributes. */
 function esc(value: string): string {
@@ -13,15 +15,6 @@ function esc(value: string): string {
 /** Escape a string for safe use as an email subject (no HTML, strip newlines). */
 function escSubject(value: string): string {
   return value.replace(/[\r\n]/g, " ").trim();
-}
-
-function configuredSender(): string | null {
-  const sender = process.env.RESEND_FROM_EMAIL?.trim();
-  if (sender) return sender;
-  console.warn(
-    "[notificationService] RESEND_FROM_EMAIL is not configured with a verified sender — skipping email notification.",
-  );
-  return null;
 }
 
 export type InvitationDeliveryResult = {
@@ -51,8 +44,6 @@ async function sendInvitationEmail(input: {
   text: string;
 }): Promise<InvitationDeliveryResult> {
   try {
-    const sender = configuredSender();
-    if (!sender) return { sent: false, error: "Email sender is not configured." };
     const rowsHtml = input.rows
       .map(
         ([label, value]) =>
@@ -61,26 +52,17 @@ async function sendInvitationEmail(input: {
       .join("");
     const safeUrl = esc(input.joinUrl);
     const html = `<!doctype html><html lang="en"><body style="margin:0;padding:32px 16px;background:#f1f5f9;font-family:Arial,sans-serif;color:#0f172a;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td align="center"><table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;background:#fff;border-radius:12px;overflow:hidden;"><tr><td style="padding:22px 28px;background:#0f172a;color:#fff;font-size:20px;font-weight:700;">5-Star.AI</td></tr><tr><td style="padding:32px 28px;"><h1 style="margin:0 0 14px;font-size:24px;">${esc(input.title)}</h1><p style="margin:0 0 22px;color:#475569;line-height:1.6;">${esc(input.intro)}</p><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;background:#f8fafc;border-radius:8px;">${rowsHtml}</table><p style="margin:28px 0;text-align:center;"><a href="${safeUrl}" style="display:inline-block;padding:13px 22px;border-radius:8px;background:#0f172a;color:#fff;text-decoration:none;font-weight:700;">${esc(input.buttonLabel)}</a></p><p style="margin:0;color:#64748b;font-size:12px;line-height:1.6;">If the button does not work, copy and paste this link:<br><span style="word-break:break-all;">${safeUrl}</span></p></td></tr></table></td></tr></table></body></html>`;
-    const response = await new ReplitConnectors().proxy("resend", "/emails", {
-      method: "POST",
-      body: JSON.stringify({
-        from: sender,
-        to: [input.to],
-        subject: escSubject(input.subject),
-        html,
-        text: input.text,
-      }),
+    await clerkClient.emails.create({
+      from: { address: CLERK_FROM_EMAIL },
+      to: { address: input.to },
+      subject: escSubject(input.subject),
+      html,
+      text: input.text,
     });
-    if (!response.ok) {
-      return {
-        sent: false,
-        error: `Email provider returned ${response.status}.`,
-      };
-    }
     return { sent: true };
   } catch (error) {
-    console.error("[notificationService] Invitation email submission failed:", error);
-    return { sent: false, error: "Invitation email could not be submitted." };
+    console.error("[notificationService] Clerk invitation email submission failed:", error);
+    return { sent: false, error: "Invitation email could not be submitted through Clerk." };
   }
 }
 
@@ -162,10 +144,6 @@ export async function sendDemoRequestAlert(data: {
   }
 
   try {
-    const sender = configuredSender();
-    if (!sender) return;
-    const connectors = new ReplitConnectors();
-
     // Only include rows that have a non-empty value
     const optionalRows: Array<[string, string]> = [];
     if (data.leadType) optionalRows.push(["Lead type", data.leadType === "AGENCY" ? "Agency" : "Single Shop"]);
@@ -218,26 +196,28 @@ export async function sendDemoRequestAlert(data: {
 </body>
 </html>`;
 
-    const payload = {
-      from: sender,
-      to: recipients,
-      subject,
-      html,
-    };
-
-    const response = await connectors.proxy("resend", "/emails", {
-      method: "POST",
-      body: JSON.stringify(payload),
-    });
-
-    if (!response.ok) {
-      const body = await response.text();
+    const deliveries = await Promise.allSettled(
+      recipients.map((recipient) =>
+        clerkClient.emails.create({
+          from: { address: CLERK_FROM_EMAIL },
+          to: { address: recipient },
+          subject,
+          html,
+        }),
+      ),
+    );
+    const failures = deliveries.filter(
+      (delivery): delivery is PromiseRejectedResult =>
+        delivery.status === "rejected",
+    );
+    if (failures.length > 0) {
       console.error(
-        `[notificationService] Resend returned ${response.status}: ${body}`,
+        `[notificationService] Clerk demo-request alert failed for ${failures.length} recipient(s).`,
+        failures[0]?.reason,
       );
     } else {
       console.info(
-        "[notificationService] Demo-request alert email sent to:",
+        "[notificationService] Demo-request alert email sent through Clerk to:",
         recipients.join(", "),
       );
     }
@@ -263,8 +243,6 @@ export async function sendPrivateFeedbackAlert(data: {
   if (data.recipients.length === 0) return;
 
   try {
-    const sender = configuredSender();
-    if (!sender) return;
     const rows = [
       ["Business", data.businessName],
       ["Rating", `${data.rating}/5`],
@@ -280,21 +258,26 @@ export async function sendPrivateFeedbackAlert(data: {
     const spamNotice = data.isSpam
       ? `<p style="margin:0 0 16px;padding:10px 12px;border:1px solid #fcd34d;background:#fffbeb;color:#78350f;border-radius:6px;font-size:13px;"><strong>Quality flag:</strong> This message looks promotional or automated. Review it before taking action.</p>`
       : "";
-    const payload = {
-      from: sender,
-      to: data.recipients,
-      subject: escSubject(
-        `New private feedback for ${data.businessName}`,
+    const subject = escSubject(`New private feedback for ${data.businessName}`);
+    const html = `<!DOCTYPE html><html lang="en"><body style="margin:0;padding:32px 16px;font-family:Arial,sans-serif;background:#f5f5f5;"><table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center"><table width="600" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:8px;overflow:hidden;"><tr><td style="background:#0f172a;padding:20px 28px;color:#fff;font-size:18px;font-weight:700;">5-Star.AI</td></tr><tr><td style="padding:28px;"><h2 style="margin:0 0 16px;color:#0f172a;">New private feedback</h2>${spamNotice}<table cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse;background:#f9fafb;">${rowsHtml}</table><p style="margin:24px 0 0;font-size:12px;color:#999;">Received: ${esc(data.createdAt)}</p></td></tr></table></td></tr></table></body></html>`;
+    const deliveries = await Promise.allSettled(
+      data.recipients.map((recipient) =>
+        clerkClient.emails.create({
+          from: { address: CLERK_FROM_EMAIL },
+          to: { address: recipient },
+          subject,
+          html,
+        }),
       ),
-      html: `<!DOCTYPE html><html lang="en"><body style="margin:0;padding:32px 16px;font-family:Arial,sans-serif;background:#f5f5f5;"><table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center"><table width="600" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:8px;overflow:hidden;"><tr><td style="background:#0f172a;padding:20px 28px;color:#fff;font-size:18px;font-weight:700;">5-Star.AI</td></tr><tr><td style="padding:28px;"><h2 style="margin:0 0 16px;color:#0f172a;">New private feedback</h2>${spamNotice}<table cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse;background:#f9fafb;">${rowsHtml}</table><p style="margin:24px 0 0;font-size:12px;color:#999;">Received: ${esc(data.createdAt)}</p></td></tr></table></td></tr></table></body></html>`,
-    };
-    const response = await new ReplitConnectors().proxy("resend", "/emails", {
-      method: "POST",
-      body: JSON.stringify(payload),
-    });
-    if (!response.ok) {
+    );
+    const failures = deliveries.filter(
+      (delivery): delivery is PromiseRejectedResult =>
+        delivery.status === "rejected",
+    );
+    if (failures.length > 0) {
       console.error(
-        `[notificationService] Resend private-feedback alert failed: ${response.status} ${(await response.text()).slice(0, 500)}`,
+        `[notificationService] Clerk private-feedback alert failed for ${failures.length} recipient(s).`,
+        failures[0]?.reason,
       );
     }
   } catch (err) {
