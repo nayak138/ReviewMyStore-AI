@@ -4,6 +4,7 @@ import { randomUUID } from "node:crypto";
 import express, { type NextFunction, type Request, type Response } from "express";
 import type { Server } from "node:http";
 import { eq } from "drizzle-orm";
+import { clerkClient } from "@clerk/express";
 import {
   db,
   pool,
@@ -40,6 +41,7 @@ const runId = randomUUID().slice(0, 8);
 const clerkOwnerA = `user_pf_route_a_${runId}`;
 const clerkOwnerB = `user_pf_route_b_${runId}`;
 const clerkNoOrg = `user_pf_route_noorg_${runId}`;
+const coOwnerEmail = `pf-route-coowner-${runId}@example.com`;
 
 let orgAId: string;
 let orgBId: string;
@@ -52,6 +54,13 @@ let feedbackBId: string;
 
 const createdOrgIds: string[] = [];
 let noOrgUserId: string;
+let publicReviewRouter: express.Router;
+let feedbackRouter: express.Router;
+const rejectedRecipients = new Set<string>();
+
+type CreateEmail = typeof clerkClient.emails.create;
+type EmailPayload = Parameters<CreateEmail>[0];
+let originalCreateEmail: CreateEmail;
 
 test("private-feedback quality checks flag promotional content without blocking submission", () => {
   assert.deepEqual(
@@ -83,6 +92,14 @@ test("private-feedback quality checks flag suspicious contact links", () => {
 });
 
 before(async () => {
+  originalCreateEmail = clerkClient.emails.create;
+  clerkClient.emails.create = (async (payload: EmailPayload) => {
+    if (rejectedRecipients.has(payload.to.address ?? "")) {
+      throw new Error("Test alert delivery rejection");
+    }
+    return {} as Awaited<ReturnType<CreateEmail>>;
+  }) as CreateEmail;
+
   businessASlug = `pf-route-biz-a-${runId}`;
   campaignASlug = `pf-route-campaign-a-${runId}`;
   businessBSlug = `pf-route-biz-b-${runId}`;
@@ -157,6 +174,14 @@ before(async () => {
       role: "OWNER",
       status: "ACTIVE",
     },
+    {
+      organizationId: orgAId,
+      clerkUserId: `user_pf_route_coowner_${runId}`,
+      name: "PF Route Co-owner",
+      email: coOwnerEmail,
+      role: "OWNER",
+      status: "ACTIVE",
+    },
   ]);
   const [noOrgUser] = await db
     .insert(usersTable)
@@ -201,8 +226,12 @@ before(async () => {
   feedbackAId = feedbackA.id;
   feedbackBId = feedbackB.id;
 
-  const { default: publicReviewRouter } = await import("./publicReview.ts");
-  const { default: feedbackRouter } = await import("./feedback.ts");
+  ({ default: publicReviewRouter } = await import("./publicReview.ts"));
+  ({ default: feedbackRouter } = await import("./feedback.ts"));
+  await startServer();
+});
+
+async function startServer() {
   const app = express();
   // Mirror production: proxy-resolved client IPs (see app.ts).
   app.set("trust proxy", true);
@@ -239,10 +268,18 @@ before(async () => {
   });
   const addr = server.address();
   if (typeof addr === "object" && addr) base = `http://127.0.0.1:${addr.port}`;
-});
+}
+
+async function stopServer() {
+  if (!server?.listening) return;
+  await new Promise<void>((resolve, reject) => {
+    server.close((error) => (error ? reject(error) : resolve()));
+  });
+}
 
 after(async () => {
-  server?.close();
+  await stopServer();
+  clerkClient.emails.create = originalCreateEmail;
   for (const orgId of createdOrgIds) {
     await db.delete(organizationsTable).where(eq(organizationsTable.id, orgId));
   }
@@ -293,6 +330,24 @@ function request(
   });
 }
 
+async function waitForFeedbackAlertStatus(sessionId: string, expectedStatus: string) {
+  const deadline = Date.now() + 3_000;
+
+  while (Date.now() < deadline) {
+    const [row] = await db
+      .select({
+        alertDeliveryStatus: privateFeedbackTable.alertDeliveryStatus,
+      })
+      .from(privateFeedbackTable)
+      .where(eq(privateFeedbackTable.sessionId, sessionId))
+      .limit(1);
+    if (row?.alertDeliveryStatus === expectedStatus) return row;
+    await new Promise((resolve) => setTimeout(resolve, 25));
+  }
+
+  assert.fail(`Private feedback ${sessionId} did not reach ${expectedStatus}`);
+}
+
 // ---------------------------------------------------------------------------
 // Rating validation (defense-in-depth: InvalidFeedbackRatingError)
 // ---------------------------------------------------------------------------
@@ -331,6 +386,52 @@ test("a rating below 3 is accepted", async () => {
     .from(privateFeedbackTable)
     .where(eq(privateFeedbackTable.sessionId, sessionId));
   assert.equal(rows.length, 1);
+});
+
+test("private-feedback alert statuses persist across a listener restart without changing 201 submissions", async () => {
+  const submitted: Array<{ sessionId: string; status: string }> = [];
+  const scenarios = [
+    { expectedStatus: "SENT", rejected: [] },
+    { expectedStatus: "PARTIAL", rejected: [coOwnerEmail] },
+    {
+      expectedStatus: "FAILED",
+      rejected: [`pf-route-a-${runId}@example.com`, coOwnerEmail],
+    },
+  ] as const;
+
+  for (const [index, scenario] of scenarios.entries()) {
+    rejectedRecipients.clear();
+    for (const recipient of scenario.rejected) rejectedRecipients.add(recipient);
+    const sessionId = `sess-delivery-${scenario.expectedStatus.toLowerCase()}-${runId}`;
+
+    const response = await postFeedback(
+      businessASlug,
+      campaignASlug,
+      `10.9.1.${index + 1}`,
+      { sessionId },
+    );
+    assert.equal(response.status, 201);
+    const body = (await response.json()) as { success?: boolean; code?: string };
+    assert.equal(
+      body.success,
+      true,
+      "a delivery issue must not replace the feedback success response",
+    );
+
+    await waitForFeedbackAlertStatus(sessionId, scenario.expectedStatus);
+    submitted.push({ sessionId, status: scenario.expectedStatus });
+  }
+
+  try {
+    await stopServer();
+    await startServer();
+
+    for (const submission of submitted) {
+      await waitForFeedbackAlertStatus(submission.sessionId, submission.status);
+    }
+  } finally {
+    rejectedRecipients.clear();
+  }
 });
 
 // ---------------------------------------------------------------------------
