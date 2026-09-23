@@ -335,16 +335,16 @@ export async function getOrCreateProviderTeam(
   businessId?: string,
 ): Promise<string> {
   const teamName = businessId
-    ? `5-STAR.AI Reviews ${organizationId} ${businessId}`
+    ? `5-STAR.AI Reviews ${businessId}`
     : `5-STAR.AI ${organizationId}`;
-  const legacyTeamName = businessId
-    ? undefined
-    : `ReviewMyStore ${organizationId}`;
+  const legacyTeamNames = businessId
+    ? [`5-STAR.AI Reviews ${organizationId} ${businessId}`]
+    : [`ReviewMyStore ${organizationId}`];
   const organization = await bndleRequest("organization/");
   const teams = asArray(organization.teams);
   const existing = teams.find((team) => {
     const name = valueString(team.name);
-    return name === teamName || name === legacyTeamName;
+    return name === teamName || legacyTeamNames.includes(name ?? "");
   });
   const existingId = existing ? valueString(existing.id) : null;
   if (existingId) return existingId;
