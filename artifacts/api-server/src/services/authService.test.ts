@@ -26,7 +26,14 @@ import {
   VerifiedEmailRequiredError,
 } from "./authService.ts";
 import {
+  expectedEnums,
+  expectedIndexes,
+  isTeamSchemaCatalogReady,
+  requiredColumns,
+  requiredForeignKeys,
+  requiredPrimaryKeyTables,
   setTeamSchemaReadinessProbeForTests,
+  type TeamSchemaCatalog,
   TeamSchemaNotReadyError,
 } from "./teamSchemaReadiness.ts";
 import { createTeamInvitation } from "./teamService.ts";
@@ -127,6 +134,58 @@ async function createAgencyFixture(adminId: string, suffix: string) {
 }
 
 let testAdminId: string;
+
+function completeTeamSchemaCatalog(): TeamSchemaCatalog {
+  return {
+    enums: [...expectedEnums.entries()].map(([enum_name, labels]) => ({
+      enum_name,
+      labels,
+    })),
+    columns: requiredColumns.map(
+      ([table_name, column_name, data_type, udt_name, is_nullable]) => ({
+        table_name,
+        column_name,
+        data_type,
+        udt_name,
+        is_nullable,
+      }),
+    ),
+    indexes: expectedIndexes.map(
+      ([table_name, index_name, is_unique, columns]) => ({
+        table_name,
+        index_name,
+        is_unique,
+        columns,
+      }),
+    ),
+    constraints: [
+      ...requiredPrimaryKeyTables.map((table_name) => ({
+        table_name,
+        constraint_type: "p",
+        foreign_table_name: null,
+        local_columns: null,
+        foreign_columns: null,
+        delete_rule: null,
+      })),
+      ...requiredForeignKeys.map(
+        ([
+          table_name,
+          local_columns,
+          foreign_table_name,
+          foreign_columns,
+          delete_rule,
+        ]) => ({
+          table_name,
+          constraint_type: "f",
+          foreign_table_name,
+          local_columns,
+          foreign_columns,
+          delete_rule,
+        }),
+      ),
+    ],
+  };
+}
 
 before(async () => {
   testAdminId = (await createTestAdmin()).id;
@@ -458,6 +517,82 @@ test("team invitation login is blocked without provisioning when team schema is 
     .from(usersTable)
     .where(eq(usersTable.clerkUserId, clerkUserId));
   assert.equal(user, undefined);
+});
+
+test("team invitation login is blocked when a required index is missing", async () => {
+  const clerkUserId = `user_team_missing_index_${runId}`;
+  const email = `team-missing-index-${runId}@example.com`;
+  registerFakeClerkUser(clerkUserId, "Missing Index Teammate", email);
+  const incompleteCatalog = completeTeamSchemaCatalog();
+  incompleteCatalog.indexes = incompleteCatalog.indexes.filter(
+    (index) => index.index_name !== "team_invitations_business_idx",
+  );
+  assert.equal(isTeamSchemaCatalogReady(incompleteCatalog), false);
+  setTeamSchemaReadinessProbeForTests(async () =>
+    isTeamSchemaCatalogReady(incompleteCatalog),
+  );
+
+  try {
+    await assert.rejects(
+      () =>
+        getOrCreateUserForClerkId(clerkUserId, {
+          teamInvitationToken: "invitation-token",
+        }),
+      TeamSchemaNotReadyError,
+    );
+  } finally {
+    setTeamSchemaReadinessProbeForTests(undefined);
+  }
+
+  const [user] = await db
+    .select()
+    .from(usersTable)
+    .where(eq(usersTable.clerkUserId, clerkUserId));
+  assert.equal(user, undefined);
+});
+
+test("existing TEAM_MEMBER login is blocked when a required primary key is missing", async () => {
+  const fixture = await createAgencyFixture(testAdminId, "team-member-missing-key");
+  const clerkUserId = `user_team_missing_key_${runId}`;
+  const [teamMember] = await db
+    .insert(usersTable)
+    .values({
+      organizationId: fixture.organization.id,
+      clerkUserId,
+      name: "Missing Key Teammate",
+      email: `team-missing-key-${runId}@example.com`,
+      role: "TEAM_MEMBER",
+      status: "ACTIVE",
+    })
+    .returning();
+  createdUserIds.push(teamMember.id);
+  registerFakeClerkUser(
+    clerkUserId,
+    "Missing Key Teammate",
+    teamMember.email,
+  );
+
+  const incompleteCatalog = completeTeamSchemaCatalog();
+  incompleteCatalog.constraints = incompleteCatalog.constraints.filter(
+    (constraint) =>
+      !(
+        constraint.constraint_type === "p" &&
+        constraint.table_name === "team_invitations"
+      ),
+  );
+  assert.equal(isTeamSchemaCatalogReady(incompleteCatalog), false);
+  setTeamSchemaReadinessProbeForTests(async () =>
+    isTeamSchemaCatalogReady(incompleteCatalog),
+  );
+
+  try {
+    await assert.rejects(
+      () => getOrCreateUserForClerkId(clerkUserId),
+      TeamSchemaNotReadyError,
+    );
+  } finally {
+    setTeamSchemaReadinessProbeForTests(undefined);
+  }
 });
 
 test("owner access does not depend on team schema readiness", async () => {

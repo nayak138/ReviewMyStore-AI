@@ -13,14 +13,37 @@ type ColumnRow = {
   is_nullable: "YES" | "NO";
 };
 
-const expectedEnums = new Map<string, string[]>([
+type IndexRow = {
+  table_name: string;
+  index_name: string;
+  is_unique: boolean;
+  columns: readonly string[];
+};
+
+type ConstraintRow = {
+  table_name: string;
+  constraint_type: string;
+  foreign_table_name: string | null;
+  local_columns: readonly string[] | null;
+  foreign_columns: readonly string[] | null;
+  delete_rule: string | null;
+};
+
+export type TeamSchemaCatalog = {
+  enums: EnumRow[];
+  columns: ColumnRow[];
+  indexes: IndexRow[];
+  constraints: ConstraintRow[];
+};
+
+export const expectedEnums = new Map<string, string[]>([
   ["user_role", ["SUPER_ADMIN", "OWNER", "TEAM_MEMBER"]],
   ["team_permission", ["NONE", "VIEW", "MANAGE"]],
   ["analytics_permission", ["NONE", "VIEW"]],
   ["team_invitation_status", ["PENDING", "ACCEPTED", "REVOKED", "EXPIRED"]],
 ]);
 
-const requiredColumns = [
+export const requiredColumns = [
   ["users", "role", "USER-DEFINED", "user_role", "NO"],
   ["business_memberships", "id", "text", "text", "NO"],
   ["business_memberships", "organization_id", "text", "text", "NO"],
@@ -66,6 +89,38 @@ const requiredColumns = [
   ["team_audit_events", "created_at", "timestamp with time zone", "timestamptz", "NO"],
 ] as const;
 
+export const expectedIndexes = [
+  ["business_memberships", "business_memberships_business_user_uidx", true, ["business_id", "user_id"]],
+  ["business_memberships", "business_memberships_organization_idx", false, ["organization_id"]],
+  ["business_memberships", "business_memberships_user_idx", false, ["user_id"]],
+  ["team_invitations", "team_invitations_token_hash_unique", true, ["token_hash"]],
+  ["team_invitations", "team_invitations_business_idx", false, ["business_id"]],
+  ["team_invitations", "team_invitations_organization_idx", false, ["organization_id"]],
+  ["team_invitations", "team_invitations_email_idx", false, ["email"]],
+  ["team_invitations", "team_invitations_pending_email_business_uidx", true, ["business_id", "email", "status"]],
+  ["team_audit_events", "team_audit_events_business_created_idx", false, ["business_id", "created_at"]],
+  ["team_audit_events", "team_audit_events_organization_idx", false, ["organization_id"]],
+] as const;
+
+export const requiredPrimaryKeyTables = [
+  "business_memberships",
+  "team_invitations",
+  "team_audit_events",
+] as const;
+
+export const requiredForeignKeys = [
+  ["business_memberships", ["organization_id"], "organizations", ["id"], "CASCADE"],
+  ["business_memberships", ["business_id"], "businesses", ["id"], "CASCADE"],
+  ["business_memberships", ["user_id"], "users", ["id"], "CASCADE"],
+  ["team_invitations", ["organization_id"], "organizations", ["id"], "CASCADE"],
+  ["team_invitations", ["business_id"], "businesses", ["id"], "CASCADE"],
+  ["team_invitations", ["invited_by_user_id"], "users", ["id"], "RESTRICT"],
+  ["team_audit_events", ["organization_id"], "organizations", ["id"], "CASCADE"],
+  ["team_audit_events", ["business_id"], "businesses", ["id"], "SET NULL"],
+  ["team_audit_events", ["actor_user_id"], "users", ["id"], "SET NULL"],
+  ["team_audit_events", ["target_user_id"], "users", ["id"], "SET NULL"],
+] as const;
+
 export const TEAM_SCHEMA_NOT_READY_CODE = "TEAM_SCHEMA_NOT_READY";
 
 export class TeamSchemaNotReadyError extends Error {
@@ -93,6 +148,82 @@ export function setTeamSchemaReadinessProbeForTests(
   readinessProbeOverride = probe;
 }
 
+/**
+ * Keep this catalog predicate aligned with scripts/verify-team-schema.ts.
+ * The runtime check must reject a partial Publish even when all tables and
+ * columns are present but a key, index, or foreign key is still missing.
+ */
+export function isTeamSchemaCatalogReady(catalog: TeamSchemaCatalog): boolean {
+  const enums = new Map(
+    catalog.enums.map((row) => [row.enum_name, row.labels]),
+  );
+  for (const [name, labels] of expectedEnums) {
+    if (JSON.stringify(enums.get(name)) !== JSON.stringify(labels)) {
+      return false;
+    }
+  }
+
+  const columns = new Map(
+    catalog.columns.map((row) => [`${row.table_name}.${row.column_name}`, row]),
+  );
+  for (const [table, column, dataType, udtName, nullable] of requiredColumns) {
+    const row = columns.get(`${table}.${column}`);
+    if (
+      !row ||
+      row.data_type !== dataType ||
+      row.udt_name !== udtName ||
+      row.is_nullable !== nullable
+    ) {
+      return false;
+    }
+  }
+
+  const indexes = new Map(
+    catalog.indexes.map((row) => [`${row.table_name}.${row.index_name}`, row]),
+  );
+  for (const [table, name, unique, columns] of expectedIndexes) {
+    const row = indexes.get(`${table}.${name}`);
+    if (
+      !row ||
+      row.is_unique !== unique ||
+      JSON.stringify(row.columns) !== JSON.stringify(columns)
+    ) {
+      return false;
+    }
+  }
+
+  const primaryKeys = new Set(
+    catalog.constraints
+      .filter((row) => row.constraint_type === "p")
+      .map((row) => row.table_name),
+  );
+  for (const table of requiredPrimaryKeyTables) {
+    if (!primaryKeys.has(table)) {
+      return false;
+    }
+  }
+
+  const foreignKeys = new Set(
+    catalog.constraints
+      .filter((row) => row.constraint_type === "f")
+      .map((row) =>
+        JSON.stringify([
+          row.table_name,
+          row.local_columns,
+          row.foreign_table_name,
+          row.foreign_columns,
+          row.delete_rule,
+        ]),
+      ),
+  );
+  for (const expected of requiredForeignKeys) {
+    if (!foreignKeys.has(JSON.stringify(expected))) {
+      return false;
+    }
+  }
+  return true;
+}
+
 async function queryTeamSchemaReadiness(): Promise<boolean> {
   try {
     const enumResult = await pool.query<EnumRow>(`
@@ -103,14 +234,6 @@ async function queryTeamSchemaReadiness(): Promise<boolean> {
       WHERE t.typname IN ('user_role', 'team_permission', 'analytics_permission', 'team_invitation_status')
       GROUP BY t.typname
     `);
-    const enums = new Map(
-      enumResult.rows.map((row) => [row.enum_name, row.labels]),
-    );
-    for (const [name, labels] of expectedEnums) {
-      if (JSON.stringify(enums.get(name)) !== JSON.stringify(labels)) {
-        return false;
-      }
-    }
 
     const columnResult = await pool.query<ColumnRow>(`
       SELECT table_name, column_name, data_type, udt_name, is_nullable
@@ -121,21 +244,60 @@ async function queryTeamSchemaReadiness(): Promise<boolean> {
           OR (table_name = 'users' AND column_name = 'role')
         )
     `);
-    const columns = new Map(
-      columnResult.rows.map((row) => [`${row.table_name}.${row.column_name}`, row]),
-    );
-    for (const [table, column, dataType, udtName, nullable] of requiredColumns) {
-      const row = columns.get(`${table}.${column}`);
-      if (
-        !row ||
-        row.data_type !== dataType ||
-        row.udt_name !== udtName ||
-        row.is_nullable !== nullable
-      ) {
-        return false;
-      }
-    }
-    return true;
+
+    const indexResult = await pool.query<IndexRow>(`
+      SELECT t.relname AS table_name,
+             i.relname AS index_name,
+             ix.indisunique AS is_unique,
+             json_agg(a.attname ORDER BY key.ordinality) AS columns
+      FROM pg_class t
+      JOIN pg_namespace n ON n.oid = t.relnamespace
+      JOIN pg_index ix ON ix.indrelid = t.oid
+      JOIN pg_class i ON i.oid = ix.indexrelid
+      CROSS JOIN LATERAL unnest(ix.indkey) WITH ORDINALITY AS key(attnum, ordinality)
+      JOIN pg_attribute a ON a.attrelid = t.oid AND a.attnum = key.attnum
+      WHERE n.nspname = 'public'
+        AND t.relname IN ('business_memberships', 'team_invitations', 'team_audit_events')
+      GROUP BY t.relname, i.relname, ix.indisunique
+    `);
+
+    const constraintResult = await pool.query<ConstraintRow>(`
+      SELECT child.relname AS table_name,
+             c.contype AS constraint_type,
+             parent.relname AS foreign_table_name,
+             COALESCE((
+               SELECT json_agg(child_col.attname ORDER BY child_key.ordinal)
+               FROM unnest(c.conkey) WITH ORDINALITY AS child_key(attnum, ordinal)
+               JOIN pg_attribute child_col
+                 ON child_col.attrelid = c.conrelid AND child_col.attnum = child_key.attnum
+             ), '[]'::json) AS local_columns,
+             COALESCE((
+               SELECT json_agg(parent_col.attname ORDER BY parent_key.ordinal)
+               FROM unnest(c.confkey) WITH ORDINALITY AS parent_key(attnum, ordinal)
+               JOIN pg_attribute parent_col
+                 ON parent_col.attrelid = c.confrelid AND parent_col.attnum = parent_key.attnum
+             ), '[]'::json) AS foreign_columns,
+             CASE c.confdeltype
+               WHEN 'a' THEN 'NO ACTION'
+               WHEN 'r' THEN 'RESTRICT'
+               WHEN 'c' THEN 'CASCADE'
+               WHEN 'n' THEN 'SET NULL'
+               WHEN 'd' THEN 'SET DEFAULT'
+             END AS delete_rule
+      FROM pg_constraint c
+      JOIN pg_class child ON child.oid = c.conrelid
+      LEFT JOIN pg_class parent ON parent.oid = c.confrelid
+      JOIN pg_namespace n ON n.oid = child.relnamespace
+      WHERE n.nspname = 'public'
+        AND child.relname IN ('business_memberships', 'team_invitations', 'team_audit_events')
+    `);
+
+    return isTeamSchemaCatalogReady({
+      enums: enumResult.rows,
+      columns: columnResult.rows,
+      indexes: indexResult.rows,
+      constraints: constraintResult.rows,
+    });
   } catch {
     // A missing database object or an unavailable catalog must never expose
     // team access. The caller returns a stable response without SQL details.
