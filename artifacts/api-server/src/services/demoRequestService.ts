@@ -1,7 +1,25 @@
-import { desc, eq } from "drizzle-orm";
-import { db, demoRequestsTable } from "@workspace/db";
+import { and, desc, eq, inArray } from "drizzle-orm";
+import { db, demoRequestsTable, type DemoRequest } from "@workspace/db";
 import { sendDemoRequestAlert } from "./notificationService";
 import { appendLeadToGoogleSheet } from "./googleSheetsService";
+
+export class DemoRequestNotFoundError extends Error {
+  constructor() {
+    super("Demo request not found.");
+    this.name = "DemoRequestNotFoundError";
+  }
+}
+
+export class DemoRequestAlertResendUnavailableError extends Error {
+  constructor() {
+    super("Only failed or partially delivered alerts can be resent.");
+    this.name = "DemoRequestAlertResendUnavailableError";
+  }
+}
+
+function serializeDemoRequest(row: DemoRequest) {
+  return { ...row, createdAt: row.createdAt.toISOString() };
+}
 
 export async function createDemoRequest(input: {
   name: string;
@@ -81,7 +99,50 @@ export async function updateDemoRequest(
     .where(eq(demoRequestsTable.id, id))
     .returning();
   if (!row) return null;
-  return { ...row, createdAt: row.createdAt.toISOString() };
+  return serializeDemoRequest(row);
+}
+
+export async function resendDemoRequestAlert(id: string) {
+  const [lead] = await db
+    .select()
+    .from(demoRequestsTable)
+    .where(eq(demoRequestsTable.id, id))
+    .limit(1);
+  if (!lead) throw new DemoRequestNotFoundError();
+
+  const [claimed] = await db
+    .update(demoRequestsTable)
+    .set({ alertDeliveryStatus: "PENDING", alertDeliveryError: null })
+    .where(
+      and(
+        eq(demoRequestsTable.id, id),
+        inArray(demoRequestsTable.alertDeliveryStatus, ["FAILED", "PARTIAL"]),
+      ),
+    )
+    .returning({ id: demoRequestsTable.id });
+  if (!claimed) throw new DemoRequestAlertResendUnavailableError();
+
+  const result = await sendDemoRequestAlert({
+    id: lead.id,
+    name: lead.name,
+    leadType: lead.leadType as "AGENCY" | "SINGLE_SHOP" | null,
+    email: lead.email,
+    company: lead.company,
+    phone: lead.phone,
+    locations: lead.locations,
+    message: lead.message,
+    createdAt: lead.createdAt.toISOString(),
+  });
+  const [updated] = await db
+    .update(demoRequestsTable)
+    .set({
+      alertDeliveryStatus: result.status,
+      alertDeliveryError: result.error ?? null,
+    })
+    .where(eq(demoRequestsTable.id, id))
+    .returning();
+  if (!updated) throw new DemoRequestNotFoundError();
+  return serializeDemoRequest(updated);
 }
 
 export async function listDemoRequests() {
@@ -90,9 +151,6 @@ export async function listDemoRequests() {
     .from(demoRequestsTable)
     .orderBy(desc(demoRequestsTable.createdAt));
   return {
-    demoRequests: rows.map((r) => ({
-      ...r,
-      createdAt: r.createdAt.toISOString(),
-    })),
+    demoRequests: rows.map(serializeDemoRequest),
   };
 }

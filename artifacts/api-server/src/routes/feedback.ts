@@ -2,13 +2,17 @@ import { Router, type IRouter, type Request, type Response } from "express";
 import {
   ListPrivateFeedbackQueryParams,
   ListPrivateFeedbackResponse,
+  ResendPrivateFeedbackAlertParams,
+  ResendPrivateFeedbackAlertResponse,
   UpdatePrivateFeedbackStatusBody,
   UpdatePrivateFeedbackStatusResponse,
 } from "@workspace/api-zod";
-import { requireAuth } from "../middlewares/requireAuth";
+import { requireAuth, requireRole } from "../middlewares/requireAuth";
 import {
   FeedbackNotFoundError,
   listPrivateFeedbackForUser,
+  PrivateFeedbackAlertResendUnavailableError,
+  resendPrivateFeedbackAlert,
   updatePrivateFeedbackStatus,
 } from "../services/privateFeedbackService";
 import {
@@ -99,5 +103,44 @@ router.patch("/feedback/:id", requireAuth, async (req, res) => {
     throw err;
   }
 });
+
+router.post(
+  "/feedback/:id/resend-alert",
+  requireAuth,
+  requireRole("OWNER"),
+  async (req, res): Promise<void> => {
+    const organizationId = requireOrganization(req, res);
+    if (!organizationId) return;
+    const params = ResendPrivateFeedbackAlertParams.safeParse(req.params);
+    if (!params.success) {
+      res.status(400).json({
+        success: false,
+        code: "INVALID_PARAMS",
+        message: params.error.message,
+      });
+      return;
+    }
+
+    try {
+      await requireFeedbackAccess(req.appUser!, params.data.id, "MANAGE");
+      const result = await resendPrivateFeedbackAlert(organizationId, params.data.id);
+      res.json(ResendPrivateFeedbackAlertResponse.parse(result));
+    } catch (err) {
+      if (err instanceof FeedbackNotFoundError || err instanceof BusinessResourceNotFoundError) {
+        res.status(404).json({ success: false, code: "NOT_FOUND", message: err.message });
+        return;
+      }
+      if (err instanceof PrivateFeedbackAlertResendUnavailableError) {
+        res.status(409).json({ success: false, code: "RESEND_UNAVAILABLE", message: err.message });
+        return;
+      }
+      if (err instanceof BusinessAccessDeniedError) {
+        res.status(403).json({ success: false, code: "FORBIDDEN", message: err.message });
+        return;
+      }
+      throw err;
+    }
+  },
+);
 
 export default router;

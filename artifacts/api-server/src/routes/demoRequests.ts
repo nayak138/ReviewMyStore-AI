@@ -3,6 +3,8 @@ import {
   CreateDemoRequestBody,
   CreateDemoRequestResponse,
   ListDemoRequestsResponse,
+  ResendDemoRequestAlertParams,
+  ResendDemoRequestAlertResponse,
   SetDemoRequestStatusBody,
   SetDemoRequestStatusParams,
   SetDemoRequestStatusResponse,
@@ -11,7 +13,10 @@ import { requireAuth, requireRole } from "../middlewares/requireAuth";
 import { rateLimit } from "../middlewares/rateLimit";
 import {
   createDemoRequest,
+  DemoRequestAlertResendUnavailableError,
+  DemoRequestNotFoundError,
   listDemoRequests,
+  resendDemoRequestAlert,
   updateDemoRequest,
 } from "../services/demoRequestService";
 
@@ -99,6 +104,37 @@ router.patch(
       return;
     }
     res.json(SetDemoRequestStatusResponse.parse(updated));
+  },
+);
+
+router.post(
+  "/admin/demo-requests/:id/resend-alert",
+  requireAuth,
+  requireRole("SUPER_ADMIN"),
+  async (req, res): Promise<void> => {
+    const params = ResendDemoRequestAlertParams.safeParse(req.params);
+    if (!params.success) {
+      res.status(400).json({
+        success: false,
+        code: "INVALID_PARAMS",
+        message: params.error.message,
+      });
+      return;
+    }
+    try {
+      const result = await resendDemoRequestAlert(params.data.id);
+      res.json(ResendDemoRequestAlertResponse.parse(result));
+    } catch (error) {
+      if (error instanceof DemoRequestNotFoundError) {
+        res.status(404).json({ success: false, code: "NOT_FOUND", message: error.message });
+        return;
+      }
+      if (error instanceof DemoRequestAlertResendUnavailableError) {
+        res.status(409).json({ success: false, code: "RESEND_UNAVAILABLE", message: error.message });
+        return;
+      }
+      throw error;
+    }
   },
 );
 

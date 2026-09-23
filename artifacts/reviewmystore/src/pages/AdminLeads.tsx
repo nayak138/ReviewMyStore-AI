@@ -17,6 +17,7 @@ import {
   getGetCurrentUserQueryKey,
   useListDemoRequests,
   getListDemoRequestsQueryKey,
+  useResendDemoRequestAlert,
   useSetDemoRequestStatus,
   type DemoRequest,
   type DemoRequestStatus,
@@ -87,9 +88,51 @@ function LeadCard({ lead }: { lead: DemoRequest }) {
       },
     },
   });
+  const resendAlert = useResendDemoRequestAlert({
+    mutation: {
+      onSuccess: (result) => {
+        queryClient.invalidateQueries({
+          queryKey: getListDemoRequestsQueryKey(),
+        });
+        if (result.alertDeliveryStatus === "SENT") {
+          toast({
+            title: "Alert resent",
+            description: "The demo alert was sent to all configured recipients.",
+          });
+          return;
+        }
+        if (result.alertDeliveryStatus === "PARTIAL") {
+          toast({
+            title: "Alert partly resent",
+            description:
+              result.alertDeliveryError ??
+              "Some recipients could not receive the demo alert.",
+            variant: "destructive",
+          });
+          return;
+        }
+        toast({
+          title: "Alert resend failed",
+          description:
+            result.alertDeliveryError ??
+            "The demo alert could not be sent. Check the notification configuration and try again.",
+          variant: "destructive",
+        });
+      },
+      onError: () => {
+        toast({
+          title: "Couldn't resend alert",
+          description: "The alert wasn't resent. Please try again.",
+          variant: "destructive",
+        });
+      },
+    },
+  });
 
   const notesValue = notesDraft ?? lead.notes ?? "";
   const notesDirty = notesDraft !== null && notesDraft !== (lead.notes ?? "");
+  const alertDeliveryFailed =
+    lead.alertDeliveryStatus === "FAILED" || lead.alertDeliveryStatus === "PARTIAL";
 
   const meta = STATUS_META[lead.status];
 
@@ -152,20 +195,40 @@ function LeadCard({ lead }: { lead: DemoRequest }) {
               </p>
             )}
 
-            {(lead.alertDeliveryStatus === "FAILED" || lead.alertDeliveryStatus === "PARTIAL") && (
+            {lead.alertDeliveryStatus === "PENDING" && (
               <div
-                className="mt-3 flex items-start gap-2 rounded-lg border border-destructive/25 bg-destructive/5 px-3 py-2 text-xs text-destructive"
+                className="mt-3 flex items-center gap-2 rounded-lg border border-amber-500/25 bg-amber-500/5 px-3 py-2 text-xs text-amber-700 dark:text-amber-400"
+                role="status"
+              >
+                <Clock className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                Alert delivery is pending.
+              </div>
+            )}
+            {alertDeliveryFailed && (
+              <div
+                className="mt-3 flex flex-col gap-2 rounded-lg border border-destructive/25 bg-destructive/5 px-3 py-2 text-xs text-destructive sm:flex-row sm:items-center sm:justify-between"
                 role="alert"
               >
-                <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-                <span>
-                  <strong>
-                    {lead.alertDeliveryStatus === "PARTIAL"
-                      ? "Alert delivery partially failed."
-                      : "Alert delivery failed."}
-                  </strong>{" "}
-                  {lead.alertDeliveryError ?? "Check the notification configuration and try again."}
-                </span>
+                <div className="flex items-start gap-2">
+                  <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                  <span>
+                    <strong>
+                      {lead.alertDeliveryStatus === "PARTIAL"
+                        ? "Alert delivery partially failed."
+                        : "Alert delivery failed."}
+                    </strong>{" "}
+                    {lead.alertDeliveryError ?? "Check the notification configuration and try again."}
+                  </span>
+                </div>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="shrink-0 border-destructive/30 bg-background text-destructive hover:bg-destructive/10 hover:text-destructive"
+                  disabled={resendAlert.isPending}
+                  onClick={() => resendAlert.mutate({ id: lead.id })}
+                >
+                  {resendAlert.isPending ? "Resending alert…" : "Resend alert"}
+                </Button>
               </div>
             )}
 

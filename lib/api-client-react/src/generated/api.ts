@@ -6013,6 +6013,78 @@ export const useUpdatePrivateFeedbackStatus = <TError = ErrorType<ErrorResponse>
       return useMutation(getUpdatePrivateFeedbackStatusMutationOptions(options));
     }
 
+export const getResendPrivateFeedbackAlertUrl = (id: string,) => {
+
+
+
+
+  return `/api/v1/feedback/${id}/resend-alert`
+}
+
+/**
+ * Only agency owners can resend alerts, and only after a failed or partial delivery.
+ * @summary Resend a failed private-feedback owner alert
+ */
+export const resendPrivateFeedbackAlert = async (id: string, options?: Parameters<typeof customFetch>[1]): Promise<PrivateFeedbackItem> => {
+
+  return customFetch<PrivateFeedbackItem>(getResendPrivateFeedbackAlertUrl(id),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getResendPrivateFeedbackAlertMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof resendPrivateFeedbackAlert>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof resendPrivateFeedbackAlert>>, TError,{id: string}, TContext> => {
+
+const mutationKey = ['resendPrivateFeedbackAlert'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof resendPrivateFeedbackAlert>>, {id: string}> = (props) => {
+          const {id} = props ?? {};
+
+          return  resendPrivateFeedbackAlert(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ResendPrivateFeedbackAlertMutationResult = NonNullable<Awaited<ReturnType<typeof resendPrivateFeedbackAlert>>>
+
+    export type ResendPrivateFeedbackAlertMutationError = ErrorType<ErrorResponse>
+
+    /**
+ * @summary Resend a failed private-feedback owner alert
+ */
+export const useResendPrivateFeedbackAlert = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof resendPrivateFeedbackAlert>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof resendPrivateFeedbackAlert>>,
+        TError,
+        {id: string},
+        TContext
+      > => {
+      return useMutation(getResendPrivateFeedbackAlertMutationOptions(options));
+    }
+
 export const getCreateDemoRequestUrl = () => {
 
 
@@ -6232,6 +6304,77 @@ export const useSetDemoRequestStatus = <TError = ErrorType<ErrorResponse>,
         TContext
       > => {
       return useMutation(getSetDemoRequestStatusMutationOptions(options));
+    }
+
+export const getResendDemoRequestAlertUrl = (id: string,) => {
+
+
+
+
+  return `/api/v1/admin/demo-requests/${id}/resend-alert`
+}
+
+/**
+ * @summary Resend a failed demo-request alert (Super Admin only)
+ */
+export const resendDemoRequestAlert = async (id: string, options?: Parameters<typeof customFetch>[1]): Promise<DemoRequest> => {
+
+  return customFetch<DemoRequest>(getResendDemoRequestAlertUrl(id),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getResendDemoRequestAlertMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof resendDemoRequestAlert>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof resendDemoRequestAlert>>, TError,{id: string}, TContext> => {
+
+const mutationKey = ['resendDemoRequestAlert'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof resendDemoRequestAlert>>, {id: string}> = (props) => {
+          const {id} = props ?? {};
+
+          return  resendDemoRequestAlert(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ResendDemoRequestAlertMutationResult = NonNullable<Awaited<ReturnType<typeof resendDemoRequestAlert>>>
+
+    export type ResendDemoRequestAlertMutationError = ErrorType<ErrorResponse>
+
+    /**
+ * @summary Resend a failed demo-request alert (Super Admin only)
+ */
+export const useResendDemoRequestAlert = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof resendDemoRequestAlert>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof resendDemoRequestAlert>>,
+        TError,
+        {id: string},
+        TContext
+      > => {
+      return useMutation(getResendDemoRequestAlertMutationOptions(options));
     }
 
 export const getGetCampaignQrUrl = (id: string,) => {

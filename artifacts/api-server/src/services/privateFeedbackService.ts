@@ -27,6 +27,13 @@ export class FeedbackNotFoundError extends Error {
   }
 }
 
+export class PrivateFeedbackAlertResendUnavailableError extends Error {
+  constructor() {
+    super("Only failed or partially delivered alerts can be resent.");
+    this.name = "PrivateFeedbackAlertResendUnavailableError";
+  }
+}
+
 export interface SubmitPrivateFeedbackInput {
   sessionId: string;
   rating: number;
@@ -276,6 +283,118 @@ export async function updatePrivateFeedbackStatus(
     .innerJoin(businessesTable, eq(privateFeedbackTable.businessId, businessesTable.id))
     .innerJoin(campaignsTable, eq(privateFeedbackTable.campaignId, campaignsTable.id))
     .where(eq(privateFeedbackTable.id, id))
+    .limit(1);
+  if (!item) throw new FeedbackNotFoundError(id);
+  return item;
+}
+
+export async function resendPrivateFeedbackAlert(
+  organizationId: string,
+  id: string,
+): Promise<PrivateFeedbackListItem> {
+  const [feedback] = await db
+    .select({
+      id: privateFeedbackTable.id,
+      businessName: businessesTable.name,
+      rating: privateFeedbackTable.rating,
+      message: privateFeedbackTable.message,
+      contact: privateFeedbackTable.contact,
+      createdAt: privateFeedbackTable.createdAt,
+      spamFlag: privateFeedbackTable.spamFlag,
+    })
+    .from(privateFeedbackTable)
+    .innerJoin(businessesTable, eq(privateFeedbackTable.businessId, businessesTable.id))
+    .where(
+      and(
+        eq(privateFeedbackTable.id, id),
+        eq(privateFeedbackTable.organizationId, organizationId),
+      ),
+    )
+    .limit(1);
+  if (!feedback) throw new FeedbackNotFoundError(id);
+
+  const [claimed] = await db
+    .update(privateFeedbackTable)
+    .set({
+      alertDeliveryStatus: "PENDING",
+      alertDeliveryError: null,
+      updatedAt: new Date(),
+    })
+    .where(
+      and(
+        eq(privateFeedbackTable.id, id),
+        eq(privateFeedbackTable.organizationId, organizationId),
+        inArray(privateFeedbackTable.alertDeliveryStatus, ["FAILED", "PARTIAL"]),
+      ),
+    )
+    .returning({ id: privateFeedbackTable.id });
+  if (!claimed) throw new PrivateFeedbackAlertResendUnavailableError();
+
+  const owners = await db
+    .select({ email: usersTable.email })
+    .from(usersTable)
+    .where(
+      and(
+        eq(usersTable.organizationId, organizationId),
+        eq(usersTable.role, "OWNER"),
+        eq(usersTable.status, "ACTIVE"),
+      ),
+    );
+  const recipients = owners
+    .map((owner) => owner.email?.trim())
+    .filter((email): email is string => Boolean(email));
+  const result = await sendPrivateFeedbackAlert({
+    recipients,
+    businessName: feedback.businessName,
+    rating: feedback.rating,
+    message: feedback.message,
+    contact: feedback.contact,
+    createdAt: feedback.createdAt.toISOString(),
+    isSpam: feedback.spamFlag,
+  });
+  const [updated] = await db
+    .update(privateFeedbackTable)
+    .set({
+      alertDeliveryStatus: result.status,
+      alertDeliveryError: result.error ?? null,
+      updatedAt: new Date(),
+    })
+    .where(
+      and(
+        eq(privateFeedbackTable.id, id),
+        eq(privateFeedbackTable.organizationId, organizationId),
+      ),
+    )
+    .returning({ id: privateFeedbackTable.id });
+  if (!updated) throw new FeedbackNotFoundError(id);
+
+  const [item] = await db
+    .select({
+      id: privateFeedbackTable.id,
+      businessId: privateFeedbackTable.businessId,
+      businessName: businessesTable.name,
+      campaignId: privateFeedbackTable.campaignId,
+      campaignName: campaignsTable.name,
+      rating: privateFeedbackTable.rating,
+      message: privateFeedbackTable.message,
+      contact: privateFeedbackTable.contact,
+      language: privateFeedbackTable.language,
+      status: privateFeedbackTable.status,
+      spamFlag: privateFeedbackTable.spamFlag,
+      spamReason: privateFeedbackTable.spamReason,
+      alertDeliveryStatus: privateFeedbackTable.alertDeliveryStatus,
+      alertDeliveryError: privateFeedbackTable.alertDeliveryError,
+      createdAt: privateFeedbackTable.createdAt,
+    })
+    .from(privateFeedbackTable)
+    .innerJoin(businessesTable, eq(privateFeedbackTable.businessId, businessesTable.id))
+    .innerJoin(campaignsTable, eq(privateFeedbackTable.campaignId, campaignsTable.id))
+    .where(
+      and(
+        eq(privateFeedbackTable.id, id),
+        eq(privateFeedbackTable.organizationId, organizationId),
+      ),
+    )
     .limit(1);
   if (!item) throw new FeedbackNotFoundError(id);
   return item;

@@ -2324,6 +2324,33 @@ export const UpdatePrivateFeedbackStatusResponse = zod.object({
 
 
 /**
+ * Only agency owners can resend alerts, and only after a failed or partial delivery.
+ * @summary Resend a failed private-feedback owner alert
+ */
+export const ResendPrivateFeedbackAlertParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const ResendPrivateFeedbackAlertResponse = zod.object({
+  "id": zod.uuid(),
+  "businessId": zod.uuid(),
+  "businessName": zod.string(),
+  "campaignId": zod.uuid(),
+  "campaignName": zod.string(),
+  "rating": zod.int(),
+  "message": zod.string(),
+  "contact": zod.string().nullable(),
+  "language": zod.enum(['en', 'hi', 'bn', 'te', 'mr', 'ta', 'ur', 'gu', 'kn', 'ml', 'pa', 'or', 'as', 'mai', 'sat', 'ks', 'ne', 'sd', 'kok', 'doi', 'mni', 'sa', 'brx']),
+  "status": zod.enum(['NEW', 'VIEWED', 'RESOLVED']),
+  "spamFlag": zod.boolean(),
+  "spamReason": zod.string().nullable(),
+  "alertDeliveryStatus": zod.union([zod.literal('PENDING'),zod.literal('SENT'),zod.literal('PARTIAL'),zod.literal('FAILED'),zod.literal('SKIPPED'),zod.literal(null)]).nullable(),
+  "alertDeliveryError": zod.string().nullable(),
+  "createdAt": zod.coerce.date()
+})
+
+
+/**
  * Public (unauthenticated). Persists the lead so the platform owner can review it from the admin API.
  * @summary Submit a demo booking / sales lead from the marketing site
  */
@@ -2398,6 +2425,30 @@ export const SetDemoRequestStatusBody = zod.object({
 }).describe('Partial update for a demo request. Provide status and\/or notes; at least one field should be sent. notes replaces the stored value (send an empty string to clear).\n')
 
 export const SetDemoRequestStatusResponse = zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "leadType": zod.union([zod.literal('AGENCY'),zod.literal('SINGLE_SHOP'),zod.literal(null)]).nullable(),
+  "email": zod.string().nullish(),
+  "company": zod.string().nullable(),
+  "phone": zod.string().nullable(),
+  "locations": zod.string().nullable(),
+  "message": zod.string().nullable(),
+  "status": zod.enum(['NEW', 'CONTACTED', 'CLOSED']),
+  "notes": zod.string().nullable(),
+  "alertDeliveryStatus": zod.union([zod.literal('PENDING'),zod.literal('SENT'),zod.literal('PARTIAL'),zod.literal('FAILED'),zod.literal('SKIPPED'),zod.literal(null)]).nullable(),
+  "alertDeliveryError": zod.string().nullable(),
+  "createdAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Resend a failed demo-request alert (Super Admin only)
+ */
+export const ResendDemoRequestAlertParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const ResendDemoRequestAlertResponse = zod.object({
   "id": zod.string(),
   "name": zod.string(),
   "leadType": zod.union([zod.literal('AGENCY'),zod.literal('SINGLE_SHOP'),zod.literal(null)]).nullable(),
