@@ -22,6 +22,46 @@ export type InvitationDeliveryResult = {
   error?: string;
 };
 
+export type AlertDeliveryStatus = "SENT" | "PARTIAL" | "FAILED" | "SKIPPED";
+
+export type AlertDeliveryResult = {
+  status: AlertDeliveryStatus;
+  recipientCount: number;
+  deliveredCount: number;
+  failedCount: number;
+  error?: string;
+};
+
+function summarizeAlertDelivery(
+  recipientCount: number,
+  failedCount: number,
+): AlertDeliveryResult {
+  const deliveredCount = recipientCount - failedCount;
+  if (recipientCount === 0) {
+    return {
+      status: "SKIPPED",
+      recipientCount,
+      deliveredCount,
+      failedCount,
+      error: "No alert recipients are configured.",
+    };
+  }
+  if (failedCount === 0) {
+    return { status: "SENT", recipientCount, deliveredCount, failedCount };
+  }
+  const error =
+    deliveredCount === 0
+      ? `All ${recipientCount} alert recipient${recipientCount === 1 ? "" : "s"} could not be submitted through Clerk.`
+      : `${failedCount} of ${recipientCount} alert recipients could not be submitted through Clerk.`;
+  return {
+    status: deliveredCount > 0 ? "PARTIAL" : "FAILED",
+    recipientCount,
+    deliveredCount,
+    failedCount,
+    error,
+  };
+}
+
 export type TeamInvitationEmailData = {
   to: string;
   agencyName: string;
@@ -125,7 +165,7 @@ export async function sendDemoRequestAlert(data: {
   locations?: string | null;
   message?: string | null;
   createdAt?: string;
-}): Promise<void> {
+}): Promise<AlertDeliveryResult> {
   // DEMO_ALERT_EMAILS is a dedicated notification-only variable.
   // It is intentionally separate from SUPER_ADMIN_EMAILS (which controls
   // privileged platform access) so that alert recipients don't accidentally
@@ -140,7 +180,7 @@ export async function sendDemoRequestAlert(data: {
     console.warn(
       "[notificationService] DEMO_ALERT_EMAILS is not configured — skipping demo-request alert email.",
     );
-    return;
+    return summarizeAlertDelivery(0, 0);
   }
 
   try {
@@ -210,6 +250,7 @@ export async function sendDemoRequestAlert(data: {
       (delivery): delivery is PromiseRejectedResult =>
         delivery.status === "rejected",
     );
+    const result = summarizeAlertDelivery(recipients.length, failures.length);
     if (failures.length > 0) {
       console.error(
         `[notificationService] Clerk demo-request alert failed for ${failures.length} recipient(s).`,
@@ -221,11 +262,19 @@ export async function sendDemoRequestAlert(data: {
         recipients.join(", "),
       );
     }
+    return result;
   } catch (err) {
     console.error(
       "[notificationService] Failed to send demo-request alert:",
       err,
     );
+    return {
+      status: "FAILED",
+      recipientCount: recipients.length,
+      deliveredCount: 0,
+      failedCount: recipients.length,
+      error: "Alert could not be submitted through Clerk.",
+    };
   }
 }
 
@@ -239,8 +288,8 @@ export async function sendPrivateFeedbackAlert(data: {
   contact: string | null;
   createdAt: string;
   isSpam: boolean;
-}): Promise<void> {
-  if (data.recipients.length === 0) return;
+}): Promise<AlertDeliveryResult> {
+  if (data.recipients.length === 0) return summarizeAlertDelivery(0, 0);
 
   try {
     const rows = [
@@ -274,16 +323,25 @@ export async function sendPrivateFeedbackAlert(data: {
       (delivery): delivery is PromiseRejectedResult =>
         delivery.status === "rejected",
     );
+    const result = summarizeAlertDelivery(data.recipients.length, failures.length);
     if (failures.length > 0) {
       console.error(
         `[notificationService] Clerk private-feedback alert failed for ${failures.length} recipient(s).`,
         failures[0]?.reason,
       );
     }
+    return result;
   } catch (err) {
     console.error(
       "[notificationService] Failed to send private-feedback alert:",
       err,
     );
+    return {
+      status: "FAILED",
+      recipientCount: data.recipients.length,
+      deliveredCount: 0,
+      failedCount: data.recipients.length,
+      error: "Alert could not be submitted through Clerk.",
+    };
   }
 }

@@ -3,6 +3,7 @@ import { sql } from "drizzle-orm";
 import { organizationsTable } from "./organizations";
 import { businessesTable } from "./businesses";
 import { campaignsTable } from "./campaigns";
+import { notificationDeliveryStatusEnum } from "./notificationDelivery";
 
 // NEW: submitted, not yet opened by the owner.
 // VIEWED: an owner has opened/read it.
@@ -44,6 +45,8 @@ export const privateFeedbackTable = pgTable(
     status: privateFeedbackStatusEnum("status").notNull().default("NEW"),
     spamFlag: boolean("spam_flag").notNull().default(false),
     spamReason: text("spam_reason"),
+    alertDeliveryStatus: notificationDeliveryStatusEnum("alert_delivery_status"),
+    alertDeliveryError: text("alert_delivery_error"),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),

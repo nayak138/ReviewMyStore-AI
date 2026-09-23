@@ -2,6 +2,7 @@ import { pgTable, text, timestamp, pgEnum } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 import { sql } from "drizzle-orm";
+import { notificationDeliveryStatusEnum } from "./notificationDelivery";
 
 // Lifecycle for a demo/lead request submitted from the public marketing site.
 // NEW: just submitted, nobody has looked at it yet.
@@ -31,6 +32,8 @@ export const demoRequestsTable = pgTable("demo_requests", {
   // Free-text admin notes about the lead (call summaries, follow-up dates).
   // Only ever written by SUPER_ADMIN via the admin API — never visitor input.
   notes: text("notes"),
+  alertDeliveryStatus: notificationDeliveryStatusEnum("alert_delivery_status"),
+  alertDeliveryError: text("alert_delivery_error"),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),

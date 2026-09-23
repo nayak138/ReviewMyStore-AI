@@ -68,6 +68,16 @@ function FeedbackCard({ item }: { item: PrivateFeedbackItem }) {
                   Quality flag
                 </Badge>
               )}
+              {(item.alertDeliveryStatus === "FAILED" || item.alertDeliveryStatus === "PARTIAL") && (
+                <Badge
+                  variant="outline"
+                  className="border-destructive/30 bg-destructive/10 text-destructive"
+                  title={item.alertDeliveryError ?? "The owner alert did not reach every recipient"}
+                >
+                  <AlertTriangle className="mr-1 h-3 w-3" aria-hidden="true" />
+                  {item.alertDeliveryStatus === "PARTIAL" ? "Alert partly failed" : "Alert failed"}
+                </Badge>
+              )}
             </div>
             <p className="mt-2 text-sm font-medium text-foreground">{item.businessName} · {item.campaignName}</p>
             <p className="mt-0.5 text-xs text-muted-foreground">
@@ -89,6 +99,12 @@ function FeedbackCard({ item }: { item: PrivateFeedbackItem }) {
           </Select>
         </div>
         <p className="mt-4 whitespace-pre-wrap text-sm leading-6 text-foreground">{item.message}</p>
+        {(item.alertDeliveryStatus === "FAILED" || item.alertDeliveryStatus === "PARTIAL") && (
+          <div className="mt-3 flex items-start gap-2 rounded-lg border border-destructive/25 bg-destructive/5 px-3 py-2 text-xs text-destructive" role="alert">
+            <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+            <span>{item.alertDeliveryError ?? "The owner alert did not reach every recipient."}</span>
+          </div>
+        )}
         {item.contact && (
           <p className="mt-3 flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
             <Phone className="h-3.5 w-3.5" aria-hidden="true" />

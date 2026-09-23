@@ -3004,6 +3004,11 @@ components:
           $ref: "#/components/schemas/DemoRequestStatus"
         notes:
           type: ["string", "null"]
+        alertDeliveryStatus:
+          type: ["string", "null"]
+          enum: [PENDING, SENT, PARTIAL, FAILED, SKIPPED, null]
+        alertDeliveryError:
+          type: ["string", "null"]
         createdAt:
           type: string
           format: date-time
@@ -3017,6 +3022,8 @@ components:
         - message
         - status
         - notes
+        - alertDeliveryStatus
+        - alertDeliveryError
         - createdAt
 
     DemoRequestStatusUpdate:
@@ -4436,6 +4443,11 @@ components:
           type: boolean
         spamReason:
           type: ["string", "null"]
+        alertDeliveryStatus:
+          type: ["string", "null"]
+          enum: [PENDING, SENT, PARTIAL, FAILED, SKIPPED, null]
+        alertDeliveryError:
+          type: ["string", "null"]
         createdAt:
           type: string
           format: date-time
@@ -4452,6 +4464,8 @@ components:
         - status
         - spamFlag
         - spamReason
+        - alertDeliveryStatus
+        - alertDeliveryError
         - createdAt
 
     ListPrivateFeedbackResult:

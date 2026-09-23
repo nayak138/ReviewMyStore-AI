@@ -2286,6 +2286,8 @@ export const ListPrivateFeedbackResponse = zod.object({
   "status": zod.enum(['NEW', 'VIEWED', 'RESOLVED']),
   "spamFlag": zod.boolean(),
   "spamReason": zod.string().nullable(),
+  "alertDeliveryStatus": zod.union([zod.literal('PENDING'),zod.literal('SENT'),zod.literal('PARTIAL'),zod.literal('FAILED'),zod.literal('SKIPPED'),zod.literal(null)]).nullable(),
+  "alertDeliveryError": zod.string().nullable(),
   "createdAt": zod.coerce.date()
 }))
 })
@@ -2315,6 +2317,8 @@ export const UpdatePrivateFeedbackStatusResponse = zod.object({
   "status": zod.enum(['NEW', 'VIEWED', 'RESOLVED']),
   "spamFlag": zod.boolean(),
   "spamReason": zod.string().nullable(),
+  "alertDeliveryStatus": zod.union([zod.literal('PENDING'),zod.literal('SENT'),zod.literal('PARTIAL'),zod.literal('FAILED'),zod.literal('SKIPPED'),zod.literal(null)]).nullable(),
+  "alertDeliveryError": zod.string().nullable(),
   "createdAt": zod.coerce.date()
 })
 
@@ -2370,6 +2374,8 @@ export const ListDemoRequestsResponse = zod.object({
   "message": zod.string().nullable(),
   "status": zod.enum(['NEW', 'CONTACTED', 'CLOSED']),
   "notes": zod.string().nullable(),
+  "alertDeliveryStatus": zod.union([zod.literal('PENDING'),zod.literal('SENT'),zod.literal('PARTIAL'),zod.literal('FAILED'),zod.literal('SKIPPED'),zod.literal(null)]).nullable(),
+  "alertDeliveryError": zod.string().nullable(),
   "createdAt": zod.coerce.date()
 }))
 })
@@ -2402,6 +2408,8 @@ export const SetDemoRequestStatusResponse = zod.object({
   "message": zod.string().nullable(),
   "status": zod.enum(['NEW', 'CONTACTED', 'CLOSED']),
   "notes": zod.string().nullable(),
+  "alertDeliveryStatus": zod.union([zod.literal('PENDING'),zod.literal('SENT'),zod.literal('PARTIAL'),zod.literal('FAILED'),zod.literal('SKIPPED'),zod.literal(null)]).nullable(),
+  "alertDeliveryError": zod.string().nullable(),
   "createdAt": zod.coerce.date()
 })
 

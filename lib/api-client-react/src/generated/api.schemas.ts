@@ -71,6 +71,20 @@ export const DemoRequestLeadType = {
   SINGLE_SHOP: 'SINGLE_SHOP',
 } as const;
 
+/**
+ * @nullable
+ */
+export type DemoRequestAlertDeliveryStatus = typeof DemoRequestAlertDeliveryStatus[keyof typeof DemoRequestAlertDeliveryStatus] | null;
+
+
+export const DemoRequestAlertDeliveryStatus = {
+  PENDING: 'PENDING',
+  SENT: 'SENT',
+  PARTIAL: 'PARTIAL',
+  FAILED: 'FAILED',
+  SKIPPED: 'SKIPPED',
+} as const;
+
 export interface DemoRequest {
   id: string;
   name: string;
@@ -89,6 +103,10 @@ export interface DemoRequest {
   status: DemoRequestStatus;
   /** @nullable */
   notes: string | null;
+  /** @nullable */
+  alertDeliveryStatus: DemoRequestAlertDeliveryStatus;
+  /** @nullable */
+  alertDeliveryError: string | null;
   createdAt: string;
 }
 
@@ -945,6 +963,20 @@ export interface PrivateFeedbackResult {
   success: boolean;
 }
 
+/**
+ * @nullable
+ */
+export type PrivateFeedbackItemAlertDeliveryStatus = typeof PrivateFeedbackItemAlertDeliveryStatus[keyof typeof PrivateFeedbackItemAlertDeliveryStatus] | null;
+
+
+export const PrivateFeedbackItemAlertDeliveryStatus = {
+  PENDING: 'PENDING',
+  SENT: 'SENT',
+  PARTIAL: 'PARTIAL',
+  FAILED: 'FAILED',
+  SKIPPED: 'SKIPPED',
+} as const;
+
 export interface PrivateFeedbackItem {
   id: string;
   businessId: string;
@@ -960,6 +992,10 @@ export interface PrivateFeedbackItem {
   spamFlag: boolean;
   /** @nullable */
   spamReason: string | null;
+  /** @nullable */
+  alertDeliveryStatus: PrivateFeedbackItemAlertDeliveryStatus;
+  /** @nullable */
+  alertDeliveryError: string | null;
   createdAt: string;
 }
 

@@ -7,6 +7,7 @@ import {
   privateFeedbackTable,
   usersTable,
   type PrivateFeedback,
+  type NotificationDeliveryStatus,
   type User,
 } from "@workspace/db";
 import { findActivePublicCampaign } from "./publicReviewService";
@@ -92,6 +93,7 @@ export async function submitPrivateFeedback(
     language: input.language ?? business.defaultLanguage ?? "en",
     spamFlag: quality.isSpam,
     spamReason: quality.reason,
+    alertDeliveryStatus: "PENDING",
   }).returning({
     id: privateFeedbackTable.id,
     createdAt: privateFeedbackTable.createdAt,
@@ -118,6 +120,16 @@ export async function submitPrivateFeedback(
     contact: input.contact ?? null,
     createdAt: feedback.createdAt.toISOString(),
     isSpam: quality.isSpam,
+  }).then(async (result) => {
+    await db
+      .update(privateFeedbackTable)
+      .set({
+        alertDeliveryStatus: result.status,
+        alertDeliveryError: result.error ?? null,
+      })
+      .where(eq(privateFeedbackTable.id, feedback.id));
+  }).catch((error) => {
+    console.error("[privateFeedbackService] Failed to persist alert delivery status:", error);
   });
 }
 
@@ -141,6 +153,8 @@ export interface PrivateFeedbackListItem {
   status: PrivateFeedback["status"];
   spamFlag: boolean;
   spamReason: string | null;
+  alertDeliveryStatus: NotificationDeliveryStatus | null;
+  alertDeliveryError: string | null;
   createdAt: Date;
 }
 
@@ -184,6 +198,8 @@ export async function listPrivateFeedback(
       status: privateFeedbackTable.status,
       spamFlag: privateFeedbackTable.spamFlag,
       spamReason: privateFeedbackTable.spamReason,
+      alertDeliveryStatus: privateFeedbackTable.alertDeliveryStatus,
+      alertDeliveryError: privateFeedbackTable.alertDeliveryError,
       createdAt: privateFeedbackTable.createdAt,
     })
     .from(privateFeedbackTable)
@@ -252,6 +268,8 @@ export async function updatePrivateFeedbackStatus(
       status: privateFeedbackTable.status,
       spamFlag: privateFeedbackTable.spamFlag,
       spamReason: privateFeedbackTable.spamReason,
+      alertDeliveryStatus: privateFeedbackTable.alertDeliveryStatus,
+      alertDeliveryError: privateFeedbackTable.alertDeliveryError,
       createdAt: privateFeedbackTable.createdAt,
     })
     .from(privateFeedbackTable)

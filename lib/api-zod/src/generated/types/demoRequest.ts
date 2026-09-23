@@ -5,6 +5,7 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { DemoRequestAlertDeliveryStatus } from './demoRequestAlertDeliveryStatus';
 import type { DemoRequestLeadType } from './demoRequestLeadType';
 import type { DemoRequestStatus } from './demoRequestStatus';
 
@@ -26,5 +27,9 @@ export interface DemoRequest {
   status: DemoRequestStatus;
   /** @nullable */
   notes: string | null;
+  /** @nullable */
+  alertDeliveryStatus: DemoRequestAlertDeliveryStatus;
+  /** @nullable */
+  alertDeliveryError: string | null;
   createdAt: Date;
 }

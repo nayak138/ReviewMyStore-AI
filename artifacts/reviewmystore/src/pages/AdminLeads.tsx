@@ -10,6 +10,7 @@ import {
   MapPin,
   Clock,
   StickyNote,
+  AlertTriangle,
 } from "lucide-react";
 import {
   useGetCurrentUser,
@@ -149,6 +150,23 @@ function LeadCard({ lead }: { lead: DemoRequest }) {
               <p className="mt-3 text-sm text-foreground/80 bg-secondary/50 rounded-lg px-3 py-2 whitespace-pre-wrap break-words">
                 {lead.message}
               </p>
+            )}
+
+            {(lead.alertDeliveryStatus === "FAILED" || lead.alertDeliveryStatus === "PARTIAL") && (
+              <div
+                className="mt-3 flex items-start gap-2 rounded-lg border border-destructive/25 bg-destructive/5 px-3 py-2 text-xs text-destructive"
+                role="alert"
+              >
+                <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                <span>
+                  <strong>
+                    {lead.alertDeliveryStatus === "PARTIAL"
+                      ? "Alert delivery partially failed."
+                      : "Alert delivery failed."}
+                  </strong>{" "}
+                  {lead.alertDeliveryError ?? "Check the notification configuration and try again."}
+                </span>
+              </div>
             )}
 
             <div className="mt-3 space-y-2">

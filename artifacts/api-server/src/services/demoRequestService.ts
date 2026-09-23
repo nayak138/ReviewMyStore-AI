@@ -22,6 +22,7 @@ export async function createDemoRequest(input: {
       phone: input.phone?.trim() || null,
       locations: input.locations?.trim() || null,
       message: input.message?.trim() || null,
+      alertDeliveryStatus: "PENDING",
     })
     .returning({ id: demoRequestsTable.id, createdAt: demoRequestsTable.createdAt });
 
@@ -37,6 +38,16 @@ export async function createDemoRequest(input: {
     locations: input.locations?.trim() || null,
     message: input.message?.trim() || null,
     createdAt: row.createdAt.toISOString(),
+  }).then(async (result) => {
+    await db
+      .update(demoRequestsTable)
+      .set({
+        alertDeliveryStatus: result.status,
+        alertDeliveryError: result.error ?? null,
+      })
+      .where(eq(demoRequestsTable.id, row.id));
+  }).catch((error) => {
+    console.error("[demoRequestService] Failed to persist alert delivery status:", error);
   });
   void appendLeadToGoogleSheet({
     id: row.id,

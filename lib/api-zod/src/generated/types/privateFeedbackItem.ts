@@ -5,6 +5,7 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { PrivateFeedbackItemAlertDeliveryStatus } from './privateFeedbackItemAlertDeliveryStatus';
 import type { PrivateFeedbackStatus } from './privateFeedbackStatus';
 import type { SupportedLanguage } from './supportedLanguage';
 
@@ -23,5 +24,9 @@ export interface PrivateFeedbackItem {
   spamFlag: boolean;
   /** @nullable */
   spamReason: string | null;
+  /** @nullable */
+  alertDeliveryStatus: PrivateFeedbackItemAlertDeliveryStatus;
+  /** @nullable */
+  alertDeliveryError: string | null;
   createdAt: Date;
 }
