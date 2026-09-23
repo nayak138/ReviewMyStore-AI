@@ -246,6 +246,9 @@ for (const expected of requiredForeignKeys) {
 if (errors.length > 0) {
   console.error("Team schema readiness check FAILED:");
   for (const error of errors) console.error(`- ${error}`);
+  console.error(
+    "Keep invitations and TEAM_MEMBER access disabled. Do not run db:push against production or add startup DDL; complete the user-approved Publish flow, then rerun this catalog check against production.",
+  );
   process.exitCode = 1;
 } else {
   console.log(
