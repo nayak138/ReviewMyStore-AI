@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@clerk/react";
 import { Redirect } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
@@ -469,10 +469,12 @@ export default function Reviews() {
   const [callbackStage, setCallbackStage] = useState<CallbackStage>("idle");
   const [pickerLocations, setPickerLocations] = useState<ReviewProviderLocationOption[]>([]);
   const [selectedLocationId, setSelectedLocationId] = useState<string | null>(null);
+  const callbackFlowActiveRef = useRef(false);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get("bndleConnect") === "1") {
+      callbackFlowActiveRef.current = true;
       params.delete("bndleConnect");
       const query = params.toString();
       window.history.replaceState({}, "", `${window.location.pathname}${query ? `?${query}` : ""}`);
@@ -526,6 +528,7 @@ export default function Reviews() {
     locations: ReviewProviderLocationOption[],
   ) {
     if (stage === "NEEDS_LOCATION") {
+      callbackFlowActiveRef.current = true;
       const matchingLocation =
         (workspaceBusiness &&
           locations.find((location) => {
@@ -539,6 +542,7 @@ export default function Reviews() {
 
       if (matchingLocation) {
         setSelectedLocationId(matchingLocation.id);
+        setPickerLocations([]);
         setCallbackStage("connecting");
         selectLocation.mutate({ data: { businessId, locationId: matchingLocation.id } });
       } else {
@@ -546,12 +550,15 @@ export default function Reviews() {
         setCallbackStage("picker");
       }
     } else if (stage === "READY") {
+      callbackFlowActiveRef.current = false;
       setCallbackStage("idle");
       queryClient.invalidateQueries({ queryKey: dashboardKey });
       syncProvider.mutate({ params: { businessId } });
     } else if (stage === "NO_LOCATIONS_FOUND") {
+      callbackFlowActiveRef.current = false;
       setCallbackStage("no_locations");
     } else {
+      callbackFlowActiveRef.current = false;
       setCallbackStage("not_connected");
     }
   }
@@ -618,7 +625,9 @@ export default function Reviews() {
   const selectLocation = useSelectReviewProviderLocation({
     mutation: {
       onSuccess: () => {
+        callbackFlowActiveRef.current = false;
         setCallbackStage("idle");
+        setPickerLocations([]);
         setSelectedLocationId(null);
         queryClient.invalidateQueries({ queryKey: dashboardKey });
         queryClient.invalidateQueries({ queryKey: getListManagedReviewsQueryKey() });
@@ -628,6 +637,9 @@ export default function Reviews() {
         });
       },
       onError: (err: any) => {
+        callbackFlowActiveRef.current = false;
+        setCallbackStage("not_connected");
+        setSelectedLocationId(null);
         const msg = err.response?.data?.message || "Failed to connect this location";
         toast({ title: msg, variant: "destructive" });
       },
@@ -683,6 +695,17 @@ export default function Reviews() {
   useEffect(() => {
     if (dashboard?.connection.status !== "PENDING") return;
     const trySync = () => {
+      // Selecting a location already runs the provider sync on the server.
+      // Do not race that request with the pending-state fallback: the extra
+      // sync can fail while the location selection succeeds, leaving the
+      // owner with a misleading failure toast and an open picker.
+      if (
+        callbackFlowActiveRef.current ||
+        callbackStage !== "idle" ||
+        selectLocation.isPending
+      ) {
+        return;
+      }
       if (document.visibilityState === "visible" && !syncProvider.isPending) {
          syncProvider.mutate({ params: { businessId } });
       }
@@ -694,7 +717,7 @@ export default function Reviews() {
       document.removeEventListener("visibilitychange", trySync);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dashboard?.connection.status]);
+  }, [dashboard?.connection.status, callbackStage, selectLocation.isPending]);
 
   // Once Google redirects back here, ask the backend what actually happened
   // (rather than trusting bundle.social's ambiguous callback query params)
@@ -724,6 +747,8 @@ export default function Reviews() {
         onSelectLocation={setSelectedLocationId}
         onConfirm={() => {
           if (!selectedLocationId) return;
+           callbackFlowActiveRef.current = true;
+           setCallbackStage("connecting");
           selectLocation.mutate({ data: { businessId, locationId: selectedLocationId } });
         }}
         onRetry={() => {

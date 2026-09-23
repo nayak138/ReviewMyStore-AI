@@ -23,8 +23,10 @@ const mocks = vi.hoisted(() => ({
   startConnectionMutate: vi.fn(),
   disconnectMutate: vi.fn(),
   syncMutate: vi.fn(),
+  selectLocationMutate: vi.fn(),
   dashboardStatus: 'PENDING' as 'DISCONNECTED' | 'PENDING' | 'CONNECTED',
   callbackStage: null as null | 'NOT_CONNECTED' | 'NEEDS_LOCATION' | 'NO_LOCATIONS_FOUND' | 'READY',
+  callbackLocations: [] as Array<{ id: string; name: string; address: string | null }>,
 }));
 
 vi.mock('@workspace/api-client-react', () => ({
@@ -81,19 +83,22 @@ vi.mock('@workspace/api-client-react', () => ({
     },
     isPending: false,
   }),
-  useGetReviewProviderLocations: (options?: { query?: { enabled?: boolean } }) => ({
+  useGetReviewProviderLocations: (
+    _params?: { businessId?: string },
+    options?: { query?: { enabled?: boolean } },
+  ) => ({
     data:
       options?.query?.enabled && mocks.callbackStage
-        ? { stage: mocks.callbackStage, locations: [] }
+        ? { stage: mocks.callbackStage, locations: mocks.callbackLocations }
         : undefined,
     isLoading: false,
   }),
   getGetReviewProviderLocationsQueryKey: () => ['/api/review-management/connection/locations'],
   useSelectReviewProviderLocation: (config?: {
-    mutation?: { onSuccess?: () => void };
+    mutation?: { onSuccess?: () => void; onError?: (error: unknown) => void };
   }) => ({
     mutate: (...args: unknown[]) => {
-      mocks.syncMutate(...args);
+      mocks.selectLocationMutate(...args);
       config?.mutation?.onSuccess?.();
     },
     isPending: false,
@@ -194,7 +199,9 @@ beforeEach(() => {
   mocks.startConnectionMutate.mockClear();
   mocks.disconnectMutate.mockClear();
   mocks.syncMutate.mockClear();
+  mocks.selectLocationMutate.mockClear();
   mocks.callbackStage = null;
+  mocks.callbackLocations = [];
 });
 
 afterEach(() => {
@@ -354,6 +361,35 @@ describe('Reviews dashboard states', () => {
     expect(params.has('bndleConnect')).toBe(false);
   });
 
+  it('closes the location picker before the successful connection settles without racing a fallback sync', async () => {
+    const user = userEvent.setup();
+    mocks.dashboardStatus = 'PENDING';
+    mocks.callbackStage = 'NEEDS_LOCATION';
+    mocks.callbackLocations = [
+      { id: 'loc-1', name: 'Downtown Store', address: '1 Main Street' },
+      { id: 'loc-2', name: 'Uptown Store', address: '2 Main Street' },
+    ];
+    window.history.replaceState(
+      {},
+      '',
+      '/reviews?businessId=business-1&businessName=Test%20Business&bndleConnect=1',
+    );
+
+    renderReviews();
+
+    expect(await screen.findByText('Choose your business')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: /uptown store/i }));
+    await user.click(screen.getByRole('button', { name: /connect this location/i }));
+
+    expect(mocks.selectLocationMutate).toHaveBeenCalledWith({
+      data: { businessId: 'business-1', locationId: 'loc-2' },
+    });
+    expect(screen.queryByText('Choose your business')).not.toBeInTheDocument();
+    expect(screen.queryByText('Connecting your business…')).not.toBeInTheDocument();
+    expect(screen.queryByText('Connection wasn’t completed')).not.toBeInTheDocument();
+    expect(mocks.syncMutate).not.toHaveBeenCalled();
+  });
+
   it('requires confirmation before disconnecting a connected Google Business store', async () => {
     const user = userEvent.setup();
     mocks.dashboardStatus = 'CONNECTED';
@@ -390,7 +426,7 @@ describe('Reviews dashboard states', () => {
     fireEvent.click(screen.getByRole('button', { name: /connect google business/i }));
 
     expect(mocks.startConnectionMutate).toHaveBeenCalledTimes(1);
-    expect(mocks.startConnectionMutate).toHaveBeenCalledWith({ data: {} });
+    expect(mocks.startConnectionMutate).toHaveBeenCalledWith({ data: { businessId: 'business-1' } });
     // The fix under test: a successful start must invalidate the dashboard
     // query, not just open the portal tab.
     expect(invalidateSpy).toHaveBeenCalledWith(

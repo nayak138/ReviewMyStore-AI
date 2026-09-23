@@ -482,6 +482,20 @@ describe("workspace layout", () => {
     );
   });
 
+  it("blurs the native schedule picker after capturing the selected date and time", async () => {
+    renderSocialMedia();
+
+    const scheduleToggle = await screen.findByTestId("button-toggle-schedule");
+    await scheduleToggle.click();
+
+    const scheduleInput = screen.getByTestId("input-scheduled-at");
+    const blurSpy = vi.spyOn(scheduleInput, "blur");
+    fireEvent.change(scheduleInput, { target: { value: "2026-09-23T16:31" } });
+
+    expect(scheduleInput).toHaveValue("2026-09-23T16:31");
+    expect(blurSpy).toHaveBeenCalledTimes(1);
+  });
+
   it("keeps a long post queue in a focusable scroll region", async () => {
     mocks.posts.push(
       ...Array.from({ length: 4 }, (_, index) => ({
