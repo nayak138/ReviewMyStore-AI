@@ -52,6 +52,7 @@ describe("SessionExpiryWatcher", () => {
   });
 
   afterEach(() => {
+    vi.useRealTimers();
     vi.restoreAllMocks();
   });
 
@@ -153,16 +154,17 @@ describe("SessionExpiryWatcher", () => {
   });
 
   it("signs out during an active session when periodic revalidation finds no token", async () => {
+    vi.useFakeTimers();
     mocks.getToken.mockResolvedValue(null);
     renderWatcher(queryClient);
 
-    act(() => {
+    await act(async () => {
       vi.advanceTimersByTime(30_000);
+      await Promise.resolve();
     });
 
-    await waitFor(() => {
-      expect(mocks.signOut).toHaveBeenCalledTimes(1);
-    });
+    expect(mocks.getToken).toHaveBeenCalledWith({ skipCache: true });
+    expect(mocks.signOut).toHaveBeenCalledTimes(1);
   });
 
   it("does not treat a failed token refresh (offline/network error) as expiry", async () => {
