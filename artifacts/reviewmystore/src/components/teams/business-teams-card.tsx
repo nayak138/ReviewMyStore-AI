@@ -206,7 +206,7 @@ export function BusinessTeamsCard() {
             ? { tone: "success", text: `Invitation sent to ${result.invitation.email}.` }
             : {
                 tone: "error",
-                text: `Invitation created, but email delivery failed. Use Resend below to try again.`,
+                text: `Invitation created, but email delivery failed. Use Send again below to try again.`,
               },
         );
       },
@@ -497,13 +497,13 @@ export function BusinessTeamsCard() {
                                 <p className="truncate text-sm font-semibold">{invite.email}</p>
                                 <p className="mt-1 text-xs text-muted-foreground">Expires {new Date(invite.expiresAt).toLocaleDateString()}</p>
                                 <p className={cn("mt-1 text-xs", invite.deliveryStatus === "SENT" ? "text-success" : "text-destructive")}>
-                                  {invite.deliveryStatus === "SENT" ? "Email submitted" : "Email delivery failed — resend to retry"}
+                                  {invite.deliveryStatus === "SENT" ? "Email submitted" : "Email delivery failed — send again to retry"}
                                 </p>
                                 <p className="mt-1 text-xs leading-5 text-muted-foreground">{accessSummary(invite) || "No feature access"}</p>
                               </div>
                               <div className="flex shrink-0 flex-wrap gap-2">
                                 <Button type="button" size="sm" variant="outline" onClick={() => { setEditingInvite(invite.id); setEditGrants(grantValues(invite)); }}>Edit</Button>
-                                <Button type="button" size="sm" variant="outline" onClick={() => resendInvite.mutate({ id: invite.id })} disabled={isBusy}>Resend</Button>
+                                <Button type="button" size="sm" variant="outline" onClick={() => resendInvite.mutate({ id: invite.id })} disabled={isBusy}>Send again</Button>
                                 <Button type="button" size="sm" variant="ghost" className="text-destructive hover:text-destructive" onClick={() => revokeInvite.mutate({ id: invite.id })} disabled={isBusy}>Revoke</Button>
                               </div>
                             </div>

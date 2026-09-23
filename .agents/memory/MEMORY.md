@@ -33,6 +33,7 @@
 - [Legacy dashboard URL](legacy-dashboard-route.md) — keep `/dashboard` as a compatibility redirect because Clerk or older bookmarks may still target it.
 - [Clerk dashboard hydration](clerk-dashboard-hydration.md) — gate protected queries on Clerk `isLoaded` and show a loader; sign-in can redirect before the session-backed API is ready.
 - [Clerk transactional email verification](clerk-transactional-email-verification.md) — `emails.create` uses Clerk's experimental `/email` endpoint; development may return 404, so verify delivery in production.
+- [Clerk onboarding invitations](clerk-onboarding-invitations.md) — use Clerk’s supported instance invitation API for agency and teammate onboarding; the transactional email API returns 404 in production.
 - [Drizzle push and legacy schema drift](drizzle-push-legacy-drift.md) — full pushes are blocked by old QR/NFC drift; do not assume `--force` makes reconciliation non-interactive.
 - [Browser regression checks](browser-regression-checks.md) — the authenticated browser tester may be unavailable in Free mode; keep deterministic UI-state coverage in the artifact tests.
 - [Social comment identifiers](social-comment-identifiers.md) — replies must use bundle.social's stored fetched-comment ID, not the platform's external comment ID.

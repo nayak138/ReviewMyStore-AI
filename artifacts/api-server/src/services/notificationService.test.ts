@@ -10,37 +10,51 @@ import {
 
 type CreateEmail = typeof clerkClient.emails.create;
 type EmailPayload = Parameters<CreateEmail>[0];
+type CreateInvitation = typeof clerkClient.invitations.createInvitation;
+type InvitationPayload = Parameters<CreateInvitation>[0];
 
-const originalCreate = clerkClient.emails.create.bind(clerkClient.emails);
-const submitted: EmailPayload[] = [];
-let createError: Error | null = null;
-let createErrorFor: ((payload: EmailPayload) => Error | null) | null = null;
+const originalCreateEmail = clerkClient.emails.create.bind(clerkClient.emails);
+const originalCreateInvitation = clerkClient.invitations.createInvitation.bind(clerkClient.invitations);
+const submittedEmails: EmailPayload[] = [];
+const submittedInvitations: InvitationPayload[] = [];
+let createEmailError: Error | null = null;
+let createInvitationError: Error | null = null;
+let createEmailErrorFor: ((payload: EmailPayload) => Error | null) | null = null;
 
 before(() => {
   clerkClient.emails.create = (async (payload: EmailPayload) => {
-    submitted.push(payload);
-    const targetedError = createErrorFor?.(payload);
+    submittedEmails.push(payload);
+    const targetedError = createEmailErrorFor?.(payload);
     if (targetedError) throw targetedError;
-    if (createError) throw createError;
+    if (createEmailError) throw createEmailError;
     return {} as Awaited<ReturnType<CreateEmail>>;
   }) as CreateEmail;
+  clerkClient.invitations.createInvitation = (async (payload: InvitationPayload) => {
+    submittedInvitations.push(payload);
+    if (createInvitationError) throw createInvitationError;
+    return {} as Awaited<ReturnType<CreateInvitation>>;
+  }) as CreateInvitation;
 });
 
 after(() => {
-  clerkClient.emails.create = originalCreate;
+  clerkClient.emails.create = originalCreateEmail;
+  clerkClient.invitations.createInvitation = originalCreateInvitation;
 });
 
 beforeEach(() => {
-  submitted.length = 0;
-  createError = null;
-  createErrorFor = null;
+  submittedEmails.length = 0;
+  submittedInvitations.length = 0;
+  createEmailError = null;
+  createInvitationError = null;
+  createEmailErrorFor = null;
 });
 
-test("agency and teammate invitations submit through Clerk with the configured sender", async () => {
+test("agency and teammate invitations submit through Clerk with the local join URLs", async () => {
+  const expiresAt = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString();
   const agencyResult = await sendAgencyOwnerInvitationEmail({
     to: "owner@example.com",
     agencyName: "Northstar Agency",
-    expiresAt: "2026-10-07T12:00:00.000Z",
+    expiresAt,
     joinUrl: "https://5-star.ai/agency/join/agency-token",
   });
   const teamResult = await sendTeamInvitationEmail({
@@ -49,7 +63,7 @@ test("agency and teammate invitations submit through Clerk with the configured s
     businessName: "Northstar Coffee",
     inviterName: "Morgan Lee",
     invitedEmail: "teammate@example.com",
-    expiresAt: "2026-10-07T12:00:00.000Z",
+    expiresAt,
     joinUrl: "https://5-star.ai/team/join/team-token",
     grants: {
       campaignsPermission: "VIEW",
@@ -62,18 +76,23 @@ test("agency and teammate invitations submit through Clerk with the configured s
 
   assert.deepEqual(agencyResult, { sent: true });
   assert.deepEqual(teamResult, { sent: true });
-  assert.equal(submitted.length, 2);
-  assert.deepEqual(submitted.map((email) => email.from), [
-    { address: "notifications@5-star.ai" },
-    { address: "notifications@5-star.ai" },
+  assert.equal(submittedInvitations.length, 2);
+  assert.deepEqual(submittedInvitations, [
+    {
+      emailAddress: "owner@example.com",
+      expiresInDays: 14,
+      ignoreExisting: true,
+      notify: true,
+      redirectUrl: "https://5-star.ai/agency/join/agency-token",
+    },
+    {
+      emailAddress: "teammate@example.com",
+      expiresInDays: 14,
+      ignoreExisting: true,
+      notify: true,
+      redirectUrl: "https://5-star.ai/team/join/team-token",
+    },
   ]);
-  assert.deepEqual(submitted.map((email) => email.to), [
-    { address: "owner@example.com" },
-    { address: "teammate@example.com" },
-  ]);
-  assert.match(submitted[0]?.subject ?? "", /Northstar Agency/);
-  assert.match(submitted[1]?.subject ?? "", /Northstar Coffee/);
-  assert.match(submitted[1]?.text ?? "", /reviewInbox: MANAGE/);
 });
 
 test("demo-request and private-feedback alerts submit one Clerk email per recipient", async () => {
@@ -104,10 +123,10 @@ test("demo-request and private-feedback alerts submit one Clerk email per recipi
     else process.env.DEMO_ALERT_EMAILS = previousRecipients;
   }
 
-  assert.equal(submitted.length, 4);
-  assert.ok(submitted.every((email) => email.from?.address === "notifications@5-star.ai"));
+  assert.equal(submittedEmails.length, 4);
+  assert.ok(submittedEmails.every((email) => email.from?.address === "notifications@5-star.ai"));
   assert.deepEqual(
-    submitted.map((email) => email.to.address),
+    submittedEmails.map((email) => email.to.address),
     [
       "first@example.com",
       "second@example.com",
@@ -115,14 +134,14 @@ test("demo-request and private-feedback alerts submit one Clerk email per recipi
       "owner-b@example.com",
     ],
   );
-  assert.match(submitted[0]?.subject ?? "", /agency lead/);
-  assert.match(submitted[2]?.subject ?? "", /private feedback/);
+  assert.match(submittedEmails[0]?.subject ?? "", /agency lead/);
+  assert.match(submittedEmails[2]?.subject ?? "", /private feedback/);
 });
 
 test("alert delivery reports a partial result when one recipient is rejected", async () => {
   const previousRecipients = process.env.DEMO_ALERT_EMAILS;
   process.env.DEMO_ALERT_EMAILS = "good@example.com, bad@example.com";
-  createErrorFor = (payload) =>
+  createEmailErrorFor = (payload) =>
     payload.to.address === "bad@example.com"
       ? new Error("Clerk rejected this recipient")
       : null;
@@ -148,7 +167,7 @@ test("alert delivery reports a partial result when one recipient is rejected", a
 
 
 test("invitation failures return a visible delivery failure instead of throwing", async () => {
-  createError = new Error("Clerk rejected the submission");
+  createInvitationError = new Error("Clerk rejected the submission");
 
   const result = await sendTeamInvitationEmail({
     to: "failed@example.com",
@@ -168,7 +187,7 @@ test("invitation failures return a visible delivery failure instead of throwing"
 });
 
 test("alert failures are contained so demo and feedback submissions can complete", async () => {
-  createError = new Error("Clerk unavailable");
+  createEmailError = new Error("Clerk unavailable");
   const previousRecipients = process.env.DEMO_ALERT_EMAILS;
   process.env.DEMO_ALERT_EMAILS = "alerts@example.com";
 
