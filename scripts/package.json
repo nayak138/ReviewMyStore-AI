@@ -4,7 +4,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "typecheck": "tsc -p tsconfig.json --noEmit"
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "ensure-team-schema": "tsx ensure-team-schema.ts",
+    "verify-team-schema": "tsx verify-team-schema.ts"
   },
   "dependencies": {
     "@workspace/db": "workspace:*"
