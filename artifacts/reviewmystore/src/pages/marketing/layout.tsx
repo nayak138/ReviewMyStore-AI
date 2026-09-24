@@ -134,6 +134,7 @@ export function MarketingLayout({ children }: { children: ReactNode }) {
               { label: "Resource library", href: "/resources" },
               { label: "Blog", href: "/blog" },
               { label: "About 5-Star.AI", href: "/about" },
+              { label: "Docs", href: "https://5-star-ai.notion.site/5-STAR-AI-DOCS-3e5e55dd92d580d79d1ecb93dea84e2d" },
             ]} goToSection={goToSection} />
             <FooterColumn title="Legal" links={[
               { label: "Privacy", href: "/privacy" },
@@ -163,6 +164,7 @@ function FooterColumn({ title, links, goToSection }: {
         {links.map((link) => (
           <li key={link.label}>
             {link.anchor ? <a href={link.href} onClick={(e) => goToSection(e, link.anchor!)} className="transition-colors hover:text-primary">{link.label}</a> :
+              link.href.startsWith("https://") ? <a href={link.href} target="_blank" rel="noopener noreferrer" className="transition-colors hover:text-primary">{link.label}</a> :
               link.href.startsWith("mailto:") ? <a href={link.href} className="transition-colors hover:text-primary">{link.label}</a> :
                 <Link href={link.href} className="transition-colors hover:text-primary">{link.label}</Link>}
           </li>
