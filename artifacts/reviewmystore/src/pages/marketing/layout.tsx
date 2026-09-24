@@ -134,7 +134,7 @@ export function MarketingLayout({ children }: { children: ReactNode }) {
               { label: "Resource library", href: "/resources" },
               { label: "Blog", href: "/blog" },
               { label: "About 5-Star.AI", href: "/about" },
-              { label: "Docs", href: "https://5-star-ai.notion.site/5-STAR-AI-DOCS-3e5e55dd92d580d79d1ecb93dea84e2d" },
+              { label: "Docs", href: "https://docs.5-star.ai/" },
             ]} goToSection={goToSection} />
             <FooterColumn title="Legal" links={[
               { label: "Privacy", href: "/privacy" },

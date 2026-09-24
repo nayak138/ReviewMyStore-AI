@@ -4,7 +4,7 @@ import { cleanup, render, screen } from "@testing-library/react";
 import { MarketingLayout } from "./layout";
 
 const docsUrl =
-  "https://5-star-ai.notion.site/5-STAR-AI-DOCS-3e5e55dd92d580d79d1ecb93dea84e2d";
+  "https://docs.5-star.ai/";
 
 vi.mock("wouter", () => ({
   Link: ({ href, children, ...props }: AnchorHTMLAttributes<HTMLAnchorElement>) => (
