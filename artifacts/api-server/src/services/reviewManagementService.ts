@@ -25,10 +25,14 @@ import { generateReviewReplyDraft } from "./aiService";
 import {
   BusinessUsageLimitError,
   completeBusinessUsageReservation,
+  completeSharedReviewImportReservation,
   getBusinessUsageHistory,
   getBusinessUsageSummary,
   releaseBusinessUsageReservation,
+  releaseSharedReviewImportReservation,
   reserveBusinessUsage,
+  reserveSharedReviewImportCapacity,
+  SharedReviewImportLimitError,
 } from "./businessUsageService";
 import { logger } from "../lib/logger";
 
@@ -865,6 +869,7 @@ export async function selectReviewProviderLocation(
   organizationId: string,
   businessIdOrLocationId: string,
   maybeLocationId?: string,
+  usageNow?: Date,
 ) {
   const businessId = maybeLocationId ? businessIdOrLocationId : undefined;
   const locationId = maybeLocationId ?? businessIdOrLocationId;
@@ -873,6 +878,7 @@ export async function selectReviewProviderLocation(
       organizationId,
       businessId,
       locationId,
+      usageNow,
     ),
   );
 }
@@ -881,6 +887,7 @@ async function selectReviewProviderLocationUnlocked(
   organizationId: string,
   businessId: string | undefined,
   locationId: string,
+  usageNow?: Date,
 ) {
   const connection = await getRequiredConnection(organizationId, businessId);
   await bndleRequest("social-account/set-channel", {
@@ -907,7 +914,7 @@ async function selectReviewProviderLocationUnlocked(
         .where(eq(providerConnectionsTable.id, connection.id));
     });
   }
-  return syncReviewProviderUnlocked(organizationId, businessId);
+  return syncReviewProviderUnlocked(organizationId, businessId, usageNow);
 }
 
 /**
@@ -1038,33 +1045,89 @@ async function startReviewImport(
   teamId: string,
   organizationId?: string,
   businessId?: string,
+  usageNow = new Date(),
 ): Promise<string | null> {
-  let reservationId: string | null = null;
-  const reserve = async (amount: number) => {
-    if (!organizationId || !businessId) return;
-    const reservation = await reserveBusinessUsage({
-      organizationId,
-      businessId,
-      metric: "GOOGLE_REVIEW_IMPORTS",
-      amount,
+  let businessReservationId: string | null = null;
+  let sharedReservationId: string | null = null;
+  const reserve = async (requestedAmount: number) => {
+    const sharedReservation = await reserveSharedReviewImportCapacity({
+      amount: requestedAmount,
+      now: usageNow,
     });
-    reservationId = reservation.id;
+    sharedReservationId = sharedReservation.id;
+    try {
+      if (organizationId && businessId) {
+        const businessReservation = await reserveBusinessUsage({
+          organizationId,
+          businessId,
+          metric: "GOOGLE_REVIEW_IMPORTS",
+          amount: sharedReservation.amount,
+          now: usageNow,
+        });
+        businessReservationId = businessReservation.id;
+      }
+      return sharedReservation.amount;
+    } catch (error) {
+      await release();
+      throw error;
+    }
   };
   const complete = async () => {
-    if (reservationId) await completeBusinessUsageReservation(reservationId);
-    reservationId = null;
+    if (businessReservationId) {
+      await completeBusinessUsageReservation(businessReservationId);
+      businessReservationId = null;
+    }
+    if (sharedReservationId) {
+      await completeSharedReviewImportReservation(sharedReservationId);
+      sharedReservationId = null;
+    }
   };
   const release = async () => {
-    if (reservationId) await releaseBusinessUsageReservation(reservationId);
-    reservationId = null;
+    const businessIdToRelease = businessReservationId;
+    const sharedIdToRelease = sharedReservationId;
+    const [businessResult, sharedResult] = await Promise.allSettled([
+      businessIdToRelease
+        ? releaseBusinessUsageReservation(businessIdToRelease)
+        : Promise.resolve(false),
+      sharedIdToRelease
+        ? releaseSharedReviewImportReservation(sharedIdToRelease)
+        : Promise.resolve(false),
+    ]);
+    if (businessIdToRelease && businessResult.status === "fulfilled") {
+      businessReservationId = null;
+    }
+    if (sharedIdToRelease && sharedResult.status === "fulfilled") {
+      sharedReservationId = null;
+    }
+    if (businessResult.status === "rejected") throw businessResult.reason;
+    if (sharedResult.status === "rejected") throw sharedResult.reason;
+  };
+
+  let providerAccepted = false;
+  const startReservedImport = async (requestedAmount: number) => {
+    const amount = await reserve(requestedAmount);
+    try {
+      await requestImport(teamId, amount);
+    } catch (error) {
+      await release();
+      throw error;
+    }
+    // If persistence fails after the provider accepted the job, keep pending
+    // reservations in place. Releasing them could let another business
+    // overspend capacity already accepted by the shared provider account.
+    providerAccepted = true;
+    await complete();
   };
 
   try {
-    await reserve(IMPORT_BATCH_COUNT);
-    await requestImport(teamId, IMPORT_BATCH_COUNT);
-    await complete();
+    await startReservedImport(IMPORT_BATCH_COUNT);
     return null;
   } catch (error) {
+    if (providerAccepted) throw error;
+    if (error instanceof SharedReviewImportLimitError) {
+      await release();
+      return error.message;
+    }
     if (error instanceof ReviewProviderError) {
       if (error.upstreamStatus === 409) {
         await release();
@@ -1076,18 +1139,20 @@ async function startReviewImport(
         const remaining = parseRemainingQuota(error.providerMessage);
         if (remaining && remaining > 0) {
           try {
-            await release();
-            await reserve(remaining);
-            await requestImport(teamId, remaining);
-            await complete();
+            await startReservedImport(remaining);
             return null;
           } catch (retryError) {
+            if (providerAccepted) throw retryError;
             if (
               retryError instanceof ReviewProviderError &&
               retryError.upstreamStatus === 409
             ) {
               await release();
               return null; // already running
+            }
+            if (retryError instanceof SharedReviewImportLimitError) {
+              await release();
+              return retryError.message;
             }
             await release();
             logger.warn(
@@ -1217,24 +1282,29 @@ async function upsertManagedReview(
     });
 }
 
-export async function syncReviewProvider(organizationId: string) {
+export async function syncReviewProvider(
+  organizationId: string,
+  usageNow?: Date,
+) {
   return withProviderOperationLock(organizationId, () =>
-    syncReviewProviderUnlocked(organizationId),
+    syncReviewProviderUnlocked(organizationId, undefined, usageNow),
   );
 }
 
 export async function syncReviewProviderForBusiness(
   organizationId: string,
   businessId: string,
+  usageNow?: Date,
 ) {
   return withProviderOperationLock(organizationId, () =>
-    syncReviewProviderUnlocked(organizationId, businessId),
+    syncReviewProviderUnlocked(organizationId, businessId, usageNow),
   );
 }
 
 async function syncReviewProviderUnlocked(
   organizationId: string,
   businessId?: string,
+  usageNow?: Date,
 ) {
   const connection = await getRequiredConnection(organizationId, businessId);
   const teamId = connection.externalProfileId;
@@ -1282,7 +1352,7 @@ async function syncReviewProviderUnlocked(
     }
 
     const importNote =
-      (await startReviewImport(teamId, organizationId, businessId)) ??
+      (await startReviewImport(teamId, organizationId, businessId, usageNow)) ??
       (await waitForReviewImport(teamId));
 
     const { reviews: rawReviews, remainingCapacity } =

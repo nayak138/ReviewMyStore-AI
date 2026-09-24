@@ -25,3 +25,4 @@ export * from "./businessMemberships";
 export * from "./teamInvitations";
 export * from "./teamAuditEvents";
 export * from "./notificationDelivery";
+export * from "./sharedProviderUsage";

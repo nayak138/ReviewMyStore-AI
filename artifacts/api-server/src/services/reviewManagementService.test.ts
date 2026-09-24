@@ -21,11 +21,16 @@ import {
   providerConnectionsTable,
   reviewAuditEventsTable,
   reviewLocationsTable,
+  sharedProviderUsagePeriodsTable,
   usersTable,
 } from "@workspace/db";
 import {
+  completeSharedReviewImportReservation,
   completeBusinessUsageReservation,
+  releaseSharedReviewImportReservation,
   reserveBusinessUsage,
+  reserveSharedReviewImportCapacity,
+  SharedReviewImportLimitError,
 } from "./businessUsageService";
 import {
   ManagedReviewNotFoundError,
@@ -41,6 +46,7 @@ import {
   selectReviewProviderLocation,
   startReviewProviderConnection,
   syncReviewProvider,
+  syncReviewProviderForBusiness,
 } from "./reviewManagementService.ts";
 
 /**
@@ -63,7 +69,31 @@ import {
  */
 
 const runId = randomUUID().slice(0, 8);
+const testUsageNow = new Date(
+  Date.UTC(2200, Number.parseInt(runId.slice(0, 3), 16), 15),
+);
+const sharedCapacityTestNow = new Date(
+  Date.UTC(2600, Number.parseInt(runId.slice(0, 3), 16), 15),
+);
 const createdOrgIds: string[] = [];
+
+async function getSharedReviewUsage(now: Date) {
+  const periodStart = new Date(now);
+  periodStart.setUTCDate(1);
+  periodStart.setUTCHours(0, 0, 0, 0);
+  const [row] = await db
+    .select()
+    .from(sharedProviderUsagePeriodsTable)
+    .where(
+      and(
+        eq(sharedProviderUsagePeriodsTable.providerAccount, "BNDLE_SOCIAL"),
+        eq(sharedProviderUsagePeriodsTable.metric, "GOOGLE_REVIEW_IMPORTS"),
+        eq(sharedProviderUsagePeriodsTable.periodStart, periodStart),
+      ),
+    )
+    .limit(1);
+  return { used: row?.used ?? 0, reserved: row?.reserved ?? 0 };
+}
 
 async function createOrg(label: string) {
   const [org] = await db
@@ -306,6 +336,98 @@ test("provider 429 maps to REVIEW_PROVIDER_RATE_LIMITED", async () => {
 // Provider sync normalization
 // ---------------------------------------------------------------------------
 
+test("shared review-import capacity is combined across businesses", async () => {
+  const reservations: string[] = [];
+  try {
+    const businessOne = await reserveSharedReviewImportCapacity({
+      amount: 175,
+      now: sharedCapacityTestNow,
+    });
+    reservations.push(businessOne.id);
+    const businessTwo = await reserveSharedReviewImportCapacity({
+      amount: 50,
+      now: sharedCapacityTestNow,
+    });
+    reservations.push(businessTwo.id);
+
+    assert.equal(businessOne.amount, 175);
+    assert.equal(
+      businessTwo.amount,
+      25,
+      "the second business receives only the shared capacity still available",
+    );
+    assert.deepEqual(await getSharedReviewUsage(sharedCapacityTestNow), {
+      used: 0,
+      reserved: 200,
+    });
+    await assert.rejects(
+      () =>
+        reserveSharedReviewImportCapacity({
+          amount: 1,
+          now: sharedCapacityTestNow,
+        }),
+      SharedReviewImportLimitError,
+    );
+  } finally {
+    await Promise.all(
+      reservations.map((id) => releaseSharedReviewImportReservation(id)),
+    );
+  }
+  assert.deepEqual(await getSharedReviewUsage(sharedCapacityTestNow), {
+    used: 0,
+    reserved: 0,
+  });
+});
+
+test("concurrent businesses cannot reserve more than the shared monthly limit", async () => {
+  const outcomes = await Promise.all(
+    Array.from({ length: 6 }, async () => {
+      try {
+        return {
+          reservation: await reserveSharedReviewImportCapacity({
+            amount: 50,
+            now: sharedCapacityTestNow,
+          }),
+        };
+      } catch (error) {
+        return { error };
+      }
+    }),
+  );
+  const reservations = outcomes.flatMap((outcome) => {
+    if ("reservation" in outcome && outcome.reservation) {
+      return [outcome.reservation];
+    }
+    return [];
+  });
+  const failures = outcomes.filter((outcome) => "error" in outcome);
+
+  try {
+    assert.equal(reservations.length, 4);
+    assert.equal(
+      reservations.reduce(
+        (total, reservation) => total + reservation.amount,
+        0,
+      ),
+      200,
+    );
+    assert.equal(failures.length, 2);
+    assert.ok(
+      failures.every(
+        ({ error }) => error instanceof SharedReviewImportLimitError,
+      ),
+    );
+    assert.deepEqual(await getSharedReviewUsage(sharedCapacityTestNow), {
+      used: 0,
+      reserved: 200,
+    });
+  } finally {
+    await Promise.all(
+      reservations.map(({ id }) => releaseSharedReviewImportReservation(id)),
+    );
+  }
+});
+
 function installSyncHandler(
   teamId: string,
   options: { failImportStart?: boolean } = {},
@@ -385,13 +507,137 @@ function installSyncHandler(
   };
 }
 
+test("sync clamps a final partial batch and explains when shared capacity is exhausted", async () => {
+  const seed = await reserveSharedReviewImportCapacity({
+    amount: 190,
+    now: sharedCapacityTestNow,
+  });
+  await completeSharedReviewImportReservation(seed.id);
+
+  const nearLimitOrg = await createOrg("shared-near-limit");
+  const exhaustedOrg = await createOrg("shared-exhausted");
+  const nearLimitTeamId = `team-shared-near-${runId}`;
+  const exhaustedTeamId = `team-shared-full-${runId}`;
+  const [nearLimitBusiness] = await db
+    .insert(businessesTable)
+    .values({
+      organizationId: nearLimitOrg.id,
+      name: "Near-limit store",
+      category: "Retail",
+      slug: `shared-near-${runId}`,
+    })
+    .returning();
+  const [exhaustedBusiness] = await db
+    .insert(businessesTable)
+    .values({
+      organizationId: exhaustedOrg.id,
+      name: "Exhausted store",
+      category: "Retail",
+      slug: `shared-full-${runId}`,
+    })
+    .returning();
+  const [exhaustedConnection] = await db
+    .insert(providerConnectionsTable)
+    .values({
+      organizationId: exhaustedOrg.id,
+      businessId: exhaustedBusiness.id,
+      provider: "BNDLE",
+      externalProfileId: exhaustedTeamId,
+      status: "CONNECTED",
+    })
+    .returning();
+  await db.insert(providerConnectionsTable).values({
+    organizationId: nearLimitOrg.id,
+    businessId: nearLimitBusiness.id,
+    provider: "BNDLE",
+    externalProfileId: nearLimitTeamId,
+    status: "CONNECTED",
+  });
+  let importStarts = 0;
+
+  providerFetch.handler = (url, init) => {
+    const method = (init.method ?? "GET").toUpperCase();
+    const path = url.pathname;
+    const teamId = path.endsWith(`/team/${nearLimitTeamId}`)
+      ? nearLimitTeamId
+      : path.endsWith(`/team/${exhaustedTeamId}`)
+        ? exhaustedTeamId
+        : null;
+    if (teamId && method === "GET") {
+      return {
+        body: {
+          socialAccounts: [
+            {
+              id: `sa-${teamId}`,
+              type: "GOOGLE_BUSINESS",
+              displayName: "Test Store",
+              externalId: `channel-${teamId}`,
+              channels: [{ id: `channel-${teamId}`, name: "Test Store" }],
+            },
+          ],
+        },
+      };
+    }
+    if (path.endsWith("/misc/google-business/reviews/import")) {
+      if (method === "POST") {
+        importStarts += 1;
+        const body = JSON.parse(String(init.body)) as {
+          teamId: string;
+          count: number;
+        };
+        assert.equal(
+          body.count,
+          10,
+          "only the shared remaining capacity is requested",
+        );
+        assert.equal(body.teamId, nearLimitTeamId);
+        return { body: {} };
+      }
+      return { body: { imports: [{ status: "COMPLETED" }] } };
+    }
+    if (path.endsWith("/misc/google-business/reviews") && method === "GET") {
+      return { body: { total: 0, reviews: [] } };
+    }
+    throw new Error(`Unexpected provider request: ${method} ${path}`);
+  };
+
+  await syncReviewProviderForBusiness(
+    nearLimitOrg.id,
+    nearLimitBusiness.id,
+    sharedCapacityTestNow,
+  );
+  assert.equal(importStarts, 1);
+  assert.deepEqual(await getSharedReviewUsage(sharedCapacityTestNow), {
+    used: 200,
+    reserved: 0,
+  });
+
+  await syncReviewProviderForBusiness(
+    exhaustedOrg.id,
+    exhaustedBusiness.id,
+    sharedCapacityTestNow,
+  );
+  const [connection] = await db
+    .select()
+    .from(providerConnectionsTable)
+    .where(eq(providerConnectionsTable.id, exhaustedConnection.id));
+  assert.equal(
+    importStarts,
+    1,
+    "a full shared allowance must not start another import",
+  );
+  assert.equal(connection.status, "CONNECTED");
+  assert.match(connection.lastError ?? "", /shared bundle\.social.*exhausted/i);
+  assert.match(connection.lastError ?? "", /administrator|try again/i);
+});
+
 test("sync normalizes provider payloads into local locations and reviews", async () => {
   const org = await createOrg("sync");
   const teamId = `team-sync-${runId}`;
   const connection = await createConnection(org.id, teamId);
   installSyncHandler(teamId);
 
-  const dashboard = await syncReviewProvider(org.id);
+  const dashboard = await syncReviewProvider(org.id, testUsageNow);
 
   // Locations: only the GOOGLE_BUSINESS account is mirrored.
   const locations = await db
@@ -456,15 +702,20 @@ test("sync normalizes provider payloads into local locations and reviews", async
     needsReply: 3,
     replied: 1,
   });
+  assert.equal((await getSharedReviewUsage(testUsageNow)).used, 50);
 
   // Re-running the sync upserts instead of duplicating.
   installSyncHandler(teamId);
-  await syncReviewProvider(org.id);
+  await syncReviewProvider(org.id, testUsageNow);
   const reviewsAfter = await db
     .select()
     .from(managedReviewsTable)
     .where(eq(managedReviewsTable.organizationId, org.id));
   assert.equal(reviewsAfter.length, 4, "second sync must not duplicate reviews");
+  assert.deepEqual(await getSharedReviewUsage(testUsageNow), {
+    used: 100,
+    reserved: 0,
+  });
 });
 
 test("an import failure surfaces as a note while previously imported reviews still sync", async () => {
@@ -473,7 +724,13 @@ test("an import failure surfaces as a note while previously imported reviews sti
   const connection = await createConnection(org.id, teamId);
   installSyncHandler(teamId, { failImportStart: true });
 
-  const dashboard = await syncReviewProvider(org.id);
+  const beforeUsage = await getSharedReviewUsage(testUsageNow);
+  const dashboard = await syncReviewProvider(org.id, testUsageNow);
+  assert.deepEqual(
+    await getSharedReviewUsage(testUsageNow),
+    beforeUsage,
+    "a failed provider import must release its shared reservation",
+  );
   assert.equal(dashboard.summary.totalReviews, 4, "existing reviews are still served");
 
   const [conn] = await db
@@ -851,7 +1108,12 @@ test("selecting a location sets the channel then imports it via the normal sync"
     throw new Error(`Unexpected provider request: ${method} ${path}`);
   };
 
-  const dashboard = await selectReviewProviderLocation(org.id, "ch-1");
+  const dashboard = await selectReviewProviderLocation(
+    org.id,
+    "ch-1",
+    undefined,
+    testUsageNow,
+  );
   assert.ok(setChannelCalled, "must select the channel before syncing");
   assert.equal(dashboard.connection.status, "CONNECTED");
   assert.equal(dashboard.locations.length, 1);

@@ -4,6 +4,8 @@ import {
   businessUsageReservationsTable,
   businessesTable,
   db,
+  sharedProviderUsagePeriodsTable,
+  sharedProviderUsageReservationsTable,
   type BusinessUsageMetric,
 } from "@workspace/db";
 import type { PgTransaction } from "drizzle-orm/pg-core";
@@ -64,6 +66,232 @@ export const BUSINESS_USAGE_CONFIG: Record<
 };
 
 const METRICS = Object.keys(BUSINESS_USAGE_CONFIG) as BusinessUsageMetric[];
+const SHARED_REVIEW_IMPORT_ACCOUNT = "BNDLE_SOCIAL";
+const SHARED_REVIEW_IMPORT_METRIC = "GOOGLE_REVIEW_IMPORTS";
+export const SHARED_REVIEW_IMPORT_MONTHLY_LIMIT = 200;
+
+export class SharedReviewImportLimitError extends Error {
+  readonly status = 429;
+  readonly code = "SHARED_PROVIDER_USAGE_LIMIT_REACHED";
+
+  constructor(
+    readonly limit: number,
+    readonly used: number,
+    readonly requested: number,
+    readonly periodEnd: Date,
+  ) {
+    super(
+      `The shared bundle.social review-import allowance is exhausted for this month. Existing reviews remain available; ask your administrator to increase the provider import allowance or try again after it resets on ${periodEnd.toISOString()}.`,
+    );
+    this.name = "SharedReviewImportLimitError";
+  }
+}
+
+export type SharedReviewImportReservation = {
+  id: string;
+  amount: number;
+  remaining: number;
+  periodStart: Date;
+  periodEnd: Date;
+};
+
+function monthlyPeriod(now: Date) {
+  const start = new Date(now);
+  start.setUTCDate(1);
+  start.setUTCHours(0, 0, 0, 0);
+  const end = new Date(start);
+  end.setUTCMonth(end.getUTCMonth() + 1);
+  return { start, end };
+}
+
+async function ensureSharedReviewImportPeriod(tx: UsageTransaction, now: Date) {
+  const period = monthlyPeriod(now);
+  await tx
+    .insert(sharedProviderUsagePeriodsTable)
+    .values({
+      providerAccount: SHARED_REVIEW_IMPORT_ACCOUNT,
+      metric: SHARED_REVIEW_IMPORT_METRIC,
+      periodStart: period.start,
+      periodEnd: period.end,
+      limit: SHARED_REVIEW_IMPORT_MONTHLY_LIMIT,
+    })
+    .onConflictDoNothing({
+      target: [
+        sharedProviderUsagePeriodsTable.providerAccount,
+        sharedProviderUsagePeriodsTable.metric,
+        sharedProviderUsagePeriodsTable.periodStart,
+      ],
+    });
+
+  const [row] = await tx
+    .select()
+    .from(sharedProviderUsagePeriodsTable)
+    .where(
+      and(
+        eq(
+          sharedProviderUsagePeriodsTable.providerAccount,
+          SHARED_REVIEW_IMPORT_ACCOUNT,
+        ),
+        eq(sharedProviderUsagePeriodsTable.metric, SHARED_REVIEW_IMPORT_METRIC),
+        eq(sharedProviderUsagePeriodsTable.periodStart, period.start),
+      ),
+    )
+    .limit(1);
+  if (!row)
+    throw new Error("Could not initialize the shared provider usage period.");
+  return row;
+}
+
+/**
+ * The shared bundle.social account has one monthly import pool across every
+ * business and organization. Lock only the period row during reservation;
+ * provider network requests happen after this transaction commits.
+ */
+export async function reserveSharedReviewImportCapacity(input: {
+  amount: number;
+  now?: Date;
+}): Promise<SharedReviewImportReservation> {
+  if (!Number.isInteger(input.amount) || input.amount < 1) {
+    throw new Error(
+      "Shared provider usage reservation amount must be a positive integer.",
+    );
+  }
+  const now = input.now ?? new Date();
+
+  return db.transaction(async (tx) => {
+    const ensured = await ensureSharedReviewImportPeriod(tx, now);
+    const [period] = await tx
+      .select()
+      .from(sharedProviderUsagePeriodsTable)
+      .where(eq(sharedProviderUsagePeriodsTable.id, ensured.id))
+      .for("update")
+      .limit(1);
+    if (!period)
+      throw new Error("Shared provider usage period no longer exists.");
+
+    const available = Math.max(0, period.limit - period.used - period.reserved);
+    const amount = Math.min(input.amount, available);
+    if (amount === 0) {
+      throw new SharedReviewImportLimitError(
+        period.limit,
+        period.used + period.reserved,
+        input.amount,
+        period.periodEnd,
+      );
+    }
+
+    const [updated] = await tx
+      .update(sharedProviderUsagePeriodsTable)
+      .set({
+        reserved: period.reserved + amount,
+        updatedAt: new Date(),
+      })
+      .where(eq(sharedProviderUsagePeriodsTable.id, period.id))
+      .returning();
+    if (!updated)
+      throw new Error("Could not reserve shared provider capacity.");
+
+    const [reservation] = await tx
+      .insert(sharedProviderUsageReservationsTable)
+      .values({
+        providerAccount: SHARED_REVIEW_IMPORT_ACCOUNT,
+        metric: SHARED_REVIEW_IMPORT_METRIC,
+        periodStart: period.periodStart,
+        amount,
+      })
+      .returning();
+    if (!reservation) {
+      throw new Error("Could not create a shared provider usage reservation.");
+    }
+
+    return {
+      id: reservation.id,
+      amount,
+      remaining: updated.limit - updated.used - updated.reserved,
+      periodStart: updated.periodStart,
+      periodEnd: updated.periodEnd,
+    };
+  });
+}
+
+async function settleSharedReviewImportReservation(
+  reservationId: string,
+  finalStatus: "SUCCEEDED" | "FAILED",
+) {
+  return db.transaction(async (tx) => {
+    const [reservation] = await tx
+      .select()
+      .from(sharedProviderUsageReservationsTable)
+      .where(
+        and(
+          eq(sharedProviderUsageReservationsTable.id, reservationId),
+          eq(sharedProviderUsageReservationsTable.status, "PENDING"),
+        ),
+      )
+      .for("update")
+      .limit(1);
+    if (!reservation) return false;
+
+    const [period] = await tx
+      .select()
+      .from(sharedProviderUsagePeriodsTable)
+      .where(
+        and(
+          eq(
+            sharedProviderUsagePeriodsTable.providerAccount,
+            reservation.providerAccount,
+          ),
+          eq(sharedProviderUsagePeriodsTable.metric, reservation.metric),
+          eq(
+            sharedProviderUsagePeriodsTable.periodStart,
+            reservation.periodStart,
+          ),
+        ),
+      )
+      .for("update")
+      .limit(1);
+    if (!period) {
+      throw new Error(
+        "Shared provider usage period for reservation no longer exists.",
+      );
+    }
+    if (period.reserved < reservation.amount) {
+      throw new Error(
+        "Shared provider usage reservation exceeds reserved capacity.",
+      );
+    }
+
+    await tx
+      .update(sharedProviderUsagePeriodsTable)
+      .set({
+        used:
+          finalStatus === "SUCCEEDED"
+            ? sql`${sharedProviderUsagePeriodsTable.used} + ${reservation.amount}`
+            : undefined,
+        reserved: period.reserved - reservation.amount,
+        updatedAt: new Date(),
+      })
+      .where(eq(sharedProviderUsagePeriodsTable.id, period.id));
+    await tx
+      .update(sharedProviderUsageReservationsTable)
+      .set({ status: finalStatus, updatedAt: new Date() })
+      .where(
+        and(
+          eq(sharedProviderUsageReservationsTable.id, reservationId),
+          eq(sharedProviderUsageReservationsTable.status, "PENDING"),
+        ),
+      );
+    return true;
+  });
+}
+
+export function completeSharedReviewImportReservation(reservationId: string) {
+  return settleSharedReviewImportReservation(reservationId, "SUCCEEDED");
+}
+
+export function releaseSharedReviewImportReservation(reservationId: string) {
+  return settleSharedReviewImportReservation(reservationId, "FAILED");
+}
 
 export class BusinessUsageLimitError extends Error {
   readonly status = 429;
