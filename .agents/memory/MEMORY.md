@@ -42,3 +42,4 @@
 - [Owner authorization compatibility](owner-authorization-compatibility.md) — owner-scoped access checks must not query additive team-membership tables, so legacy databases keep existing owner flows working during rollout.
 - [Replit feedback widget](replit-feedback-widget.md) — the published-app feedback panel and badge are platform-injected, not application source.
 - [Clerk branding replacement](clerk-branding-replacement.md) — replace the logo directly; the Remove flow can report missing organization permission even when dashboard access is authorized.
+- [Notion public-page publishing](notion-public-page-publishing.md) — the API can create/edit pages but cannot toggle Notion’s “Publish to web” setting.

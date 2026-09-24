@@ -42,6 +42,19 @@ const mocks = vi.hoisted(() => ({
       profileUrl: string | null;
       connected: boolean;
     }>,
+    usage: [
+      {
+        metric: "SOCIAL_POSTS",
+        label: "Social posts",
+        window: "DAILY",
+        used: 2,
+        reserved: 1,
+        limit: 50,
+        remaining: 47,
+        periodEnd: "2026-08-21T00:00:00Z",
+      },
+    ] as Array<Record<string, unknown>>,
+    usageHistory: [] as Array<Record<string, unknown>>,
   },
 }));
 
@@ -334,6 +347,21 @@ describe("Meta callback recovery", () => {
 });
 
 describe("workspace layout", () => {
+  it("hides usage and explanatory notices while preserving channel and publishing controls", async () => {
+    renderSocialMedia();
+
+    expect(await screen.findByTestId("social-composer")).toBeInTheDocument();
+    expect(screen.queryByTestId("social-usage")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("social-reconnect-guide")).not.toBeInTheDocument();
+    expect(screen.queryByText("About media")).not.toBeInTheDocument();
+    expect(
+      screen.queryByText(/Select an available Page or profile to attach it/),
+    ).not.toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Connected channels" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Add a channel" })).toBeInTheDocument();
+    expect(screen.getByTestId("button-publish-post")).toBeInTheDocument();
+  });
+
   it("renders an explicit empty queue state for an authenticated business", async () => {
     renderSocialMedia();
 

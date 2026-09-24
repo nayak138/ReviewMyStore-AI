@@ -10,8 +10,6 @@ import {
   CheckCircle2,
   Clock3,
   Facebook,
-  Info,
-  History,
   Instagram,
   Link2,
   Loader2,
@@ -669,72 +667,6 @@ export default function SocialMedia() {
 
         {selectedBusinessId && (
           <>
-            {dashboard?.usage?.length ? (
-              <section className="rounded-2xl border border-border bg-card p-4 shadow-sm" data-testid="social-usage">
-                <div className="mb-3 flex items-center justify-between gap-3">
-                  <div>
-                    <h2 className="text-sm font-semibold">Business usage</h2>
-                    <p className="mt-1 text-xs text-muted-foreground">App allowances are shared across this business's connected channels.</p>
-                  </div>
-                  <Badge variant="secondary">₹200/month plan</Badge>
-                </div>
-                <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-                  {dashboard.usage
-                    .filter((item) => ["SOCIAL_POSTS", "SOCIAL_COMMENT_IMPORTS", "SOCIAL_COMMENT_REPLIES"].includes(item.metric))
-                    .map((item) => (
-                      <div key={item.metric} className="rounded-xl border border-border bg-secondary/30 p-3" data-testid={`usage-${item.metric.toLowerCase()}`}>
-                        <div className="flex items-center justify-between gap-2 text-xs">
-                          <span className="font-medium">{item.label}</span>
-                          <span className="text-muted-foreground">{item.window === "DAILY" ? "Daily" : "Monthly"}</span>
-                        </div>
-                        <div className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
-                          <span className="text-muted-foreground">Used <strong className="text-foreground">{item.used}</strong></span>
-                          <span className="text-muted-foreground">Reserved <strong className="text-foreground">{item.reserved}</strong></span>
-                          <span className="text-muted-foreground">Limit <strong className="text-foreground">{item.limit}</strong></span>
-                          <span className="text-muted-foreground">Remaining <strong className="text-foreground">{item.remaining}</strong></span>
-                        </div>
-                        <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-muted">
-                          <div className="h-full rounded-full bg-primary" style={{ width: `${Math.min(100, (item.used + item.reserved) / item.limit * 100)}%` }} />
-                        </div>
-                        <p className="mt-2 text-[11px] text-muted-foreground">
-                          Resets {formatDate(item.periodEnd, true)}
-                        </p>
-                      </div>
-                    ))}
-                </div>
-                <div className="mt-4 border-t border-border pt-4">
-                  <div className="mb-2 flex items-center gap-2">
-                    <History className="h-4 w-4 text-muted-foreground" />
-                    <h3 className="text-sm font-semibold">Recent usage history</h3>
-                  </div>
-                  {dashboard.usageHistory?.length ? (
-                    <div className="divide-y divide-border rounded-xl border border-border">
-                      {dashboard.usageHistory
-                        .filter((item) => ["SOCIAL_POSTS", "SOCIAL_COMMENT_IMPORTS", "SOCIAL_COMMENT_REPLIES"].includes(item.metric))
-                        .map((item) => (
-                          <div key={item.id} className="flex flex-wrap items-center justify-between gap-2 px-3 py-2.5 text-xs">
-                            <div>
-                              <span className="font-medium">{item.label}</span>
-                              <span className="ml-2 text-muted-foreground">{formatDate(item.createdAt, true)}</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <span className="text-muted-foreground">{item.amount} {item.amount === 1 ? "unit" : "units"}</span>
-                              <Badge variant={item.status === "SUCCEEDED" ? "secondary" : item.status === "FAILED" ? "destructive" : "outline"}>
-                                {item.status === "SUCCEEDED" ? "Completed" : item.status === "FAILED" ? "Released" : "In progress"}
-                              </Badge>
-                            </div>
-                          </div>
-                        ))}
-                    </div>
-                  ) : (
-                    <p className="text-xs text-muted-foreground">No social usage has been recorded for this business yet.</p>
-                  )}
-                </div>
-                <p className="mt-3 text-[11px] text-muted-foreground">
-                  These are 5-STAR.AI allowances. Facebook, Instagram, and Threads may apply separate provider limits that are not included here.
-                </p>
-              </section>
-            ) : null}
              <section className="grid min-w-0 items-stretch gap-6 lg:grid-cols-2" data-testid="social-channel-grid">
               <Card className="flex h-full min-w-0 flex-col overflow-hidden border-primary/15 bg-primary/[0.035]">
                 <CardHeader className="border-b border-border/70 pb-4">
@@ -768,13 +700,6 @@ export default function SocialMedia() {
                     <CardDescription>Authorize Meta once, then choose the exact Page or profile for this business.</CardDescription>
                  </CardHeader>
                  <CardContent className="space-y-3">
-                   <div className="flex gap-3 rounded-xl border border-sky-500/20 bg-sky-500/[0.06] p-3 text-xs leading-relaxed text-sky-950 dark:text-sky-100" data-testid="social-reconnect-guide">
-                     <Info className="mt-0.5 h-4 w-4 shrink-0 text-sky-700 dark:text-sky-300" aria-hidden="true" />
-                     <div>
-                       <p className="font-semibold">Connected the wrong Meta account?</p>
-                       <p className="mt-0.5 text-sky-950/75 dark:text-sky-100/75">Use Reconnect access below. It clears the old provider login before opening Meta again, so you can authorize the correct account.</p>
-                     </div>
-                   </div>
                    <RadioGroup
                      value={accountPickerPlatform}
                      onValueChange={(value) => setAccountPickerPlatform(value as SocialMediaPlatform)}
@@ -869,9 +794,6 @@ export default function SocialMedia() {
                        );
                      })}
                    </RadioGroup>
-                     <p className="pt-1 text-xs leading-relaxed text-muted-foreground">
-                       Select an available Page or profile to attach it. To replace an attached account, use Switch in Connected channels; the current channel stays active until the replacement is confirmed.
-                   </p>
                 </CardContent>
               </Card>
             </section>
@@ -891,7 +813,6 @@ export default function SocialMedia() {
                     <div className="space-y-2"><div className="flex items-center justify-between gap-3"><Label>Media <span className="font-normal text-muted-foreground">(optional, required for Instagram)</span></Label><input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/quicktime,video/webm" multiple className="sr-only" onChange={handleMediaSelection} data-testid="input-post-media" /><Button type="button" variant="outline" size="sm" onClick={() => fileInputRef.current?.click()} disabled={isUploadingMedia || finalizeUpload.isPending} data-testid="button-add-post-media">{isUploadingMedia || finalizeUpload.isPending ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <Paperclip className="mr-1.5 h-3.5 w-3.5" />}{isUploadingMedia ? "Uploading media..." : "Add media"}</Button></div><p className="text-xs text-muted-foreground">JPG, PNG, WEBP, GIF, MP4, MOV, or WEBM. Images up to 25 MB; videos up to 100 MB.</p>{media.length > 0 && <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">{media.map((item) => <div key={item.objectPath} className="group relative overflow-hidden rounded-xl border border-border bg-secondary/30" data-testid={`media-preview-${item.objectPath}`}><div className="aspect-square bg-muted">{item.type.startsWith("video/") ? <video src={item.previewUrl} className="h-full w-full object-cover" controls preload="metadata" /> : <img src={item.previewUrl} alt={item.name} className="h-full w-full object-cover" />}</div><div className="flex items-center justify-between gap-1 px-2 py-1.5"><span className="truncate text-[11px] text-muted-foreground">{item.name}</span><Button type="button" variant="ghost" size="icon" className="h-6 w-6 shrink-0 text-muted-foreground hover:text-destructive" onClick={() => setMedia((current) => current.filter((mediaItem) => mediaItem.objectPath !== item.objectPath))} aria-label={`Remove ${item.name}`}><Trash2 className="h-3.5 w-3.5" /></Button></div></div>)}</div>}</div>
                     <div className="space-y-2"><Label>Publish to</Label><div className="grid gap-2 sm:grid-cols-3">{PLATFORMS.map((platform) => { const meta = PLATFORM_META[platform]; const selected = selectedPlatforms.includes(platform); const unavailable = !connectedPlatforms.has(platform) || (platform === SocialMediaPlatform.INSTAGRAM && media.length === 0); return <button type="button" key={platform} onClick={() => !unavailable && togglePlatform(platform)} disabled={unavailable} title={platform === SocialMediaPlatform.INSTAGRAM && media.length === 0 ? "Add an image or video to publish to Instagram." : undefined} className={cn("flex items-center gap-2 rounded-xl border px-3 py-2.5 text-left text-sm transition-colors", selected ? "border-primary bg-primary/5 text-primary" : "border-border hover:bg-secondary", unavailable && "cursor-not-allowed opacity-45")} aria-pressed={selected} data-testid={`button-select-platform-${platform.toLowerCase()}`}><span className={cn("flex h-7 w-7 items-center justify-center rounded-lg", meta.tint)}><PlatformMark platform={platform} /></span><span className="flex-1"><span className="block">{meta.label}</span>{platform === SocialMediaPlatform.INSTAGRAM && <span className="block text-[10px] text-muted-foreground">Media required</span>}</span>{selected && <Check className="h-4 w-4" />}</button>; })}</div><p className="text-xs text-muted-foreground">{media.length ? "Instagram is available because this post includes media." : "Add media to unlock Instagram publishing."}</p></div>
                      <div className="rounded-xl border border-border bg-secondary/50 p-3.5"><button type="button" className="flex w-full items-center justify-between gap-4 text-left" onClick={() => setScheduleEnabled((value) => !value)} aria-pressed={scheduleEnabled} data-testid="button-toggle-schedule"><span className="flex items-center gap-2 text-sm font-medium"><CalendarClock className="h-4 w-4 text-primary" /> Schedule for later</span><span className={cn("relative h-5 w-9 rounded-full transition-colors", scheduleEnabled ? "bg-primary" : "bg-muted")}><span className={cn("absolute top-1 h-3 w-3 rounded-full bg-card transition-transform", scheduleEnabled ? "translate-x-5" : "translate-x-1")} /></span></button>{scheduleEnabled && <div className="mt-3 space-y-1.5"><Label htmlFor="scheduled-at" className="text-xs">Date and time</Label><Input ref={scheduleInputRef} id="scheduled-at" type="datetime-local" min={minimumScheduleTime()} value={scheduledAt} onChange={handleScheduledAtChange} required data-testid="input-scheduled-at" /></div>}</div>
-                    <div className="rounded-xl border border-sky-500/20 bg-sky-500/[0.06] p-3 text-xs leading-relaxed text-sky-900 dark:text-sky-100"><p className="font-semibold">About media</p><p className="mt-1 text-sky-900/75 dark:text-sky-100/75">Instagram posts need at least one image or video. Attached media is prepared with the social provider when you publish or schedule.</p></div>
                     <Button type="submit" className="w-full shadow-sm" disabled={createPost.isPending || isUploadingMedia || finalizeUpload.isPending || !caption.trim() || selectedPlatforms.length === 0 || (scheduleEnabled && !scheduledAt)} data-testid="button-publish-post">{createPost.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : scheduleEnabled ? <CalendarClock className="mr-2 h-4 w-4" /> : <Send className="mr-2 h-4 w-4" />}{createPost.isPending ? "Sending..." : scheduleEnabled ? "Schedule post" : "Publish now"}</Button>
                   </form>
                 </CardContent>

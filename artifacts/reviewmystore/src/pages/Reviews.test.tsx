@@ -25,6 +25,7 @@ const mocks = vi.hoisted(() => ({
   syncMutate: vi.fn(),
   selectLocationMutate: vi.fn(),
   dashboardStatus: 'PENDING' as 'DISCONNECTED' | 'PENDING' | 'CONNECTED',
+  remainingImportCapacity: 20,
   callbackStage: null as null | 'NOT_CONNECTED' | 'NEEDS_LOCATION' | 'NO_LOCATIONS_FOUND' | 'READY',
   callbackLocations: [] as Array<{ id: string; name: string; address: string | null }>,
 }));
@@ -42,12 +43,26 @@ vi.mock('@workspace/api-client-react', () => ({
         provider: 'BNDLE',
         lastSyncedAt: mocks.dashboardStatus === 'CONNECTED' ? '2026-08-20T00:00:00Z' : null,
         lastError: null,
+        remainingImportCapacity: mocks.remainingImportCapacity,
       },
       locations:
         mocks.dashboardStatus === 'CONNECTED'
           ? [{ id: 'loc-1', name: 'Test Business', address: null, category: null, websiteUrl: null, isSelected: true }]
           : [],
       summary: { totalReviews: 3, needsReply: 1, replied: 2 },
+      usage: [
+        {
+          metric: 'GOOGLE_REVIEW_IMPORTS',
+          label: 'Google review imports',
+          window: 'MONTHLY',
+          used: 3,
+          reserved: 1,
+          limit: 200,
+          remaining: 196,
+          periodEnd: '2026-09-30T00:00:00Z',
+        },
+      ],
+      usageHistory: [],
     },
     isLoading: false,
   }),
@@ -207,6 +222,7 @@ beforeEach(() => {
   mocks.selectLocationMutate.mockClear();
   mocks.callbackStage = null;
   mocks.callbackLocations = [];
+  mocks.remainingImportCapacity = 20;
 });
 
 afterEach(() => {
@@ -342,6 +358,17 @@ describe('Reviews dashboard states', () => {
     // The pending / connect screens must not leak into the connected state.
     expect(screen.queryByText('Connection Pending')).not.toBeInTheDocument();
     expect(screen.queryByText('Connect your Google Business')).not.toBeInTheDocument();
+  });
+
+  it('hides detailed usage panels while keeping the low-capacity import warning', () => {
+    mocks.dashboardStatus = 'CONNECTED';
+    mocks.remainingImportCapacity = 4;
+    renderReviews();
+
+    expect(screen.queryByTestId('review-usage')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('review-provider-limits')).not.toBeInTheDocument();
+    expect(screen.queryByText('Google provider limits')).not.toBeInTheDocument();
+    expect(screen.getByText('Only 4 review imports left this month.')).toBeInTheDocument();
   });
 
   it('returns Google cancellation or denial to the requested business without a false success state', async () => {
