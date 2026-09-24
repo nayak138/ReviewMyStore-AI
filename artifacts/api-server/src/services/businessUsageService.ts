@@ -1,4 +1,14 @@
-import { and, desc, eq, gt, or, sql } from "drizzle-orm";
+import {
+  and,
+  desc,
+  eq,
+  gt,
+  inArray,
+  isNotNull,
+  lte,
+  or,
+  sql,
+} from "drizzle-orm";
 import {
   businessUsagePeriodsTable,
   businessUsageReservationsTable,
@@ -95,6 +105,8 @@ export type SharedReviewImportReservation = {
   periodEnd: Date;
 };
 
+export const REVIEW_IMPORT_ATTEMPT_STALE_AFTER_MS = 5 * 60_000;
+
 function monthlyPeriod(now: Date) {
   const start = new Date(now);
   start.setUTCDate(1);
@@ -150,6 +162,7 @@ async function ensureSharedReviewImportPeriod(tx: UsageTransaction, now: Date) {
 export async function reserveSharedReviewImportCapacity(input: {
   amount: number;
   now?: Date;
+  providerAttemptId?: string;
 }): Promise<SharedReviewImportReservation> {
   if (!Number.isInteger(input.amount) || input.amount < 1) {
     throw new Error(
@@ -198,6 +211,8 @@ export async function reserveSharedReviewImportCapacity(input: {
         metric: SHARED_REVIEW_IMPORT_METRIC,
         periodStart: period.periodStart,
         amount,
+        providerAttemptId: input.providerAttemptId ?? null,
+        providerAttemptStatus: input.providerAttemptId ? "NOT_STARTED" : null,
       })
       .returning();
     if (!reservation) {
@@ -291,6 +306,61 @@ export function completeSharedReviewImportReservation(reservationId: string) {
 
 export function releaseSharedReviewImportReservation(reservationId: string) {
   return settleSharedReviewImportReservation(reservationId, "FAILED");
+}
+
+async function updateReviewImportAttemptStatus(
+  providerAttemptId: string,
+  expected: "NOT_STARTED" | "IN_FLIGHT",
+  status: "IN_FLIGHT" | "ACCEPTED" | "REJECTED",
+): Promise<boolean> {
+  const [updated] = await db
+    .update(sharedProviderUsageReservationsTable)
+    .set({ providerAttemptStatus: status, updatedAt: new Date() })
+    .where(
+      and(
+        eq(
+          sharedProviderUsageReservationsTable.providerAttemptId,
+          providerAttemptId,
+        ),
+        eq(
+          sharedProviderUsageReservationsTable.providerAttemptStatus,
+          expected,
+        ),
+        eq(sharedProviderUsageReservationsTable.status, "PENDING"),
+      ),
+    )
+    .returning({ id: sharedProviderUsageReservationsTable.id });
+  return Boolean(updated);
+}
+
+export function markSharedReviewImportAttemptStarted(
+  providerAttemptId: string,
+) {
+  return updateReviewImportAttemptStatus(
+    providerAttemptId,
+    "NOT_STARTED",
+    "IN_FLIGHT",
+  );
+}
+
+export function markSharedReviewImportAttemptAccepted(
+  providerAttemptId: string,
+) {
+  return updateReviewImportAttemptStatus(
+    providerAttemptId,
+    "IN_FLIGHT",
+    "ACCEPTED",
+  );
+}
+
+export function markSharedReviewImportAttemptRejected(
+  providerAttemptId: string,
+) {
+  return updateReviewImportAttemptStatus(
+    providerAttemptId,
+    "IN_FLIGHT",
+    "REJECTED",
+  );
 }
 
 export class BusinessUsageLimitError extends Error {
@@ -420,6 +490,7 @@ export async function reserveBusinessUsage(input: {
   metric: BusinessUsageMetric;
   amount?: number;
   now?: Date;
+  providerAttemptId?: string;
 }): Promise<BusinessUsageReservation> {
   const amount = input.amount ?? 1;
   if (!Number.isInteger(amount) || amount < 1) {
@@ -467,6 +538,7 @@ export async function reserveBusinessUsage(input: {
         metric: input.metric,
         periodStart: period.periodStart,
         amount,
+        providerAttemptId: input.providerAttemptId ?? null,
       })
       .returning();
     if (!reservation) throw new Error("Could not create usage reservation.");
@@ -547,6 +619,97 @@ export function completeBusinessUsageReservation(reservationId: string) {
 
 export function releaseBusinessUsageReservation(reservationId: string) {
   return settleReservation(reservationId, "FAILED");
+}
+
+export async function settleBusinessUsageReservationsForReviewImportAttempt(
+  providerAttemptId: string,
+  finalStatus: "SUCCEEDED" | "FAILED",
+): Promise<number> {
+  const reservations = await db
+    .select({ id: businessUsageReservationsTable.id })
+    .from(businessUsageReservationsTable)
+    .where(
+      and(
+        eq(businessUsageReservationsTable.providerAttemptId, providerAttemptId),
+        eq(businessUsageReservationsTable.status, "PENDING"),
+      ),
+    );
+  let settled = 0;
+  for (const reservation of reservations) {
+    const didSettle =
+      finalStatus === "SUCCEEDED"
+        ? await completeBusinessUsageReservation(reservation.id)
+        : await releaseBusinessUsageReservation(reservation.id);
+    if (didSettle) settled += 1;
+  }
+  return settled;
+}
+
+/**
+ * Resolve only stale attempts with a persisted outcome. NOT_STARTED means the
+ * provider request was never dispatched; REJECTED is an explicit provider
+ * rejection; ACCEPTED is charged even if the API stopped before settlement.
+ * IN_FLIGHT remains reserved because its outcome is ambiguous.
+ */
+export async function reconcileStaleSharedReviewImportReservations(
+  now = new Date(),
+): Promise<number> {
+  const staleBefore = new Date(
+    now.getTime() - REVIEW_IMPORT_ATTEMPT_STALE_AFTER_MS,
+  );
+  const staleReservations = await db
+    .select()
+    .from(sharedProviderUsageReservationsTable)
+    .where(
+      and(
+        eq(sharedProviderUsageReservationsTable.status, "PENDING"),
+        isNotNull(sharedProviderUsageReservationsTable.providerAttemptId),
+        lte(sharedProviderUsageReservationsTable.updatedAt, staleBefore),
+        inArray(sharedProviderUsageReservationsTable.providerAttemptStatus, [
+          "NOT_STARTED",
+          "ACCEPTED",
+          "REJECTED",
+        ]),
+      ),
+    );
+
+  let reconciled = 0;
+  for (const reservation of staleReservations) {
+    const providerAttemptId = reservation.providerAttemptId;
+    const attemptStatus = reservation.providerAttemptStatus;
+    if (!providerAttemptId || !attemptStatus) continue;
+    const claimed = await db
+      .update(sharedProviderUsageReservationsTable)
+      .set({
+        providerAttemptStatus:
+          attemptStatus === "NOT_STARTED" ? "REJECTED" : attemptStatus,
+        updatedAt: new Date(),
+      })
+      .where(
+        and(
+          eq(sharedProviderUsageReservationsTable.id, reservation.id),
+          eq(sharedProviderUsageReservationsTable.status, "PENDING"),
+          eq(
+            sharedProviderUsageReservationsTable.providerAttemptStatus,
+            attemptStatus,
+          ),
+          lte(sharedProviderUsageReservationsTable.updatedAt, staleBefore),
+        ),
+      )
+      .returning({ id: sharedProviderUsageReservationsTable.id });
+    if (!claimed.length) continue;
+
+    const wasAccepted = attemptStatus === "ACCEPTED";
+    await settleBusinessUsageReservationsForReviewImportAttempt(
+      providerAttemptId,
+      wasAccepted ? "SUCCEEDED" : "FAILED",
+    );
+    const settled = wasAccepted
+      ? await completeSharedReviewImportReservation(reservation.id)
+      : await releaseSharedReviewImportReservation(reservation.id);
+    if (settled) reconciled += 1;
+  }
+  return reconciled;
 }
 
 export async function getBusinessUsageSummary(

@@ -47,6 +47,10 @@ export const sharedProviderUsageReservationsTable = pgTable(
     metric: text("metric").notNull(),
     periodStart: timestamp("period_start", { withTimezone: true }).notNull(),
     amount: integer("amount").notNull(),
+    providerAttemptId: text("provider_attempt_id"),
+    providerAttemptStatus: text(
+      "provider_attempt_status",
+    ).$type<SharedProviderAttemptStatus>(),
     status: text("status").notNull().default("PENDING"),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
@@ -65,8 +69,15 @@ export const sharedProviderUsageReservationsTable = pgTable(
       table.status,
       table.updatedAt,
     ),
+    index("shared_provider_usage_reservations_attempt_idx").on(
+      table.providerAttemptId,
+      table.providerAttemptStatus,
+    ),
   ],
 );
+
+export type SharedProviderAttemptStatus =
+  "NOT_STARTED" | "IN_FLIGHT" | "ACCEPTED" | "REJECTED";
 
 export type SharedProviderUsageReservation =
   typeof sharedProviderUsageReservationsTable.$inferSelect;

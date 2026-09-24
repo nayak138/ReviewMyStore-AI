@@ -30,6 +30,10 @@ import {
   getBusinessUsageSummary,
   releaseBusinessUsageReservation,
   releaseSharedReviewImportReservation,
+  markSharedReviewImportAttemptAccepted,
+  markSharedReviewImportAttemptRejected,
+  markSharedReviewImportAttemptStarted,
+  reconcileStaleSharedReviewImportReservations,
   reserveBusinessUsage,
   reserveSharedReviewImportCapacity,
   SharedReviewImportLimitError,
@@ -1047,12 +1051,17 @@ async function startReviewImport(
   businessId?: string,
   usageNow = new Date(),
 ): Promise<string | null> {
+  await reconcileStaleSharedReviewImportReservations();
   let businessReservationId: string | null = null;
   let sharedReservationId: string | null = null;
+  let providerAttemptId: string | null = null;
+  let providerCallMayHaveBeenAccepted = false;
   const reserve = async (requestedAmount: number) => {
+    providerAttemptId = randomUUID();
     const sharedReservation = await reserveSharedReviewImportCapacity({
       amount: requestedAmount,
       now: usageNow,
+      providerAttemptId,
     });
     sharedReservationId = sharedReservation.id;
     try {
@@ -1063,6 +1072,7 @@ async function startReviewImport(
           metric: "GOOGLE_REVIEW_IMPORTS",
           amount: sharedReservation.amount,
           now: usageNow,
+          providerAttemptId,
         });
         businessReservationId = businessReservation.id;
       }
@@ -1106,17 +1116,45 @@ async function startReviewImport(
   let providerAccepted = false;
   const startReservedImport = async (requestedAmount: number) => {
     const amount = await reserve(requestedAmount);
+    const attemptId = providerAttemptId;
+    if (!attemptId) throw new Error("Review import attempt was not recorded.");
+    const started = await markSharedReviewImportAttemptStarted(attemptId);
+    if (!started) {
+      throw new Error("Review import reservation is no longer pending.");
+    }
+    providerCallMayHaveBeenAccepted = true;
     try {
       await requestImport(teamId, amount);
     } catch (error) {
-      await release();
+      const confirmedRejected =
+        error instanceof ReviewProviderError &&
+        ((error.upstreamStatus !== null &&
+          error.upstreamStatus >= 400 &&
+          error.upstreamStatus < 500) ||
+          (error.code === "REVIEW_PROVIDER_NOT_CONFIGURED" &&
+            error.upstreamStatus === null));
+      if (confirmedRejected) {
+        const rejected = await markSharedReviewImportAttemptRejected(attemptId);
+        if (!rejected) {
+          throw new Error(
+            "Review import attempt outcome changed unexpectedly.",
+          );
+        }
+        providerCallMayHaveBeenAccepted = false;
+        await release();
+      }
       throw error;
     }
     // If persistence fails after the provider accepted the job, keep pending
     // reservations in place. Releasing them could let another business
     // overspend capacity already accepted by the shared provider account.
     providerAccepted = true;
+    const accepted = await markSharedReviewImportAttemptAccepted(attemptId);
+    if (!accepted) {
+      throw new Error("Could not persist the accepted review import attempt.");
+    }
     await complete();
+    providerCallMayHaveBeenAccepted = false;
   };
 
   try {
@@ -1124,6 +1162,16 @@ async function startReviewImport(
     return null;
   } catch (error) {
     if (providerAccepted) throw error;
+    if (providerCallMayHaveBeenAccepted) {
+      logger.warn(
+        {
+          upstreamStatus:
+            error instanceof ReviewProviderError ? error.upstreamStatus : null,
+        },
+        "Review import outcome is uncertain; keeping its capacity reserved",
+      );
+      return "The latest review import status could not be confirmed. It may still be running; showing previously imported reviews.";
+    }
     if (error instanceof SharedReviewImportLimitError) {
       await release();
       return error.message;

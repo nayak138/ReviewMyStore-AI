@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "typecheck": "tsc -p tsconfig.json --noEmit",
+    "ensure-shared-provider-usage-schema": "tsx ensure-shared-provider-usage-schema.ts",
     "ensure-team-schema": "tsx ensure-team-schema.ts",
     "verify-team-schema": "tsx verify-team-schema.ts"
   },

@@ -15,6 +15,7 @@ import { and, eq } from "drizzle-orm";
 import {
   db,
   businessesTable,
+  businessUsageReservationsTable,
   pool,
   managedReviewsTable,
   organizationsTable,
@@ -22,14 +23,22 @@ import {
   reviewAuditEventsTable,
   reviewLocationsTable,
   sharedProviderUsagePeriodsTable,
+  sharedProviderUsageReservationsTable,
   usersTable,
 } from "@workspace/db";
 import {
   completeSharedReviewImportReservation,
   completeBusinessUsageReservation,
+  getBusinessUsageSummary,
+  markSharedReviewImportAttemptAccepted,
+  markSharedReviewImportAttemptRejected,
+  markSharedReviewImportAttemptStarted,
+  reconcileStaleSharedReviewImportReservations,
+  releaseBusinessUsageReservation,
   releaseSharedReviewImportReservation,
   reserveBusinessUsage,
   reserveSharedReviewImportCapacity,
+  REVIEW_IMPORT_ATTEMPT_STALE_AFTER_MS,
   SharedReviewImportLimitError,
 } from "./businessUsageService";
 import {
@@ -74,6 +83,9 @@ const testUsageNow = new Date(
 );
 const sharedCapacityTestNow = new Date(
   Date.UTC(2600, Number.parseInt(runId.slice(0, 3), 16), 15),
+);
+const recoveryTestNow = new Date(
+  Date.UTC(2700, Number.parseInt(runId.slice(0, 3), 16), 15),
 );
 const createdOrgIds: string[] = [];
 
@@ -428,6 +440,198 @@ test("concurrent businesses cannot reserve more than the shared monthly limit", 
   }
 });
 
+async function createReviewImportRecoveryAttempt(
+  label: string,
+  now: Date,
+  amount = 7,
+) {
+  const org = await createOrg(`recovery-${label}`);
+  const [business] = await db
+    .insert(businessesTable)
+    .values({
+      organizationId: org.id,
+      name: `Recovery ${label} store`,
+      category: "Retail",
+      slug: `recovery-${label}-${runId}`,
+    })
+    .returning();
+  const providerAttemptId = randomUUID();
+  const shared = await reserveSharedReviewImportCapacity({
+    amount,
+    now,
+    providerAttemptId,
+  });
+  const businessReservation = await reserveBusinessUsage({
+    organizationId: org.id,
+    businessId: business.id,
+    metric: "GOOGLE_REVIEW_IMPORTS",
+    amount: shared.amount,
+    now,
+    providerAttemptId,
+  });
+  return {
+    organizationId: org.id,
+    businessId: business.id,
+    providerAttemptId,
+    sharedReservationId: shared.id,
+    businessReservationId: businessReservation.id,
+    amount: shared.amount,
+  };
+}
+
+async function ageReviewImportAttempt(sharedReservationId: string) {
+  const updatedAt = new Date(
+    Date.now() - REVIEW_IMPORT_ATTEMPT_STALE_AFTER_MS - 1_000,
+  );
+  await db
+    .update(sharedProviderUsageReservationsTable)
+    .set({ updatedAt })
+    .where(eq(sharedProviderUsageReservationsTable.id, sharedReservationId));
+}
+
+test("stale review-import reservations never dispatched to the provider are released", async () => {
+  const now = new Date(recoveryTestNow);
+  now.setUTCMonth(now.getUTCMonth() + 1);
+  const attempt = await createReviewImportRecoveryAttempt("not-started", now);
+  await ageReviewImportAttempt(attempt.sharedReservationId);
+
+  assert.equal(await reconcileStaleSharedReviewImportReservations(), 1);
+  assert.deepEqual(await getSharedReviewUsage(now), {
+    used: 0,
+    reserved: 0,
+  });
+  const usage = await getBusinessUsageSummary(
+    attempt.organizationId,
+    attempt.businessId,
+    now,
+  );
+  const businessUsage = usage.find(
+    (item) => item.metric === "GOOGLE_REVIEW_IMPORTS",
+  );
+  assert.equal(businessUsage?.used, 0);
+  assert.equal(businessUsage?.reserved, 0);
+  assert.equal(businessUsage?.remaining, 200);
+  const [businessReservation] = await db
+    .select()
+    .from(businessUsageReservationsTable)
+    .where(
+      eq(businessUsageReservationsTable.id, attempt.businessReservationId),
+    );
+  assert.equal(businessReservation.status, "FAILED");
+});
+
+test("stale review-import reservations accepted by the provider are charged, not released", async () => {
+  const now = new Date(recoveryTestNow);
+  now.setUTCMonth(now.getUTCMonth() + 2);
+  const attempt = await createReviewImportRecoveryAttempt("accepted", now);
+  assert.equal(
+    await markSharedReviewImportAttemptStarted(attempt.providerAttemptId),
+    true,
+  );
+  assert.equal(
+    await markSharedReviewImportAttemptAccepted(attempt.providerAttemptId),
+    true,
+  );
+  await ageReviewImportAttempt(attempt.sharedReservationId);
+
+  assert.equal(await reconcileStaleSharedReviewImportReservations(), 1);
+  assert.deepEqual(await getSharedReviewUsage(now), {
+    used: attempt.amount,
+    reserved: 0,
+  });
+  const usage = await getBusinessUsageSummary(
+    attempt.organizationId,
+    attempt.businessId,
+    now,
+  );
+  const businessUsage = usage.find(
+    (item) => item.metric === "GOOGLE_REVIEW_IMPORTS",
+  );
+  assert.equal(businessUsage?.used, attempt.amount);
+  assert.equal(businessUsage?.reserved, 0);
+  assert.equal(businessUsage?.remaining, 200 - attempt.amount);
+  const [businessReservation] = await db
+    .select()
+    .from(businessUsageReservationsTable)
+    .where(
+      eq(businessUsageReservationsTable.id, attempt.businessReservationId),
+    );
+  assert.equal(businessReservation.status, "SUCCEEDED");
+});
+
+test("stale provider-rejected review imports release both reservations", async () => {
+  const now = new Date(recoveryTestNow);
+  now.setUTCMonth(now.getUTCMonth() + 4);
+  const attempt = await createReviewImportRecoveryAttempt("rejected", now, 8);
+  assert.equal(
+    await markSharedReviewImportAttemptStarted(attempt.providerAttemptId),
+    true,
+  );
+  assert.equal(
+    await markSharedReviewImportAttemptRejected(attempt.providerAttemptId),
+    true,
+  );
+  await ageReviewImportAttempt(attempt.sharedReservationId);
+
+  assert.equal(await reconcileStaleSharedReviewImportReservations(), 1);
+  assert.deepEqual(await getSharedReviewUsage(now), {
+    used: 0,
+    reserved: 0,
+  });
+  const usage = await getBusinessUsageSummary(
+    attempt.organizationId,
+    attempt.businessId,
+    now,
+  );
+  const businessUsage = usage.find(
+    (item) => item.metric === "GOOGLE_REVIEW_IMPORTS",
+  );
+  assert.equal(businessUsage?.used, 0);
+  assert.equal(businessUsage?.reserved, 0);
+  const [businessReservation] = await db
+    .select()
+    .from(businessUsageReservationsTable)
+    .where(
+      eq(businessUsageReservationsTable.id, attempt.businessReservationId),
+    );
+  assert.equal(businessReservation.status, "FAILED");
+});
+
+test("stale review-import reservations with an unknown provider outcome remain held", async () => {
+  const now = new Date(recoveryTestNow);
+  now.setUTCMonth(now.getUTCMonth() + 3);
+  const attempt = await createReviewImportRecoveryAttempt("in-flight", now);
+  assert.equal(
+    await markSharedReviewImportAttemptStarted(attempt.providerAttemptId),
+    true,
+  );
+  await ageReviewImportAttempt(attempt.sharedReservationId);
+
+  assert.equal(await reconcileStaleSharedReviewImportReservations(), 0);
+  assert.deepEqual(await getSharedReviewUsage(now), {
+    used: 0,
+    reserved: attempt.amount,
+  });
+  const usage = await getBusinessUsageSummary(
+    attempt.organizationId,
+    attempt.businessId,
+    now,
+  );
+  assert.equal(
+    usage.find((item) => item.metric === "GOOGLE_REVIEW_IMPORTS")?.reserved,
+    attempt.amount,
+  );
+
+  // An uncertain outcome is intentionally not released. Mark it rejected only
+  // for test cleanup after proving the recovery path leaves it untouched.
+  assert.equal(
+    await markSharedReviewImportAttemptRejected(attempt.providerAttemptId),
+    true,
+  );
+  await releaseBusinessUsageReservation(attempt.businessReservationId);
+  await releaseSharedReviewImportReservation(attempt.sharedReservationId);
+});
+
 function installSyncHandler(
   teamId: string,
   options: { failImportStart?: boolean } = {},
@@ -728,8 +932,11 @@ test("an import failure surfaces as a note while previously imported reviews sti
   const dashboard = await syncReviewProvider(org.id, testUsageNow);
   assert.deepEqual(
     await getSharedReviewUsage(testUsageNow),
-    beforeUsage,
-    "a failed provider import must release its shared reservation",
+    {
+      used: beforeUsage.used,
+      reserved: beforeUsage.reserved + 50,
+    },
+    "an ambiguous provider failure must keep its reservation to prevent overspending",
   );
   assert.equal(dashboard.summary.totalReviews, 4, "existing reviews are still served");
 
@@ -738,7 +945,7 @@ test("an import failure surfaces as a note while previously imported reviews sti
     .from(providerConnectionsTable)
     .where(eq(providerConnectionsTable.id, connection.id));
   assert.equal(conn.status, "CONNECTED", "a failed import start must not break the connection");
-  assert.match(conn.lastError ?? "", /could not be imported/i);
+  assert.match(conn.lastError ?? "", /status could not be confirmed/i);
   assert.ok(
     !conn.lastError?.includes("import exploded upstream"),
     "upstream error text must not leak into the owner-facing note",

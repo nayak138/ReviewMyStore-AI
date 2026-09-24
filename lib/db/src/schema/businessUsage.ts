@@ -90,6 +90,7 @@ export const businessUsageReservationsTable = pgTable(
       withTimezone: true,
     }).notNull(),
     amount: integer("amount").notNull(),
+    providerAttemptId: text("provider_attempt_id"),
     status: text("status")
       .notNull()
       .default("PENDING")
@@ -111,6 +112,9 @@ export const businessUsageReservationsTable = pgTable(
     index("business_usage_reservations_cleanup_idx").on(
       table.status,
       table.updatedAt,
+    ),
+    index("business_usage_reservations_provider_attempt_idx").on(
+      table.providerAttemptId,
     ),
   ],
 );
