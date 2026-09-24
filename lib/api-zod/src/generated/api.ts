@@ -1133,6 +1133,36 @@ export const GetAdminPortalResponse = zod.object({
 
 
 /**
+ * @summary List old uncertain shared review-import reservations
+ */
+export const ListAdminSharedReviewImportsResponse = zod.object({
+  "attempts": zod.array(zod.object({
+  "id": zod.uuid(),
+  "organizationName": zod.string(),
+  "businessName": zod.string(),
+  "amount": zod.int(),
+  "providerAttemptStatus": zod.enum(['IN_FLIGHT', 'ACCEPTED', 'REJECTED']),
+  "attemptedAt": zod.coerce.date(),
+  "ageMs": zod.int()
+}))
+})
+
+
+/**
+ * @summary Check provider evidence before settling reserved capacity
+ */
+export const CheckAdminSharedReviewImportParams = zod.object({
+  "id": zod.uuid()
+})
+
+export const CheckAdminSharedReviewImportResponse = zod.object({
+  "outcome": zod.enum(['RECONCILED', 'AMBIGUOUS', 'NOT_FOUND', 'NOT_ELIGIBLE']),
+  "providerStatus": zod.string().nullable(),
+  "message": zod.string()
+})
+
+
+/**
  * @summary List account deactivation requests for review
  */
 export const ListAdminDeactivationRequestsResponse = zod.object({

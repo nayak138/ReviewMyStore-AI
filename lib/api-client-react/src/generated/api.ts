@@ -36,6 +36,8 @@ import type {
   AdminPlatformResetInput,
   AdminPlatformResetResult,
   AdminPortal,
+  AdminSharedReviewImportCheck,
+  AdminSharedReviewImportList,
   AutocompletePlacesParams,
   Business,
   BusinessAnalytics,
@@ -3008,6 +3010,154 @@ export function useGetAdminPortal<TData = Awaited<ReturnType<typeof getAdminPort
 
 
 
+
+export const getListAdminSharedReviewImportsUrl = () => {
+
+
+
+
+  return `/api/v1/admin/shared-review-imports`
+}
+
+/**
+ * @summary List old uncertain shared review-import reservations
+ */
+export const listAdminSharedReviewImports = async ( options?: Parameters<typeof customFetch>[1]): Promise<AdminSharedReviewImportList> => {
+
+  return customFetch<AdminSharedReviewImportList>(getListAdminSharedReviewImportsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListAdminSharedReviewImportsQueryKey = () => {
+    return [
+    `/api/v1/admin/shared-review-imports`
+    ] as const;
+    }
+
+
+export const getListAdminSharedReviewImportsQueryOptions = <TData = Awaited<ReturnType<typeof listAdminSharedReviewImports>>, TError = ErrorType<ErrorResponse>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAdminSharedReviewImports>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListAdminSharedReviewImportsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listAdminSharedReviewImports>>> = ({ signal }) => listAdminSharedReviewImports({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listAdminSharedReviewImports>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListAdminSharedReviewImportsQueryResult = NonNullable<Awaited<ReturnType<typeof listAdminSharedReviewImports>>>
+export type ListAdminSharedReviewImportsQueryError = ErrorType<ErrorResponse>
+
+
+/**
+ * @summary List old uncertain shared review-import reservations
+ */
+
+export function useListAdminSharedReviewImports<TData = Awaited<ReturnType<typeof listAdminSharedReviewImports>>, TError = ErrorType<ErrorResponse>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAdminSharedReviewImports>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListAdminSharedReviewImportsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getCheckAdminSharedReviewImportUrl = (id: string,) => {
+
+
+
+
+  return `/api/v1/admin/shared-review-imports/${id}/check`
+}
+
+/**
+ * @summary Check provider evidence before settling reserved capacity
+ */
+export const checkAdminSharedReviewImport = async (id: string, options?: Parameters<typeof customFetch>[1]): Promise<AdminSharedReviewImportCheck> => {
+
+  return customFetch<AdminSharedReviewImportCheck>(getCheckAdminSharedReviewImportUrl(id),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getCheckAdminSharedReviewImportMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof checkAdminSharedReviewImport>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof checkAdminSharedReviewImport>>, TError,{id: string}, TContext> => {
+
+const mutationKey = ['checkAdminSharedReviewImport'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof checkAdminSharedReviewImport>>, {id: string}> = (props) => {
+          const {id} = props ?? {};
+
+          return  checkAdminSharedReviewImport(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CheckAdminSharedReviewImportMutationResult = NonNullable<Awaited<ReturnType<typeof checkAdminSharedReviewImport>>>
+
+    export type CheckAdminSharedReviewImportMutationError = ErrorType<ErrorResponse>
+
+    /**
+ * @summary Check provider evidence before settling reserved capacity
+ */
+export const useCheckAdminSharedReviewImport = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof checkAdminSharedReviewImport>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof checkAdminSharedReviewImport>>,
+        TError,
+        {id: string},
+        TContext
+      > => {
+      return useMutation(getCheckAdminSharedReviewImportMutationOptions(options));
+    }
 
 export const getListAdminDeactivationRequestsUrl = () => {
 

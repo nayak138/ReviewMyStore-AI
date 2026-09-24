@@ -52,6 +52,7 @@ import {
   getReviewProviderConnectionLocations,
   listManagedReviews,
   publishManagedReviewReply,
+  recoverUncertainSharedReviewImport,
   selectReviewProviderLocation,
   startReviewProviderConnection,
   syncReviewProvider,
@@ -630,6 +631,187 @@ test("stale review-import reservations with an unknown provider outcome remain h
   );
   await releaseBusinessUsageReservation(attempt.businessReservationId);
   await releaseSharedReviewImportReservation(attempt.sharedReservationId);
+});
+
+test("provider evidence settles a uniquely matched uncertain review import", async () => {
+  const now = new Date(recoveryTestNow);
+  now.setUTCMonth(now.getUTCMonth() + 6);
+  const attempt = await createReviewImportRecoveryAttempt("provider-evidence", now);
+  const teamId = `team-evidence-${runId}`;
+  const importId = `import-evidence-${runId}`;
+  await db.insert(providerConnectionsTable).values({
+    organizationId: attempt.organizationId,
+    businessId: attempt.businessId,
+    externalProfileId: teamId,
+    status: "CONNECTED",
+  });
+  assert.equal(
+    await markSharedReviewImportAttemptStarted(attempt.providerAttemptId),
+    true,
+  );
+  await ageReviewImportAttempt(attempt.sharedReservationId);
+  const [reservation] = await db
+    .select()
+    .from(sharedProviderUsageReservationsTable)
+    .where(eq(sharedProviderUsageReservationsTable.id, attempt.sharedReservationId));
+  const attemptedAt = reservation.createdAt.toISOString();
+
+  providerFetch.handler = (url) => {
+    if (
+      url.pathname.endsWith("/misc/google-business/reviews/import") &&
+      url.searchParams.get("teamId") === teamId
+    ) {
+      return {
+        body: {
+          imports: [
+            {
+              id: importId,
+              teamId,
+              requestedCount: attempt.amount,
+              createdAt: attemptedAt,
+              status: "COMPLETED",
+            },
+          ],
+        },
+      };
+    }
+    if (url.pathname.endsWith(`/misc/google-business/reviews/import/${importId}`)) {
+      return {
+        body: {
+          id: importId,
+          teamId,
+          requestedCount: attempt.amount,
+          createdAt: attemptedAt,
+          status: "COMPLETED",
+        },
+      };
+    }
+    return { status: 404, body: {} };
+  };
+
+  const result = await recoverUncertainSharedReviewImport(
+    attempt.sharedReservationId,
+  );
+  assert.equal(result.outcome, "RECONCILED");
+  assert.equal(result.providerStatus, "COMPLETED");
+  assert.deepEqual(await getSharedReviewUsage(now), {
+    used: attempt.amount,
+    reserved: 0,
+  });
+  const usage = await getBusinessUsageSummary(
+    attempt.organizationId,
+    attempt.businessId,
+    now,
+  );
+  const businessUsage = usage.find(
+    (item) => item.metric === "GOOGLE_REVIEW_IMPORTS",
+  );
+  assert.equal(businessUsage?.used, attempt.amount);
+  assert.equal(businessUsage?.reserved, 0);
+});
+
+test("multiple matching provider imports keep uncertain capacity held", async () => {
+  const now = new Date(recoveryTestNow);
+  now.setUTCMonth(now.getUTCMonth() + 7);
+  const attempt = await createReviewImportRecoveryAttempt("provider-ambiguous", now);
+  const teamId = `team-ambiguous-${runId}`;
+  await db.insert(providerConnectionsTable).values({
+    organizationId: attempt.organizationId,
+    businessId: attempt.businessId,
+    externalProfileId: teamId,
+    status: "CONNECTED",
+  });
+  assert.equal(
+    await markSharedReviewImportAttemptStarted(attempt.providerAttemptId),
+    true,
+  );
+  await ageReviewImportAttempt(attempt.sharedReservationId);
+  const [staleReservation] = await db
+    .select()
+    .from(sharedProviderUsageReservationsTable)
+    .where(eq(sharedProviderUsageReservationsTable.id, attempt.sharedReservationId));
+  const reservationAttemptedAt = staleReservation.createdAt.toISOString();
+  providerFetch.handler = (url) => {
+    if (url.pathname.endsWith("/misc/google-business/reviews/import")) {
+      return {
+        body: {
+          imports: [
+            {
+              id: `import-ambiguous-a-${runId}`,
+              teamId,
+              requestedCount: attempt.amount,
+              createdAt: reservationAttemptedAt,
+            },
+            {
+              id: `import-ambiguous-b-${runId}`,
+              teamId,
+              requestedCount: attempt.amount,
+              createdAt: reservationAttemptedAt,
+            },
+          ],
+        },
+      };
+    }
+    return { status: 404, body: {} };
+  };
+
+  const result = await recoverUncertainSharedReviewImport(
+    attempt.sharedReservationId,
+  );
+  assert.equal(result.outcome, "AMBIGUOUS");
+  assert.match(result.message, /does not prove rejection/i);
+  assert.deepEqual(await getSharedReviewUsage(now), {
+    used: 0,
+    reserved: attempt.amount,
+  });
+
+  assert.equal(
+    await markSharedReviewImportAttemptRejected(attempt.providerAttemptId),
+    true,
+  );
+  await releaseBusinessUsageReservation(attempt.businessReservationId);
+  await releaseSharedReviewImportReservation(attempt.sharedReservationId);
+});
+
+test("a confirmed provider rejection releases its old reservation on recovery", async () => {
+  const now = new Date(recoveryTestNow);
+  now.setUTCMonth(now.getUTCMonth() + 8);
+  const attempt = await createReviewImportRecoveryAttempt("admin-rejected", now);
+  assert.equal(
+    await markSharedReviewImportAttemptStarted(attempt.providerAttemptId),
+    true,
+  );
+  assert.equal(
+    await markSharedReviewImportAttemptRejected(attempt.providerAttemptId),
+    true,
+  );
+  await ageReviewImportAttempt(attempt.sharedReservationId);
+  let providerCalls = 0;
+  providerFetch.handler = () => {
+    providerCalls += 1;
+    return { status: 500, body: {} };
+  };
+
+  const result = await recoverUncertainSharedReviewImport(
+    attempt.sharedReservationId,
+  );
+  assert.equal(result.outcome, "RECONCILED");
+  assert.equal(result.providerStatus, "REJECTED");
+  assert.equal(providerCalls, 0);
+  assert.deepEqual(await getSharedReviewUsage(now), {
+    used: 0,
+    reserved: 0,
+  });
+  const usage = await getBusinessUsageSummary(
+    attempt.organizationId,
+    attempt.businessId,
+    now,
+  );
+  const businessUsage = usage.find(
+    (item) => item.metric === "GOOGLE_REVIEW_IMPORTS",
+  );
+  assert.equal(businessUsage?.used, 0);
+  assert.equal(businessUsage?.reserved, 0);
 });
 
 function installSyncHandler(

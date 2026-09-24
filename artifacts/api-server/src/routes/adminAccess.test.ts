@@ -114,6 +114,29 @@ test("unauthenticated callers cannot access the admin portal API", async () => {
   assert.equal(body.code, "UNAUTHENTICATED");
 });
 
+test("regular agency owners cannot view or check shared provider reservations", async () => {
+  const headers = { "x-test-clerk-user": ownerClerkId };
+  const listResponse = await fetch(`${baseUrl}/admin/shared-review-imports`, {
+    headers,
+  });
+  assert.equal(listResponse.status, 403);
+
+  const checkResponse = await fetch(
+    `${baseUrl}/admin/shared-review-imports/${randomUUID()}/check`,
+    { method: "POST", headers },
+  );
+  assert.equal(checkResponse.status, 403);
+});
+
+test("Super Admins can view shared provider reservations", async () => {
+  const response = await fetch(`${baseUrl}/admin/shared-review-imports`, {
+    headers: { "x-test-clerk-user": adminClerkId },
+  });
+  assert.equal(response.status, 200);
+  const body = (await response.json()) as { attempts: unknown[] };
+  assert.ok(Array.isArray(body.attempts));
+});
+
 test("regular agency owners cannot reset platform tenant data", async () => {
   const response = await fetch(`${baseUrl}/admin/platform-data`, {
     method: "DELETE",

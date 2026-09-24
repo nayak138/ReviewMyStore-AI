@@ -5,6 +5,9 @@ import {
   CreateAdminAgencyInvitationParams,
   CreateAdminAgencyInvitationResponse,
   CreateAdminAgencyResponse,
+  CheckAdminSharedReviewImportParams,
+  CheckAdminSharedReviewImportResponse,
+  ListAdminSharedReviewImportsResponse,
   ListAdminDeactivationRequestsResponse,
   GetAdminOverviewResponse,
   GetAdminPortalResponse,
@@ -33,6 +36,7 @@ import {
   createAgencyInvitation,
   getAdminOverview,
   getAdminPortal,
+  listAdminSharedReviewImports,
   getPublicAgencyInvitation,
   listAdminDeactivationRequests,
   reviewAdminDeactivationRequest,
@@ -40,6 +44,7 @@ import {
   revokeAgencyInvitation,
   updateAgency,
 } from "../services/adminService";
+import { recoverUncertainSharedReviewImport } from "../services/reviewManagementService";
 
 const router: IRouter = Router();
 
@@ -81,6 +86,51 @@ router.get(
   async (_req, res) => {
     const data = GetAdminPortalResponse.parse(await getAdminPortal());
     res.json(data);
+  },
+);
+
+router.get(
+  "/admin/shared-review-imports",
+  requireAuth,
+  requireRole("SUPER_ADMIN"),
+  async (_req, res): Promise<void> => {
+    const data = await listAdminSharedReviewImports();
+    res.json(ListAdminSharedReviewImportsResponse.parse(data));
+  },
+);
+
+router.post(
+  "/admin/shared-review-imports/:id/check",
+  requireAuth,
+  requireRole("SUPER_ADMIN"),
+  async (req, res): Promise<void> => {
+    const params = CheckAdminSharedReviewImportParams.safeParse(req.params);
+    if (!params.success) {
+      res.status(400).json({
+        success: false,
+        code: "INVALID_REQUEST",
+        message: params.error.message,
+      });
+      return;
+    }
+
+    try {
+      const result = await recoverUncertainSharedReviewImport(
+        params.data.id,
+      );
+      res.json(CheckAdminSharedReviewImportResponse.parse(result));
+    } catch (error) {
+      req.log.error(
+        { err: error, reservationId: params.data.id },
+        "Could not verify an uncertain shared review import",
+      );
+      res.status(502).json({
+        success: false,
+        code: "PROVIDER_EVIDENCE_UNAVAILABLE",
+        message:
+          "Could not verify the provider attempt. Its capacity remains reserved; try again later.",
+      });
+    }
   },
 );
 

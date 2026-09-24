@@ -26,8 +26,10 @@ import {
   BusinessUsageLimitError,
   completeBusinessUsageReservation,
   completeSharedReviewImportReservation,
+  completeSharedReviewImportReservationWithEvidence,
   getBusinessUsageHistory,
   getBusinessUsageSummary,
+  listStaleUncertainSharedReviewImportReservations,
   releaseBusinessUsageReservation,
   releaseSharedReviewImportReservation,
   markSharedReviewImportAttemptAccepted,
@@ -36,6 +38,7 @@ import {
   reconcileStaleSharedReviewImportReservations,
   reserveBusinessUsage,
   reserveSharedReviewImportCapacity,
+  settleBusinessUsageReservationsForReviewImportAttempt,
   SharedReviewImportLimitError,
 } from "./businessUsageService";
 import { logger } from "../lib/logger";
@@ -1251,6 +1254,223 @@ async function waitForReviewImport(teamId: string): Promise<string | null> {
     );
   }
   return "The review import is still running. Sync again in a minute to pick up the newest reviews.";
+}
+
+const IMPORT_EVIDENCE_TIME_TOLERANCE_MS = 2 * 60_000;
+const KNOWN_PROVIDER_IMPORT_STATUSES = new Set([
+  "PENDING",
+  "FETCHING_REVIEWS",
+  "COMPLETED",
+  "FAILED",
+  "RATE_LIMITED",
+]);
+
+function providerImportMatchesAttemptTime(
+  value: Date | null,
+  attemptedAt: Date,
+) {
+  return (
+    value !== null &&
+    Math.abs(value.getTime() - attemptedAt.getTime()) <=
+      IMPORT_EVIDENCE_TIME_TOLERANCE_MS
+  );
+}
+
+export type SharedReviewImportRecoveryResult = {
+  outcome: "RECONCILED" | "AMBIGUOUS" | "NOT_FOUND" | "NOT_ELIGIBLE";
+  providerStatus: string | null;
+  message: string;
+};
+
+/**
+ * A missing or non-unique provider job is not evidence that the request was
+ * rejected. Only a single provider record whose detail matches the team,
+ * requested count, and attempt time can settle an uncertain reservation.
+ */
+export async function recoverUncertainSharedReviewImport(
+  reservationId: string,
+): Promise<SharedReviewImportRecoveryResult> {
+  const attempts = await listStaleUncertainSharedReviewImportReservations();
+  const matchingAttempt = attempts.find((item) => item.id === reservationId);
+  if (!matchingAttempt) {
+    return {
+      outcome: "NOT_ELIGIBLE",
+      providerStatus: null,
+      message:
+        "This reservation is no longer an old uncertain attempt. Refresh the list before checking it again.",
+    };
+  }
+
+  if (
+    matchingAttempt.providerAttemptStatus === "ACCEPTED" ||
+    matchingAttempt.providerAttemptStatus === "REJECTED"
+  ) {
+    const providerAttemptId = matchingAttempt.providerAttemptId;
+    if (!providerAttemptId) {
+      return {
+        outcome: "NOT_ELIGIBLE",
+        providerStatus: null,
+        message:
+          "The confirmed provider result is missing its attempt identifier. Capacity remains reserved.",
+      };
+    }
+    const accepted = matchingAttempt.providerAttemptStatus === "ACCEPTED";
+    await settleBusinessUsageReservationsForReviewImportAttempt(
+      providerAttemptId,
+      accepted ? "SUCCEEDED" : "FAILED",
+    );
+    const settled = accepted
+      ? await completeSharedReviewImportReservation(reservationId)
+      : await releaseSharedReviewImportReservation(reservationId);
+    return settled
+      ? {
+          outcome: "RECONCILED",
+          providerStatus: accepted ? "ACCEPTED" : "REJECTED",
+          message: accepted
+            ? "bundle.social previously confirmed acceptance. The reserved capacity has now been counted as used."
+            : "bundle.social explicitly rejected the request. The shared capacity reservation has been released.",
+        }
+      : {
+          outcome: "NOT_ELIGIBLE",
+          providerStatus: accepted ? "ACCEPTED" : "REJECTED",
+          message:
+            "The reservation changed while it was being reconciled. Refresh the list to see its current status.",
+        };
+  }
+
+  const connectionConditions = matchingAttempt.businessId
+    ? [
+        eq(
+          providerConnectionsTable.businessId,
+          matchingAttempt.businessId,
+        ),
+      ]
+    : matchingAttempt.organizationId
+      ? [
+          eq(
+            providerConnectionsTable.organizationId,
+            matchingAttempt.organizationId,
+          ),
+          isNull(providerConnectionsTable.businessId),
+        ]
+      : [];
+  if (connectionConditions.length === 0) {
+    return {
+      outcome: "AMBIGUOUS",
+      providerStatus: null,
+      message:
+        "The original provider team cannot be matched to this reservation. Capacity remains reserved until the request can be identified.",
+    };
+  }
+
+  const connections = await db
+    .select({ teamId: providerConnectionsTable.externalProfileId })
+    .from(providerConnectionsTable)
+    .where(
+      and(
+        eq(providerConnectionsTable.provider, "BNDLE"),
+        ...connectionConditions,
+      ),
+    )
+    .limit(2);
+  if (connections.length !== 1) {
+    return {
+      outcome: "AMBIGUOUS",
+      providerStatus: null,
+      message:
+        "The original provider team cannot be identified uniquely. Capacity remains reserved until the request can be matched.",
+    };
+  }
+
+  const teamId = connections[0]!.teamId;
+  const listing = await bndleRequest("misc/google-business/reviews/import", {}, {
+    teamId,
+  });
+  const imports = asArray(listing.imports);
+  const candidates = imports.filter((item) => {
+    const id = valueString(item.id) ?? valueString(item.importId);
+    if (!id) return false;
+    const listedTeam = valueString(item.teamId);
+    if (listedTeam && listedTeam !== teamId) return false;
+    const requestedCount = valueNumber(item.requestedCount);
+    if (
+      requestedCount !== null &&
+      requestedCount !== matchingAttempt.amount
+    ) {
+      return false;
+    }
+    const createdAt =
+      asDate(item.createdAt) ?? asDate(item.startedAt) ?? asDate(item.updatedAt);
+    return (
+      createdAt === null ||
+      providerImportMatchesAttemptTime(createdAt, matchingAttempt.attemptedAt)
+    );
+  });
+
+  if (candidates.length !== 1) {
+    return {
+      outcome: "AMBIGUOUS",
+      providerStatus: null,
+      message:
+        "bundle.social did not return one unique import record matching this team's requested amount and start time. Capacity remains reserved; a missing or duplicate record does not prove rejection.",
+    };
+  }
+
+  const importId =
+    valueString(candidates[0]!.id) ?? valueString(candidates[0]!.importId);
+  if (!importId) {
+    return {
+      outcome: "AMBIGUOUS",
+      providerStatus: null,
+      message:
+        "bundle.social did not provide an import ID that can be verified. Capacity remains reserved.",
+    };
+  }
+
+  const details = await bndleRequest(
+    `misc/google-business/reviews/import/${encodeURIComponent(importId)}`,
+  );
+  const detailCreatedAt =
+    asDate(details.createdAt) ??
+    asDate(details.startedAt) ??
+    asDate(details.updatedAt);
+  const providerStatus = valueString(details.status);
+  const detailsMatch =
+    valueString(details.id) === importId &&
+    valueString(details.teamId) === teamId &&
+    valueNumber(details.requestedCount) === matchingAttempt.amount &&
+    providerImportMatchesAttemptTime(
+      detailCreatedAt,
+      matchingAttempt.attemptedAt,
+    ) &&
+    providerStatus !== null &&
+    KNOWN_PROVIDER_IMPORT_STATUSES.has(providerStatus);
+
+  if (!detailsMatch) {
+    return {
+      outcome: "AMBIGUOUS",
+      providerStatus,
+      message:
+        "The provider import details do not uniquely confirm this team's requested amount and start time. Capacity remains reserved.",
+    };
+  }
+
+  const settled = await completeSharedReviewImportReservationWithEvidence(
+    reservationId,
+  );
+  return settled
+    ? {
+        outcome: "RECONCILED",
+        providerStatus,
+        message:
+          "bundle.social confirmed this import was accepted. Its reserved capacity has been counted as used.",
+      }
+    : {
+        outcome: "NOT_ELIGIBLE",
+        providerStatus,
+        message:
+          "The reservation changed while it was being checked. Refresh the list to see its current status.",
+      };
 }
 
 async function fetchAllReviews(

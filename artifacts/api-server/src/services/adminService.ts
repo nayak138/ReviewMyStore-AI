@@ -19,6 +19,7 @@ import {
 } from "@workspace/db";
 import { generateUniqueOrgSlug } from "./authService";
 import { sendAgencyOwnerInvitationEmail } from "./notificationService";
+import { listStaleUncertainSharedReviewImportReservations } from "./businessUsageService";
 
 const DEFAULT_INVITATION_DAYS = 14;
 
@@ -257,6 +258,31 @@ export async function getAdminPortal() {
       archivedAt: iso(business.archivedAt),
       createdAt: business.createdAt.toISOString(),
     })),
+  };
+}
+
+export async function listAdminSharedReviewImports(now = new Date()) {
+  const attempts = await listStaleUncertainSharedReviewImportReservations(now);
+  return {
+    attempts: attempts.flatMap((attempt) => {
+      const providerAttemptStatus = attempt.providerAttemptStatus;
+      if (
+        providerAttemptStatus !== "IN_FLIGHT" &&
+        providerAttemptStatus !== "ACCEPTED" &&
+        providerAttemptStatus !== "REJECTED"
+      ) {
+        return [];
+      }
+      return [{
+        id: attempt.id,
+        organizationName: attempt.organizationName ?? "Agency unavailable",
+        businessName: attempt.businessName ?? "Business unavailable",
+        amount: attempt.amount,
+        providerAttemptStatus,
+        attemptedAt: attempt.attemptedAt.toISOString(),
+        ageMs: Math.max(0, now.getTime() - attempt.attemptedAt.getTime()),
+      }];
+    }),
   };
 }
 

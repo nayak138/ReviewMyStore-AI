@@ -14,6 +14,7 @@ import {
   businessUsageReservationsTable,
   businessesTable,
   db,
+  organizationsTable,
   sharedProviderUsagePeriodsTable,
   sharedProviderUsageReservationsTable,
   type BusinessUsageMetric,
@@ -361,6 +362,141 @@ export function markSharedReviewImportAttemptRejected(
     "IN_FLIGHT",
     "REJECTED",
   );
+}
+
+export async function listStaleUncertainSharedReviewImportReservations(
+  now = new Date(),
+) {
+  const staleBefore = new Date(
+    now.getTime() - REVIEW_IMPORT_ATTEMPT_STALE_AFTER_MS,
+  );
+  return db
+    .select({
+      id: sharedProviderUsageReservationsTable.id,
+      providerAttemptId: sharedProviderUsageReservationsTable.providerAttemptId,
+      amount: sharedProviderUsageReservationsTable.amount,
+      attemptedAt: sharedProviderUsageReservationsTable.createdAt,
+      providerAttemptStatus:
+        sharedProviderUsageReservationsTable.providerAttemptStatus,
+      businessId: businessUsageReservationsTable.businessId,
+      organizationId: businessUsageReservationsTable.organizationId,
+      businessName: businessesTable.name,
+      organizationName: organizationsTable.name,
+    })
+    .from(sharedProviderUsageReservationsTable)
+    .leftJoin(
+      businessUsageReservationsTable,
+      and(
+        eq(
+          businessUsageReservationsTable.providerAttemptId,
+          sharedProviderUsageReservationsTable.providerAttemptId,
+        ),
+        eq(businessUsageReservationsTable.metric, "GOOGLE_REVIEW_IMPORTS"),
+        eq(businessUsageReservationsTable.status, "PENDING"),
+      ),
+    )
+    .leftJoin(
+      businessesTable,
+      eq(businessesTable.id, businessUsageReservationsTable.businessId),
+    )
+    .leftJoin(
+      organizationsTable,
+      eq(
+        organizationsTable.id,
+        businessUsageReservationsTable.organizationId,
+      ),
+    )
+    .where(
+      and(
+        eq(
+          sharedProviderUsageReservationsTable.providerAccount,
+          SHARED_REVIEW_IMPORT_ACCOUNT,
+        ),
+        eq(
+          sharedProviderUsageReservationsTable.metric,
+          SHARED_REVIEW_IMPORT_METRIC,
+        ),
+        eq(sharedProviderUsageReservationsTable.status, "PENDING"),
+        inArray(
+          sharedProviderUsageReservationsTable.providerAttemptStatus,
+          ["IN_FLIGHT", "ACCEPTED", "REJECTED"],
+        ),
+        isNotNull(sharedProviderUsageReservationsTable.providerAttemptId),
+        lte(sharedProviderUsageReservationsTable.updatedAt, staleBefore),
+      ),
+    )
+    .orderBy(desc(sharedProviderUsageReservationsTable.updatedAt));
+}
+
+/**
+ * Settle only after a provider import record has been independently matched
+ * to this attempt. Keep the attempt's original timestamp so the existing
+ * stale reconciler can retry if one of the ledger writes fails partway through.
+ */
+export async function completeSharedReviewImportReservationWithEvidence(
+  reservationId: string,
+): Promise<boolean> {
+  const [reservation] = await db
+    .select()
+    .from(sharedProviderUsageReservationsTable)
+    .where(eq(sharedProviderUsageReservationsTable.id, reservationId))
+    .limit(1);
+
+  if (!reservation) return false;
+  if (reservation.status !== "PENDING") {
+    return reservation.status === "SUCCEEDED";
+  }
+  if (!reservation.providerAttemptId) return false;
+
+  let attemptStatus = reservation.providerAttemptStatus;
+  if (attemptStatus === "IN_FLIGHT") {
+    const [accepted] = await db
+      .update(sharedProviderUsageReservationsTable)
+      .set({ providerAttemptStatus: "ACCEPTED" })
+      .where(
+        and(
+          eq(sharedProviderUsageReservationsTable.id, reservationId),
+          eq(sharedProviderUsageReservationsTable.status, "PENDING"),
+          eq(
+            sharedProviderUsageReservationsTable.providerAttemptStatus,
+            "IN_FLIGHT",
+          ),
+        ),
+      )
+      .returning({ id: sharedProviderUsageReservationsTable.id });
+
+    if (accepted) {
+      attemptStatus = "ACCEPTED";
+    } else {
+      const [current] = await db
+        .select({
+          status: sharedProviderUsageReservationsTable.status,
+          providerAttemptStatus:
+            sharedProviderUsageReservationsTable.providerAttemptStatus,
+        })
+        .from(sharedProviderUsageReservationsTable)
+        .where(eq(sharedProviderUsageReservationsTable.id, reservationId))
+        .limit(1);
+      if (current?.status === "SUCCEEDED") return true;
+      attemptStatus = current?.providerAttemptStatus ?? null;
+    }
+  }
+
+  if (attemptStatus !== "ACCEPTED") return false;
+
+  await settleBusinessUsageReservationsForReviewImportAttempt(
+    reservation.providerAttemptId,
+    "SUCCEEDED",
+  );
+  const settled = await completeSharedReviewImportReservation(reservationId);
+  if (settled) return true;
+
+  const [current] = await db
+    .select({ status: sharedProviderUsageReservationsTable.status })
+    .from(sharedProviderUsageReservationsTable)
+    .where(eq(sharedProviderUsageReservationsTable.id, reservationId))
+    .limit(1);
+  return current?.status === "SUCCEEDED";
 }
 
 export class BusinessUsageLimitError extends Error {

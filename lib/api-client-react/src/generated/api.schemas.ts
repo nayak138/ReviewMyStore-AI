@@ -430,6 +430,46 @@ export interface AdminPortal {
   businesses: AdminBusiness[];
 }
 
+export type AdminSharedReviewImportProviderAttemptStatus = typeof AdminSharedReviewImportProviderAttemptStatus[keyof typeof AdminSharedReviewImportProviderAttemptStatus];
+
+
+export const AdminSharedReviewImportProviderAttemptStatus = {
+  IN_FLIGHT: 'IN_FLIGHT',
+  ACCEPTED: 'ACCEPTED',
+  REJECTED: 'REJECTED',
+} as const;
+
+export interface AdminSharedReviewImport {
+  id: string;
+  organizationName: string;
+  businessName: string;
+  amount: number;
+  providerAttemptStatus: AdminSharedReviewImportProviderAttemptStatus;
+  attemptedAt: string;
+  ageMs: number;
+}
+
+export interface AdminSharedReviewImportList {
+  attempts: AdminSharedReviewImport[];
+}
+
+export type AdminSharedReviewImportCheckOutcome = typeof AdminSharedReviewImportCheckOutcome[keyof typeof AdminSharedReviewImportCheckOutcome];
+
+
+export const AdminSharedReviewImportCheckOutcome = {
+  RECONCILED: 'RECONCILED',
+  AMBIGUOUS: 'AMBIGUOUS',
+  NOT_FOUND: 'NOT_FOUND',
+  NOT_ELIGIBLE: 'NOT_ELIGIBLE',
+} as const;
+
+export interface AdminSharedReviewImportCheck {
+  outcome: AdminSharedReviewImportCheckOutcome;
+  /** @nullable */
+  providerStatus: string | null;
+  message: string;
+}
+
 export type AdminPlatformResetInputConfirmation = typeof AdminPlatformResetInputConfirmation[keyof typeof AdminPlatformResetInputConfirmation];
 
 

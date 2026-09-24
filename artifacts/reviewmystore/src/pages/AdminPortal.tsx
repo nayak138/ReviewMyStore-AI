@@ -6,17 +6,21 @@ import {
   getGetAdminPortalQueryKey,
   getGetCurrentUserQueryKey,
   getListAdminDeactivationRequestsQueryKey,
+  getListAdminSharedReviewImportsQueryKey,
+  useCheckAdminSharedReviewImport,
   useCreateAdminAgency,
   useCreateAdminAgencyInvitation,
   useGetAdminPortal,
   useGetCurrentUser,
   useListAdminDeactivationRequests,
+  useListAdminSharedReviewImports,
   useResetAdminPlatformData,
   useRevokeAdminAgencyInvitation,
   useReviewAdminDeactivationRequest,
   useUpdateAdminAgency,
   type AdminAgency,
   type AdminDeactivationRequest,
+  type AdminSharedReviewImport,
   type OrganizationPlan,
   type OrganizationStatus,
   type SubscriptionStatus,
@@ -39,6 +43,7 @@ import {
   Link2,
   Loader2,
   Plus,
+  RefreshCw,
   Search,
   ShieldCheck,
   Trash2,
@@ -59,6 +64,15 @@ function formatDate(value: string | null | undefined) {
   return value
     ? new Date(value).toLocaleDateString(undefined, { dateStyle: "medium" })
     : "Never";
+}
+
+function formatElapsed(ms: number) {
+  const minutes = Math.max(1, Math.floor(ms / 60_000));
+  if (minutes < 60) return `${minutes} min`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours} hr ${minutes % 60} min`;
+  const days = Math.floor(hours / 24);
+  return `${days} day${days === 1 ? "" : "s"} ${hours % 24} hr`;
 }
 
 function signupUrl(path: string) {
@@ -436,12 +450,75 @@ function AgencyCard({
   );
 }
 
+function SharedReviewImportQueue({
+  attempts,
+  isLoading,
+  checkingId,
+  onCheck,
+}: {
+  attempts: AdminSharedReviewImport[];
+  isLoading: boolean;
+  checkingId?: string;
+  onCheck: (id: string) => void;
+}) {
+  if (isLoading) {
+    return <div className="space-y-3"><Skeleton className="h-24 w-full" /><Skeleton className="h-24 w-full" /></div>;
+  }
+  if (attempts.length === 0) {
+    return (
+      <Card>
+        <CardContent className="py-16 text-center text-sm text-muted-foreground">
+          No old review-import reservations are holding shared capacity.
+        </CardContent>
+      </Card>
+    );
+  }
+  return (
+    <div className="space-y-3">
+      {attempts.map((attempt) => (
+        <Card key={attempt.id} className="border-border shadow-sm">
+          <CardContent className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="min-w-0">
+              <p className="font-medium text-foreground">{attempt.businessName}</p>
+              <p className="text-sm text-muted-foreground">{attempt.organizationName}</p>
+              <p className="mt-2 text-xs text-muted-foreground">
+                Attempted {formatDate(attempt.attemptedAt)} · held for {formatElapsed(attempt.ageMs)}
+              </p>
+            </div>
+            <div className="flex flex-wrap items-center gap-3">
+              <Badge variant="outline">
+                {attempt.providerAttemptStatus === "IN_FLIGHT"
+                  ? "Outcome unclear"
+                  : `Provider ${attempt.providerAttemptStatus.toLowerCase()} confirmed`}
+              </Badge>
+              <Badge variant="outline">{attempt.amount.toLocaleString()} reviews held</Badge>
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={Boolean(checkingId)}
+                onClick={() => onCheck(attempt.id)}
+              >
+                {checkingId === attempt.id
+                  ? <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  : <RefreshCw className="mr-2 h-4 w-4" />}
+                {attempt.providerAttemptStatus === "IN_FLIGHT"
+                  ? "Check bundle.social"
+                  : "Settle confirmed result"}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+  );
+}
+
 export default function AdminPortal() {
   const { isLoaded, isSignedIn } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
-  const [view, setView] = useState<"agencies" | "businesses" | "deactivation">("agencies");
+  const [view, setView] = useState<"agencies" | "businesses" | "deactivation" | "sharedImports">("agencies");
   const [createOpen, setCreateOpen] = useState(false);
   const [resetOpen, setResetOpen] = useState(false);
   const [resetConfirmation, setResetConfirmation] = useState("");
@@ -472,6 +549,42 @@ export default function AdminPortal() {
         queryKey: getListAdminDeactivationRequestsQueryKey(),
       },
     });
+  const {
+    data: sharedImportsData,
+    isLoading: sharedImportsLoading,
+  } = useListAdminSharedReviewImports({
+    query: {
+      enabled: !!isSignedIn && isSuperAdmin,
+      queryKey: getListAdminSharedReviewImportsQueryKey(),
+    },
+  });
+  const checkSharedImport = useCheckAdminSharedReviewImport({
+    mutation: {
+      onSuccess: (result) => {
+        void queryClient.invalidateQueries({
+          queryKey: getListAdminSharedReviewImportsQueryKey(),
+        });
+        toast({
+          title:
+            result.outcome === "RECONCILED"
+              ? result.providerStatus === "REJECTED"
+                ? "Provider rejection confirmed"
+                : "Provider acceptance confirmed"
+              : result.outcome === "AMBIGUOUS"
+                ? "Capacity remains reserved"
+                : "Attempt status changed",
+          description: result.message,
+        });
+      },
+      onError: () =>
+        toast({
+          title: "Provider check unavailable",
+          description:
+            "Capacity remains reserved. Try the provider check again later.",
+          variant: "destructive",
+        }),
+    },
+  });
   const createAgency = useCreateAdminAgency({
     mutation: {
       onSuccess: (result) => {
@@ -547,6 +660,15 @@ export default function AdminPortal() {
       ),
     [data?.businesses, search],
   );
+  const filteredSharedImports = useMemo(
+    () =>
+      (sharedImportsData?.attempts ?? []).filter((attempt) =>
+        `${attempt.businessName} ${attempt.organizationName}`
+          .toLowerCase()
+          .includes(search.toLowerCase()),
+      ),
+    [sharedImportsData?.attempts, search],
+  );
   const newAiQuotaValue = Number(newAgency.aiQuota);
   const newBusinessesLimitValue = Number(newAgency.businessesLimit);
   const newAgencyLimitsInvalid =
@@ -608,11 +730,15 @@ export default function AdminPortal() {
                Review requests
                {(deactivationData?.pendingCount ?? 0) > 0 && <span className="ml-1.5 rounded-full bg-amber-500/15 px-1.5 text-xs text-amber-700 dark:text-amber-300">{deactivationData?.pendingCount}</span>}
              </Button>
+             <Button size="sm" variant={view === "sharedImports" ? "secondary" : "ghost"} onClick={() => setView("sharedImports")}>
+               Shared capacity
+               {(sharedImportsData?.attempts.length ?? 0) > 0 && <span className="ml-1.5 rounded-full bg-amber-500/15 px-1.5 text-xs text-amber-700 dark:text-amber-300">{sharedImportsData?.attempts.length}</span>}
+             </Button>
           </div>
-          <div className="relative w-full sm:max-w-sm">
+          {view !== "deactivation" && <div className="relative w-full sm:max-w-sm">
             <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
             <Input className="pl-9" value={search} onChange={(event) => setSearch(event.target.value)} placeholder={view === "agencies" ? "Search agencies or owners…" : "Search businesses or agencies…"} />
-          </div>
+          </div>}
         </div>
 
         {isLoading ? (
@@ -647,6 +773,26 @@ export default function AdminPortal() {
               </div>
             </CardContent>
           </Card>
+        ) : view === "sharedImports" ? (
+          <div className="space-y-4">
+            <Card className="border-amber-300/70 bg-amber-50/70 shadow-sm dark:border-amber-900/50 dark:bg-amber-950/20">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <TriangleAlert className="h-4 w-4 text-amber-600" />
+                  Why shared capacity is held
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-0 text-sm text-muted-foreground">
+                Review-import allowance is shared across all businesses, so an unclear request stays reserved until one provider job matches the team, amount, and start time. If a provider result was already recorded, the action applies it: accepted requests are counted as used and explicit rejections release capacity. Missing or duplicate job records are not proof of rejection, so that capacity stays held.
+              </CardContent>
+            </Card>
+            <SharedReviewImportQueue
+              attempts={filteredSharedImports}
+              isLoading={sharedImportsLoading}
+              checkingId={checkSharedImport.isPending ? checkSharedImport.variables?.id : undefined}
+              onCheck={(id) => checkSharedImport.mutate({ id })}
+            />
+          </div>
         ) : (
           <DeactivationQueue
             requests={deactivationData?.requests ?? []}

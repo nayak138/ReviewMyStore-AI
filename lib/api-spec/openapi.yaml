@@ -1064,6 +1064,75 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  /v1/admin/shared-review-imports:
+    get:
+      operationId: listAdminSharedReviewImports
+      tags: [admin]
+      summary: List old uncertain shared review-import reservations
+      responses:
+        "200":
+          description: Old uncertain provider attempts (Super Admin only)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminSharedReviewImportList"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Not authorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /v1/admin/shared-review-imports/{id}/check:
+    post:
+      operationId: checkAdminSharedReviewImport
+      tags: [admin]
+      summary: Check provider evidence before settling reserved capacity
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Provider evidence check result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminSharedReviewImportCheck"
+        "400":
+          description: Invalid reservation ID
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Not authorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "502":
+          description: Provider evidence could not be checked
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /v1/admin/deactivation-requests:
     get:
       operationId: listAdminDeactivationRequests
@@ -3653,6 +3722,60 @@ components:
         - overview
         - agencies
         - businesses
+
+    AdminSharedReviewImport:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        organizationName:
+          type: string
+        businessName:
+          type: string
+        amount:
+          type: integer
+        providerAttemptStatus:
+          type: string
+          enum: ["IN_FLIGHT", "ACCEPTED", "REJECTED"]
+        attemptedAt:
+          type: string
+          format: date-time
+        ageMs:
+          type: integer
+      required:
+        - id
+        - organizationName
+        - businessName
+        - amount
+        - providerAttemptStatus
+        - attemptedAt
+        - ageMs
+
+    AdminSharedReviewImportList:
+      type: object
+      properties:
+        attempts:
+          type: array
+          items:
+            $ref: "#/components/schemas/AdminSharedReviewImport"
+      required:
+        - attempts
+
+    AdminSharedReviewImportCheck:
+      type: object
+      properties:
+        outcome:
+          type: string
+          enum: ["RECONCILED", "AMBIGUOUS", "NOT_FOUND", "NOT_ELIGIBLE"]
+        providerStatus:
+          type: ["string", "null"]
+        message:
+          type: string
+      required:
+        - outcome
+        - providerStatus
+        - message
 
     AdminPlatformResetInput:
       type: object
