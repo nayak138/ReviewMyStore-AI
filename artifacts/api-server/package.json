@@ -8,6 +8,7 @@
     "build": "node ./build.mjs",
     "start": "node --enable-source-maps ./dist/index.mjs",
     "typecheck": "tsc -p tsconfig.json --noEmit",
+    "check:bundle-social-import-history": "tsx src/scripts/checkBundleSocialImportHistory.ts",
     "test": "tsx --test \"src/**/*.test.ts\""
   },
   "dependencies": {

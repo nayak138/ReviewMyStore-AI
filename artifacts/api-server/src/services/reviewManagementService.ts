@@ -42,6 +42,11 @@ import {
   SharedReviewImportLimitError,
 } from "./businessUsageService";
 import { logger } from "../lib/logger";
+import {
+  assessReviewImportHistory,
+  getReviewImportId,
+  reviewImportDetailsMatch,
+} from "./reviewImportRecoveryEvidence";
 
 // bundle.social REST API. All endpoints live under /api/v1 and authenticate
 // with the org-level x-api-key header. Docs: https://info.bundle.social
@@ -1256,26 +1261,6 @@ async function waitForReviewImport(teamId: string): Promise<string | null> {
   return "The review import is still running. Sync again in a minute to pick up the newest reviews.";
 }
 
-const IMPORT_EVIDENCE_TIME_TOLERANCE_MS = 2 * 60_000;
-const KNOWN_PROVIDER_IMPORT_STATUSES = new Set([
-  "PENDING",
-  "FETCHING_REVIEWS",
-  "COMPLETED",
-  "FAILED",
-  "RATE_LIMITED",
-]);
-
-function providerImportMatchesAttemptTime(
-  value: Date | null,
-  attemptedAt: Date,
-) {
-  return (
-    value !== null &&
-    Math.abs(value.getTime() - attemptedAt.getTime()) <=
-      IMPORT_EVIDENCE_TIME_TOLERANCE_MS
-  );
-}
-
 export type SharedReviewImportRecoveryResult = {
   outcome: "RECONCILED" | "AMBIGUOUS" | "NOT_FOUND" | "NOT_ELIGIBLE";
   providerStatus: string | null;
@@ -1387,27 +1372,13 @@ export async function recoverUncertainSharedReviewImport(
     teamId,
   });
   const imports = asArray(listing.imports);
-  const candidates = imports.filter((item) => {
-    const id = valueString(item.id) ?? valueString(item.importId);
-    if (!id) return false;
-    const listedTeam = valueString(item.teamId);
-    if (listedTeam && listedTeam !== teamId) return false;
-    const requestedCount = valueNumber(item.requestedCount);
-    if (
-      requestedCount !== null &&
-      requestedCount !== matchingAttempt.amount
-    ) {
-      return false;
-    }
-    const createdAt =
-      asDate(item.createdAt) ?? asDate(item.startedAt) ?? asDate(item.updatedAt);
-    return (
-      createdAt === null ||
-      providerImportMatchesAttemptTime(createdAt, matchingAttempt.attemptedAt)
-    );
-  });
-
-  if (candidates.length !== 1) {
+  const attemptEvidence = {
+    teamId,
+    requestedCount: matchingAttempt.amount,
+    attemptedAt: matchingAttempt.attemptedAt,
+  };
+  const assessment = assessReviewImportHistory(imports, attemptEvidence);
+  if (assessment.outcome !== "UNIQUE") {
     return {
       outcome: "AMBIGUOUS",
       providerStatus: null,
@@ -1416,8 +1387,7 @@ export async function recoverUncertainSharedReviewImport(
     };
   }
 
-  const importId =
-    valueString(candidates[0]!.id) ?? valueString(candidates[0]!.importId);
+  const importId = getReviewImportId(assessment.candidates[0]!);
   if (!importId) {
     return {
       outcome: "AMBIGUOUS",
@@ -1430,23 +1400,8 @@ export async function recoverUncertainSharedReviewImport(
   const details = await bndleRequest(
     `misc/google-business/reviews/import/${encodeURIComponent(importId)}`,
   );
-  const detailCreatedAt =
-    asDate(details.createdAt) ??
-    asDate(details.startedAt) ??
-    asDate(details.updatedAt);
   const providerStatus = valueString(details.status);
-  const detailsMatch =
-    valueString(details.id) === importId &&
-    valueString(details.teamId) === teamId &&
-    valueNumber(details.requestedCount) === matchingAttempt.amount &&
-    providerImportMatchesAttemptTime(
-      detailCreatedAt,
-      matchingAttempt.attemptedAt,
-    ) &&
-    providerStatus !== null &&
-    KNOWN_PROVIDER_IMPORT_STATUSES.has(providerStatus);
-
-  if (!detailsMatch) {
+  if (!reviewImportDetailsMatch(details, importId, attemptEvidence)) {
     return {
       outcome: "AMBIGUOUS",
       providerStatus,

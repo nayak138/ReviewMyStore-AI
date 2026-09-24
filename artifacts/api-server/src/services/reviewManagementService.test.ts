@@ -8,6 +8,10 @@ import {
   resetCalls,
   restoreFetch,
 } from "../testSupport/fakeProviderFetch.ts";
+import {
+  assessReviewImportHistory,
+  reviewImportDetailsMatch,
+} from "./reviewImportRecoveryEvidence.ts";
 import { test, after } from "node:test";
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
@@ -89,6 +93,46 @@ const recoveryTestNow = new Date(
   Date.UTC(2700, Number.parseInt(runId.slice(0, 3), 16), 15),
 );
 const createdOrgIds: string[] = [];
+
+test("review-import evidence distinguishes unique, ambiguous, and no-match history", () => {
+  const attempt = {
+    teamId: "evidence-team",
+    requestedCount: 25,
+    attemptedAt: new Date("2026-09-20T12:00:00.000Z"),
+  };
+  const importRecord = {
+    id: "evidence-import",
+    teamId: attempt.teamId,
+    requestedCount: attempt.requestedCount,
+    createdAt: attempt.attemptedAt.toISOString(),
+    status: "COMPLETED",
+  };
+
+  assert.equal(
+    assessReviewImportHistory([importRecord], attempt).outcome,
+    "UNIQUE",
+  );
+  assert.equal(
+    assessReviewImportHistory(
+      [importRecord, { ...importRecord, id: "duplicate-import" }],
+      attempt,
+    ).outcome,
+    "AMBIGUOUS",
+  );
+  assert.equal(assessReviewImportHistory([], attempt).outcome, "NOT_FOUND");
+  assert.equal(
+    reviewImportDetailsMatch(importRecord, "evidence-import", attempt),
+    true,
+  );
+  assert.equal(
+    reviewImportDetailsMatch(
+      { ...importRecord, teamId: "different-team" },
+      "evidence-import",
+      attempt,
+    ),
+    false,
+  );
+});
 
 async function getSharedReviewUsage(now: Date) {
   const periodStart = new Date(now);
