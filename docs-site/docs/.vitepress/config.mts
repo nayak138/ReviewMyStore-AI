@@ -8,6 +8,11 @@ export default defineConfig({
     "Practical guides for agencies and store teams using 5-Star.AI.",
   cleanUrls: true,
   lastUpdated: true,
+  vite: {
+    build: {
+      target: "esnext",
+    },
+  },
   head: [
     ["link", { rel: "icon", href: "/favicon.png" }],
     ["meta", { name: "theme-color", content: "#f7f8fc" }],
