@@ -92,9 +92,17 @@ const sections = [
     title: "Fees and billing",
     body: (
       <p>
-        Some parts of the Service may be offered for a fee. Pricing and billing terms are presented
-        at the time of purchase. Unless stated otherwise, fees are non-refundable to the extent
-        permitted by law, and we may change pricing with reasonable advance notice.
+        5-Star.AI is an agency-led service with custom pricing and no fixed public plan price. Before
+        paid service begins, we will provide a written quote that states whether fees are per agency
+        account or per business or location, which businesses or locations are covered, included
+        usage, billing frequency, and applicable taxes. The 7-day trial is free, does not
+        automatically convert to a paid plan, and does not trigger a charge. Paid service begins
+        only after you accept the quote. You may cancel by emailing{" "}
+        <a href="mailto:hello@5-star.ai" className="text-primary hover:underline">
+          hello@5-star.ai
+        </a>
+        ; any notice period, effective date, or refund terms will be stated in your accepted quote.
+        We may change pricing with reasonable advance notice.
       </p>
     ),
   },
@@ -112,25 +120,28 @@ const sections = [
           confirmed.
         </p>
         <p>
-          The ₹200/month agency plan currently includes, per business, up to
-          200 Google review imports per calendar month, 100 AI-generated Google
-          review reply drafts per calendar month, 50 social post destinations
-          per UTC day, 5,000 social comment import requests per calendar
-          month, and 50 social comment replies per UTC day. Public AI review
-          generation also has a 50-generation monthly business allowance.
-          Failed provider requests release their reserved allowance; accepted
-          scheduled or published actions count, and deleting a scheduled
-          action does not refund its allowance.
+          Included usage is custom and will be stated in your written quote.
+          Application usage allowances are technical limits, not a promise that
+          the same volume is available across an agency account. Failed provider
+          requests release their reserved allowance; accepted scheduled or
+          published actions count, and deleting a scheduled action does not
+          refund its allowance.
         </p>
         <p>
-          These are 5-Star.AI application allowances, not guarantees of
-          provider capacity. bundle.social Pro has its own limits, including
-          50 Facebook/Instagram posts per account per day, 50 Facebook/Instagram
-          comments per account per day, 20 Google Business posts per account
-          per day, 200 Google review or Facebook recommendation imports per
-          account per month, and separate API throttles. The stricter limit
-          applies, and bundle.social may change its limits under its own
-          terms.
+          Provider capacity is separate from our application allowances and is
+          shared across businesses connected through our bundle.social account.
+          Current bundle.social Pro limits include 50 Facebook or Instagram
+          posts per connected account per day, 50 Facebook or Instagram
+          comments per connected account per day, 20 Google Business posts per
+          connected account per day, and 200 Google review or Facebook
+          recommendation imports per connected account per month, plus
+          separate API throttles. These are provider-plan ceilings, not
+          individual entitlements for each 5-Star.AI business; use by other
+          connected businesses can reduce remaining shared capacity. Included
+          quantities in a written quote are subject to the lower of our
+          application allowances and available provider capacity. Provider
+          limits and throttles apply, may change under bundle.social's terms,
+          and can constrain usage below application allowances.
         </p>
       </>
     ),
@@ -218,7 +229,7 @@ export default function Terms() {
       badge="Legal"
       title="Terms of Service"
       intro="The rules for using 5-Star.AI — plainly stated."
-      lastUpdated="August 6, 2026"
+      lastUpdated="September 25, 2026"
       sections={sections}
       metaTitle={TERMS_META.title}
       metaDescription={TERMS_META.description}
