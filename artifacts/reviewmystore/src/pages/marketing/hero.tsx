@@ -1,8 +1,8 @@
 import { ArrowRight, BookOpen, Check, PencilLine, Send, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { BookDemoDialog } from "@/components/book-demo-dialog";
 import type { TrialDialogPlacement } from "@/components/book-demo-dialog";
 import { scrollToSection } from "./scroll";
+import { BookDemoDialog } from "@/components/book-demo-dialog-lazy";
 
 export const REASSURANCE = ["7-Day Free Trial", "No Credit Card", "No Sign Up"] as const;
 export const DOCS_URL = "https://docs.5-star.ai/";

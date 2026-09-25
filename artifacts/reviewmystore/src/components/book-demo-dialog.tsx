@@ -1,4 +1,10 @@
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import {
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type RefObject,
+} from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as RadioGroupPrimitive from "@radix-ui/react-radio-group";
@@ -11,7 +17,6 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import {
   Form,
@@ -27,6 +32,7 @@ import { RadioGroup } from "@/components/ui/radio-group";
 import { useToast } from "@/hooks/use-toast";
 import { useCreateDemoRequest } from "@workspace/api-client-react";
 import { trackEvent } from "@/lib/analytics";
+import { AppProviders } from "@/components/app-providers";
 
 export type TrialDialogPlacement =
   | "hero"
@@ -53,13 +59,30 @@ const demoFormSchema = z.object({
 
 type DemoFormValues = z.infer<typeof demoFormSchema>;
 
-export function BookDemoDialog({ children, placement, marketingDark = false }: { children: ReactNode; placement: TrialDialogPlacement; marketingDark?: boolean }) {
-  const [open, setOpen] = useState(false);
+interface BookDemoDialogContentProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  marketingDark: boolean;
+  dialogId: string;
+  triggerRef: RefObject<HTMLElement | null>;
+  hasAppProviders: boolean;
+  placement: TrialDialogPlacement;
+}
+
+function BookDemoDialogContentInner({
+  open,
+  onOpenChange,
+  marketingDark,
+  dialogId,
+  triggerRef,
+  placement,
+}: BookDemoDialogContentProps) {
   const [submitted, setSubmitted] = useState(false);
   const [requestError, setRequestError] = useState(false);
   const [requestPending, setRequestPending] = useState(false);
   const submittingRef = useRef(false);
-  const openRef = useRef(false);
+  const openRef = useRef(open);
+  const previousOpenRef = useRef(false);
   const requestGeneration = useRef(0);
   const resetTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { toast } = useToast();
@@ -127,19 +150,20 @@ export function BookDemoDialog({ children, placement, marketingDark = false }: {
     mutation.reset();
   };
 
-  const handleOpenChange = (next: boolean) => {
-    const wasOpen = openRef.current;
-    openRef.current = next;
-    setOpen(next);
-    if (next && !wasOpen) {
-      trackEvent("guided_trial_dialog_opened", { placement });
-    }
-    if (next && resetTimer.current) {
-      clearTimeout(resetTimer.current);
-      resetTimer.current = null;
+  useLayoutEffect(() => {
+    const wasOpen = previousOpenRef.current;
+    openRef.current = open;
+
+    if (open) {
+      if (!wasOpen) {
+        trackEvent("guided_trial_dialog_opened", { placement });
+      }
+      if (resetTimer.current) {
+        clearTimeout(resetTimer.current);
+        resetTimer.current = null;
+      }
       resetView();
-    }
-    if (!next) {
+    } else if (wasOpen) {
       requestGeneration.current += 1;
       // Reset for the next visit after the closing animation.
       resetTimer.current = setTimeout(() => {
@@ -147,12 +171,24 @@ export function BookDemoDialog({ children, placement, marketingDark = false }: {
         resetTimer.current = null;
       }, 300);
     }
+    previousOpenRef.current = open;
+  }, [open]);
+
+  const handleOpenChange = (next: boolean) => {
+    openRef.current = next;
+    onOpenChange(next);
   };
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogTrigger asChild>{children}</DialogTrigger>
-      <DialogContent className={`max-h-[calc(100dvh-2rem)] w-[calc(100vw-2rem)] overflow-y-auto overscroll-contain p-4 text-foreground sm:max-w-lg sm:p-6 ${marketingDark ? "dark" : ""}`}>
+      <DialogContent
+        id={dialogId}
+        onCloseAutoFocus={(event) => {
+          event.preventDefault();
+          triggerRef.current?.focus();
+        }}
+        className={`max-h-[calc(100dvh-2rem)] w-[calc(100vw-2rem)] overflow-y-auto overscroll-contain p-4 text-foreground sm:max-w-lg sm:p-6 ${marketingDark ? "dark" : ""}`}
+      >
         {submitted ? (
           <motion.div
             initial={reduceMotion ? false : { opacity: 0, scale: 0.95 }}
@@ -311,4 +347,9 @@ export function BookDemoDialog({ children, placement, marketingDark = false }: {
       </DialogContent>
     </Dialog>
   );
+}
+
+export function BookDemoDialogContent(props: BookDemoDialogContentProps) {
+  const content = <BookDemoDialogContentInner {...props} />;
+  return props.hasAppProviders ? content : <AppProviders>{content}</AppProviders>;
 }

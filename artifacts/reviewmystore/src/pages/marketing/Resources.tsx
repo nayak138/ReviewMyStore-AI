@@ -3,7 +3,7 @@ import { MarketingLayout } from "./layout";
 import { usePageMeta } from "./use-page-meta";
 import { RESOURCES_META } from "./route-meta";
 import { Button } from "@/components/ui/button";
-import { BookDemoDialog } from "@/components/book-demo-dialog";
+import { BookDemoDialog } from "@/components/book-demo-dialog-lazy";
 import {
   Rocket,
   QrCode,

@@ -2,7 +2,7 @@ import { ReactNode, useCallback, useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "wouter";
 import { ArrowUpRight, Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { BookDemoDialog } from "@/components/book-demo-dialog";
+import { BookDemoDialog } from "@/components/book-demo-dialog-lazy";
 import { BrandLogo } from "@/components/brand-logo";
 import { focusSection, scrollToSection } from "./scroll";
 import "./landing.css";

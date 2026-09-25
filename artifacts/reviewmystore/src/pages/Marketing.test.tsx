@@ -29,7 +29,7 @@ vi.mock("wouter", () => ({
 }));
 
 const dialogProps: { marketingDark?: boolean }[] = [];
-vi.mock("@/components/book-demo-dialog", () => ({
+vi.mock("@/components/book-demo-dialog-lazy", () => ({
   BookDemoDialog: ({ children, marketingDark }: { children: ReactNode; marketingDark?: boolean }) => {
     dialogProps.push({ marketingDark });
     return children;

@@ -11,7 +11,10 @@ import {
   Sparkles,
   Star,
 } from "lucide-react";
-import { ReviewTone, SupportedLanguage } from "@workspace/api-client-react";
+import type {
+  ReviewTone as ApiReviewTone,
+  SupportedLanguage,
+} from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { BrandLogo } from "@/components/brand-logo";
 import { LanguageSelector } from "@/components/customer-review/LanguageSelector";
@@ -34,11 +37,17 @@ const highlights = [
   "Great location",
 ];
 
+const DEMO_REVIEW_TONE = {
+  ENTHUSIASTIC: "ENTHUSIASTIC",
+  SHORT_DIRECT: "SHORT_DIRECT",
+  DETAILED: "DETAILED",
+  WARM: "WARM",
+} as const satisfies Record<string, ApiReviewTone>;
 const tones = [
-  { value: ReviewTone.ENTHUSIASTIC, key: "toneEnthusiastic" as const },
-  { value: ReviewTone.SHORT_DIRECT, key: "toneShort" as const },
-  { value: ReviewTone.DETAILED, key: "toneDetailed" as const },
-  { value: ReviewTone.WARM, key: "toneWarm" as const },
+  { value: DEMO_REVIEW_TONE.ENTHUSIASTIC, key: "toneEnthusiastic" as const },
+  { value: DEMO_REVIEW_TONE.SHORT_DIRECT, key: "toneShort" as const },
+  { value: DEMO_REVIEW_TONE.DETAILED, key: "toneDetailed" as const },
+  { value: DEMO_REVIEW_TONE.WARM, key: "toneWarm" as const },
 ];
 
 type DemoLanguage = SupportedLanguage | string;
@@ -47,8 +56,8 @@ const demoHeaderImage = `${import.meta.env.BASE_URL}marina-bay-sands-singapore.j
 export function InteractiveReviewDemo({ active = true, onStatusChange }: { active?: boolean; onStatusChange?: (message: string) => void }) {
   const [rating, setRating] = useState<number | null>(null);
   const [selectedHighlights, setSelectedHighlights] = useState<string[]>([]);
-  const [tone, setTone] = useState<ReviewTone | null>(null);
-  const [language, setLanguage] = useState<DemoLanguage>(SupportedLanguage.en);
+  const [tone, setTone] = useState<ApiReviewTone | null>(null);
+  const [language, setLanguage] = useState<DemoLanguage>("en");
   const [detail, setDetail] = useState("");
   const [customerName, setCustomerName] = useState("");
   const [occasion, setOccasion] = useState("");
@@ -96,7 +105,7 @@ export function InteractiveReviewDemo({ active = true, onStatusChange }: { activ
           sessionId: `landing-demo-${crypto.randomUUID()}`,
           keywords: selectedHighlights,
           rating,
-          tone: tone ?? ReviewTone.WARM,
+          tone: tone ?? DEMO_REVIEW_TONE.WARM,
           language,
           mentionDetail: detail.trim() || null,
           customerName: customerName.trim() || null,

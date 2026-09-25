@@ -14,7 +14,7 @@ vi.mock("wouter", () => ({
   Link: ({ href, children, ...props }: AnchorHTMLAttributes<HTMLAnchorElement>) => <a href={href} {...props}>{children}</a>,
   useLocation: () => ["/", vi.fn()],
 }));
-vi.mock("@/components/book-demo-dialog", () => ({
+vi.mock("@/components/book-demo-dialog-lazy", () => ({
   BookDemoDialog: ({ children }: { children: ReactNode }) => children,
 }));
 

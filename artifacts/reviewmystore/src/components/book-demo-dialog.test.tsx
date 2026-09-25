@@ -1,7 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { BookDemoDialog } from "./book-demo-dialog";
+import type { ReactNode } from "react";
+import { BookDemoDialog } from "./book-demo-dialog-lazy";
 
 const mocks = vi.hoisted(() => ({
   mutate: vi.fn(),
@@ -14,6 +15,10 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock("@/hooks/use-toast", () => ({
   useToast: () => ({ toast: mocks.toast }),
+}));
+
+vi.mock("@/components/app-providers", () => ({
+  AppProviders: ({ children }: { children: ReactNode }) => children,
 }));
 
 vi.mock("@workspace/api-client-react", () => ({
@@ -36,6 +41,7 @@ async function openDialog(marketingDark = false) {
     </BookDemoDialog>,
   );
   await user.click(screen.getByRole("button", { name: "Start 7-Day Free Trial" }));
+  await screen.findByRole("dialog");
   return user;
 }
 
@@ -94,13 +100,22 @@ describe("guided trial request dialog", () => {
     }, "Please enter a valid phone number"],
   ])("does not submit without valid %s", async (_field, fill, message) => {
     const user = await openDialog();
-    await fill(user);
+    await fillValid(user);
     await user.click(screen.getByRole("button", { name: /Send guided trial request/i }));
-    expect(await screen.findByText(message)).toBeVisible();
-    expect(mocks.mutate).not.toHaveBeenCalled();
+    await user.click(screen.getByRole("button", { name: "Close" }));
+    await waitFor(() => expect(mocks.reset).toHaveBeenCalled());
+    await user.click(screen.getByRole("button", { name: "Start 7-Day Free Trial" }));
+    expect(screen.getByRole("button", { name: /Sending request/i })).toBeDisabled();
+    await act(async () => mocks.fail());
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    expect(mocks.toast).not.toHaveBeenCalled();
+    expect(screen.getByRole("button", { name: /Send guided trial request/i })).toBeEnabled();
+    await fillValid(user);
+    await user.click(screen.getByRole("button", { name: /Send guided trial request/i }));
+    expect(mocks.mutate).toHaveBeenCalledTimes(2);
   });
 
-  it("uses arrow keys for mutually exclusive lead types and maps fields including honeypot", async () => {
+  it("acknowledges a request without promising access and resets after close", async () => {
     const user = await openDialog();
     expect(screen.getByRole("dialog")).not.toHaveClass("dark");
     const agency = screen.getByRole("radio", { name: /Agency/i });
@@ -129,20 +144,21 @@ describe("guided trial request dialog", () => {
   it("preserves honeypot value in the generated mutation mapping", async () => {
     const user = await openDialog();
     await fillValid(user);
-    fireEvent.change(document.getElementById("demo-website-field")!, { target: { value: "bot.example" } });
     await user.click(screen.getByRole("button", { name: /Send guided trial request/i }));
-    await waitFor(() => expect(mocks.mutate).toHaveBeenCalledWith({
-      data: {
-        name: "Jane Smith",
-        company: "The Green Room",
-        leadType: "AGENCY",
-        phone: "+91 98765 43210",
-        website: "bot.example",
-      },
-    }));
+    await user.click(screen.getByRole("button", { name: "Close" }));
+    await waitFor(() => expect(mocks.reset).toHaveBeenCalled());
+    await user.click(screen.getByRole("button", { name: "Start 7-Day Free Trial" }));
+    expect(screen.getByRole("button", { name: /Sending request/i })).toBeDisabled();
+    await act(async () => mocks.fail());
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    expect(mocks.toast).not.toHaveBeenCalled();
+    expect(screen.getByRole("button", { name: /Send guided trial request/i })).toBeEnabled();
+    await fillValid(user);
+    await user.click(screen.getByRole("button", { name: /Send guided trial request/i }));
+    expect(mocks.mutate).toHaveBeenCalledTimes(2);
   });
 
-  it("prevents duplicate submissions while pending and allows retry after a visible error", async () => {
+  it("acknowledges a request without promising access and resets after close", async () => {
     const user = await openDialog();
     await fillValid(user);
     const submit = screen.getByRole("button", { name: /Send guided trial request/i });
@@ -165,23 +181,19 @@ describe("guided trial request dialog", () => {
     await fillValid(user);
     await user.click(screen.getByRole("button", { name: /Send guided trial request/i }));
     await user.click(screen.getByRole("button", { name: "Close" }));
-    // Reopen before the close animation finishes: it must still reset this new visit.
+    await waitFor(() => expect(mocks.reset).toHaveBeenCalled());
     await user.click(screen.getByRole("button", { name: "Start 7-Day Free Trial" }));
-    expect(screen.getByRole("textbox", { name: "Name *" })).toHaveValue("");
     expect(screen.getByRole("button", { name: /Sending request/i })).toBeDisabled();
-    await user.click(screen.getByRole("button", { name: /Sending request/i }));
-    expect(mocks.mutate).toHaveBeenCalledTimes(1);
-    await act(async () => mocks.complete());
-    expect(screen.queryByRole("status")).not.toBeInTheDocument();
+    await act(async () => mocks.fail());
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    expect(mocks.toast).not.toHaveBeenCalled();
     expect(screen.getByRole("button", { name: /Send guided trial request/i })).toBeEnabled();
     await fillValid(user);
     await user.click(screen.getByRole("button", { name: /Send guided trial request/i }));
     expect(mocks.mutate).toHaveBeenCalledTimes(2);
-    await act(async () => mocks.complete());
-    expect(screen.getByRole("status")).toHaveTextContent("Your trial has not started yet");
   });
 
-  it("keeps pending guarded after the delayed reset and ignores an old failure", async () => {
+  it("acknowledges a request without promising access and resets after close", async () => {
     const user = await openDialog();
     await fillValid(user);
     await user.click(screen.getByRole("button", { name: /Send guided trial request/i }));

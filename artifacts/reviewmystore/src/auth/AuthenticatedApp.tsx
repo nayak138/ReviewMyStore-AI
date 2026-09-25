@@ -29,7 +29,8 @@ import {
   BRAND_LOGO_LIGHT,
   BrandIcon,
 } from "@/components/brand-logo";
-import { BookDemoDialog } from "@/components/book-demo-dialog";
+import { AppProviders } from "@/components/app-providers";
+import { BookDemoDialog } from "@/components/book-demo-dialog-lazy";
 import { Button } from "@/components/ui/button";
 import {
   clearInvitationToken,
@@ -178,7 +179,7 @@ export function SignInPage() {
           </p>
           <div className="inline-flex max-w-full items-center gap-2 rounded-full border border-amber-200 bg-amber-100 p-1 pl-3 text-xs font-medium text-amber-900">
             <span>Agency access only</span>
-            <BookDemoDialog placement="auth_contact">
+            <BookDemoDialog placement="auth_contact" hasAppProviders>
               <Button
                 type="button"
                 size="sm"
@@ -429,7 +430,7 @@ export function AuthenticatedRoutes() {
   );
 }
 
-export default function AuthenticatedApp() {
+function AuthenticatedAppContent() {
   const [, setLocation] = useLocation();
 
   return (
@@ -460,5 +461,13 @@ export default function AuthenticatedApp() {
       <SessionExpiryWatcher />
       <AuthenticatedRoutes />
     </ClerkProvider>
+  );
+}
+
+export default function AuthenticatedApp() {
+  return (
+    <AppProviders>
+      <AuthenticatedAppContent />
+    </AppProviders>
   );
 }

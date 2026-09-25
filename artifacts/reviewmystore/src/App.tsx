@@ -9,21 +9,10 @@ import {
   useState,
   lazy,
   Suspense,
+  type ComponentType,
 } from "react";
-import {
-  MutationCache,
-  QueryCache,
-  QueryClient,
-  QueryClientProvider,
-} from "@tanstack/react-query";
-import { Toaster } from "@/components/ui/toaster";
-import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/components/theme-provider";
 import { BrandIcon } from "@/components/brand-logo";
-import {
-  isSessionExpiredError,
-  signalSessionExpired,
-} from "./auth/session-expiry";
 import About from "./pages/marketing/About";
 import Blog from "./pages/marketing/Blog";
 import BlogPost from "./pages/marketing/BlogPost";
@@ -34,44 +23,32 @@ import Marketing from "./pages/Marketing";
 
 // Route-level code splitting: public visitors do not download the protected
 // dashboard or Clerk until they navigate to an authenticated route.
-const CustomerReview = lazy(() => import("./pages/CustomerReview"));
-const ShortRedirect = lazy(() => import("./pages/ShortRedirect"));
 const AuthenticatedApp = lazy(() => import("./auth/AuthenticatedApp"));
 
-function shouldRetryQuery(failureCount: number, error: unknown): boolean {
-  const status =
-    typeof error === "object" && error !== null
-      ? Number(
-          (error as { status?: unknown; response?: { status?: unknown } })
-            .status ??
-            (error as { response?: { status?: unknown } }).response?.status,
-        )
-      : undefined;
-  return status !== 401 && status !== 403 && failureCount < 2;
-}
-
-// Any confirmed-unauthenticated (401) response from a query or mutation
-// means the session expired -- broadcast it once here so the
-// SessionExpiryWatcher mounted inside the authenticated app can clear
-// caches and sign out, regardless of which page or hook triggered it.
-function handlePotentialSessionExpiry(error: unknown): void {
-  if (isSessionExpiredError(error)) signalSessionExpired("api");
-}
-
-const queryClient = new QueryClient({
-  queryCache: new QueryCache({ onError: handlePotentialSessionExpiry }),
-  mutationCache: new MutationCache({ onError: handlePotentialSessionExpiry }),
-  defaultOptions: {
-    queries: {
-      retry: shouldRetryQuery,
-      staleTime: 30_000,
-      gcTime: 5 * 60_000,
-      refetchOnWindowFocus: false,
-    },
-  },
-});
-
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
+
+function lazyWithAppProviders(
+  loadPage: () => Promise<{ default: ComponentType }>,
+) {
+  return lazy(async () => {
+    const [{ default: Page }, { AppProviders }] = await Promise.all([
+      loadPage(),
+      import("@/components/app-providers"),
+    ]);
+    return {
+      default: function AppProvidedRoute() {
+        return (
+          <AppProviders>
+            <Page />
+          </AppProviders>
+        );
+      },
+    };
+  });
+}
+
+const CustomerReview = lazyWithAppProviders(() => import("./pages/CustomerReview"));
+const ShortRedirect = lazyWithAppProviders(() => import("./pages/ShortRedirect"));
 
 /** Suspense fallback for lazy-loaded routes. Renders nothing for the first
  * ~150ms so fast connections never see a flash; after that, shows a subtle
@@ -154,12 +131,7 @@ function App({ ssrPath }: { ssrPath?: string }) {
   return (
     <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
       <WouterRouter base={basePath} ssrPath={ssrPath}>
-        <TooltipProvider>
-          <QueryClientProvider client={queryClient}>
-            <AppShell />
-          </QueryClientProvider>
-          <Toaster />
-        </TooltipProvider>
+        <AppShell />
       </WouterRouter>
     </ThemeProvider>
   );

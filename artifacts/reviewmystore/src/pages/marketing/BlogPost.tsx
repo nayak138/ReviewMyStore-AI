@@ -5,7 +5,7 @@ import { usePageMeta } from "./use-page-meta";
 import { blogPostMeta } from "./route-meta";
 import { blogPosts, getBlogPost } from "./blog-data";
 import { Button } from "@/components/ui/button";
-import { BookDemoDialog } from "@/components/book-demo-dialog";
+import { BookDemoDialog } from "@/components/book-demo-dialog-lazy";
 import { ArrowLeft, ArrowRight, Clock } from "lucide-react";
 
 export default function BlogPost() {

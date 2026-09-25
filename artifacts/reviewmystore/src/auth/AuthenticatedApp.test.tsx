@@ -44,7 +44,7 @@ vi.mock("@workspace/api-client-react", () => ({
   useGetPublicAgencyInvitation: () => ({ data: undefined, isLoading: false }),
 }));
 
-vi.mock("@/components/book-demo-dialog", () => ({
+vi.mock("@/components/book-demo-dialog-lazy", () => ({
   BookDemoDialog: ({ children }: { children: React.ReactNode }) => children,
 }));
 

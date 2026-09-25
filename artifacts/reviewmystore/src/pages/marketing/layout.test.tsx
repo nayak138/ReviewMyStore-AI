@@ -12,7 +12,7 @@ vi.mock("wouter", () => ({
   useLocation: () => ["/", vi.fn()],
 }));
 
-vi.mock("@/components/book-demo-dialog", () => ({
+vi.mock("@/components/book-demo-dialog-lazy", () => ({
   BookDemoDialog: ({ children }: { children: ReactNode }) => children,
 }));
 
