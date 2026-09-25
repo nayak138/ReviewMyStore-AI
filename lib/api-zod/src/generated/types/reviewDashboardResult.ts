@@ -5,6 +5,7 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { BusinessUsageBilling } from './businessUsageBilling';
 import type { BusinessUsageHistoryItem } from './businessUsageHistoryItem';
 import type { BusinessUsageSummaryItem } from './businessUsageSummaryItem';
 import type { ReviewInboxSummary } from './reviewInboxSummary';
@@ -17,4 +18,5 @@ export interface ReviewDashboardResult {
   summary: ReviewInboxSummary;
   usage: BusinessUsageSummaryItem[];
   usageHistory: BusinessUsageHistoryItem[];
+  usageBilling: BusinessUsageBilling;
 }

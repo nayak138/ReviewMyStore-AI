@@ -4,6 +4,7 @@ import { randomUUID } from "node:crypto";
 import { eq } from "drizzle-orm";
 import {
   businessesTable,
+  businessSocialCommentsTable,
   db,
   objectUploadsTable,
   organizationsTable,
@@ -22,12 +23,17 @@ import {
   listSocialMediaComments,
   listSocialMediaPosts,
   replyToSocialMediaComment,
+  requestSocialMediaMediaUploadUrl,
   SocialMediaBadRequestError,
+  SocialMediaConflictError,
 } from "./socialMediaService";
 import {
+  BusinessUsageLimitError,
   completeBusinessUsageReservation,
   getBusinessUsageSummary,
+  releaseBusinessUsageReservation,
   reserveBusinessUsage,
+  settleMediaUploadReservations,
 } from "./businessUsageService";
 
 const runId = randomUUID().slice(0, 8);
@@ -43,10 +49,15 @@ let secondBusinessId: string;
 let providerCalls: Array<{ path: string; body: Record<string, unknown> }> = [];
 let postResponse: { status: number; body: Record<string, unknown> } | null =
   null;
+let commentListOverride: Array<Record<string, unknown>> | null = null;
 let facebookProviderExternalId = `facebook-${runId}`;
 let providerSocialAccountsOverride: unknown[] | null = null;
 const originalFetch = globalThis.fetch;
 const originalGetObject = ObjectStorageService.prototype.getObjectEntityFile;
+const originalGetUploadURL = ObjectStorageService.prototype.getObjectEntityUploadURL;
+const originalNormalizeObjectPath =
+  ObjectStorageService.prototype.normalizeObjectEntityPath;
+let uploadUrlCount = 0;
 
 const objectMetadata = new Map<
   string,
@@ -79,6 +90,10 @@ before(async () => {
       },
     } as never;
   }) as typeof ObjectStorageService.prototype.getObjectEntityFile;
+  ObjectStorageService.prototype.getObjectEntityUploadURL = async () =>
+    `https://storage.googleapis.com/test-bucket/uploads/${runId}-${++uploadUrlCount}`;
+  ObjectStorageService.prototype.normalizeObjectEntityPath = (rawPath) =>
+    `/objects/uploads/${rawPath.split("/").at(-1)}`;
   globalThis.fetch = (async (
     input: string | URL | Request,
     init?: RequestInit,
@@ -174,7 +189,7 @@ before(async () => {
     if (path === "comment/import/comments") {
       return new Response(
         JSON.stringify({
-          items: [
+          items: commentListOverride ?? [
             {
               id: "fetched-comment-test",
               externalId: "platform-comment-test",
@@ -279,6 +294,8 @@ before(async () => {
 beforeEach(async () => {
   providerCalls = [];
   postResponse = null;
+  commentListOverride = null;
+  uploadUrlCount = 0;
   facebookProviderExternalId = `facebook-${runId}`;
   providerSocialAccountsOverride = null;
   objectMetadata.clear();
@@ -294,6 +311,9 @@ beforeEach(async () => {
 after(async () => {
   globalThis.fetch = originalFetch;
   ObjectStorageService.prototype.getObjectEntityFile = originalGetObject;
+  ObjectStorageService.prototype.getObjectEntityUploadURL = originalGetUploadURL;
+  ObjectStorageService.prototype.normalizeObjectEntityPath =
+    originalNormalizeObjectPath;
   if (organizationId) {
     await db
       .delete(objectUploadsTable)
@@ -380,6 +400,124 @@ test("rejects unsupported and oversized owned media before calling the provider"
   assert.equal(providerCalls.length, 0);
 });
 
+test("settles daily and monthly usage only for finalized media uploads", async () => {
+  const upload = await requestSocialMediaMediaUploadUrl(
+    organizationId,
+    ownerId,
+    {
+      businessId,
+      name: "photo.jpg",
+      size: 1024,
+      contentType: "image/jpeg",
+    },
+  );
+  await db
+    .update(objectUploadsTable)
+    .set({ finalizedAt: new Date() })
+    .where(eq(objectUploadsTable.objectPath, upload.objectPath));
+  assert.equal(
+    await settleMediaUploadReservations(upload.objectPath, "SUCCEEDED"),
+    2,
+  );
+  const usage = await getBusinessUsageSummary(organizationId, businessId);
+  assert.equal(
+    usage.find((item) => item.metric === "SOCIAL_MEDIA_UPLOADS")?.used,
+    1,
+  );
+  assert.equal(
+    usage.find((item) => item.metric === "SOCIAL_MEDIA_UPLOADS_MONTHLY")?.used,
+    1,
+  );
+});
+
+test("daily post, comment, and media caps stop new provider actions", async () => {
+  const usage = await getBusinessUsageSummary(organizationId, secondBusinessId);
+  const postAllowance = usage.find((item) => item.metric === "SOCIAL_POSTS");
+  assert.ok(postAllowance && postAllowance.remaining > 0);
+  const postFill = await reserveBusinessUsage({
+    organizationId,
+    businessId: secondBusinessId,
+    metric: "SOCIAL_POSTS",
+    amount: postAllowance.remaining,
+  });
+  const commentFill = await reserveBusinessUsage({
+    organizationId,
+    businessId: secondBusinessId,
+    metric: "SOCIAL_COMMENT_DAILY_UNITS",
+    amount: 5,
+  });
+  const mediaFill = await reserveBusinessUsage({
+    organizationId,
+    businessId: secondBusinessId,
+    metric: "SOCIAL_MEDIA_UPLOADS",
+    amount: 100,
+  });
+  const olderCommentId = `older-comment-at-cap-${runId}`;
+  const importedAt = new Date();
+  importedAt.setUTCDate(importedAt.getUTCDate() - 1);
+  await db.insert(businessSocialCommentsTable).values({
+    organizationId,
+    businessId: secondBusinessId,
+    providerCommentId: olderCommentId,
+    providerPostId: "post-cap-test",
+    importedAt,
+  });
+  const mediaPath = `/objects/uploads/cap-check-${runId}`;
+  await addUpload(mediaPath, ownerId);
+  const providerStart = providerCalls.length;
+
+  await assert.rejects(
+    () =>
+      createSocialMediaPost(organizationId, ownerId, {
+        businessId: secondBusinessId,
+        caption: "Must stop at the daily post cap",
+        platforms: ["INSTAGRAM"],
+        media: [mediaPath],
+      }),
+    BusinessUsageLimitError,
+  );
+  await assert.rejects(
+    () =>
+      importSocialMediaComments(organizationId, {
+        businessId: secondBusinessId,
+        platform: "INSTAGRAM",
+        postId: "post-cap-test",
+      }),
+    BusinessUsageLimitError,
+  );
+  await assert.rejects(
+    () =>
+      replyToSocialMediaComment(
+        organizationId,
+        secondBusinessId,
+        olderCommentId,
+        "This older comment must wait for the daily reset.",
+      ),
+    BusinessUsageLimitError,
+  );
+  await assert.rejects(
+    () =>
+      requestSocialMediaMediaUploadUrl(organizationId, ownerId, {
+        businessId: secondBusinessId,
+        name: "photo.jpg",
+        size: 1024,
+        contentType: "image/jpeg",
+      }),
+    BusinessUsageLimitError,
+  );
+  assert.equal(
+    providerCalls.slice(providerStart).some((call) =>
+      ["post", "comment/import", "comment", "upload/from-url"].includes(call.path),
+    ),
+    false,
+  );
+  await Promise.all([
+    releaseBusinessUsageReservation(postFill.id),
+    releaseBusinessUsageReservation(commentFill.id),
+    releaseBusinessUsageReservation(mediaFill.id),
+  ]);
+});
+
 test("registers finalized owner image and video media before publishing to Instagram", async () => {
   const imagePath = `/objects/uploads/image-${runId}`;
   const videoPath = `/objects/uploads/video-${runId}`;
@@ -401,7 +539,10 @@ test("registers finalized owner image and video media before publishing to Insta
   );
   assert.equal(providerCalls[3]?.body.teamId, `team-${runId}`);
   const postData = providerCalls[3]?.body.data as Record<string, Record<string, unknown>>;
-  assert.deepEqual(postData.INSTAGRAM.uploadIds, ["upload-1", "upload-2"]);
+  assert.deepEqual(
+    [...(postData.INSTAGRAM.uploadIds as string[])].sort(),
+    ["upload-1", "upload-2"],
+  );
   assert.equal(postData.INSTAGRAM.type, "POST");
   assert.deepEqual(deletedObjectPaths, [imagePath, videoPath]);
   const remainingUploads = await db
@@ -414,6 +555,7 @@ test("registers finalized owner image and video media before publishing to Insta
 test("includes a POST type for both Facebook and Instagram in a combined post", async () => {
   const imagePath = `/objects/uploads/facebook-instagram-${runId}`;
   await addUpload(imagePath, ownerId);
+  const usageBefore = await getBusinessUsageSummary(organizationId, businessId);
 
   await createSocialMediaPost(organizationId, ownerId, {
     businessId,
@@ -430,6 +572,15 @@ test("includes a POST type for both Facebook and Instagram in a combined post", 
   assert.deepEqual(postData.FACEBOOK.uploadIds, ["upload-1"]);
   assert.equal(postData.INSTAGRAM.type, "POST");
   assert.deepEqual(postData.INSTAGRAM.uploadIds, ["upload-1"]);
+  const usageAfter = await getBusinessUsageSummary(organizationId, businessId);
+  assert.equal(
+    usageAfter.find((item) => item.metric === "SOCIAL_POSTS")?.used,
+    (usageBefore.find((item) => item.metric === "SOCIAL_POSTS")?.used ?? 0) + 2,
+  );
+  assert.equal(
+    usageAfter.find((item) => item.metric === "SOCIAL_POSTS_MONTHLY")?.used,
+    (usageBefore.find((item) => item.metric === "SOCIAL_POSTS_MONTHLY")?.used ?? 0) + 2,
+  );
 });
 
 test("keeps the Threads payload free of Facebook and Instagram fields", async () => {
@@ -787,8 +938,9 @@ test("includes the selected social account type when importing comments", async 
   });
   const usageAfter = await getBusinessUsageSummary(organizationId, businessId);
   assert.equal(
-    usageAfter.find((item) => item.metric === "SOCIAL_COMMENT_IMPORTS")?.used,
-    (usageBefore.find((item) => item.metric === "SOCIAL_COMMENT_IMPORTS")?.used ?? 0) + 1,
+    usageAfter.find((item) => item.metric === "SOCIAL_COMMENT_DAILY_UNITS")?.used,
+    usageBefore.find((item) => item.metric === "SOCIAL_COMMENT_DAILY_UNITS")?.used ?? 0,
+    "starting a provider import job does not consume a comment unit",
   );
 });
 
@@ -823,6 +975,14 @@ test("keeps the provider fetched-comment id for replies", async () => {
 
   assert.equal(result.comments[0]?.id, "fetched-comment-test");
   assert.equal(result.comments[0]?.externalId, "platform-comment-test");
+  assert.equal(result.comments[0]?.canReply, true);
+  assert.equal(result.comments[0]?.dailyUnitCountedToday, true);
+  const usage = await getBusinessUsageSummary(organizationId, businessId);
+  assert.equal(
+    usage.find((item) => item.metric === "SOCIAL_COMMENT_IMPORTS")?.used,
+    1,
+    "the fetched provider comment is counted once toward the monthly allowance",
+  );
 });
 
 test("charges and settles the business allowance when replying to a social comment", async () => {
@@ -842,7 +1002,141 @@ test("charges and settles the business allowance when replying to a social comme
 
   const usageAfter = await getBusinessUsageSummary(organizationId, businessId);
   assert.equal(
-    usageAfter.find((item) => item.metric === "SOCIAL_COMMENT_REPLIES")?.used,
-    (usageBefore.find((item) => item.metric === "SOCIAL_COMMENT_REPLIES")?.used ?? 0) + 1,
+    usageAfter.find((item) => item.metric === "SOCIAL_COMMENT_DAILY_UNITS")?.used,
+    usageBefore.find((item) => item.metric === "SOCIAL_COMMENT_DAILY_UNITS")?.used ?? 0,
+    "a reply shares the daily unit already counted for a same-day import",
+  );
+  await assert.rejects(
+    () =>
+      replyToSocialMediaComment(
+        organizationId,
+        businessId,
+        "fetched-comment-test",
+        "A second reply should be rejected.",
+      ),
+    SocialMediaConflictError,
+  );
+});
+
+test("a reply to a comment imported on an earlier UTC day uses today's unit", async () => {
+  const commentId = `older-comment-${runId}`;
+  const importedAt = new Date();
+  importedAt.setUTCDate(importedAt.getUTCDate() - 1);
+  await db.insert(businessSocialCommentsTable).values({
+    organizationId,
+    businessId,
+    providerCommentId: commentId,
+    providerPostId: "post-older",
+    importedAt,
+  });
+  const usageBefore = await getBusinessUsageSummary(organizationId, businessId);
+
+  await replyToSocialMediaComment(
+    organizationId,
+    businessId,
+    commentId,
+    "Thanks for the note.",
+  );
+
+  const usageAfter = await getBusinessUsageSummary(organizationId, businessId);
+  assert.equal(
+    usageAfter.find((item) => item.metric === "SOCIAL_COMMENT_DAILY_UNITS")?.used,
+    (usageBefore.find((item) => item.metric === "SOCIAL_COMMENT_DAILY_UNITS")?.used ?? 0) + 1,
+  );
+});
+
+test("only the remaining daily comment units are returned as imported", async () => {
+  const fill = await reserveBusinessUsage({
+    organizationId,
+    businessId: secondBusinessId,
+    metric: "SOCIAL_COMMENT_DAILY_UNITS",
+    amount: 4,
+  });
+  await completeBusinessUsageReservation(fill.id);
+  commentListOverride = [
+    {
+      id: `cap-comment-one-${runId}`,
+      externalId: `external-cap-comment-one-${runId}`,
+      postId: "post-cap-test",
+      text: "First available comment",
+      authorName: "A customer",
+    },
+    {
+      id: `cap-comment-two-${runId}`,
+      externalId: `external-cap-comment-two-${runId}`,
+      postId: "post-cap-test",
+      text: "This comment exceeds the daily allowance",
+      authorName: "Another customer",
+    },
+  ];
+
+  const result = await listSocialMediaComments(
+    organizationId,
+    secondBusinessId,
+    "post-cap-test",
+  );
+  const usage = await getBusinessUsageSummary(
+    organizationId,
+    secondBusinessId,
+  );
+
+  assert.deepEqual(
+    result.comments.map((comment) => comment.id),
+    [`cap-comment-one-${runId}`],
+  );
+  assert.equal(
+    usage.find((item) => item.metric === "SOCIAL_COMMENT_DAILY_UNITS")?.used,
+    5,
+  );
+  assert.equal(
+    usage.find((item) => item.metric === "SOCIAL_COMMENT_IMPORTS")?.used,
+    1,
+  );
+});
+
+test("a same-day reply remains available when its imported comment fills the cap", async () => {
+  const usageBefore = await getBusinessUsageSummary(organizationId, businessId);
+  const dailyBefore = usageBefore.find(
+    (item) => item.metric === "SOCIAL_COMMENT_DAILY_UNITS",
+  );
+  assert.ok(dailyBefore && dailyBefore.remaining >= 2);
+  const fill = await reserveBusinessUsage({
+    organizationId,
+    businessId,
+    metric: "SOCIAL_COMMENT_DAILY_UNITS",
+    amount: dailyBefore.remaining - 1,
+  });
+  await completeBusinessUsageReservation(fill.id);
+
+  const commentId = `same-day-cap-comment-${runId}`;
+  commentListOverride = [{
+    id: commentId,
+    externalId: `external-${commentId}`,
+    postId: "post-same-day-cap",
+    text: "A comment that uses the last unit",
+    authorName: "A customer",
+  }];
+  const imported = await listSocialMediaComments(
+    organizationId,
+    businessId,
+    "post-same-day-cap",
+  );
+  assert.equal(imported.comments[0]?.dailyUnitCountedToday, true);
+  const atCap = await getBusinessUsageSummary(organizationId, businessId);
+  assert.equal(
+    atCap.find((item) => item.metric === "SOCIAL_COMMENT_DAILY_UNITS")?.remaining,
+    0,
+  );
+
+  await replyToSocialMediaComment(
+    organizationId,
+    businessId,
+    commentId,
+    "Thanks for sharing!",
+  );
+  const afterReply = await getBusinessUsageSummary(organizationId, businessId);
+  assert.equal(
+    afterReply.find((item) => item.metric === "SOCIAL_COMMENT_DAILY_UNITS")?.used,
+    atCap.find((item) => item.metric === "SOCIAL_COMMENT_DAILY_UNITS")?.used,
   );
 });

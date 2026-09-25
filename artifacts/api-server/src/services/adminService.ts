@@ -19,7 +19,10 @@ import {
 } from "@workspace/db";
 import { generateUniqueOrgSlug } from "./authService";
 import { sendAgencyOwnerInvitationEmail } from "./notificationService";
-import { listStaleUncertainSharedReviewImportReservations } from "./businessUsageService";
+import {
+  getBusinessUsageBilling,
+  listStaleUncertainSharedReviewImportReservations,
+} from "./businessUsageService";
 
 const DEFAULT_INVITATION_DAYS = 14;
 
@@ -35,6 +38,13 @@ export class AdminAgencyNotFoundError extends Error {
   constructor(id: string) {
     super(`Agency ${id} not found`);
     this.name = "AdminAgencyNotFoundError";
+  }
+}
+
+export class AdminBusinessNotFoundError extends Error {
+  constructor(id: string) {
+    super(`Business ${id} not found`);
+    this.name = "AdminBusinessNotFoundError";
   }
 }
 
@@ -154,7 +164,12 @@ export async function getAdminPortal() {
   const organizationIds = organizations.map((organization) => organization.id);
 
   if (organizationIds.length === 0) {
-    return { overview: await getAdminOverview(), agencies: [], businesses: [] };
+    return {
+      overview: await getAdminOverview(),
+      agencies: [],
+      businesses: [],
+      usageTierAlerts: [],
+    };
   }
 
   const [owners, businesses, invitations] = await Promise.all([
@@ -222,6 +237,43 @@ export async function getAdminPortal() {
     }
   }
 
+  const businessRows = await Promise.all(
+    businesses.map(async (business) => {
+      const owner = ownerByOrg.get(business.organizationId);
+      return {
+        ...business,
+        archivedAt: iso(business.archivedAt),
+        createdAt: business.createdAt.toISOString(),
+        ownerName: owner?.name ?? null,
+        ownerEmail: owner?.email ?? null,
+        usageBilling: await getBusinessUsageBilling(
+          business.organizationId,
+          business.id,
+        ),
+      };
+    }),
+  );
+  const usageTierAlerts = businessRows.flatMap((business) =>
+    business.usageBilling.categories
+      .filter((category) => category.multiplier > 1)
+      .map((category) => ({
+        businessId: business.id,
+        businessName: business.name,
+        organizationName: business.organizationName,
+        ownerName: business.ownerName,
+        ownerEmail: business.ownerEmail,
+        category: category.label,
+        used: category.used,
+        baseLimit: category.baseLimit,
+        multiplier: category.multiplier,
+        quotedMonthlyBaseAmountCents:
+          business.usageBilling.quotedMonthlyBaseAmountCents,
+        manualInvoiceTotalCents:
+          business.usageBilling.manualInvoiceTotalCents,
+        currency: business.usageBilling.currency,
+      })),
+  );
+
   return {
     overview: await getAdminOverview(),
     agencies: organizations.map((organization) => {
@@ -253,12 +305,35 @@ export async function getAdminPortal() {
           : null,
       };
     }),
-    businesses: businesses.map((business) => ({
-      ...business,
-      archivedAt: iso(business.archivedAt),
-      createdAt: business.createdAt.toISOString(),
-    })),
+    businesses: businessRows,
+    usageTierAlerts,
   };
+}
+
+export async function updateAdminBusinessUsagePricing(input: {
+  businessId: string;
+  quotedMonthlyBaseAmountCents: number | null;
+  currency: string;
+}) {
+  const [business] = await db
+    .update(businessesTable)
+    .set({
+      quotedMonthlyBaseAmountCents: input.quotedMonthlyBaseAmountCents,
+      quotedMonthlyCurrency: input.currency,
+      updatedAt: new Date(),
+    })
+    .where(
+      and(
+        eq(businessesTable.id, input.businessId),
+        isNull(businessesTable.deletedAt),
+      ),
+    )
+    .returning({
+      id: businessesTable.id,
+      organizationId: businessesTable.organizationId,
+    });
+  if (!business) throw new AdminBusinessNotFoundError(input.businessId);
+  return getBusinessUsageBilling(business.organizationId, business.id);
 }
 
 export async function listAdminSharedReviewImports(now = new Date()) {

@@ -45,6 +45,8 @@ import type {
   BusinessListResult,
   BusinessStatusInput,
   BusinessUpdateInput,
+  BusinessUsageBilling,
+  BusinessUsagePricingInput,
   Campaign,
   CampaignCreateInput,
   CampaignListResult,
@@ -3010,6 +3012,78 @@ export function useGetAdminPortal<TData = Awaited<ReturnType<typeof getAdminPort
 
 
 
+
+export const getUpdateAdminBusinessUsagePricingUrl = (businessId: string,) => {
+
+
+
+
+  return `/api/v1/admin/businesses/${businessId}/usage-pricing`
+}
+
+/**
+ * @summary Set the quoted monthly base amount for manual usage invoicing
+ */
+export const updateAdminBusinessUsagePricing = async (businessId: string,
+    businessUsagePricingInput: BusinessUsagePricingInput, options?: Parameters<typeof customFetch>[1]): Promise<BusinessUsageBilling> => {
+
+  return customFetch<BusinessUsageBilling>(getUpdateAdminBusinessUsagePricingUrl(businessId),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(businessUsagePricingInput)
+  }
+);}
+
+
+
+
+
+export const getUpdateAdminBusinessUsagePricingMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateAdminBusinessUsagePricing>>, TError,{businessId: string;data: BodyType<BusinessUsagePricingInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateAdminBusinessUsagePricing>>, TError,{businessId: string;data: BodyType<BusinessUsagePricingInput>}, TContext> => {
+
+const mutationKey = ['updateAdminBusinessUsagePricing'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateAdminBusinessUsagePricing>>, {businessId: string;data: BodyType<BusinessUsagePricingInput>}> = (props) => {
+          const {businessId,data} = props ?? {};
+
+          return  updateAdminBusinessUsagePricing(businessId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateAdminBusinessUsagePricingMutationResult = NonNullable<Awaited<ReturnType<typeof updateAdminBusinessUsagePricing>>>
+    export type UpdateAdminBusinessUsagePricingMutationBody = BodyType<BusinessUsagePricingInput>
+    export type UpdateAdminBusinessUsagePricingMutationError = ErrorType<void>
+
+    /**
+ * @summary Set the quoted monthly base amount for manual usage invoicing
+ */
+export const useUpdateAdminBusinessUsagePricing = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateAdminBusinessUsagePricing>>, TError,{businessId: string;data: BodyType<BusinessUsagePricingInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateAdminBusinessUsagePricing>>,
+        TError,
+        {businessId: string;data: BodyType<BusinessUsagePricingInput>},
+        TContext
+      > => {
+      return useMutation(getUpdateAdminBusinessUsagePricingMutationOptions(options));
+    }
 
 export const getListAdminSharedReviewImportsUrl = () => {
 

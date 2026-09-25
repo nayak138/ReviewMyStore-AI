@@ -3,17 +3,22 @@ import {
   desc,
   eq,
   gt,
+  gte,
   inArray,
   isNotNull,
+  isNull,
   lte,
+  like,
   or,
   sql,
 } from "drizzle-orm";
 import {
+  businessSocialCommentsTable,
   businessUsagePeriodsTable,
   businessUsageReservationsTable,
   businessesTable,
   db,
+  objectUploadsTable,
   organizationsTable,
   sharedProviderUsagePeriodsTable,
   sharedProviderUsageReservationsTable,
@@ -27,6 +32,7 @@ type UsageMetricConfig = {
   label: string;
   limit: number;
   window: UsageWindow;
+  allowMonthlyOverage?: boolean;
 };
 
 type UsageTransaction = Parameters<
@@ -60,23 +66,56 @@ export const BUSINESS_USAGE_CONFIG: Record<
     window: "MONTHLY",
   },
   SOCIAL_POSTS: {
-    label: "Social posts",
-    limit: 50,
+    label: "Social posts today",
+    limit: 10,
     window: "DAILY",
+  },
+  SOCIAL_POSTS_MONTHLY: {
+    label: "Social posts this month",
+    limit: 50,
+    window: "MONTHLY",
+    allowMonthlyOverage: true,
   },
   SOCIAL_COMMENT_IMPORTS: {
-    label: "Social comment imports",
-    limit: 5_000,
+    label: "Imported social comments this month",
+    limit: 25,
     window: "MONTHLY",
+    allowMonthlyOverage: true,
+  },
+  SOCIAL_COMMENT_DAILY_UNITS: {
+    label: "Comment units today",
+    limit: 5,
+    window: "DAILY",
   },
   SOCIAL_COMMENT_REPLIES: {
-    label: "Social comment replies",
+    label: "Legacy social comment replies",
     limit: 50,
     window: "DAILY",
+  },
+  SOCIAL_MEDIA_UPLOADS: {
+    label: "Social media uploads today",
+    limit: 100,
+    window: "DAILY",
+  },
+  SOCIAL_MEDIA_UPLOADS_MONTHLY: {
+    label: "Social media uploads this month",
+    limit: 500,
+    window: "MONTHLY",
+    allowMonthlyOverage: true,
   },
 };
 
-const METRICS = Object.keys(BUSINESS_USAGE_CONFIG) as BusinessUsageMetric[];
+const METRICS: BusinessUsageMetric[] = [
+  "GOOGLE_REVIEW_IMPORTS",
+  "AI_REVIEW_REPLIES",
+  "PUBLIC_AI_GENERATIONS",
+  "SOCIAL_POSTS",
+  "SOCIAL_POSTS_MONTHLY",
+  "SOCIAL_COMMENT_IMPORTS",
+  "SOCIAL_COMMENT_DAILY_UNITS",
+  "SOCIAL_MEDIA_UPLOADS",
+  "SOCIAL_MEDIA_UPLOADS_MONTHLY",
+];
 const SHARED_REVIEW_IMPORT_ACCOUNT = "BNDLE_SOCIAL";
 const SHARED_REVIEW_IMPORT_METRIC = "GOOGLE_REVIEW_IMPORTS";
 export const SHARED_REVIEW_IMPORT_MONTHLY_LIMIT = 200;
@@ -535,8 +574,29 @@ export type BusinessUsageSummaryItem = {
   reserved: number;
   limit: number;
   remaining: number;
+  nearLimit: boolean;
+  warningThresholdPercent: number;
   periodStart: string;
   periodEnd: string;
+};
+
+export type BusinessUsageBillingCategory = {
+  metric:
+    | "SOCIAL_POSTS_MONTHLY"
+    | "SOCIAL_COMMENT_IMPORTS"
+    | "SOCIAL_MEDIA_UPLOADS_MONTHLY";
+  label: string;
+  used: number;
+  baseLimit: number;
+  multiplier: number;
+};
+
+export type BusinessUsageBilling = {
+  quotedMonthlyBaseAmountCents: number | null;
+  currency: string;
+  highestMultiplier: number;
+  manualInvoiceTotalCents: number | null;
+  categories: BusinessUsageBillingCategory[];
 };
 
 export type BusinessUsageHistoryItem = {
@@ -627,6 +687,7 @@ export async function reserveBusinessUsage(input: {
   amount?: number;
   now?: Date;
   providerAttemptId?: string;
+  allowMonthlyOverage?: boolean;
 }): Promise<BusinessUsageReservation> {
   const amount = input.amount ?? 1;
   if (!Number.isInteger(amount) || amount < 1) {
@@ -651,7 +712,12 @@ export async function reserveBusinessUsage(input: {
       .where(
         and(
           eq(businessUsagePeriodsTable.id, period.id),
-          sql`${businessUsagePeriodsTable.used} + ${businessUsagePeriodsTable.reserved} + ${amount} <= ${businessUsagePeriodsTable.limit}`,
+          ...(input.allowMonthlyOverage &&
+          BUSINESS_USAGE_CONFIG[input.metric].allowMonthlyOverage
+            ? []
+            : [
+                sql`${businessUsagePeriodsTable.used} + ${businessUsagePeriodsTable.reserved} + ${amount} <= ${businessUsagePeriodsTable.limit}`,
+              ]),
         ),
       )
       .returning();
@@ -683,7 +749,7 @@ export async function reserveBusinessUsage(input: {
       id: reservation.id,
       metric: input.metric,
       amount,
-      remaining: updated.limit - updated.used - updated.reserved,
+      remaining: Math.max(0, updated.limit - updated.used - updated.reserved),
       periodStart: updated.periodStart,
       periodEnd: updated.periodEnd,
     };
@@ -704,6 +770,7 @@ async function settleReservation(
           eq(businessUsageReservationsTable.status, "PENDING"),
         ),
       )
+      .for("update")
       .limit(1);
     if (!reservation) return false;
 
@@ -720,7 +787,7 @@ async function settleReservation(
       .limit(1);
     if (!period) throw new Error("Usage period for reservation no longer exists.");
 
-    await tx
+    const [updatedPeriod] = await tx
       .update(businessUsagePeriodsTable)
       .set({
         used:
@@ -733,10 +800,14 @@ async function settleReservation(
       .where(
         and(
           eq(businessUsagePeriodsTable.id, period.id),
-          gt(businessUsagePeriodsTable.reserved, 0),
+          gte(businessUsagePeriodsTable.reserved, reservation.amount),
         ),
-      );
-    await tx
+      )
+      .returning({ id: businessUsagePeriodsTable.id });
+    if (!updatedPeriod) {
+      throw new Error("Usage reservation exceeds its period's reserved amount.");
+    }
+    const [settled] = await tx
       .update(businessUsageReservationsTable)
       .set({ status: finalStatus, updatedAt: new Date() })
       .where(
@@ -744,8 +815,9 @@ async function settleReservation(
           eq(businessUsageReservationsTable.id, reservationId),
           eq(businessUsageReservationsTable.status, "PENDING"),
         ),
-      );
-    return true;
+      )
+      .returning({ id: businessUsageReservationsTable.id });
+    return Boolean(settled);
   });
 }
 
@@ -853,6 +925,7 @@ export async function getBusinessUsageSummary(
   businessId: string,
   now = new Date(),
 ): Promise<BusinessUsageSummaryItem[]> {
+  await releaseExpiredMediaUploadReservations(now, businessId);
   return db.transaction(async (tx) => {
     for (const metric of METRICS) {
       await ensurePeriod(tx, organizationId, businessId, metric, now);
@@ -892,11 +965,283 @@ export async function getBusinessUsageSummary(
         reserved,
         limit: row?.limit ?? config.limit,
         remaining: Math.max(0, (row?.limit ?? config.limit) - used - reserved),
+        nearLimit:
+          used + reserved >=
+          Math.ceil((row?.limit ?? config.limit) * 0.8),
+        warningThresholdPercent: 80,
         periodStart: period.start.toISOString(),
         periodEnd: period.end.toISOString(),
       };
     });
   });
+}
+
+export function monthlyMetaMultiplier(used: number, baseLimit: number): number {
+  return Math.max(1, Math.ceil(Math.max(0, used) / baseLimit));
+}
+
+export async function getBusinessUsageBilling(
+  organizationId: string,
+  businessId: string,
+  now = new Date(),
+): Promise<BusinessUsageBilling> {
+  const [business] = await db
+    .select({
+      quotedMonthlyBaseAmountCents:
+        businessesTable.quotedMonthlyBaseAmountCents,
+      currency: businessesTable.quotedMonthlyCurrency,
+    })
+    .from(businessesTable)
+    .where(
+      and(
+        eq(businessesTable.id, businessId),
+        eq(businessesTable.organizationId, organizationId),
+      ),
+    )
+    .limit(1);
+  if (!business) throw new Error("Business not found.");
+
+  const summary = await getBusinessUsageSummary(organizationId, businessId, now);
+  const categoryConfigs = [
+    {
+      metric: "SOCIAL_POSTS_MONTHLY" as const,
+      label: "Social posts",
+      baseLimit: BUSINESS_USAGE_CONFIG.SOCIAL_POSTS_MONTHLY.limit,
+    },
+    {
+      metric: "SOCIAL_COMMENT_IMPORTS" as const,
+      label: "Imported social comments",
+      baseLimit: BUSINESS_USAGE_CONFIG.SOCIAL_COMMENT_IMPORTS.limit,
+    },
+    {
+      metric: "SOCIAL_MEDIA_UPLOADS_MONTHLY" as const,
+      label: "Social media uploads",
+      baseLimit: BUSINESS_USAGE_CONFIG.SOCIAL_MEDIA_UPLOADS_MONTHLY.limit,
+    },
+  ];
+  const categories = categoryConfigs.map((category) => {
+    const row = summary.find((item) => item.metric === category.metric);
+    const used = row?.used ?? 0;
+    return {
+      ...category,
+      used,
+      multiplier: monthlyMetaMultiplier(used, category.baseLimit),
+    };
+  });
+  const highestMultiplier = Math.max(
+    1,
+    ...categories.map((category) => category.multiplier),
+  );
+  return {
+    quotedMonthlyBaseAmountCents: business.quotedMonthlyBaseAmountCents,
+    currency: business.currency,
+    highestMultiplier,
+    manualInvoiceTotalCents:
+      business.quotedMonthlyBaseAmountCents === null
+        ? null
+        : business.quotedMonthlyBaseAmountCents * highestMultiplier,
+    categories,
+  };
+}
+
+export async function assertBusinessUsageAvailable(input: {
+  organizationId: string;
+  businessId: string;
+  metric: BusinessUsageMetric;
+  now?: Date;
+}) {
+  const now = input.now ?? new Date();
+  const item = (await getBusinessUsageSummary(
+    input.organizationId,
+    input.businessId,
+    now,
+  )).find((usage) => usage.metric === input.metric);
+  if (!item) throw new Error("Business usage period could not be loaded.");
+  if (item.remaining < 1) {
+    throw new BusinessUsageLimitError(
+      input.metric,
+      item.limit,
+      item.used + item.reserved,
+      1,
+      new Date(item.periodEnd),
+    );
+  }
+  return item.remaining;
+}
+
+/**
+ * Count fetched provider comments only when they are visible as completed
+ * imported records. Each new comment consumes one UTC daily comment unit and
+ * is counted once toward the monthly import allowance.
+ * The unique business/comment key makes repeated refreshes idempotent.
+ */
+export async function recordImportedSocialComments(input: {
+  organizationId: string;
+  businessId: string;
+  comments: Array<{ id: string; postId?: string | null }>;
+  now?: Date;
+}): Promise<Set<string>> {
+  const now = input.now ?? new Date();
+  return db.transaction(async (tx) => {
+    const monthlyPeriod = await ensurePeriod(
+      tx,
+      input.organizationId,
+      input.businessId,
+      "SOCIAL_COMMENT_IMPORTS",
+      now,
+    );
+    const dailyPeriod = await ensurePeriod(
+      tx,
+      input.organizationId,
+      input.businessId,
+      "SOCIAL_COMMENT_DAILY_UNITS",
+      now,
+    );
+    const [lockedDailyPeriod] = await tx
+      .select()
+      .from(businessUsagePeriodsTable)
+      .where(eq(businessUsagePeriodsTable.id, dailyPeriod.id))
+      .for("update")
+      .limit(1);
+    if (!lockedDailyPeriod) {
+      throw new Error("Daily comment usage period could not be locked.");
+    }
+    const newlyImported = new Set<string>();
+    for (const comment of input.comments) {
+      if (
+        !comment.id ||
+        lockedDailyPeriod.used + lockedDailyPeriod.reserved >=
+          lockedDailyPeriod.limit
+      ) {
+        continue;
+      }
+      const [created] = await tx
+        .insert(businessSocialCommentsTable)
+        .values({
+          organizationId: input.organizationId,
+          businessId: input.businessId,
+          providerCommentId: comment.id,
+          providerPostId: comment.postId ?? null,
+          importedAt: now,
+        })
+        .onConflictDoNothing({
+          target: [
+            businessSocialCommentsTable.businessId,
+            businessSocialCommentsTable.providerCommentId,
+          ],
+        })
+        .returning({
+          providerCommentId: businessSocialCommentsTable.providerCommentId,
+        });
+      if (!created) continue;
+      newlyImported.add(created.providerCommentId);
+      const [updatedDailyPeriod] = await tx
+        .update(businessUsagePeriodsTable)
+        .set({
+          used: sql`${businessUsagePeriodsTable.used} + 1`,
+          updatedAt: now,
+        })
+        .where(eq(businessUsagePeriodsTable.id, lockedDailyPeriod.id))
+        .returning({ id: businessUsagePeriodsTable.id });
+      const [updatedMonthlyPeriod] = await tx
+        .update(businessUsagePeriodsTable)
+        .set({
+          used: sql`${businessUsagePeriodsTable.used} + 1`,
+          updatedAt: now,
+        })
+        .where(eq(businessUsagePeriodsTable.id, monthlyPeriod.id))
+        .returning({ id: businessUsagePeriodsTable.id });
+      if (!updatedDailyPeriod || !updatedMonthlyPeriod) {
+        throw new Error("Could not settle imported comment usage.");
+      }
+      await tx.insert(businessUsageReservationsTable).values({
+        organizationId: input.organizationId,
+        businessId: input.businessId,
+        metric: "SOCIAL_COMMENT_DAILY_UNITS",
+        periodStart: dailyPeriod.periodStart,
+        amount: 1,
+        status: "SUCCEEDED",
+        createdAt: now,
+        updatedAt: now,
+      });
+      lockedDailyPeriod.used += 1;
+    }
+    return newlyImported;
+  });
+}
+
+export async function settleMediaUploadReservations(
+  objectPath: string,
+  status: "SUCCEEDED" | "FAILED",
+): Promise<number> {
+  const reservations = await db
+    .select({ id: businessUsageReservationsTable.id })
+    .from(businessUsageReservationsTable)
+    .where(
+      and(
+        eq(
+          businessUsageReservationsTable.providerAttemptId,
+          `social-media-upload:${objectPath}`,
+        ),
+        eq(businessUsageReservationsTable.status, "PENDING"),
+      ),
+    );
+  let settled = 0;
+  for (const reservation of reservations) {
+    const didSettle =
+      status === "SUCCEEDED"
+        ? await completeBusinessUsageReservation(reservation.id)
+        : await releaseBusinessUsageReservation(reservation.id);
+    if (didSettle) settled += 1;
+  }
+  return settled;
+}
+
+export async function releaseExpiredMediaUploadReservations(
+  now = new Date(),
+  businessId?: string,
+) {
+  const expiredBefore = new Date(now.getTime() - 15 * 60_000);
+  const stale = await db
+    .select({
+      id: businessUsageReservationsTable.id,
+      providerAttemptId: businessUsageReservationsTable.providerAttemptId,
+    })
+    .from(businessUsageReservationsTable)
+    .where(
+      and(
+        inArray(businessUsageReservationsTable.metric, [
+          "SOCIAL_MEDIA_UPLOADS",
+          "SOCIAL_MEDIA_UPLOADS_MONTHLY",
+        ]),
+        ...(businessId
+          ? [eq(businessUsageReservationsTable.businessId, businessId)]
+          : []),
+        eq(businessUsageReservationsTable.status, "PENDING"),
+        isNotNull(businessUsageReservationsTable.providerAttemptId),
+        like(
+          businessUsageReservationsTable.providerAttemptId,
+          "social-media-upload:%",
+        ),
+        lte(businessUsageReservationsTable.createdAt, expiredBefore),
+      ),
+    );
+  let released = 0;
+  for (const reservation of stale) {
+    const objectPath = reservation.providerAttemptId?.replace(
+      "social-media-upload:",
+      "",
+    );
+    if (!objectPath) continue;
+    const [upload] = await db
+      .select({ finalizedAt: objectUploadsTable.finalizedAt })
+      .from(objectUploadsTable)
+      .where(eq(objectUploadsTable.objectPath, objectPath))
+      .limit(1);
+    if (upload?.finalizedAt) continue;
+    if (await releaseBusinessUsageReservation(reservation.id)) released += 1;
+  }
+  return released;
 }
 
 export async function getBusinessUsageHistory(

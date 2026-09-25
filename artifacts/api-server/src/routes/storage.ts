@@ -16,9 +16,10 @@ import {
   canAccessObject,
   getObjectAclPolicy,
 } from '../lib/objectAcl';
-import { and, eq, gt, isNull } from 'drizzle-orm';
+import { and, eq, gt } from 'drizzle-orm';
 import { db, objectUploadsTable } from '@workspace/db';
 import { BusinessAccessDeniedError, requireOwner } from '../services/businessAccessService';
+import { settleMediaUploadReservations } from '../services/businessUsageService';
 
 const router: IRouter = Router();
 const objectStorageService = new ObjectStorageService();
@@ -123,7 +124,6 @@ router.post(
       .where(
         and(
           eq(objectUploadsTable.objectPath, parsed.data.objectPath),
-          isNull(objectUploadsTable.finalizedAt),
           gt(objectUploadsTable.expiresAt, new Date()),
         ),
       )
@@ -136,17 +136,20 @@ router.post(
 
     try {
       await requireOwner(req.appUser!);
-      await objectStorageService.trySetObjectEntityAclPolicy(
-        pending.objectPath,
-        {
-          owner: req.appUser!.clerkUserId,
-          visibility: parsed.data.visibility,
-        },
-      );
-      await db
-        .update(objectUploadsTable)
-        .set({ finalizedAt: new Date() })
-        .where(eq(objectUploadsTable.id, pending.id));
+      if (!pending.finalizedAt) {
+        await objectStorageService.trySetObjectEntityAclPolicy(
+          pending.objectPath,
+          {
+            owner: req.appUser!.clerkUserId,
+            visibility: parsed.data.visibility,
+          },
+        );
+        await db
+          .update(objectUploadsTable)
+          .set({ finalizedAt: new Date() })
+          .where(eq(objectUploadsTable.id, pending.id));
+      }
+      await settleMediaUploadReservations(pending.objectPath, 'SUCCEEDED');
       res.json({ objectPath: pending.objectPath });
     } catch (error) {
       if (error instanceof BusinessAccessDeniedError) {

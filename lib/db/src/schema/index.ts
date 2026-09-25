@@ -21,6 +21,7 @@ export * from "./socialMediaProviderTeams";
 export * from "./accountDataExports";
 export * from "./accountDeactivationRequests";
 export * from "./businessUsage";
+export * from "./businessSocialComments";
 export * from "./businessMemberships";
 export * from "./teamInvitations";
 export * from "./teamAuditEvents";

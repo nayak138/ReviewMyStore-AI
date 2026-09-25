@@ -59,6 +59,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import { BlockedActionNotice, LimitBlockedAction, UsageSummaryPanel } from "./usage-ui";
 
 const PLATFORM_META: Record<SocialMediaPlatform, { label: string; shortLabel: string; icon: typeof Facebook; tint: string }> = {
   [SocialMediaPlatform.FACEBOOK]: { label: "Facebook", shortLabel: "Facebook", icon: Facebook, tint: "text-[#385898] bg-[#385898]/10" },
@@ -89,6 +90,14 @@ function formatDate(value: string | null | undefined, withTime = false) {
     year: "numeric",
     ...(withTime ? { hour: "numeric", minute: "2-digit" } : {}),
   }).format(date);
+}
+
+function formatCents(cents: number, currency: string) {
+  try {
+    return new Intl.NumberFormat(undefined, { style: "currency", currency }).format(cents / 100);
+  } catch {
+    return `${currency} ${(cents / 100).toFixed(2)}`;
+  }
 }
 
 function minimumScheduleTime() {
@@ -176,7 +185,17 @@ function AccountRow({
   );
 }
 
-function PostCard({ post, onImportComments, importing }: { post: SocialMediaPost; onImportComments: (post: SocialMediaPost) => void; importing: boolean }) {
+function PostCard({
+  post,
+  onImportComments,
+  importing,
+  importBlockedReason,
+}: {
+  post: SocialMediaPost;
+  onImportComments: (post: SocialMediaPost) => void;
+  importing: boolean;
+  importBlockedReason?: string | null;
+}) {
   const status = post.status.toUpperCase();
   const canImportComments = isPublishedPost(post);
   const statusClass =
@@ -201,18 +220,20 @@ function PostCard({ post, onImportComments, importing }: { post: SocialMediaPost
       </p>
       <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-border pt-3 text-xs text-muted-foreground">
         <span>{post.publishedAt ? `Published ${formatDate(post.publishedAt, true)}` : post.scheduledAt ? `Scheduled ${formatDate(post.scheduledAt, true)}` : "Created recently"}</span>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => onImportComments(post)}
-          disabled={importing || !canImportComments}
-          title={canImportComments ? undefined : "Comments can be imported after this post is live."}
-          data-testid={`button-import-comments-${post.id}`}
-        >
-          {importing ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <MessageCircle className="mr-1.5 h-3.5 w-3.5" />}
-          Import comments
-        </Button>
+        <LimitBlockedAction reason={importBlockedReason ?? (!canImportComments ? "Comments can be imported after this post is live." : null)} testId={`button-import-comments-${post.id}`}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => onImportComments(post)}
+            disabled={importing || !canImportComments || Boolean(importBlockedReason)}
+            data-testid={`button-import-comments-${post.id}`}
+          >
+            {importing ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <MessageCircle className="mr-1.5 h-3.5 w-3.5" />}
+            Import comments
+          </Button>
+        </LimitBlockedAction>
       </div>
+      {importBlockedReason && <BlockedActionNotice reason={importBlockedReason} testId={`notice-import-comments-${post.id}`} />}
     </article>
   );
 }
@@ -288,6 +309,23 @@ export default function SocialMedia() {
     query: { enabled: !!isSignedIn && !!selectedBusinessId, queryKey: dashboardKey },
   });
   const dashboard = dashboardQuery.data;
+  const billing = dashboard?.usageBilling;
+  const socialUsage = dashboard?.usage ?? [];
+  const postUsage = socialUsage.find((item) => item.metric === "SOCIAL_POSTS");
+  const commentDailyUsage = socialUsage.find((item) => item.metric === "SOCIAL_COMMENT_DAILY_UNITS");
+  const mediaDailyUsage = socialUsage.find((item) => item.metric === "SOCIAL_MEDIA_UPLOADS");
+  const postBlockedReason = postUsage && postUsage.remaining <= 0
+    ? "The daily social post allowance is fully used. Publishing is available again when today's allowance resets."
+    : postUsage && selectedPlatforms.length > postUsage.remaining
+      ? `This cross-post uses ${selectedPlatforms.length} daily post units, but only ${postUsage.remaining} remain. Remove a destination or try again after today's allowance resets.`
+      : null;
+  const commentDailyBlockedReason = commentDailyUsage && commentDailyUsage.remaining <= 0
+    ? "The daily comment-unit allowance of five is fully used. New comments and replies to older comments are available again after midnight UTC. You can still reply once to a comment imported today."
+    : null;
+  const commentImportBlockedReason = commentDailyBlockedReason;
+  const mediaBlockedReason = mediaDailyUsage && mediaDailyUsage.remaining <= 0
+    ? "The daily media upload allowance is fully used. Uploads are available again when today's allowance resets."
+      : null;
   const postsParams = { businessId: selectedBusinessId ?? "" };
   const postsKey = getListSocialMediaPostsQueryKey(postsParams);
   const postsQuery = useListSocialMediaPosts(postsParams, {
@@ -302,6 +340,14 @@ export default function SocialMedia() {
     query: { enabled: !!isSignedIn && !!selectedBusinessId && !!selectedPostId, queryKey: commentsKey },
   });
   const comments = commentsQuery.data?.comments ?? [];
+  useEffect(() => {
+    if (!selectedBusinessId || !commentsQuery.dataUpdatedAt) return;
+    void queryClient.invalidateQueries({
+      queryKey: getGetSocialMediaDashboardQueryKey({
+        businessId: selectedBusinessId,
+      }),
+    });
+  }, [commentsQuery.dataUpdatedAt, queryClient, selectedBusinessId]);
   const connectedPlatforms = useMemo(() => new Set((dashboard?.accounts ?? []).map((account) => account.platform)), [dashboard?.accounts]);
   const authorizedPlatforms = useMemo(
     () => new Set((dashboard?.availableAccounts ?? []).map((account) => account.platform)),
@@ -522,7 +568,7 @@ export default function SocialMedia() {
   };
   const handlePublish = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!selectedBusinessId || !caption.trim() || selectedPlatforms.length === 0) return;
+    if (!selectedBusinessId || !caption.trim() || selectedPlatforms.length === 0 || postBlockedReason) return;
     createPost.mutate({
       data: {
         businessId: selectedBusinessId,
@@ -544,7 +590,7 @@ export default function SocialMedia() {
   const handleMediaSelection = async (event: ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files ?? []);
     event.target.value = "";
-    if (!files.length) return;
+    if (!files.length || mediaBlockedReason) return;
     if (media.length + files.length > 10) {
       toast({ title: "Too many media files", description: "Attach up to 10 images or videos.", variant: "destructive" });
       return;
@@ -592,6 +638,10 @@ export default function SocialMedia() {
   };
   const handleImportComments = (post: SocialMediaPost) => {
     if (!selectedBusinessId) return;
+    if (commentImportBlockedReason) {
+      toast({ title: "Comment import allowance reached", description: commentImportBlockedReason, variant: "destructive" });
+      return;
+    }
     if (!isPublishedPost(post)) {
       toast({
         title: "Post isn't live yet",
@@ -619,7 +669,13 @@ export default function SocialMedia() {
     });
   };
   const handleReply = (commentId: string, text: string) => {
-    if (!selectedBusinessId || !text.trim() || replyingCommentId) return;
+    const comment = comments.find((item) => item.id === commentId);
+    if (
+      !selectedBusinessId ||
+      !text.trim() ||
+      replyingCommentId ||
+      (commentDailyBlockedReason && !comment?.dailyUnitCountedToday)
+    ) return;
     setReplyingCommentId(commentId);
     replyComment.mutate({
       id: commentId,
@@ -798,6 +854,41 @@ export default function SocialMedia() {
               </Card>
             </section>
 
+            {dashboard && (
+              <section className="grid min-w-0 gap-6 lg:grid-cols-[1.35fr_0.65fr]" data-testid="social-usage">
+                <UsageSummaryPanel
+                  items={socialUsage}
+                  metrics={["SOCIAL_POSTS", "SOCIAL_POSTS_MONTHLY", "SOCIAL_COMMENT_DAILY_UNITS", "SOCIAL_COMMENT_IMPORTS", "SOCIAL_MEDIA_UPLOADS", "SOCIAL_MEDIA_UPLOADS_MONTHLY"]}
+                  title="Social usage"
+                  description="Daily caps protect activity today; monthly allowances track the broader service usage for this business."
+                  testId="social-usage-summary"
+                />
+                <Card className="border-border bg-card shadow-sm" data-testid="social-billing-summary">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-base">Manual billing estimate</CardTitle>
+                    <CardDescription>Month-to-date activity and the current quote multiplier.</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="rounded-xl bg-secondary/50 p-3">
+                        <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Highest multiplier</p>
+                          <p className="mt-1 text-2xl font-semibold tabular-nums">{billing?.highestMultiplier ?? "—"}{billing ? "×" : ""}</p>
+                      </div>
+                      <div className="rounded-xl bg-secondary/50 p-3">
+                        <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Estimate</p>
+                        <p className="mt-1 text-2xl font-semibold tabular-nums">
+                          {!billing || billing.manualInvoiceTotalCents === null ? "Not quoted" : formatCents(billing.manualInvoiceTotalCents, billing.currency)}
+                        </p>
+                      </div>
+                    </div>
+                    <p className="text-xs leading-relaxed text-muted-foreground">
+                      Estimates are for manual invoicing only. ReviewMyStore does not automatically collect charges from this workspace.
+                    </p>
+                  </CardContent>
+                </Card>
+              </section>
+            )}
+
               <section
                  className="grid min-w-0 items-stretch gap-6 lg:grid-cols-2"
                data-testid="social-content-grid"
@@ -810,10 +901,11 @@ export default function SocialMedia() {
                   <form className="space-y-4" onSubmit={handlePublish} data-testid="form-social-post">
                     <div className="space-y-2"><Label htmlFor="post-title">Internal title <span className="font-normal text-muted-foreground">(optional)</span></Label><Input id="post-title" maxLength={160} value={title} onChange={(event) => setTitle(event.target.value)} placeholder="Spring hours update" data-testid="input-post-title" /></div>
                     <div className="space-y-2"><div className="flex items-center justify-between"><Label htmlFor="post-caption">Caption</Label><span className="text-xs text-muted-foreground">{caption.length}/5000</span></div><Textarea id="post-caption" value={caption} onChange={(event) => setCaption(event.target.value)} maxLength={5000} placeholder="Share something your customers will find useful..." className="min-h-36 resize-y leading-relaxed" required data-testid="textarea-post-caption" /></div>
-                    <div className="space-y-2"><div className="flex items-center justify-between gap-3"><Label>Media <span className="font-normal text-muted-foreground">(optional, required for Instagram)</span></Label><input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/quicktime,video/webm" multiple className="sr-only" onChange={handleMediaSelection} data-testid="input-post-media" /><Button type="button" variant="outline" size="sm" onClick={() => fileInputRef.current?.click()} disabled={isUploadingMedia || finalizeUpload.isPending} data-testid="button-add-post-media">{isUploadingMedia || finalizeUpload.isPending ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <Paperclip className="mr-1.5 h-3.5 w-3.5" />}{isUploadingMedia ? "Uploading media..." : "Add media"}</Button></div><p className="text-xs text-muted-foreground">JPG, PNG, WEBP, GIF, MP4, MOV, or WEBM. Images up to 25 MB; videos up to 100 MB.</p>{media.length > 0 && <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">{media.map((item) => <div key={item.objectPath} className="group relative overflow-hidden rounded-xl border border-border bg-secondary/30" data-testid={`media-preview-${item.objectPath}`}><div className="aspect-square bg-muted">{item.type.startsWith("video/") ? <video src={item.previewUrl} className="h-full w-full object-cover" controls preload="metadata" /> : <img src={item.previewUrl} alt={item.name} className="h-full w-full object-cover" />}</div><div className="flex items-center justify-between gap-1 px-2 py-1.5"><span className="truncate text-[11px] text-muted-foreground">{item.name}</span><Button type="button" variant="ghost" size="icon" className="h-6 w-6 shrink-0 text-muted-foreground hover:text-destructive" onClick={() => setMedia((current) => current.filter((mediaItem) => mediaItem.objectPath !== item.objectPath))} aria-label={`Remove ${item.name}`}><Trash2 className="h-3.5 w-3.5" /></Button></div></div>)}</div>}</div>
+                    <div className="space-y-2"><div className="flex items-center justify-between gap-3"><Label>Media <span className="font-normal text-muted-foreground">(optional, required for Instagram)</span></Label><input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/quicktime,video/webm" multiple className="sr-only" onChange={handleMediaSelection} disabled={Boolean(mediaBlockedReason)} data-testid="input-post-media" /><LimitBlockedAction reason={mediaBlockedReason} testId="button-add-post-media"><Button type="button" variant="outline" size="sm" onClick={() => fileInputRef.current?.click()} disabled={isUploadingMedia || finalizeUpload.isPending || Boolean(mediaBlockedReason)} data-testid="button-add-post-media">{isUploadingMedia || finalizeUpload.isPending ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <Paperclip className="mr-1.5 h-3.5 w-3.5" />}{isUploadingMedia ? "Uploading media..." : "Add media"}</Button></LimitBlockedAction></div><p className="text-xs text-muted-foreground">JPG, PNG, WEBP, GIF, MP4, MOV, or WEBM. Images up to 25 MB; videos up to 100 MB.</p>{mediaBlockedReason && <BlockedActionNotice reason={mediaBlockedReason} testId="notice-add-post-media" />}{media.length > 0 && <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">{media.map((item) => <div key={item.objectPath} className="group relative overflow-hidden rounded-xl border border-border bg-secondary/30" data-testid={`media-preview-${item.objectPath}`}><div className="aspect-square bg-muted">{item.type.startsWith("video/") ? <video src={item.previewUrl} className="h-full w-full object-cover" controls preload="metadata" /> : <img src={item.previewUrl} alt={item.name} className="h-full w-full object-cover" />}</div><div className="flex items-center justify-between gap-1 px-2 py-1.5"><span className="truncate text-[11px] text-muted-foreground">{item.name}</span><Button type="button" variant="ghost" size="icon" className="h-6 w-6 shrink-0 text-muted-foreground hover:text-destructive" onClick={() => setMedia((current) => current.filter((mediaItem) => mediaItem.objectPath !== item.objectPath))} aria-label={`Remove ${item.name}`}><Trash2 className="h-3.5 w-3.5" /></Button></div></div>)}</div>}</div>
                     <div className="space-y-2"><Label>Publish to</Label><div className="grid gap-2 sm:grid-cols-3">{PLATFORMS.map((platform) => { const meta = PLATFORM_META[platform]; const selected = selectedPlatforms.includes(platform); const unavailable = !connectedPlatforms.has(platform) || (platform === SocialMediaPlatform.INSTAGRAM && media.length === 0); return <button type="button" key={platform} onClick={() => !unavailable && togglePlatform(platform)} disabled={unavailable} title={platform === SocialMediaPlatform.INSTAGRAM && media.length === 0 ? "Add an image or video to publish to Instagram." : undefined} className={cn("flex items-center gap-2 rounded-xl border px-3 py-2.5 text-left text-sm transition-colors", selected ? "border-primary bg-primary/5 text-primary" : "border-border hover:bg-secondary", unavailable && "cursor-not-allowed opacity-45")} aria-pressed={selected} data-testid={`button-select-platform-${platform.toLowerCase()}`}><span className={cn("flex h-7 w-7 items-center justify-center rounded-lg", meta.tint)}><PlatformMark platform={platform} /></span><span className="flex-1"><span className="block">{meta.label}</span>{platform === SocialMediaPlatform.INSTAGRAM && <span className="block text-[10px] text-muted-foreground">Media required</span>}</span>{selected && <Check className="h-4 w-4" />}</button>; })}</div><p className="text-xs text-muted-foreground">{media.length ? "Instagram is available because this post includes media." : "Add media to unlock Instagram publishing."}</p></div>
                      <div className="rounded-xl border border-border bg-secondary/50 p-3.5"><button type="button" className="flex w-full items-center justify-between gap-4 text-left" onClick={() => setScheduleEnabled((value) => !value)} aria-pressed={scheduleEnabled} data-testid="button-toggle-schedule"><span className="flex items-center gap-2 text-sm font-medium"><CalendarClock className="h-4 w-4 text-primary" /> Schedule for later</span><span className={cn("relative h-5 w-9 rounded-full transition-colors", scheduleEnabled ? "bg-primary" : "bg-muted")}><span className={cn("absolute top-1 h-3 w-3 rounded-full bg-card transition-transform", scheduleEnabled ? "translate-x-5" : "translate-x-1")} /></span></button>{scheduleEnabled && <div className="mt-3 space-y-1.5"><Label htmlFor="scheduled-at" className="text-xs">Date and time</Label><Input ref={scheduleInputRef} id="scheduled-at" type="datetime-local" min={minimumScheduleTime()} value={scheduledAt} onChange={handleScheduledAtChange} required data-testid="input-scheduled-at" /></div>}</div>
-                    <Button type="submit" className="w-full shadow-sm" disabled={createPost.isPending || isUploadingMedia || finalizeUpload.isPending || !caption.trim() || selectedPlatforms.length === 0 || (scheduleEnabled && !scheduledAt)} data-testid="button-publish-post">{createPost.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : scheduleEnabled ? <CalendarClock className="mr-2 h-4 w-4" /> : <Send className="mr-2 h-4 w-4" />}{createPost.isPending ? "Sending..." : scheduleEnabled ? "Schedule post" : "Publish now"}</Button>
+                    <LimitBlockedAction reason={postBlockedReason} testId="button-publish-post"><Button type="submit" className="w-full shadow-sm" disabled={createPost.isPending || isUploadingMedia || finalizeUpload.isPending || !caption.trim() || selectedPlatforms.length === 0 || (scheduleEnabled && !scheduledAt) || Boolean(postBlockedReason)} data-testid="button-publish-post">{createPost.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : scheduleEnabled ? <CalendarClock className="mr-2 h-4 w-4" /> : <Send className="mr-2 h-4 w-4" />}{createPost.isPending ? "Sending..." : scheduleEnabled ? "Schedule post" : "Publish now"}</Button></LimitBlockedAction>
+                    {postBlockedReason && <BlockedActionNotice reason={postBlockedReason} testId="notice-publish-post" />}
                   </form>
                 </CardContent>
               </Card>
@@ -836,7 +928,7 @@ export default function SocialMedia() {
                           role="region"
                           aria-label="Scrollable recent post queue"
                          >
-                           {posts.slice(0, 8).map((post) => <PostCard key={post.id} post={post} onImportComments={handleImportComments} importing={importingPostId === post.id} />)}
+                           {posts.slice(0, 8).map((post) => <PostCard key={post.id} post={post} onImportComments={handleImportComments} importing={importingPostId === post.id} importBlockedReason={commentImportBlockedReason} />)}
                          </div>
                        ) :
                           <div className="rounded-2xl border border-dashed border-border px-5 py-12 text-center" data-testid="state-no-posts"><div className="mx-auto mb-3 flex h-11 w-11 items-center justify-center rounded-xl bg-secondary text-muted-foreground"><Send className="h-5 w-5" /></div><p className="text-sm font-semibold">Your queue is clear</p><p className="mx-auto mt-1 max-w-xs text-xs leading-relaxed text-muted-foreground">A thoughtful, useful post can start the conversation. Compose one in the post composer.</p></div>}
@@ -854,7 +946,8 @@ export default function SocialMedia() {
                      </Select>
                    </div>
                    {selectedCommentPost && selectedCommentPost.platforms.length > 1 && <div className="space-y-2"><Label htmlFor="comment-platform">Channel to review</Label><Select value={selectedCommentPlatform} onValueChange={(value) => setSelectedCommentPlatform(value as SocialMediaPlatform)}><SelectTrigger id="comment-platform" data-testid="select-comment-platform"><SelectValue placeholder="Choose a channel" /></SelectTrigger><SelectContent>{selectedCommentPost.platforms.map((platform) => <SelectItem key={platform} value={platform} data-testid={`option-comment-platform-${platform.toLowerCase()}`}>{PLATFORM_META[platform].label}</SelectItem>)}</SelectContent></Select></div>}
-                   {selectedPostId && <Button variant="outline" className="w-full" onClick={() => { if (selectedCommentPost) handleImportComments(selectedCommentPost); }} disabled={!!importingPostId || !selectedCommentPlatform} data-testid="button-import-selected-comments"><MessageCircle className="mr-2 h-4 w-4" />Import latest comments</Button>}
+                   {selectedPostId && <LimitBlockedAction reason={commentImportBlockedReason} testId="button-import-selected-comments"><Button variant="outline" className="w-full" onClick={() => { if (selectedCommentPost) handleImportComments(selectedCommentPost); }} disabled={!!importingPostId || !selectedCommentPlatform || Boolean(commentImportBlockedReason)} data-testid="button-import-selected-comments"><MessageCircle className="mr-2 h-4 w-4" />Import latest comments</Button></LimitBlockedAction>}
+                   {selectedPostId && commentImportBlockedReason && <BlockedActionNotice reason={commentImportBlockedReason} testId="notice-import-selected-comments" />}
                    {!selectedPostId && <div className="rounded-xl bg-secondary/60 p-4 text-center text-xs leading-relaxed text-muted-foreground">{posts.length ? "Scheduled posts will be available here once they are live." : "Publish a post first to bring its public comments into this desk."}</div>}
                   <div
                     className={cn(
@@ -867,7 +960,7 @@ export default function SocialMedia() {
                   >
                     {commentsQuery.isLoading ? <div data-testid="state-comments-loading" className="space-y-3">{[0, 1].map((item) => <div key={item} className="space-y-3 rounded-xl border border-border p-4"><Skeleton className="h-4 w-36" /><Skeleton className="h-12 w-full" /><Skeleton className="h-9 w-full" /></div>)}</div> :
                       commentsQuery.isError ? <div className="rounded-xl border border-destructive/20 bg-destructive/5 p-4 text-sm" role="alert" data-testid="state-comments-error"><p className="font-semibold">Comments could not load</p><p className="mt-1 text-xs text-muted-foreground">{errorMessage(commentsQuery.error, "Try importing the comments again.")}</p></div> :
-                        comments.length ? <div className="space-y-3">{comments.map((comment) => <CommentRow key={comment.id} comment={comment} draft={replyDrafts[comment.id] ?? ""} onDraftChange={(value) => setReplyDrafts((current) => ({ ...current, [comment.id]: value }))} onReply={() => handleReply(comment.id, replyDrafts[comment.id] ?? "")} isReplying={replyingCommentId === comment.id} isAnotherReplyPending={Boolean(replyingCommentId && replyingCommentId !== comment.id)} />)}</div> :
+                        comments.length ? <div className="space-y-3">{comments.map((comment) => <CommentRow key={comment.id} comment={comment} draft={replyDrafts[comment.id] ?? ""} onDraftChange={(value) => setReplyDrafts((current) => ({ ...current, [comment.id]: value }))} onReply={() => handleReply(comment.id, replyDrafts[comment.id] ?? "")} isReplying={replyingCommentId === comment.id} isAnotherReplyPending={Boolean(replyingCommentId && replyingCommentId !== comment.id)} replyBlockedReason={comment.dailyUnitCountedToday ? null : commentDailyBlockedReason} />)}</div> :
                           <div className="rounded-2xl border border-dashed border-border px-5 py-12 text-center" data-testid="state-no-comments"><div className="mx-auto mb-3 flex h-11 w-11 items-center justify-center rounded-xl bg-secondary text-muted-foreground"><MessageSquare className="h-5 w-5" /></div><p className="text-sm font-semibold">No imported comments yet</p><p className="mx-auto mt-1 max-w-sm text-xs leading-relaxed text-muted-foreground">Import a post's latest public comments to bring the conversation into this desk.</p></div>}
                   </div>
                  </CardContent>
@@ -894,6 +987,7 @@ function CommentRow({
   onReply,
   isReplying,
   isAnotherReplyPending,
+  replyBlockedReason,
 }: {
   comment: SocialMediaComment;
   draft: string;
@@ -901,6 +995,7 @@ function CommentRow({
   onReply: () => void;
   isReplying: boolean;
   isAnotherReplyPending: boolean;
+  replyBlockedReason?: string | null;
 }) {
   return (
     <article className="rounded-2xl border border-border bg-background p-4" data-testid={`card-comment-${comment.id}`}>
@@ -908,7 +1003,8 @@ function CommentRow({
         <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">{comment.authorName.slice(0, 1).toUpperCase()}</div>
         <div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-x-2 gap-y-1"><p className="text-sm font-semibold" data-testid={`text-comment-author-${comment.id}`}>{comment.authorName}</p>{comment.createdAt && <span className="text-xs text-muted-foreground">{formatDate(comment.createdAt, true)}</span>}</div><p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-foreground/85" data-testid={`text-comment-${comment.id}`}>{comment.text}</p></div>
       </div>
-       {comment.canReply ? <div className="mt-4 flex min-w-0 flex-col gap-2 sm:flex-row sm:items-end"><Textarea value={draft} onChange={(event) => onDraftChange(event.target.value)} placeholder="Write a public reply..." maxLength={2000} className="min-h-20 min-w-0 resize-y text-sm sm:flex-1" aria-label={`Reply to ${comment.authorName}`} data-testid={`textarea-reply-${comment.id}`} /><Button className="w-full shrink-0 sm:mb-0 sm:w-auto" onClick={onReply} disabled={isReplying || isAnotherReplyPending || !draft.trim()} aria-busy={isReplying} data-testid={`button-reply-comment-${comment.id}`}>{isReplying ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />} {isReplying ? "Publishing..." : "Reply"}</Button></div> : <p className="mt-3 text-xs text-muted-foreground">Replies are unavailable for this comment.</p>}
+       {comment.canReply ? <div className="mt-4 flex min-w-0 flex-col gap-2 sm:flex-row sm:items-end"><Textarea value={draft} onChange={(event) => onDraftChange(event.target.value)} placeholder="Write a public reply..." maxLength={2000} className="min-h-20 min-w-0 resize-y text-sm sm:flex-1" aria-label={`Reply to ${comment.authorName}`} data-testid={`textarea-reply-${comment.id}`} /><LimitBlockedAction reason={replyBlockedReason} testId={`button-reply-comment-${comment.id}`}><Button className="w-full shrink-0 sm:mb-0 sm:w-auto" onClick={onReply} disabled={isReplying || isAnotherReplyPending || !draft.trim() || Boolean(replyBlockedReason)} aria-busy={isReplying} data-testid={`button-reply-comment-${comment.id}`}>{isReplying ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />} {isReplying ? "Publishing..." : "Reply"}</Button></LimitBlockedAction></div> : <p className="mt-3 text-xs text-muted-foreground">Replies are unavailable for this comment.</p>}
+       {comment.canReply && replyBlockedReason && <BlockedActionNotice reason={replyBlockedReason} testId={`notice-reply-comment-${comment.id}`} />}
     </article>
   );
 }

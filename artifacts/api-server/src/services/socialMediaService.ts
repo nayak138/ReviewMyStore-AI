@@ -1,5 +1,6 @@
-import { and, eq, isNotNull } from "drizzle-orm";
+import { and, eq, isNotNull, isNull } from "drizzle-orm";
 import {
+  businessSocialCommentsTable,
   businessesTable,
   db,
   objectUploadsTable,
@@ -22,9 +23,13 @@ import {
 } from "../lib/objectAcl";
 import { logger } from "../lib/logger";
 import {
+  assertBusinessUsageAvailable,
   completeBusinessUsageReservation,
+  getBusinessUsageBilling,
   getBusinessUsageHistory,
   getBusinessUsageSummary,
+  recordImportedSocialComments,
+  releaseExpiredMediaUploadReservations,
   releaseBusinessUsageReservation,
   reserveBusinessUsage,
 } from "./businessUsageService";
@@ -89,6 +94,14 @@ function valueDate(value: unknown): Date | null {
   if (!raw) return null;
   const date = new Date(raw);
   return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function isSameUtcDay(left: Date, right = new Date()) {
+  return (
+    left.getUTCFullYear() === right.getUTCFullYear() &&
+    left.getUTCMonth() === right.getUTCMonth() &&
+    left.getUTCDate() === right.getUTCDate()
+  );
 }
 
 function providerPlatform(value: unknown): Platform | null {
@@ -412,13 +425,41 @@ export async function requestSocialMediaMediaUploadUrl(
         : "Videos must be 100 MB or smaller.",
     );
   }
+  await releaseExpiredMediaUploadReservations();
   const uploadURL = await objectStorageService.getObjectEntityUploadURL();
   const objectPath = objectStorageService.normalizeObjectEntityPath(uploadURL);
-  await db.insert(objectUploadsTable).values({
-    objectPath,
-    ownerClerkUserId: clerkUserId,
-    expiresAt: new Date(Date.now() + 15 * 60 * 1000),
+  const providerAttemptId = `social-media-upload:${objectPath}`;
+  const dailyReservation = await reserveBusinessUsage({
+    organizationId,
+    businessId: input.businessId,
+    metric: "SOCIAL_MEDIA_UPLOADS",
+    providerAttemptId,
   });
+  let monthlyReservation:
+    | Awaited<ReturnType<typeof reserveBusinessUsage>>
+    | undefined;
+  try {
+    monthlyReservation = await reserveBusinessUsage({
+      organizationId,
+      businessId: input.businessId,
+      metric: "SOCIAL_MEDIA_UPLOADS_MONTHLY",
+      providerAttemptId,
+      allowMonthlyOverage: true,
+    });
+    await db.insert(objectUploadsTable).values({
+      objectPath,
+      ownerClerkUserId: clerkUserId,
+      expiresAt: new Date(Date.now() + 15 * 60 * 1000),
+    });
+  } catch (error) {
+    await Promise.all([
+      releaseBusinessUsageReservation(dailyReservation.id),
+      monthlyReservation
+        ? releaseBusinessUsageReservation(monthlyReservation.id)
+        : Promise.resolve(false),
+    ]);
+    throw error;
+  }
   return {
     uploadURL,
     objectPath,
@@ -586,6 +627,7 @@ export async function getSocialMediaDashboard(
     availableAccounts,
     usage: await getBusinessUsageSummary(organizationId, businessId),
     usageHistory: await getBusinessUsageHistory(organizationId, businessId),
+    usageBilling: await getBusinessUsageBilling(organizationId, businessId),
   };
 }
 
@@ -873,6 +915,35 @@ export async function createSocialMediaPost(
       "Choose a publishing time at least one minute in the future.",
     );
   }
+  const dailyReservation = await reserveBusinessUsage({
+    organizationId,
+    businessId: input.businessId,
+    metric: "SOCIAL_POSTS",
+    amount: input.platforms.length,
+  });
+  let monthlyReservation:
+    | Awaited<ReturnType<typeof reserveBusinessUsage>>
+    | undefined;
+  try {
+    monthlyReservation = await reserveBusinessUsage({
+      organizationId,
+      businessId: input.businessId,
+      metric: "SOCIAL_POSTS_MONTHLY",
+      amount: input.platforms.length,
+      allowMonthlyOverage: true,
+    });
+  } catch (error) {
+    await releaseBusinessUsageReservation(dailyReservation.id);
+    throw error;
+  }
+  const releasePostUsage = async () => {
+    await Promise.all([
+      releaseBusinessUsageReservation(dailyReservation.id),
+      monthlyReservation
+        ? releaseBusinessUsageReservation(monthlyReservation.id)
+        : Promise.resolve(false),
+    ]);
+  };
   let uploadIds: string[] = [];
   try {
     if (mediaPaths.length) {
@@ -884,6 +955,7 @@ export async function createSocialMediaPost(
       );
     }
   } catch (error) {
+    await releasePostUsage();
     if (error instanceof SocialMediaBadRequestError) throw error;
     if (error instanceof ReviewProviderError) {
       throw new SocialMediaBadRequestError(
@@ -897,6 +969,7 @@ export async function createSocialMediaPost(
     (platform) => !readyAccounts.some((account) => account.platform === platform),
   );
   if (missingProviderTargets.length) {
+    await releasePostUsage();
     throw new SocialMediaBadRequestError(
       `Connect ${missingProviderTargets.join(", ")} before publishing to those channels.`,
     );
@@ -927,12 +1000,6 @@ export async function createSocialMediaPost(
     input.title?.trim() ||
     input.caption.trim().replace(/\s+/g, " ").slice(0, 80) ||
     "Social media post";
-  const usageReservation = await reserveBusinessUsage({
-    organizationId,
-    businessId: input.businessId,
-    metric: "SOCIAL_POSTS",
-    amount: input.platforms.length,
-  });
   let created: JsonRecord;
   try {
     created = await bndleRequest("post", {
@@ -950,7 +1017,7 @@ export async function createSocialMediaPost(
       }),
     });
   } catch (error) {
-    await releaseBusinessUsageReservation(usageReservation.id);
+    await releasePostUsage();
     if (error instanceof ReviewProviderError && error.upstreamStatus === 400) {
       const providerMessage = error.providerMessage?.toLowerCase() ?? "";
       if (
@@ -986,7 +1053,12 @@ export async function createSocialMediaPost(
     }
     throw error;
   }
-  await completeBusinessUsageReservation(usageReservation.id);
+  await Promise.all([
+    completeBusinessUsageReservation(dailyReservation.id),
+    monthlyReservation
+      ? completeBusinessUsageReservation(monthlyReservation.id)
+      : Promise.resolve(false),
+  ]);
   if (mediaPaths.length) {
     await removePublishedMedia(mediaPaths, clerkUserId);
   }
@@ -1027,6 +1099,7 @@ function commentPayload(raw: JsonRecord) {
       valueString(raw.externalParentId) ?? valueString(raw.parentCommentId),
     createdAt: valueDate(raw.createdAt) ?? valueDate(raw.createdTime),
     canReply: true,
+    dailyUnitCountedToday: false,
   };
 }
 
@@ -1045,26 +1118,19 @@ export async function importSocialMediaComments(
       "Choose one published post to import comments from.",
     );
   }
-  const usageReservation = await reserveBusinessUsage({
+  await assertBusinessUsageAvailable({
     organizationId,
     businessId: input.businessId,
-    metric: "SOCIAL_COMMENT_IMPORTS",
+    metric: "SOCIAL_COMMENT_DAILY_UNITS",
   });
-  let result: JsonRecord;
-  try {
-    result = await bndleRequest("comment/import", {
-      method: "POST",
-      body: JSON.stringify({
-        teamId,
-        socialAccountType: input.platform,
-        ...(input.postId ? { postId: input.postId } : { importedPostId: input.importedPostId }),
-      }),
-    });
-  } catch (error) {
-    await releaseBusinessUsageReservation(usageReservation.id);
-    throw error;
-  }
-  await completeBusinessUsageReservation(usageReservation.id);
+  const result = await bndleRequest("comment/import", {
+    method: "POST",
+    body: JSON.stringify({
+      teamId,
+      socialAccountType: input.platform,
+      ...(input.postId ? { postId: input.postId } : { importedPostId: input.importedPostId }),
+    }),
+  });
   return {
     importId: valueString(result.importId) ?? valueString(result.id),
     status: valueString(result.status) ?? "FETCHING",
@@ -1083,8 +1149,44 @@ export async function listSocialMediaComments(
     undefined,
     { teamId, postId },
   );
+  const comments = asArray(result.comments ?? result.data ?? result.items).map(
+    commentPayload,
+  );
+  await recordImportedSocialComments({
+    organizationId,
+    businessId,
+    comments: comments.map((comment) => ({
+      id: comment.id,
+      postId: comment.postId,
+    })),
+  });
+  const imported = await db
+    .select({
+      providerCommentId: businessSocialCommentsTable.providerCommentId,
+      importedAt: businessSocialCommentsTable.importedAt,
+      repliedAt: businessSocialCommentsTable.repliedAt,
+      replyReservationId: businessSocialCommentsTable.replyReservationId,
+    })
+    .from(businessSocialCommentsTable)
+    .where(
+      and(
+        eq(businessSocialCommentsTable.organizationId, organizationId),
+        eq(businessSocialCommentsTable.businessId, businessId),
+      ),
+    );
+  const stateById = new Map(
+    imported.map((comment) => [comment.providerCommentId, comment]),
+  );
   return {
-    comments: asArray(result.comments ?? result.data ?? result.items).map(commentPayload),
+    comments: comments.flatMap((comment) => {
+      const state = stateById.get(comment.id);
+      if (!state) return [];
+      return [{
+        ...comment,
+        canReply: !state.repliedAt && !state.replyReservationId,
+        dailyUnitCountedToday: isSameUtcDay(state.importedAt),
+      }];
+    }),
   };
 }
 
@@ -1095,11 +1197,60 @@ export async function replyToSocialMediaComment(
   text: string,
 ) {
   const { teamId } = await getBusinessTeam(organizationId, businessId);
-  const usageReservation = await reserveBusinessUsage({
-    organizationId,
-    businessId,
-    metric: "SOCIAL_COMMENT_REPLIES",
-  });
+  const [trackedComment] = await db
+    .select({
+      id: businessSocialCommentsTable.id,
+      importedAt: businessSocialCommentsTable.importedAt,
+      repliedAt: businessSocialCommentsTable.repliedAt,
+      replyReservationId: businessSocialCommentsTable.replyReservationId,
+    })
+    .from(businessSocialCommentsTable)
+    .where(
+      and(
+        eq(businessSocialCommentsTable.organizationId, organizationId),
+        eq(businessSocialCommentsTable.businessId, businessId),
+        eq(businessSocialCommentsTable.providerCommentId, commentId),
+      ),
+    )
+    .limit(1);
+  if (!trackedComment) {
+    throw new SocialMediaBadRequestError(
+      "Import this comment before replying to it.",
+    );
+  }
+  if (trackedComment.repliedAt || trackedComment.replyReservationId) {
+    throw new SocialMediaConflictError(
+      "A reply has already been sent or is in progress for this comment.",
+    );
+  }
+  const usageReservation = isSameUtcDay(trackedComment.importedAt)
+    ? null
+    : await reserveBusinessUsage({
+        organizationId,
+        businessId,
+        metric: "SOCIAL_COMMENT_DAILY_UNITS",
+      });
+  const replyClaimId =
+    usageReservation?.id ?? `same-day-reply:${trackedComment.id}`;
+  const [claimedComment] = await db
+    .update(businessSocialCommentsTable)
+    .set({ replyReservationId: replyClaimId })
+    .where(
+      and(
+        eq(businessSocialCommentsTable.id, trackedComment.id),
+        isNull(businessSocialCommentsTable.repliedAt),
+        isNull(businessSocialCommentsTable.replyReservationId),
+      ),
+    )
+    .returning({ id: businessSocialCommentsTable.id });
+  if (!claimedComment) {
+    if (usageReservation) {
+      await releaseBusinessUsageReservation(usageReservation.id);
+    }
+    throw new SocialMediaConflictError(
+      "A reply has already been sent or is in progress for this comment.",
+    );
+  }
   let result: JsonRecord;
   try {
     result = await bndleRequest("comment", {
@@ -1111,9 +1262,37 @@ export async function replyToSocialMediaComment(
       }),
     });
   } catch (error) {
-    await releaseBusinessUsageReservation(usageReservation.id);
+    await Promise.all([
+      usageReservation
+        ? releaseBusinessUsageReservation(usageReservation.id)
+        : Promise.resolve(false),
+      db
+        .update(businessSocialCommentsTable)
+        .set({ replyReservationId: null })
+        .where(
+          and(
+            eq(businessSocialCommentsTable.id, trackedComment.id),
+            eq(businessSocialCommentsTable.replyReservationId, replyClaimId),
+          ),
+        ),
+    ]);
     throw error;
   }
-  await completeBusinessUsageReservation(usageReservation.id);
-  return commentPayload(result);
+  if (usageReservation) {
+    await completeBusinessUsageReservation(usageReservation.id);
+  }
+  await db
+    .update(businessSocialCommentsTable)
+    .set({ repliedAt: new Date(), replyReservationId: null })
+    .where(
+      and(
+        eq(businessSocialCommentsTable.id, trackedComment.id),
+        eq(businessSocialCommentsTable.replyReservationId, replyClaimId),
+      ),
+    );
+  return {
+    ...commentPayload(result),
+    canReply: false,
+    dailyUnitCountedToday: true,
+  };
 }

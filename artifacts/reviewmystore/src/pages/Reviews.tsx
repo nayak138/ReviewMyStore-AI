@@ -46,10 +46,8 @@ import { BrandIcon } from "@/components/brand-logo";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { Star, MessageSquare, RefreshCw, AlertCircle, Bot, Send, Trash2, Edit3, Search, Store, Link2Off, MapPin, CheckCircle2, XCircle } from "lucide-react";
+import { LimitBlockedAction, UsageSummaryPanel } from "./usage-ui";
 
-// bundle.social's Free plan allows 5 review imports/month; Pro/Business
-// default to 200. We don't know which plan the account is on, only the
-// remaining count, so warn generously once it gets low.
 function useDebounce<T>(value: T, delay?: number): T {
   const [debouncedValue, setDebouncedValue] = useState<T>(value);
   useEffect(() => {
@@ -489,6 +487,15 @@ export default function Reviews() {
   const { data: dashboard, isLoading: dashboardLoading } = useGetReviewDashboard({ businessId }, {
     query: { enabled: !!isSignedIn && !!businessId, queryKey: dashboardKey }
   });
+  const reviewImportUsage = (dashboard?.usage ?? []).find((item) => item.metric === "GOOGLE_REVIEW_IMPORTS");
+  const sharedProviderImportCapacity = dashboard?.connection.remainingImportCapacity;
+  const sharedProviderImportNearLimit =
+    sharedProviderImportCapacity !== null &&
+    sharedProviderImportCapacity !== undefined &&
+    sharedProviderImportCapacity <= 40;
+  const reviewSyncBlockedReason = reviewImportUsage?.remaining === 0
+    ? "Google review imports are at the assigned monthly limit. Sync will be available again when the allowance resets."
+    : null;
 
   const matchingReviewLocation = workspaceBusiness
     ? dashboard?.locations.find((location) => {
@@ -848,19 +855,18 @@ export default function Reviews() {
               If you already signed in and selected a location in the other tab, sync now to finish connecting. Otherwise, reopen the connection tab or start again.
             </p>
             <div className="flex items-center justify-center gap-3 mt-6">
-              <Button
-                size="lg"
-                className="shadow-sm"
-                disabled={syncProvider.isPending}
-                onClick={() => syncProvider.mutate({ params: { businessId } })}
-              >
-                {syncProvider.isPending ? (
-                  <RefreshCw className="w-5 h-5 mr-2 animate-spin" />
-                ) : (
-                  <RefreshCw className="w-5 h-5 mr-2" />
-                )}
-                I've connected — Sync now
-              </Button>
+              <LimitBlockedAction reason={reviewSyncBlockedReason} testId="button-sync-reviews-pending">
+                <Button
+                  size="lg"
+                  className="shadow-sm"
+                  disabled={syncProvider.isPending || Boolean(reviewSyncBlockedReason)}
+                  onClick={() => syncProvider.mutate({ params: { businessId } })}
+                  data-testid="button-sync-reviews-pending"
+                >
+                  {syncProvider.isPending ? <RefreshCw className="w-5 h-5 mr-2 animate-spin" /> : <RefreshCw className="w-5 h-5 mr-2" />}
+                  I've connected — Sync now
+                </Button>
+              </LimitBlockedAction>
               <Button
                 variant="outline"
                 size="lg"
@@ -892,16 +898,19 @@ export default function Reviews() {
             <p className="text-xs text-muted-foreground hidden sm:block px-2">
               Last synced: {dashboard?.connection.lastSyncedAt ? new Date(dashboard?.connection.lastSyncedAt).toLocaleString() : 'Never'}
             </p>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="bg-background shadow-sm"
-               onClick={() => syncProvider.mutate({ params: { businessId } })}
-              disabled={syncProvider.isPending}
-            >
-              <RefreshCw className={`w-4 h-4 mr-2 ${syncProvider.isPending ? 'animate-spin' : ''}`} />
-              Sync Now
-            </Button>
+            <LimitBlockedAction reason={reviewSyncBlockedReason} testId="button-sync-reviews">
+              <Button
+                variant="outline"
+                size="sm"
+                className="bg-background shadow-sm"
+                onClick={() => syncProvider.mutate({ params: { businessId } })}
+                disabled={syncProvider.isPending || Boolean(reviewSyncBlockedReason)}
+                data-testid="button-sync-reviews"
+              >
+                <RefreshCw className={`w-4 h-4 mr-2 ${syncProvider.isPending ? 'animate-spin' : ''}`} />
+                Sync Now
+              </Button>
+            </LimitBlockedAction>
             <Button
               variant="outline"
               size="sm"
@@ -925,13 +934,11 @@ export default function Reviews() {
           </div>
         </div>
 
-        {dashboard?.connection.remainingImportCapacity !== null &&
-          dashboard?.connection.remainingImportCapacity !== undefined &&
-          dashboard.connection.remainingImportCapacity <= IMPORT_CAPACITY_WARNING_THRESHOLD && (
+        {reviewImportUsage?.nearLimit && (
             <div className="flex items-start gap-3 p-4 rounded-xl border border-amber-300/60 bg-amber-50 dark:bg-amber-900/10 dark:border-amber-900/50">
               <AlertCircle className="w-5 h-5 text-amber-600 dark:text-amber-500 shrink-0 mt-0.5" />
               <div className="text-sm text-amber-900 dark:text-amber-300 leading-relaxed">
-                {dashboard.connection.remainingImportCapacity <= 0 ? (
+                {reviewImportUsage.remaining <= 0 ? (
                   <>
                     <span className="font-semibold">You've reached your monthly Google review import limit.</span>{" "}
                     New reviews won't be imported until your plan resets next month.
@@ -939,7 +946,7 @@ export default function Reviews() {
                 ) : (
                   <>
                     <span className="font-semibold">
-                      Only {dashboard.connection.remainingImportCapacity} review import{dashboard.connection.remainingImportCapacity === 1 ? "" : "s"} left this month.
+                      Only {reviewImportUsage.remaining} review import{reviewImportUsage.remaining === 1 ? "" : "s"} left this month.
                     </span>{" "}
                     You're close to your monthly Google review import limit.
                   </>
@@ -954,6 +961,41 @@ export default function Reviews() {
               </div>
             </div>
           )}
+
+        {sharedProviderImportNearLimit && (
+          <div
+            className="flex items-start gap-3 rounded-xl border border-amber-300/60 bg-amber-50 p-4 dark:border-amber-900/50 dark:bg-amber-900/10"
+            role="status"
+            data-testid="review-provider-limits"
+          >
+            <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-amber-600 dark:text-amber-500" />
+            <div className="text-sm leading-relaxed text-amber-900 dark:text-amber-300">
+              {sharedProviderImportCapacity === 0 ? (
+                <>
+                  <span className="font-semibold">The shared bundle.social review-import cap is exhausted.</span>{" "}
+                  This provider allowance is shared across connected businesses and is separate from this business&apos;s 200-review monthly allowance.
+                </>
+              ) : (
+                <>
+                  <span className="font-semibold">
+                    Only {sharedProviderImportCapacity} shared provider review import{sharedProviderImportCapacity === 1 ? "" : "s"} remain.
+                  </span>{" "}
+                  This bundle.social cap is shared across connected businesses and is separate from this business&apos;s 200-review monthly allowance.
+                </>
+              )}
+            </div>
+          </div>
+        )}
+
+        {dashboard && (
+          <UsageSummaryPanel
+            items={dashboard.usage ?? []}
+            metrics={["GOOGLE_REVIEW_IMPORTS"]}
+            title="Google review allowance"
+            description="Review imports are counted for this business only. Reserved imports are included in the remaining balance."
+            testId="review-usage"
+          />
+        )}
 
         <div className="grid grid-cols-3 gap-2 md:gap-4">
           <Card className="shadow-sm border-border">
@@ -1091,5 +1133,3 @@ export default function Reviews() {
     </AppLayout>
   );
 }
-
-const IMPORT_CAPACITY_WARNING_THRESHOLD = 5;

@@ -16,9 +16,11 @@ import {
   useListAdminSharedReviewImports,
   useResetAdminPlatformData,
   useRevokeAdminAgencyInvitation,
+  useUpdateAdminBusinessUsagePricing,
   useReviewAdminDeactivationRequest,
   useUpdateAdminAgency,
   type AdminAgency,
+  type AdminPortal as AdminPortalData,
   type AdminDeactivationRequest,
   type AdminSharedReviewImport,
   type OrganizationPlan,
@@ -94,6 +96,124 @@ function deactivationStatusClass(status: AdminDeactivationRequest["status"]) {
     return "border-destructive/30 bg-destructive/10 text-destructive";
   }
   return "border-border bg-muted text-muted-foreground";
+}
+
+function formatCents(cents: number | null, currency: string) {
+  if (cents === null) return "Not quoted";
+  try {
+    return new Intl.NumberFormat(undefined, { style: "currency", currency }).format(cents / 100);
+  } catch {
+    return `${currency} ${(cents / 100).toFixed(2)}`;
+  }
+}
+
+function BusinessUsageCard({ business }: { business: AdminPortalData["businesses"][number] }) {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [amount, setAmount] = useState(
+    business.usageBilling.quotedMonthlyBaseAmountCents === null
+      ? ""
+      : String(business.usageBilling.quotedMonthlyBaseAmountCents / 100),
+  );
+  const [currency, setCurrency] = useState(business.usageBilling.currency);
+  useEffect(() => {
+    setAmount(
+      business.usageBilling.quotedMonthlyBaseAmountCents === null
+        ? ""
+        : String(business.usageBilling.quotedMonthlyBaseAmountCents / 100),
+    );
+    setCurrency(business.usageBilling.currency);
+  }, [business.usageBilling.currency, business.usageBilling.quotedMonthlyBaseAmountCents]);
+  const update = useUpdateAdminBusinessUsagePricing({
+    mutation: {
+      onSuccess: () => {
+        void queryClient.invalidateQueries({ queryKey: getGetAdminPortalQueryKey() });
+        toast({ title: "Usage quote saved", description: `${business.name} is set for manual invoicing.` });
+      },
+      onError: () => toast({ title: "Couldn't save usage quote", description: "Check the amount and three-letter currency, then try again.", variant: "destructive" }),
+    },
+  });
+  const amountNumber = amount.trim() === "" ? null : Number(amount);
+  const invalid = amountNumber !== null && (!Number.isFinite(amountNumber) || amountNumber < 0);
+  const normalizedCurrency = currency.trim().toUpperCase();
+  const currencyInvalid = !/^[A-Z]{3}$/.test(normalizedCurrency);
+  const save = () => {
+    if (invalid || currencyInvalid) return;
+    update.mutate({
+      businessId: business.id,
+      data: {
+        quotedMonthlyBaseAmountCents: amountNumber === null ? null : Math.round(amountNumber * 100),
+        currency: normalizedCurrency,
+      },
+    });
+  };
+  return (
+    <Card className="border-border shadow-sm" data-testid={`card-business-usage-${business.id}`}>
+      <CardHeader className="pb-3">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+          <div className="min-w-0">
+            <CardTitle className="truncate text-base">{business.name}</CardTitle>
+            <p className="mt-1 text-xs text-muted-foreground">{business.organizationName} · {business.ownerName ?? "Owner not assigned"}{business.ownerEmail ? ` · ${business.ownerEmail}` : ""}</p>
+          </div>
+          <Badge variant="outline">{business.status}</Badge>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="grid gap-3 sm:grid-cols-2">
+          {business.usageBilling.categories.map((category) => (
+            <div key={category.metric} className="rounded-xl border border-border bg-background p-3">
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-xs font-semibold text-foreground">{category.label}</p>
+                <Badge variant="secondary">{category.multiplier}×</Badge>
+              </div>
+              <p className="mt-2 text-sm tabular-nums text-muted-foreground">{category.used.toLocaleString()} used of {category.baseLimit.toLocaleString()} base units</p>
+            </div>
+          ))}
+        </div>
+        <div className="grid gap-4 border-t border-border pt-4 sm:grid-cols-[1fr_auto_auto] sm:items-end">
+          <label className="space-y-1.5 text-sm">
+            <span className="font-medium">Quoted monthly base amount</span>
+            <Input type="number" min={0} step="0.01" value={amount} onChange={(event) => setAmount(event.target.value)} placeholder="Leave blank to remove quote" aria-label={`${business.name} quoted monthly base amount`} data-testid={`input-usage-quote-${business.id}`} />
+            <span className="block text-xs text-muted-foreground">Manual invoice estimate: {formatCents(business.usageBilling.manualInvoiceTotalCents, business.usageBilling.currency)}</span>
+          </label>
+          <label className="space-y-1.5 text-sm">
+            <span className="font-medium">Currency</span>
+            <Input value={currency} maxLength={3} onChange={(event) => setCurrency(event.target.value.toUpperCase())} aria-label={`${business.name} invoice currency`} data-testid={`input-usage-currency-${business.id}`} />
+            <span className="block text-xs text-muted-foreground">Three letters, such as USD</span>
+          </label>
+          <Button variant="outline" onClick={save} disabled={update.isPending || invalid || currencyInvalid} data-testid={`button-save-usage-${business.id}`}>
+            {update.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Save quote
+          </Button>
+        </div>
+        <p className="text-xs leading-relaxed text-muted-foreground">Quotes and estimates are for manual invoicing. No automatic charge is collected by this workspace.</p>
+      </CardContent>
+    </Card>
+  );
+}
+
+function UsageTierAlerts({ alerts }: { alerts: AdminPortalData["usageTierAlerts"] }) {
+  if (!alerts.length) {
+    return <Card className="border-dashed"><CardContent className="py-8 text-center text-sm text-muted-foreground">No businesses have crossed a usage tier.</CardContent></Card>;
+  }
+  return (
+    <Card className="border-amber-300/70 bg-amber-50/40 shadow-sm dark:border-amber-900/50 dark:bg-amber-950/15" data-testid="usage-tier-alerts">
+      <CardHeader className="pb-3">
+        <CardTitle className="flex items-center gap-2 text-base"><TriangleAlert className="h-4 w-4 text-amber-600" /> Tier-crossing alerts</CardTitle>
+        <p className="text-xs text-muted-foreground">Review these rows before preparing manual invoices.</p>
+      </CardHeader>
+      <CardContent className="space-y-2 pt-0">
+        {alerts.map((alert, index) => (
+          <div key={`${alert.businessId}-${alert.category}-${index}`} className="grid gap-2 rounded-xl border border-amber-200/80 bg-background/70 p-3 text-sm md:grid-cols-[1.15fr_1fr_1fr_auto_auto] md:items-center dark:border-amber-900/40" data-testid={`row-usage-alert-${alert.businessId}-${index}`}>
+            <div><p className="font-semibold">{alert.businessName}</p><p className="text-xs text-muted-foreground">{alert.organizationName}</p></div>
+            <div><p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Agency owner</p><p>{alert.ownerName ?? "Unassigned"}</p><p className="text-xs text-muted-foreground">{alert.ownerEmail ?? "No email"}</p></div>
+            <div><p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Category</p><p>{alert.category}</p></div>
+            <div className="tabular-nums"><p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Count</p><p>{alert.used.toLocaleString()} / {alert.baseLimit.toLocaleString()}</p></div>
+            <div className="md:text-right"><Badge variant="outline">{alert.multiplier}×</Badge><p className="mt-1 text-xs font-semibold tabular-nums">{formatCents(alert.manualInvoiceTotalCents, alert.currency)}</p></div>
+          </div>
+        ))}
+      </CardContent>
+    </Card>
+  );
 }
 
 function DeactivationQueue({
@@ -725,7 +845,10 @@ export default function AdminPortal() {
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="inline-flex rounded-lg border border-border bg-card p-1">
             <Button size="sm" variant={view === "agencies" ? "secondary" : "ghost"} onClick={() => setView("agencies")}>Agencies</Button>
-             <Button size="sm" variant={view === "businesses" ? "secondary" : "ghost"} onClick={() => setView("businesses")}>All businesses</Button>
+             <Button size="sm" variant={view === "businesses" ? "secondary" : "ghost"} onClick={() => setView("businesses")}>
+               All businesses
+               {(data?.usageTierAlerts.length ?? 0) > 0 && <span className="ml-1.5 rounded-full bg-amber-500/15 px-1.5 text-xs text-amber-700 dark:text-amber-300">{data?.usageTierAlerts.length}</span>}
+             </Button>
              <Button size="sm" variant={view === "deactivation" ? "secondary" : "ghost"} onClick={() => setView("deactivation")}>
                Review requests
                {(deactivationData?.pendingCount ?? 0) > 0 && <span className="ml-1.5 rounded-full bg-amber-500/15 px-1.5 text-xs text-amber-700 dark:text-amber-300">{deactivationData?.pendingCount}</span>}
@@ -760,19 +883,14 @@ export default function AdminPortal() {
             </div>
           )
         ) : view === "businesses" ? (
-          <Card className="border-border shadow-sm">
-            <CardContent className="p-0">
-              <div className="divide-y divide-border">
-                {filteredBusinesses.map((business) => (
-                  <div key={business.id} className="flex flex-col gap-2 p-4 sm:flex-row sm:items-center sm:justify-between">
-                    <div className="min-w-0"><p className="font-medium text-foreground">{business.name}</p><p className="text-sm text-muted-foreground">{business.category} · {business.organizationName}</p></div>
-                    <div className="flex items-center gap-3 text-xs text-muted-foreground"><Badge variant="outline">{business.status}</Badge><span>Added {formatDate(business.createdAt)}</span></div>
-                  </div>
-                ))}
-                {filteredBusinesses.length === 0 && <p className="p-12 text-center text-sm text-muted-foreground">No businesses match your search.</p>}
-              </div>
-            </CardContent>
-          </Card>
+          <div className="space-y-5">
+            <UsageTierAlerts alerts={data?.usageTierAlerts ?? []} />
+            {filteredBusinesses.length === 0 ? (
+              <Card><CardContent className="py-12 text-center text-sm text-muted-foreground">No businesses match your search.</CardContent></Card>
+            ) : (
+              filteredBusinesses.map((business) => <BusinessUsageCard key={business.id} business={business} />)
+            )}
+          </div>
         ) : view === "sharedImports" ? (
           <div className="space-y-4">
             <Card className="border-amber-300/70 bg-amber-50/70 shadow-sm dark:border-amber-900/50 dark:bg-amber-950/20">

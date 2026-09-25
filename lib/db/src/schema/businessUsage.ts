@@ -15,8 +15,12 @@ export const businessUsageMetricValues = [
   "AI_REVIEW_REPLIES",
   "PUBLIC_AI_GENERATIONS",
   "SOCIAL_POSTS",
+  "SOCIAL_POSTS_MONTHLY",
   "SOCIAL_COMMENT_IMPORTS",
+  "SOCIAL_COMMENT_DAILY_UNITS",
   "SOCIAL_COMMENT_REPLIES",
+  "SOCIAL_MEDIA_UPLOADS",
+  "SOCIAL_MEDIA_UPLOADS_MONTHLY",
 ] as const;
 
 export type BusinessUsageMetric = (typeof businessUsageMetricValues)[number];

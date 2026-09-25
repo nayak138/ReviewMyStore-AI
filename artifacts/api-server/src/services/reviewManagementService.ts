@@ -27,6 +27,7 @@ import {
   completeBusinessUsageReservation,
   completeSharedReviewImportReservation,
   completeSharedReviewImportReservationWithEvidence,
+  getBusinessUsageBilling,
   getBusinessUsageHistory,
   getBusinessUsageSummary,
   listStaleUncertainSharedReviewImportReservations,
@@ -1066,8 +1067,32 @@ async function startReviewImport(
   let providerCallMayHaveBeenAccepted = false;
   const reserve = async (requestedAmount: number) => {
     providerAttemptId = randomUUID();
+    let allowedAmount = requestedAmount;
+    if (organizationId && businessId) {
+      const usage = await getBusinessUsageSummary(
+        organizationId,
+        businessId,
+        usageNow,
+      );
+      const businessAllowance = usage.find(
+        (item) => item.metric === "GOOGLE_REVIEW_IMPORTS",
+      );
+      if (!businessAllowance) {
+        throw new Error("Google review import allowance is unavailable.");
+      }
+      allowedAmount = Math.min(requestedAmount, businessAllowance.remaining);
+      if (allowedAmount < 1) {
+        throw new BusinessUsageLimitError(
+          "GOOGLE_REVIEW_IMPORTS",
+          businessAllowance.limit,
+          businessAllowance.used + businessAllowance.reserved,
+          requestedAmount,
+          new Date(businessAllowance.periodEnd),
+        );
+      }
+    }
     const sharedReservation = await reserveSharedReviewImportCapacity({
-      amount: requestedAmount,
+      amount: allowedAmount,
       now: usageNow,
       providerAttemptId,
     });
@@ -1733,6 +1758,15 @@ export async function getReviewDashboard(
     usageHistory: businessId
       ? await getBusinessUsageHistory(organizationId, businessId)
       : [],
+    usageBilling: businessId
+      ? await getBusinessUsageBilling(organizationId, businessId)
+      : {
+          quotedMonthlyBaseAmountCents: null,
+          currency: "USD",
+          highestMultiplier: 1,
+          manualInvoiceTotalCents: null,
+          categories: [],
+        },
   };
 }
 

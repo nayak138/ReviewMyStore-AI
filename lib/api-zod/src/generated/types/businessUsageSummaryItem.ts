@@ -16,6 +16,8 @@ export interface BusinessUsageSummaryItem {
   reserved: number;
   limit: number;
   remaining: number;
+  nearLimit: boolean;
+  warningThresholdPercent: number;
   periodStart: Date;
   periodEnd: Date;
 }

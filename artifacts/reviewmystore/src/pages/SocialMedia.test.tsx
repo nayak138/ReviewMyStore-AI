@@ -12,6 +12,7 @@ const mocks = vi.hoisted(() => ({
     text: string;
     createdAt: string | null;
     canReply: boolean;
+    dailyUnitCountedToday?: boolean;
   }>,
   posts: [] as Array<{
     id: string;
@@ -49,8 +50,8 @@ const mocks = vi.hoisted(() => ({
         window: "DAILY",
         used: 2,
         reserved: 1,
-        limit: 50,
-        remaining: 47,
+    limit: 10,
+    remaining: 7,
         periodEnd: "2026-08-21T00:00:00Z",
       },
     ] as Array<Record<string, unknown>>,
@@ -171,6 +172,19 @@ beforeEach(() => {
   mocks.commentsLoading = false;
   mocks.dashboardData.accounts.length = 0;
   mocks.dashboardData.availableAccounts.length = 0;
+  mocks.dashboardData.usage = [{
+    metric: "SOCIAL_POSTS",
+    label: "Social posts",
+    window: "DAILY",
+    used: 2,
+    reserved: 1,
+    limit: 10,
+    remaining: 7,
+    nearLimit: false,
+    warningThresholdPercent: 80,
+    periodStart: "2026-08-20T00:00:00Z",
+    periodEnd: "2026-08-21T00:00:00Z",
+  }];
   mocks.importCommentsMutate.mockClear();
   mocks.replyMutate.mockClear();
   mocks.attachMutate.mockClear();
@@ -347,11 +361,12 @@ describe("Meta callback recovery", () => {
 });
 
 describe("workspace layout", () => {
-  it("hides usage and explanatory notices while preserving channel and publishing controls", async () => {
+  it("shows precise usage and manual billing context while preserving channel and publishing controls", async () => {
     renderSocialMedia();
 
     expect(await screen.findByTestId("social-composer")).toBeInTheDocument();
-    expect(screen.queryByTestId("social-usage")).not.toBeInTheDocument();
+    expect(screen.getByTestId("social-usage")).toBeInTheDocument();
+    expect(screen.getByTestId("social-billing-summary")).toBeInTheDocument();
     expect(screen.queryByTestId("social-reconnect-guide")).not.toBeInTheDocument();
     expect(screen.queryByText("About media")).not.toBeInTheDocument();
     expect(
@@ -360,6 +375,252 @@ describe("workspace layout", () => {
     expect(screen.getByRole("heading", { name: "Connected channels" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Add a channel" })).toBeInTheDocument();
     expect(screen.getByTestId("button-publish-post")).toBeInTheDocument();
+  });
+
+  it("blocks publishing at the daily post cap with a focusable explanation", async () => {
+    mocks.dashboardData.usage = [{
+      metric: "SOCIAL_POSTS",
+      label: "Social posts",
+      window: "DAILY",
+      used: 10,
+      reserved: 0,
+      limit: 10,
+      remaining: 0,
+      nearLimit: true,
+      warningThresholdPercent: 80,
+      periodStart: "2026-08-20T00:00:00Z",
+      periodEnd: "2026-08-21T00:00:00Z",
+    }];
+
+    renderSocialMedia();
+
+    const publish = await screen.findByTestId("button-publish-post");
+    expect(publish).toBeDisabled();
+    expect(screen.getByTestId("button-publish-post-notice")).toHaveAttribute("tabindex", "0");
+    expect(screen.getByTestId("button-publish-post-notice")).toHaveAccessibleName(/daily social post allowance/i);
+    expect(screen.getByTestId("notice-publish-post")).toHaveTextContent(/daily social post allowance/i);
+  });
+
+  it("blocks a cross-post when its destination count exceeds remaining daily post units", async () => {
+    mocks.dashboardData.accounts.push(
+      { id: "connected-facebook", platform: "FACEBOOK", displayName: "Facebook Page", username: "page" },
+      { id: "connected-threads", platform: "THREADS", displayName: "Threads Profile", username: "profile" },
+    );
+    mocks.dashboardData.usage = [{
+      metric: "SOCIAL_POSTS",
+      label: "Social posts",
+      window: "DAILY",
+      used: 9,
+      reserved: 0,
+      limit: 10,
+      remaining: 1,
+      nearLimit: true,
+      warningThresholdPercent: 80,
+      periodStart: "2026-08-20T00:00:00Z",
+      periodEnd: "2026-08-21T00:00:00Z",
+    }];
+
+    renderSocialMedia();
+    await screen.findByTestId("button-select-platform-facebook");
+    fireEvent.click(screen.getByTestId("button-select-platform-facebook"));
+    fireEvent.click(screen.getByTestId("button-select-platform-threads"));
+
+    expect(screen.getByTestId("button-publish-post")).toBeDisabled();
+    expect(screen.getByTestId("notice-publish-post")).toHaveTextContent(/uses 2 daily post units, but only 1 remain/i);
+  });
+
+  it("blocks comment imports and replies at the daily comment-unit cap", async () => {
+    mocks.posts.push({
+      id: "daily-comment-cap",
+      status: "PUBLISHED",
+      platforms: ["FACEBOOK"],
+      title: "A live post",
+      caption: "A live post",
+      publishedAt: "2026-09-22T00:00:00Z",
+      scheduledAt: null,
+    });
+    mocks.comments.push({
+      id: "daily-comment-cap-item",
+      authorName: "A customer",
+      text: "A comment that could be replied to",
+      createdAt: null,
+      canReply: true,
+      dailyUnitCountedToday: false,
+    });
+    mocks.dashboardData.usage = [{
+      metric: "SOCIAL_COMMENT_DAILY_UNITS",
+      label: "Daily comment units",
+      window: "DAILY",
+      used: 5,
+      reserved: 0,
+      limit: 5,
+      remaining: 0,
+      nearLimit: true,
+      warningThresholdPercent: 80,
+      periodStart: "2026-09-22T00:00:00Z",
+      periodEnd: "2026-09-23T00:00:00Z",
+    }];
+
+    renderSocialMedia();
+    const importButton = await screen.findByTestId("button-import-comments-daily-comment-cap");
+    const replyButton = await screen.findByTestId("button-reply-comment-daily-comment-cap-item");
+
+    expect(importButton).toBeDisabled();
+    expect(screen.getByTestId("button-import-comments-daily-comment-cap-notice")).toHaveAttribute("tabindex", "0");
+    expect(screen.getByTestId("notice-import-comments-daily-comment-cap")).toHaveTextContent(/daily comment-unit allowance/i);
+    expect(replyButton).toBeDisabled();
+    expect(screen.getByTestId("button-reply-comment-daily-comment-cap-item-notice")).toHaveAttribute("tabindex", "0");
+    expect(screen.getByTestId("notice-reply-comment-daily-comment-cap-item")).toHaveTextContent(/daily comment-unit allowance/i);
+  });
+
+  it("keeps a same-day imported comment reply available at the cap", async () => {
+    mocks.posts.push({
+      id: "same-day-comment-post",
+      status: "PUBLISHED",
+      platforms: ["FACEBOOK"],
+      title: "A live post",
+      caption: "A live post",
+      publishedAt: "2026-09-22T00:00:00Z",
+      scheduledAt: null,
+    });
+    mocks.comments.push({
+      id: "same-day-comment",
+      authorName: "A customer",
+      text: "Already counted today",
+      createdAt: null,
+      canReply: true,
+      dailyUnitCountedToday: true,
+    });
+    mocks.dashboardData.usage = [{
+      metric: "SOCIAL_COMMENT_DAILY_UNITS",
+      label: "Comment units today",
+      window: "DAILY",
+      used: 5,
+      reserved: 0,
+      limit: 5,
+      remaining: 0,
+      nearLimit: true,
+      warningThresholdPercent: 80,
+      periodStart: "2026-09-22T00:00:00Z",
+      periodEnd: "2026-09-23T00:00:00Z",
+    }];
+
+    renderSocialMedia();
+    const replyButton = await screen.findByTestId("button-reply-comment-same-day-comment");
+    fireEvent.change(screen.getByTestId("textarea-reply-same-day-comment"), {
+      target: { value: "Thanks for sharing!" },
+    });
+    expect(replyButton).toBeEnabled();
+    expect(screen.queryByTestId("notice-reply-comment-same-day-comment")).not.toBeInTheDocument();
+  });
+
+  it("blocks media selection at the daily upload cap with accessible guidance", async () => {
+    mocks.dashboardData.usage = [{
+      metric: "SOCIAL_MEDIA_UPLOADS",
+      label: "Daily media uploads",
+      window: "DAILY",
+      used: 100,
+      reserved: 0,
+      limit: 100,
+      remaining: 0,
+      nearLimit: true,
+      warningThresholdPercent: 80,
+      periodStart: "2026-09-22T00:00:00Z",
+      periodEnd: "2026-09-23T00:00:00Z",
+    }];
+
+    renderSocialMedia();
+    expect(await screen.findByTestId("button-add-post-media")).toBeDisabled();
+    expect(screen.getByTestId("input-post-media")).toBeDisabled();
+    expect(screen.getByTestId("button-add-post-media-notice")).toHaveAttribute("tabindex", "0");
+    expect(screen.getByTestId("notice-add-post-media")).toHaveTextContent(/daily media upload allowance/i);
+  });
+
+  it("does not hard-stop comment imports or media uploads when only monthly bases are exceeded", async () => {
+    mocks.posts.push({
+      id: "monthly-overage-post",
+      status: "PUBLISHED",
+      platforms: ["FACEBOOK"],
+      title: "Monthly overage post",
+      caption: "A live post",
+      publishedAt: "2026-09-22T00:00:00Z",
+      scheduledAt: null,
+    });
+    mocks.dashboardData.usage = [
+      {
+        metric: "SOCIAL_POSTS",
+        label: "Social posts",
+        window: "DAILY",
+        used: 1,
+        reserved: 0,
+        limit: 10,
+        remaining: 9,
+        nearLimit: false,
+        warningThresholdPercent: 80,
+        periodStart: "2026-09-20T00:00:00Z",
+        periodEnd: "2026-09-21T00:00:00Z",
+      },
+      {
+        metric: "SOCIAL_COMMENT_DAILY_UNITS",
+        label: "Daily comment units",
+        window: "DAILY",
+        used: 1,
+        reserved: 0,
+        limit: 5,
+        remaining: 4,
+        nearLimit: false,
+        warningThresholdPercent: 80,
+        periodStart: "2026-09-20T00:00:00Z",
+        periodEnd: "2026-09-21T00:00:00Z",
+      },
+      {
+        metric: "SOCIAL_COMMENT_IMPORTS",
+        label: "Monthly comment imports",
+        window: "MONTHLY",
+        used: 30,
+        reserved: 0,
+        limit: 25,
+        remaining: 0,
+        nearLimit: true,
+        warningThresholdPercent: 80,
+        periodStart: "2026-09-01T00:00:00Z",
+        periodEnd: "2026-10-01T00:00:00Z",
+      },
+      {
+        metric: "SOCIAL_MEDIA_UPLOADS",
+        label: "Daily media uploads",
+        window: "DAILY",
+        used: 2,
+        reserved: 0,
+        limit: 100,
+        remaining: 98,
+        nearLimit: false,
+        warningThresholdPercent: 80,
+        periodStart: "2026-09-20T00:00:00Z",
+        periodEnd: "2026-09-21T00:00:00Z",
+      },
+      {
+        metric: "SOCIAL_MEDIA_UPLOADS_MONTHLY",
+        label: "Monthly media uploads",
+        window: "MONTHLY",
+        used: 550,
+        reserved: 0,
+        limit: 500,
+        remaining: 0,
+        nearLimit: true,
+        warningThresholdPercent: 80,
+        periodStart: "2026-09-01T00:00:00Z",
+        periodEnd: "2026-10-01T00:00:00Z",
+      },
+    ];
+
+    renderSocialMedia();
+
+    expect(await screen.findByTestId("button-import-selected-comments")).toBeEnabled();
+    expect(screen.getByTestId("button-add-post-media")).toBeEnabled();
+    expect(screen.getByTestId("social-usage-summary-warning")).toBeInTheDocument();
+    expect(screen.getByTestId("usage-metric-social_comment_imports")).toHaveTextContent("5 over base");
+    expect(screen.getByTestId("usage-metric-social_media_uploads_monthly")).toHaveTextContent("50 over base");
   });
 
   it("renders an explicit empty queue state for an authenticated business", async () => {

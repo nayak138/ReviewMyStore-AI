@@ -1064,6 +1064,34 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  /v1/admin/businesses/{businessId}/usage-pricing:
+    patch:
+      operationId: updateAdminBusinessUsagePricing
+      tags: [admin]
+      summary: Set the quoted monthly base amount for manual usage invoicing
+      parameters:
+        - name: businessId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BusinessUsagePricingInput"
+      responses:
+        "200":
+          description: Saved business pricing and current manual estimate
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BusinessUsageBilling"
+        "400": { description: Invalid amount or currency }
+        "401": { description: Not authenticated }
+        "403": { description: Not authorized (requires SUPER_ADMIN role) }
+        "404": { description: Business not found }
+
   /v1/admin/shared-review-imports:
     get:
       operationId: listAdminSharedReviewImports
@@ -3676,6 +3704,12 @@ components:
           type: string
         category:
           type: string
+        ownerName:
+          type: ["string", "null"]
+        ownerEmail:
+          type: ["string", "null"]
+        usageBilling:
+          $ref: "#/components/schemas/BusinessUsageBilling"
         status:
           $ref: "#/components/schemas/BusinessStatus"
         archivedAt:
@@ -3692,6 +3726,9 @@ components:
         - name
         - slug
         - category
+        - ownerName
+        - ownerEmail
+        - usageBilling
         - status
         - archivedAt
         - createdAt
@@ -3718,10 +3755,44 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/AdminBusiness"
+        usageTierAlerts:
+          type: array
+          items:
+            $ref: "#/components/schemas/AdminUsageTierAlert"
       required:
         - overview
         - agencies
         - businesses
+        - usageTierAlerts
+
+    AdminUsageTierAlert:
+      type: object
+      properties:
+        businessId: { type: string, format: uuid }
+        businessName: { type: string }
+        organizationName: { type: string }
+        ownerName: { type: ["string", "null"] }
+        ownerEmail: { type: ["string", "null"] }
+        category: { type: string }
+        used: { type: integer }
+        baseLimit: { type: integer }
+        multiplier: { type: integer }
+        quotedMonthlyBaseAmountCents: { type: ["integer", "null"] }
+        manualInvoiceTotalCents: { type: ["integer", "null"] }
+        currency: { type: string }
+      required:
+        - businessId
+        - businessName
+        - organizationName
+        - ownerName
+        - ownerEmail
+        - category
+        - used
+        - baseLimit
+        - multiplier
+        - quotedMonthlyBaseAmountCents
+        - manualInvoiceTotalCents
+        - currency
 
     AdminSharedReviewImport:
       type: object
@@ -5141,12 +5212,15 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/BusinessUsageHistoryItem"
+        usageBilling:
+          $ref: "#/components/schemas/BusinessUsageBilling"
       required:
         - teamId
         - accounts
         - availableAccounts
         - usage
         - usageHistory
+        - usageBilling
 
     SocialMediaConnectionInput:
       type: object
@@ -5346,6 +5420,8 @@ components:
           format: date-time
         canReply:
           type: boolean
+        dailyUnitCountedToday:
+          type: boolean
       required:
         - id
         - externalId
@@ -5355,6 +5431,7 @@ components:
         - parentCommentId
         - createdAt
         - canReply
+        - dailyUnitCountedToday
 
     SocialMediaCommentListResult:
       type: object
@@ -5458,7 +5535,9 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/BusinessUsageHistoryItem"
-      required: [connection, locations, summary, usage, usageHistory]
+        usageBilling:
+          $ref: "#/components/schemas/BusinessUsageBilling"
+      required: [connection, locations, summary, usage, usageHistory, usageBilling]
 
     BusinessUsageMetric:
       type: string
@@ -5469,6 +5548,10 @@ components:
         - SOCIAL_POSTS
         - SOCIAL_COMMENT_IMPORTS
         - SOCIAL_COMMENT_REPLIES
+        - SOCIAL_POSTS_MONTHLY
+        - SOCIAL_COMMENT_DAILY_UNITS
+        - SOCIAL_MEDIA_UPLOADS
+        - SOCIAL_MEDIA_UPLOADS_MONTHLY
 
     BusinessUsageSummaryItem:
       type: object
@@ -5488,6 +5571,10 @@ components:
           type: integer
         remaining:
           type: integer
+        nearLimit:
+          type: boolean
+        warningThresholdPercent:
+          type: integer
         periodStart:
           type: string
           format: date-time
@@ -5502,8 +5589,58 @@ components:
         - reserved
         - limit
         - remaining
+        - nearLimit
+        - warningThresholdPercent
         - periodStart
         - periodEnd
+
+    BusinessUsageBillingCategory:
+      type: object
+      properties:
+        metric:
+          type: string
+          enum:
+            - SOCIAL_POSTS_MONTHLY
+            - SOCIAL_COMMENT_IMPORTS
+            - SOCIAL_MEDIA_UPLOADS_MONTHLY
+        label: { type: string }
+        used: { type: integer }
+        baseLimit: { type: integer }
+        multiplier: { type: integer }
+      required: [metric, label, used, baseLimit, multiplier]
+
+    BusinessUsageBilling:
+      type: object
+      properties:
+        quotedMonthlyBaseAmountCents:
+          type: ["integer", "null"]
+        currency:
+          type: string
+        highestMultiplier:
+          type: integer
+        manualInvoiceTotalCents:
+          type: ["integer", "null"]
+        categories:
+          type: array
+          items:
+            $ref: "#/components/schemas/BusinessUsageBillingCategory"
+      required:
+        - quotedMonthlyBaseAmountCents
+        - currency
+        - highestMultiplier
+        - manualInvoiceTotalCents
+        - categories
+
+    BusinessUsagePricingInput:
+      type: object
+      properties:
+        quotedMonthlyBaseAmountCents:
+          type: ["integer", "null"]
+          minimum: 0
+        currency:
+          type: string
+          pattern: "^[A-Z]{3}$"
+      required: [quotedMonthlyBaseAmountCents, currency]
 
     BusinessUsageHistoryItem:
       type: object

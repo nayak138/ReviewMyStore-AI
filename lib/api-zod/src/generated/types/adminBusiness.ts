@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { BusinessStatus } from './businessStatus';
+import type { BusinessUsageBilling } from './businessUsageBilling';
 
 export interface AdminBusiness {
   id: string;
@@ -15,6 +16,11 @@ export interface AdminBusiness {
   name: string;
   slug: string;
   category: string;
+  /** @nullable */
+  ownerName: string | null;
+  /** @nullable */
+  ownerEmail: string | null;
+  usageBilling: BusinessUsageBilling;
   status: BusinessStatus;
   /** @nullable */
   archivedAt: Date | null;

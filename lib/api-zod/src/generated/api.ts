@@ -293,19 +293,21 @@ export const GetReviewDashboardResponse = zod.object({
   "replied": zod.int()
 }),
   "usage": zod.array(zod.object({
-  "metric": zod.enum(['GOOGLE_REVIEW_IMPORTS', 'AI_REVIEW_REPLIES', 'PUBLIC_AI_GENERATIONS', 'SOCIAL_POSTS', 'SOCIAL_COMMENT_IMPORTS', 'SOCIAL_COMMENT_REPLIES']),
+  "metric": zod.enum(['GOOGLE_REVIEW_IMPORTS', 'AI_REVIEW_REPLIES', 'PUBLIC_AI_GENERATIONS', 'SOCIAL_POSTS', 'SOCIAL_COMMENT_IMPORTS', 'SOCIAL_COMMENT_REPLIES', 'SOCIAL_POSTS_MONTHLY', 'SOCIAL_COMMENT_DAILY_UNITS', 'SOCIAL_MEDIA_UPLOADS', 'SOCIAL_MEDIA_UPLOADS_MONTHLY']),
   "label": zod.string(),
   "window": zod.enum(['DAILY', 'MONTHLY']),
   "used": zod.int(),
   "reserved": zod.int(),
   "limit": zod.int(),
   "remaining": zod.int(),
+  "nearLimit": zod.boolean(),
+  "warningThresholdPercent": zod.int(),
   "periodStart": zod.coerce.date(),
   "periodEnd": zod.coerce.date()
 })),
   "usageHistory": zod.array(zod.object({
   "id": zod.string(),
-  "metric": zod.enum(['GOOGLE_REVIEW_IMPORTS', 'AI_REVIEW_REPLIES', 'PUBLIC_AI_GENERATIONS', 'SOCIAL_POSTS', 'SOCIAL_COMMENT_IMPORTS', 'SOCIAL_COMMENT_REPLIES']),
+  "metric": zod.enum(['GOOGLE_REVIEW_IMPORTS', 'AI_REVIEW_REPLIES', 'PUBLIC_AI_GENERATIONS', 'SOCIAL_POSTS', 'SOCIAL_COMMENT_IMPORTS', 'SOCIAL_COMMENT_REPLIES', 'SOCIAL_POSTS_MONTHLY', 'SOCIAL_COMMENT_DAILY_UNITS', 'SOCIAL_MEDIA_UPLOADS', 'SOCIAL_MEDIA_UPLOADS_MONTHLY']),
   "label": zod.string(),
   "window": zod.enum(['DAILY', 'MONTHLY']),
   "amount": zod.int(),
@@ -314,7 +316,20 @@ export const GetReviewDashboardResponse = zod.object({
   "updatedAt": zod.coerce.date(),
   "periodStart": zod.coerce.date(),
   "periodEnd": zod.coerce.date()
+})),
+  "usageBilling": zod.object({
+  "quotedMonthlyBaseAmountCents": zod.int().nullable(),
+  "currency": zod.string(),
+  "highestMultiplier": zod.int(),
+  "manualInvoiceTotalCents": zod.int().nullable(),
+  "categories": zod.array(zod.object({
+  "metric": zod.enum(['SOCIAL_POSTS_MONTHLY', 'SOCIAL_COMMENT_IMPORTS', 'SOCIAL_MEDIA_UPLOADS_MONTHLY']),
+  "label": zod.string(),
+  "used": zod.int(),
+  "baseLimit": zod.int(),
+  "multiplier": zod.int()
 }))
+})
 })
 
 
@@ -372,19 +387,21 @@ export const DisconnectReviewProviderResponse = zod.object({
   "replied": zod.int()
 }),
   "usage": zod.array(zod.object({
-  "metric": zod.enum(['GOOGLE_REVIEW_IMPORTS', 'AI_REVIEW_REPLIES', 'PUBLIC_AI_GENERATIONS', 'SOCIAL_POSTS', 'SOCIAL_COMMENT_IMPORTS', 'SOCIAL_COMMENT_REPLIES']),
+  "metric": zod.enum(['GOOGLE_REVIEW_IMPORTS', 'AI_REVIEW_REPLIES', 'PUBLIC_AI_GENERATIONS', 'SOCIAL_POSTS', 'SOCIAL_COMMENT_IMPORTS', 'SOCIAL_COMMENT_REPLIES', 'SOCIAL_POSTS_MONTHLY', 'SOCIAL_COMMENT_DAILY_UNITS', 'SOCIAL_MEDIA_UPLOADS', 'SOCIAL_MEDIA_UPLOADS_MONTHLY']),
   "label": zod.string(),
   "window": zod.enum(['DAILY', 'MONTHLY']),
   "used": zod.int(),
   "reserved": zod.int(),
   "limit": zod.int(),
   "remaining": zod.int(),
+  "nearLimit": zod.boolean(),
+  "warningThresholdPercent": zod.int(),
   "periodStart": zod.coerce.date(),
   "periodEnd": zod.coerce.date()
 })),
   "usageHistory": zod.array(zod.object({
   "id": zod.string(),
-  "metric": zod.enum(['GOOGLE_REVIEW_IMPORTS', 'AI_REVIEW_REPLIES', 'PUBLIC_AI_GENERATIONS', 'SOCIAL_POSTS', 'SOCIAL_COMMENT_IMPORTS', 'SOCIAL_COMMENT_REPLIES']),
+  "metric": zod.enum(['GOOGLE_REVIEW_IMPORTS', 'AI_REVIEW_REPLIES', 'PUBLIC_AI_GENERATIONS', 'SOCIAL_POSTS', 'SOCIAL_COMMENT_IMPORTS', 'SOCIAL_COMMENT_REPLIES', 'SOCIAL_POSTS_MONTHLY', 'SOCIAL_COMMENT_DAILY_UNITS', 'SOCIAL_MEDIA_UPLOADS', 'SOCIAL_MEDIA_UPLOADS_MONTHLY']),
   "label": zod.string(),
   "window": zod.enum(['DAILY', 'MONTHLY']),
   "amount": zod.int(),
@@ -393,7 +410,20 @@ export const DisconnectReviewProviderResponse = zod.object({
   "updatedAt": zod.coerce.date(),
   "periodStart": zod.coerce.date(),
   "periodEnd": zod.coerce.date()
+})),
+  "usageBilling": zod.object({
+  "quotedMonthlyBaseAmountCents": zod.int().nullable(),
+  "currency": zod.string(),
+  "highestMultiplier": zod.int(),
+  "manualInvoiceTotalCents": zod.int().nullable(),
+  "categories": zod.array(zod.object({
+  "metric": zod.enum(['SOCIAL_POSTS_MONTHLY', 'SOCIAL_COMMENT_IMPORTS', 'SOCIAL_MEDIA_UPLOADS_MONTHLY']),
+  "label": zod.string(),
+  "used": zod.int(),
+  "baseLimit": zod.int(),
+  "multiplier": zod.int()
 }))
+})
 })
 
 
@@ -444,19 +474,21 @@ export const SelectReviewProviderLocationResponse = zod.object({
   "replied": zod.int()
 }),
   "usage": zod.array(zod.object({
-  "metric": zod.enum(['GOOGLE_REVIEW_IMPORTS', 'AI_REVIEW_REPLIES', 'PUBLIC_AI_GENERATIONS', 'SOCIAL_POSTS', 'SOCIAL_COMMENT_IMPORTS', 'SOCIAL_COMMENT_REPLIES']),
+  "metric": zod.enum(['GOOGLE_REVIEW_IMPORTS', 'AI_REVIEW_REPLIES', 'PUBLIC_AI_GENERATIONS', 'SOCIAL_POSTS', 'SOCIAL_COMMENT_IMPORTS', 'SOCIAL_COMMENT_REPLIES', 'SOCIAL_POSTS_MONTHLY', 'SOCIAL_COMMENT_DAILY_UNITS', 'SOCIAL_MEDIA_UPLOADS', 'SOCIAL_MEDIA_UPLOADS_MONTHLY']),
   "label": zod.string(),
   "window": zod.enum(['DAILY', 'MONTHLY']),
   "used": zod.int(),
   "reserved": zod.int(),
   "limit": zod.int(),
   "remaining": zod.int(),
+  "nearLimit": zod.boolean(),
+  "warningThresholdPercent": zod.int(),
   "periodStart": zod.coerce.date(),
   "periodEnd": zod.coerce.date()
 })),
   "usageHistory": zod.array(zod.object({
   "id": zod.string(),
-  "metric": zod.enum(['GOOGLE_REVIEW_IMPORTS', 'AI_REVIEW_REPLIES', 'PUBLIC_AI_GENERATIONS', 'SOCIAL_POSTS', 'SOCIAL_COMMENT_IMPORTS', 'SOCIAL_COMMENT_REPLIES']),
+  "metric": zod.enum(['GOOGLE_REVIEW_IMPORTS', 'AI_REVIEW_REPLIES', 'PUBLIC_AI_GENERATIONS', 'SOCIAL_POSTS', 'SOCIAL_COMMENT_IMPORTS', 'SOCIAL_COMMENT_REPLIES', 'SOCIAL_POSTS_MONTHLY', 'SOCIAL_COMMENT_DAILY_UNITS', 'SOCIAL_MEDIA_UPLOADS', 'SOCIAL_MEDIA_UPLOADS_MONTHLY']),
   "label": zod.string(),
   "window": zod.enum(['DAILY', 'MONTHLY']),
   "amount": zod.int(),
@@ -465,7 +497,20 @@ export const SelectReviewProviderLocationResponse = zod.object({
   "updatedAt": zod.coerce.date(),
   "periodStart": zod.coerce.date(),
   "periodEnd": zod.coerce.date()
+})),
+  "usageBilling": zod.object({
+  "quotedMonthlyBaseAmountCents": zod.int().nullable(),
+  "currency": zod.string(),
+  "highestMultiplier": zod.int(),
+  "manualInvoiceTotalCents": zod.int().nullable(),
+  "categories": zod.array(zod.object({
+  "metric": zod.enum(['SOCIAL_POSTS_MONTHLY', 'SOCIAL_COMMENT_IMPORTS', 'SOCIAL_MEDIA_UPLOADS_MONTHLY']),
+  "label": zod.string(),
+  "used": zod.int(),
+  "baseLimit": zod.int(),
+  "multiplier": zod.int()
 }))
+})
 })
 
 
@@ -498,19 +543,21 @@ export const SyncReviewProviderResponse = zod.object({
   "replied": zod.int()
 }),
   "usage": zod.array(zod.object({
-  "metric": zod.enum(['GOOGLE_REVIEW_IMPORTS', 'AI_REVIEW_REPLIES', 'PUBLIC_AI_GENERATIONS', 'SOCIAL_POSTS', 'SOCIAL_COMMENT_IMPORTS', 'SOCIAL_COMMENT_REPLIES']),
+  "metric": zod.enum(['GOOGLE_REVIEW_IMPORTS', 'AI_REVIEW_REPLIES', 'PUBLIC_AI_GENERATIONS', 'SOCIAL_POSTS', 'SOCIAL_COMMENT_IMPORTS', 'SOCIAL_COMMENT_REPLIES', 'SOCIAL_POSTS_MONTHLY', 'SOCIAL_COMMENT_DAILY_UNITS', 'SOCIAL_MEDIA_UPLOADS', 'SOCIAL_MEDIA_UPLOADS_MONTHLY']),
   "label": zod.string(),
   "window": zod.enum(['DAILY', 'MONTHLY']),
   "used": zod.int(),
   "reserved": zod.int(),
   "limit": zod.int(),
   "remaining": zod.int(),
+  "nearLimit": zod.boolean(),
+  "warningThresholdPercent": zod.int(),
   "periodStart": zod.coerce.date(),
   "periodEnd": zod.coerce.date()
 })),
   "usageHistory": zod.array(zod.object({
   "id": zod.string(),
-  "metric": zod.enum(['GOOGLE_REVIEW_IMPORTS', 'AI_REVIEW_REPLIES', 'PUBLIC_AI_GENERATIONS', 'SOCIAL_POSTS', 'SOCIAL_COMMENT_IMPORTS', 'SOCIAL_COMMENT_REPLIES']),
+  "metric": zod.enum(['GOOGLE_REVIEW_IMPORTS', 'AI_REVIEW_REPLIES', 'PUBLIC_AI_GENERATIONS', 'SOCIAL_POSTS', 'SOCIAL_COMMENT_IMPORTS', 'SOCIAL_COMMENT_REPLIES', 'SOCIAL_POSTS_MONTHLY', 'SOCIAL_COMMENT_DAILY_UNITS', 'SOCIAL_MEDIA_UPLOADS', 'SOCIAL_MEDIA_UPLOADS_MONTHLY']),
   "label": zod.string(),
   "window": zod.enum(['DAILY', 'MONTHLY']),
   "amount": zod.int(),
@@ -519,7 +566,20 @@ export const SyncReviewProviderResponse = zod.object({
   "updatedAt": zod.coerce.date(),
   "periodStart": zod.coerce.date(),
   "periodEnd": zod.coerce.date()
+})),
+  "usageBilling": zod.object({
+  "quotedMonthlyBaseAmountCents": zod.int().nullable(),
+  "currency": zod.string(),
+  "highestMultiplier": zod.int(),
+  "manualInvoiceTotalCents": zod.int().nullable(),
+  "categories": zod.array(zod.object({
+  "metric": zod.enum(['SOCIAL_POSTS_MONTHLY', 'SOCIAL_COMMENT_IMPORTS', 'SOCIAL_MEDIA_UPLOADS_MONTHLY']),
+  "label": zod.string(),
+  "used": zod.int(),
+  "baseLimit": zod.int(),
+  "multiplier": zod.int()
 }))
+})
 })
 
 
@@ -708,19 +768,21 @@ export const GetSocialMediaDashboardResponse = zod.object({
   "connected": zod.boolean()
 })),
   "usage": zod.array(zod.object({
-  "metric": zod.enum(['GOOGLE_REVIEW_IMPORTS', 'AI_REVIEW_REPLIES', 'PUBLIC_AI_GENERATIONS', 'SOCIAL_POSTS', 'SOCIAL_COMMENT_IMPORTS', 'SOCIAL_COMMENT_REPLIES']),
+  "metric": zod.enum(['GOOGLE_REVIEW_IMPORTS', 'AI_REVIEW_REPLIES', 'PUBLIC_AI_GENERATIONS', 'SOCIAL_POSTS', 'SOCIAL_COMMENT_IMPORTS', 'SOCIAL_COMMENT_REPLIES', 'SOCIAL_POSTS_MONTHLY', 'SOCIAL_COMMENT_DAILY_UNITS', 'SOCIAL_MEDIA_UPLOADS', 'SOCIAL_MEDIA_UPLOADS_MONTHLY']),
   "label": zod.string(),
   "window": zod.enum(['DAILY', 'MONTHLY']),
   "used": zod.int(),
   "reserved": zod.int(),
   "limit": zod.int(),
   "remaining": zod.int(),
+  "nearLimit": zod.boolean(),
+  "warningThresholdPercent": zod.int(),
   "periodStart": zod.coerce.date(),
   "periodEnd": zod.coerce.date()
 })),
   "usageHistory": zod.array(zod.object({
   "id": zod.string(),
-  "metric": zod.enum(['GOOGLE_REVIEW_IMPORTS', 'AI_REVIEW_REPLIES', 'PUBLIC_AI_GENERATIONS', 'SOCIAL_POSTS', 'SOCIAL_COMMENT_IMPORTS', 'SOCIAL_COMMENT_REPLIES']),
+  "metric": zod.enum(['GOOGLE_REVIEW_IMPORTS', 'AI_REVIEW_REPLIES', 'PUBLIC_AI_GENERATIONS', 'SOCIAL_POSTS', 'SOCIAL_COMMENT_IMPORTS', 'SOCIAL_COMMENT_REPLIES', 'SOCIAL_POSTS_MONTHLY', 'SOCIAL_COMMENT_DAILY_UNITS', 'SOCIAL_MEDIA_UPLOADS', 'SOCIAL_MEDIA_UPLOADS_MONTHLY']),
   "label": zod.string(),
   "window": zod.enum(['DAILY', 'MONTHLY']),
   "amount": zod.int(),
@@ -729,7 +791,20 @@ export const GetSocialMediaDashboardResponse = zod.object({
   "updatedAt": zod.coerce.date(),
   "periodStart": zod.coerce.date(),
   "periodEnd": zod.coerce.date()
+})),
+  "usageBilling": zod.object({
+  "quotedMonthlyBaseAmountCents": zod.int().nullable(),
+  "currency": zod.string(),
+  "highestMultiplier": zod.int(),
+  "manualInvoiceTotalCents": zod.int().nullable(),
+  "categories": zod.array(zod.object({
+  "metric": zod.enum(['SOCIAL_POSTS_MONTHLY', 'SOCIAL_COMMENT_IMPORTS', 'SOCIAL_MEDIA_UPLOADS_MONTHLY']),
+  "label": zod.string(),
+  "used": zod.int(),
+  "baseLimit": zod.int(),
+  "multiplier": zod.int()
 }))
+})
 })
 
 
@@ -897,7 +972,8 @@ export const ListSocialMediaCommentsResponse = zod.object({
   "authorName": zod.string(),
   "parentCommentId": zod.string().nullable(),
   "createdAt": zod.coerce.date().nullable(),
-  "canReply": zod.boolean()
+  "canReply": zod.boolean(),
+  "dailyUnitCountedToday": zod.boolean()
 }))
 })
 
@@ -942,7 +1018,8 @@ export const ReplyToSocialMediaCommentResponse = zod.object({
   "authorName": zod.string(),
   "parentCommentId": zod.string().nullable(),
   "createdAt": zod.coerce.date().nullable(),
-  "canReply": zod.boolean()
+  "canReply": zod.boolean(),
+  "dailyUnitCountedToday": zod.boolean()
 })
 
 
@@ -1125,9 +1202,70 @@ export const GetAdminPortalResponse = zod.object({
   "name": zod.string(),
   "slug": zod.string(),
   "category": zod.string(),
+  "ownerName": zod.string().nullable(),
+  "ownerEmail": zod.string().nullable(),
+  "usageBilling": zod.object({
+  "quotedMonthlyBaseAmountCents": zod.int().nullable(),
+  "currency": zod.string(),
+  "highestMultiplier": zod.int(),
+  "manualInvoiceTotalCents": zod.int().nullable(),
+  "categories": zod.array(zod.object({
+  "metric": zod.enum(['SOCIAL_POSTS_MONTHLY', 'SOCIAL_COMMENT_IMPORTS', 'SOCIAL_MEDIA_UPLOADS_MONTHLY']),
+  "label": zod.string(),
+  "used": zod.int(),
+  "baseLimit": zod.int(),
+  "multiplier": zod.int()
+}))
+}),
   "status": zod.enum(['ACTIVE', 'SUSPENDED', 'DISABLED']),
   "archivedAt": zod.coerce.date().nullable(),
   "createdAt": zod.coerce.date()
+})),
+  "usageTierAlerts": zod.array(zod.object({
+  "businessId": zod.uuid(),
+  "businessName": zod.string(),
+  "organizationName": zod.string(),
+  "ownerName": zod.string().nullable(),
+  "ownerEmail": zod.string().nullable(),
+  "category": zod.string(),
+  "used": zod.int(),
+  "baseLimit": zod.int(),
+  "multiplier": zod.int(),
+  "quotedMonthlyBaseAmountCents": zod.int().nullable(),
+  "manualInvoiceTotalCents": zod.int().nullable(),
+  "currency": zod.string()
+}))
+})
+
+
+/**
+ * @summary Set the quoted monthly base amount for manual usage invoicing
+ */
+export const UpdateAdminBusinessUsagePricingParams = zod.object({
+  "businessId": zod.uuid()
+})
+
+export const updateAdminBusinessUsagePricingBodyQuotedMonthlyBaseAmountCentsMin = 0;
+
+export const updateAdminBusinessUsagePricingBodyCurrencyRegExp = new RegExp('^[A-Z]{3}$');
+
+
+export const UpdateAdminBusinessUsagePricingBody = zod.object({
+  "quotedMonthlyBaseAmountCents": zod.int().min(updateAdminBusinessUsagePricingBodyQuotedMonthlyBaseAmountCentsMin).nullable(),
+  "currency": zod.string().regex(updateAdminBusinessUsagePricingBodyCurrencyRegExp)
+})
+
+export const UpdateAdminBusinessUsagePricingResponse = zod.object({
+  "quotedMonthlyBaseAmountCents": zod.int().nullable(),
+  "currency": zod.string(),
+  "highestMultiplier": zod.int(),
+  "manualInvoiceTotalCents": zod.int().nullable(),
+  "categories": zod.array(zod.object({
+  "metric": zod.enum(['SOCIAL_POSTS_MONTHLY', 'SOCIAL_COMMENT_IMPORTS', 'SOCIAL_MEDIA_UPLOADS_MONTHLY']),
+  "label": zod.string(),
+  "used": zod.int(),
+  "baseLimit": zod.int(),
+  "multiplier": zod.int()
 }))
 })
 

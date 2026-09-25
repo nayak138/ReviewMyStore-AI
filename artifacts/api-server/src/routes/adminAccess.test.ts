@@ -5,6 +5,7 @@ import express from "express";
 import type { Server } from "node:http";
 import { eq } from "drizzle-orm";
 import {
+  businessesTable,
   db,
   organizationsTable,
   pool,
@@ -16,6 +17,7 @@ const ownerClerkId = `user_admin_guard_owner_${runId}`;
 const adminClerkId = `user_admin_guard_admin_${runId}`;
 let ownerId: string;
 let adminId: string;
+let businessId: string;
 let server: Server;
 let baseUrl: string;
 
@@ -38,6 +40,16 @@ before(async () => {
       status: "ACTIVE",
     })
     .returning();
+  const [business] = await db
+    .insert(businessesTable)
+    .values({
+      organizationId: organization.id,
+      name: "Admin pricing test business",
+      category: "Retail",
+      slug: `admin-pricing-business-${runId}`,
+      status: "ACTIVE",
+    })
+    .returning();
   const [admin] = await db
     .insert(usersTable)
     .values({
@@ -51,6 +63,7 @@ before(async () => {
     .returning();
   ownerId = owner.id;
   adminId = admin.id;
+  businessId = business.id;
 
   const { default: adminRouter } = await import("./admin.ts");
   const app = express();
@@ -135,6 +148,69 @@ test("Super Admins can view shared provider reservations", async () => {
   assert.equal(response.status, 200);
   const body = (await response.json()) as { attempts: unknown[] };
   assert.ok(Array.isArray(body.attempts));
+});
+
+test("only super admins can set a business quote and view its billing tiers", async () => {
+  const ownerResponse = await fetch(
+    `${baseUrl}/admin/businesses/${businessId}/usage-pricing`,
+    {
+      method: "PATCH",
+      headers: {
+        "content-type": "application/json",
+        "x-test-clerk-user": ownerClerkId,
+      },
+      body: JSON.stringify({
+        quotedMonthlyBaseAmountCents: 12_500,
+        currency: "USD",
+      }),
+    },
+  );
+  assert.equal(ownerResponse.status, 403);
+
+  const updateResponse = await fetch(
+    `${baseUrl}/admin/businesses/${businessId}/usage-pricing`,
+    {
+      method: "PATCH",
+      headers: {
+        "content-type": "application/json",
+        "x-test-clerk-user": adminClerkId,
+      },
+      body: JSON.stringify({
+        quotedMonthlyBaseAmountCents: 12_500,
+        currency: "USD",
+      }),
+    },
+  );
+  assert.equal(updateResponse.status, 200);
+  const billing = (await updateResponse.json()) as {
+    quotedMonthlyBaseAmountCents: number;
+    currency: string;
+    highestMultiplier: number;
+    manualInvoiceTotalCents: number;
+  };
+  assert.equal(billing.quotedMonthlyBaseAmountCents, 12_500);
+  assert.equal(billing.currency, "USD");
+  assert.equal(billing.highestMultiplier, 1);
+  assert.equal(billing.manualInvoiceTotalCents, 12_500);
+
+  const portalResponse = await fetch(`${baseUrl}/admin/portal`, {
+    headers: { "x-test-clerk-user": adminClerkId },
+  });
+  assert.equal(portalResponse.status, 200);
+  const portal = (await portalResponse.json()) as {
+    businesses: Array<{
+      id: string;
+      ownerName: string | null;
+      ownerEmail: string | null;
+      usageBilling: { quotedMonthlyBaseAmountCents: number | null };
+    }>;
+    usageTierAlerts: unknown[];
+  };
+  const priced = portal.businesses.find((business) => business.id === businessId);
+  assert.equal(priced?.ownerName, "Regular Agency Owner");
+  assert.equal(priced?.ownerEmail, `admin-guard-owner-${runId}@example.com`);
+  assert.equal(priced?.usageBilling.quotedMonthlyBaseAmountCents, 12_500);
+  assert.ok(Array.isArray(portal.usageTierAlerts));
 });
 
 test("regular agency owners cannot reset platform tenant data", async () => {

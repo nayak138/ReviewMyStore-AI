@@ -396,6 +396,33 @@ export interface AdminAgency {
   pendingInvitation: AdminPendingInvitation | null;
 }
 
+export type BusinessUsageBillingCategoryMetric = typeof BusinessUsageBillingCategoryMetric[keyof typeof BusinessUsageBillingCategoryMetric];
+
+
+export const BusinessUsageBillingCategoryMetric = {
+  SOCIAL_POSTS_MONTHLY: 'SOCIAL_POSTS_MONTHLY',
+  SOCIAL_COMMENT_IMPORTS: 'SOCIAL_COMMENT_IMPORTS',
+  SOCIAL_MEDIA_UPLOADS_MONTHLY: 'SOCIAL_MEDIA_UPLOADS_MONTHLY',
+} as const;
+
+export interface BusinessUsageBillingCategory {
+  metric: BusinessUsageBillingCategoryMetric;
+  label: string;
+  used: number;
+  baseLimit: number;
+  multiplier: number;
+}
+
+export interface BusinessUsageBilling {
+  /** @nullable */
+  quotedMonthlyBaseAmountCents: number | null;
+  currency: string;
+  highestMultiplier: number;
+  /** @nullable */
+  manualInvoiceTotalCents: number | null;
+  categories: BusinessUsageBillingCategory[];
+}
+
 export type BusinessStatus = typeof BusinessStatus[keyof typeof BusinessStatus];
 
 
@@ -413,6 +440,11 @@ export interface AdminBusiness {
   name: string;
   slug: string;
   category: string;
+  /** @nullable */
+  ownerName: string | null;
+  /** @nullable */
+  ownerEmail: string | null;
+  usageBilling: BusinessUsageBilling;
   status: BusinessStatus;
   /** @nullable */
   archivedAt: string | null;
@@ -424,10 +456,30 @@ export type AdminPortalOverview = AdminOverview & {
   pendingInvitations: number;
 };
 
+export interface AdminUsageTierAlert {
+  businessId: string;
+  businessName: string;
+  organizationName: string;
+  /** @nullable */
+  ownerName: string | null;
+  /** @nullable */
+  ownerEmail: string | null;
+  category: string;
+  used: number;
+  baseLimit: number;
+  multiplier: number;
+  /** @nullable */
+  quotedMonthlyBaseAmountCents: number | null;
+  /** @nullable */
+  manualInvoiceTotalCents: number | null;
+  currency: string;
+}
+
 export interface AdminPortal {
   overview: AdminPortalOverview;
   agencies: AdminAgency[];
   businesses: AdminBusiness[];
+  usageTierAlerts: AdminUsageTierAlert[];
 }
 
 export type AdminSharedReviewImportProviderAttemptStatus = typeof AdminSharedReviewImportProviderAttemptStatus[keyof typeof AdminSharedReviewImportProviderAttemptStatus];
@@ -1285,6 +1337,10 @@ export const BusinessUsageMetric = {
   SOCIAL_POSTS: 'SOCIAL_POSTS',
   SOCIAL_COMMENT_IMPORTS: 'SOCIAL_COMMENT_IMPORTS',
   SOCIAL_COMMENT_REPLIES: 'SOCIAL_COMMENT_REPLIES',
+  SOCIAL_POSTS_MONTHLY: 'SOCIAL_POSTS_MONTHLY',
+  SOCIAL_COMMENT_DAILY_UNITS: 'SOCIAL_COMMENT_DAILY_UNITS',
+  SOCIAL_MEDIA_UPLOADS: 'SOCIAL_MEDIA_UPLOADS',
+  SOCIAL_MEDIA_UPLOADS_MONTHLY: 'SOCIAL_MEDIA_UPLOADS_MONTHLY',
 } as const;
 
 export type BusinessUsageSummaryItemWindow = typeof BusinessUsageSummaryItemWindow[keyof typeof BusinessUsageSummaryItemWindow];
@@ -1303,6 +1359,8 @@ export interface BusinessUsageSummaryItem {
   reserved: number;
   limit: number;
   remaining: number;
+  nearLimit: boolean;
+  warningThresholdPercent: number;
   periodStart: string;
   periodEnd: string;
 }
@@ -1343,6 +1401,7 @@ export interface SocialMediaDashboardResult {
   availableAccounts: SocialMediaAvailableAccount[];
   usage: BusinessUsageSummaryItem[];
   usageHistory: BusinessUsageHistoryItem[];
+  usageBilling: BusinessUsageBilling;
 }
 
 export interface SocialMediaConnectionInput {
@@ -1460,6 +1519,7 @@ export interface SocialMediaComment {
   /** @nullable */
   createdAt: string | null;
   canReply: boolean;
+  dailyUnitCountedToday: boolean;
 }
 
 export interface SocialMediaCommentListResult {
@@ -1539,6 +1599,17 @@ export interface ReviewDashboardResult {
   summary: ReviewInboxSummary;
   usage: BusinessUsageSummaryItem[];
   usageHistory: BusinessUsageHistoryItem[];
+  usageBilling: BusinessUsageBilling;
+}
+
+export interface BusinessUsagePricingInput {
+  /**
+     * @minimum 0
+     * @nullable
+     */
+  quotedMonthlyBaseAmountCents: number | null;
+  /** @pattern ^[A-Z]{3}$ */
+  currency: string;
 }
 
 /**

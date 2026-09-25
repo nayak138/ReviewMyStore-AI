@@ -20,12 +20,14 @@ switching a Google or Meta identity does not reset that business’s allowance.
 Social usage is shared across the social channels connected to the same
 business.
 
-Google review imports also depend on separate upstream import capacity
-(shown in the app as Google provider limits). That capacity is independent of
-a business’s app allowance and may be the tighter limit. If either limit is
-exhausted, new imports may have to wait until the corresponding allowance
-resets or provider capacity becomes available. Existing reviews remain
-available.
+Each business can import up to **200 Google reviews per UTC calendar month**.
+This is a business allowance, not an account-wide allowance. Google review
+imports also depend on separate upstream import capacity (shown in the app as
+Google provider limits). The separate **bundle.social provider cap is shared
+across all connected businesses and is not an additional 200-review
+entitlement**. If either limit is exhausted, new imports may have to wait until
+the corresponding allowance resets or provider capacity becomes available.
+Existing reviews remain available.
 
 ## What the usage terms mean
 
@@ -69,17 +71,46 @@ one does not by itself mean the other actions have the same limit.
 
 A social post is counted by destination. For example, sending one post to
 Facebook and Instagram uses one post unit for each selected destination.
-Scheduling a post also uses the selected destinations’ post allowance.
+Scheduling a post also uses the selected destinations’ post allowance, so
+cross-posting consumes one unit for every selected destination.
 
 Comment import fetches comments from a connected platform for a published post
-so your team can review them.
-
-Comment reply sends a response back to the platform. Importing comments and
-replying to a comment are separate actions.
+so your team can review them. Each imported comment may receive at most one
+reply. A newly imported comment and its same-day reply share one daily comment
+unit; a reply sent on a later UTC day uses one unit in that day's allowance.
 
 The business app allowance and any separate platform or provider restrictions
 can both apply to social actions. A provider may reject an action even when
 the business still has app allowance remaining.
+
+### Meta usage caps
+
+Meta usage is aggregated across all connected Meta platforms (Facebook and
+Instagram), rather than reset separately for each connected platform. The
+monthly base limits are **50 posts**, **25 imported comments**, and **500
+completed media uploads**. Hard daily limits are **10 posts**, **5 comment
+units**, and **100 completed media uploads**.
+Cross-posting still consumes one post unit per selected destination. Each newly
+imported comment uses one daily comment unit. Its single allowed reply shares
+that unit if sent on the same UTC day; a reply sent on a later UTC day uses one
+unit on that day. No imported comment may receive more than one reply.
+
+Usage warnings appear at 80% of the applicable daily or monthly limit. Daily
+Meta caps are hard stops. Google review imports also stop at the 200-review
+business cap per UTC month, independently of the shared bundle.social provider
+cap. Meta monthly base limits determine the overage tier and do not stop
+otherwise-permitted activity. Owner and admin users can see a manual invoice
+estimate for monthly overages. Estimates are not automatic charges, and
+5-Star.AI does not automatically collect payment.
+
+Monthly overages are tiered by category block (posts, imported comments, and
+completed media uploads). The highest category multiplier reached applies once
+to the quoted base amount; category multipliers are not stacked or applied
+once per destination. Usage within the monthly base limit is 1×; the first
+additional block equal to that category’s base limit is 2×, and the second
+additional block is 3×. For example, 51–100 posts is the 2× post tier, and
+101–150 posts is the 3× post tier. Only the highest tier reached across the
+three categories sets the manual invoice estimate.
 
 ## Choosing or switching a Meta channel
 

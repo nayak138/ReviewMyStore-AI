@@ -25,7 +25,8 @@ const mocks = vi.hoisted(() => ({
   syncMutate: vi.fn(),
   selectLocationMutate: vi.fn(),
   dashboardStatus: 'PENDING' as 'DISCONNECTED' | 'PENDING' | 'CONNECTED',
-  remainingImportCapacity: 20,
+  providerRemainingImportCapacity: 200,
+  businessImportUsage: { used: 3, reserved: 1, limit: 200, remaining: 196, nearLimit: false },
   callbackStage: null as null | 'NOT_CONNECTED' | 'NEEDS_LOCATION' | 'NO_LOCATIONS_FOUND' | 'READY',
   callbackLocations: [] as Array<{ id: string; name: string; address: string | null }>,
 }));
@@ -43,7 +44,7 @@ vi.mock('@workspace/api-client-react', () => ({
         provider: 'BNDLE',
         lastSyncedAt: mocks.dashboardStatus === 'CONNECTED' ? '2026-08-20T00:00:00Z' : null,
         lastError: null,
-        remainingImportCapacity: mocks.remainingImportCapacity,
+        remainingImportCapacity: mocks.providerRemainingImportCapacity,
       },
       locations:
         mocks.dashboardStatus === 'CONNECTED'
@@ -55,10 +56,10 @@ vi.mock('@workspace/api-client-react', () => ({
           metric: 'GOOGLE_REVIEW_IMPORTS',
           label: 'Google review imports',
           window: 'MONTHLY',
-          used: 3,
-          reserved: 1,
+          ...mocks.businessImportUsage,
           limit: 200,
-          remaining: 196,
+          warningThresholdPercent: 80,
+          periodStart: '2026-09-01T00:00:00Z',
           periodEnd: '2026-09-30T00:00:00Z',
         },
       ],
@@ -222,7 +223,8 @@ beforeEach(() => {
   mocks.selectLocationMutate.mockClear();
   mocks.callbackStage = null;
   mocks.callbackLocations = [];
-  mocks.remainingImportCapacity = 20;
+  mocks.providerRemainingImportCapacity = 200;
+  mocks.businessImportUsage = { used: 3, reserved: 1, limit: 200, remaining: 196, nearLimit: false };
 });
 
 afterEach(() => {
@@ -360,15 +362,24 @@ describe('Reviews dashboard states', () => {
     expect(screen.queryByText('Connect your Google Business')).not.toBeInTheDocument();
   });
 
-  it('hides detailed usage panels while keeping the low-capacity import warning', () => {
+  it('shows the assigned usage panel and only warns when the API marks the allowance near its limit', () => {
     mocks.dashboardStatus = 'CONNECTED';
-    mocks.remainingImportCapacity = 4;
+    mocks.businessImportUsage = { used: 196, reserved: 0, limit: 200, remaining: 4, nearLimit: true };
     renderReviews();
 
-    expect(screen.queryByTestId('review-usage')).not.toBeInTheDocument();
+    expect(screen.getByTestId('review-usage')).toBeInTheDocument();
     expect(screen.queryByTestId('review-provider-limits')).not.toBeInTheDocument();
-    expect(screen.queryByText('Google provider limits')).not.toBeInTheDocument();
+    expect(screen.getByTestId('review-usage-warning')).toBeInTheDocument();
     expect(screen.getByText('Only 4 review imports left this month.')).toBeInTheDocument();
+  });
+
+  it('warns independently when the shared provider cap reaches 80 percent', () => {
+    mocks.providerRemainingImportCapacity = 40;
+    renderReviews();
+
+    expect(screen.getByTestId('review-provider-limits')).toBeInTheDocument();
+    expect(screen.getByText(/only 40 shared provider review imports remain/i)).toBeInTheDocument();
+    expect(screen.queryByTestId('review-usage-warning')).not.toBeInTheDocument();
   });
 
   it('returns Google cancellation or denial to the requested business without a false success state', async () => {

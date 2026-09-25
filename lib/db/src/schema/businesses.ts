@@ -78,6 +78,12 @@ export const businessesTable = pgTable(
     // languages) — see artifacts/api-server/src/services/promptService.ts
     // for the matching display-name map used when prompting the AI.
     defaultLanguage: text("default_language").notNull().default("en"),
+    // Quoted base amount is stored in the currency's minor unit (for example,
+    // cents) and is used only for manual invoice estimates.
+    quotedMonthlyBaseAmountCents: integer("quoted_monthly_base_amount_cents"),
+    quotedMonthlyCurrency: text("quoted_monthly_currency")
+      .notNull()
+      .default("USD"),
     status: businessStatusEnum("status").notNull().default("ACTIVE"),
     archivedAt: timestamp("archived_at", { withTimezone: true }),
     deletedAt: timestamp("deleted_at", { withTimezone: true }),

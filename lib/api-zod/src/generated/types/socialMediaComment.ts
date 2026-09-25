@@ -18,4 +18,5 @@ export interface SocialMediaComment {
   /** @nullable */
   createdAt: Date | null;
   canReply: boolean;
+  dailyUnitCountedToday: boolean;
 }

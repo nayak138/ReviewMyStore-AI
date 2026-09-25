@@ -130,18 +130,38 @@ const sections = [
         <p>
           Provider capacity is separate from our application allowances and is
           shared across businesses connected through our bundle.social account.
-          Current bundle.social Pro limits include 50 Facebook or Instagram
-          posts per connected account per day, 50 Facebook or Instagram
-          comments per connected account per day, 20 Google Business posts per
-          connected account per day, and 200 Google review or Facebook
-          recommendation imports per connected account per month, plus
-          separate API throttles. These are provider-plan ceilings, not
-          individual entitlements for each 5-Star.AI business; use by other
+          The 5-Star.AI business allowance is 200 Google review imports per
+          business per UTC calendar month; the separate
+          bundle.social provider cap is shared across all connected businesses
+          and is not an additional per-business entitlement. Use by other
           connected businesses can reduce remaining shared capacity. Included
           quantities in a written quote are subject to the lower of our
           application allowances and available provider capacity. Provider
           limits and throttles apply, may change under bundle.social's terms,
           and can constrain usage below application allowances.
+        </p>
+        <p>
+          Meta usage is aggregated across all connected Facebook and Instagram
+          platforms. Monthly base limits are 50 posts, 25 imported comments,
+          and 500 completed media uploads. Hard daily limits are 10 posts, 5
+          comment units, and 100 completed media uploads. Cross-posting consumes
+          one post unit per selected destination. Each newly imported comment
+          uses one daily comment unit; its single allowed reply shares that unit
+          if sent on the same UTC day, while a later-day reply uses one unit on
+          that day. No imported comment may receive more than one reply.
+          Warnings appear at 80% of the applicable limit. Daily hard stops block
+          additional activity after the daily limit is reached.
+        </p>
+        <p>
+          Monthly overages are tiered by category block: posts, imported
+          comments, and completed media uploads. The highest category multiplier
+          reached applies once to the quoted base amount; category multipliers
+          are not stacked or applied once per destination. Usage within a
+          category's monthly base limit is 1×; the first additional block equal
+          to that category's base limit is 2×, and the second additional block
+          is 3×. Owners and admins can view a manual invoice estimate for
+          monthly overages. The estimate is not an automatic charge, and
+          5-Star.AI does not automatically collect payment.
         </p>
       </>
     ),

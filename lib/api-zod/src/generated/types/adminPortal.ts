@@ -8,9 +8,11 @@
 import type { AdminAgency } from './adminAgency';
 import type { AdminBusiness } from './adminBusiness';
 import type { AdminPortalOverview } from './adminPortalOverview';
+import type { AdminUsageTierAlert } from './adminUsageTierAlert';
 
 export interface AdminPortal {
   overview: AdminPortalOverview;
   agencies: AdminAgency[];
   businesses: AdminBusiness[];
+  usageTierAlerts: AdminUsageTierAlert[];
 }

@@ -18,6 +18,9 @@ import {
   UpdateAdminAgencyBody,
   UpdateAdminAgencyParams,
   UpdateAdminAgencyResponse,
+  UpdateAdminBusinessUsagePricingBody,
+  UpdateAdminBusinessUsagePricingParams,
+  UpdateAdminBusinessUsagePricingResponse,
   ReviewAdminDeactivationRequestBody,
   ReviewAdminDeactivationRequestParams,
   ReviewAdminDeactivationRequestResponse,
@@ -28,6 +31,7 @@ import { requireAuth, requireRole } from "../middlewares/requireAuth";
 import { publicOrigin } from "../lib/publicOrigin";
 import {
   AdminAgencyNotFoundError,
+  AdminBusinessNotFoundError,
   AdminInvitationNotFoundError,
   AdminDeactivationRequestAlreadyReviewedError,
   AdminDeactivationRequestNotFoundError,
@@ -43,6 +47,7 @@ import {
   resetPlatformTenantData,
   revokeAgencyInvitation,
   updateAgency,
+  updateAdminBusinessUsagePricing,
 } from "../services/adminService";
 import { recoverUncertainSharedReviewImport } from "../services/reviewManagementService";
 
@@ -86,6 +91,43 @@ router.get(
   async (_req, res) => {
     const data = GetAdminPortalResponse.parse(await getAdminPortal());
     res.json(data);
+  },
+);
+
+router.patch(
+  "/admin/businesses/:businessId/usage-pricing",
+  requireAuth,
+  requireRole("SUPER_ADMIN"),
+  async (req, res): Promise<void> => {
+    const params = UpdateAdminBusinessUsagePricingParams.safeParse(req.params);
+    const body = UpdateAdminBusinessUsagePricingBody.safeParse(req.body);
+    if (!params.success || !body.success) {
+      res.status(400).json({
+        success: false,
+        code: "INVALID_REQUEST",
+        message: params.success
+          ? body.error?.message ?? "Invalid pricing details."
+          : params.error.message,
+      });
+      return;
+    }
+    try {
+      const result = await updateAdminBusinessUsagePricing({
+        businessId: params.data.businessId,
+        ...body.data,
+      });
+      res.json(UpdateAdminBusinessUsagePricingResponse.parse(result));
+    } catch (error) {
+      if (error instanceof AdminBusinessNotFoundError) {
+        res.status(404).json({
+          success: false,
+          code: "NOT_FOUND",
+          message: error.message,
+        });
+        return;
+      }
+      throw error;
+    }
   },
 );
 
