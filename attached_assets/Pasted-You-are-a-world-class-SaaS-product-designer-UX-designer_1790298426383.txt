@@ -1,0 +1,973 @@
+You are a world-class SaaS product designer, UX designer, conversion-rate
+optimization expert, creative director, copywriter and senior frontend
+engineer.
+
+You are working on the existing 5-Star.AI website:
+
+https://5-star.ai/
+
+5-Star.AI is an AI-powered Google review and reputation management SaaS for
+local businesses, agencies and multi-location businesses.
+
+Your task is NOT to redesign the website from scratch.
+
+Your task is to take the EXISTING landing page and make it feel like a
+world-class, premium, highly polished SaaS product website while preserving
+the existing 5-Star.AI brand identity, product experience and core structure.
+
+===========================================================
+MOST IMPORTANT RULE
+===========================================================
+
+DO NOT DESTROY OR REPLACE THE EXISTING PRODUCT EXPERIENCE.
+
+Before making ANY code changes:
+
+1. Inspect the complete existing codebase.
+2. Understand the current landing page architecture.
+3. Understand the existing interactive customer experience section.
+4. Understand the current review-generation flow.
+5. Understand the existing CTA/signup/trial flow.
+6. Understand the existing responsive implementation.
+7. Identify the current design system, colors, fonts, spacing and components.
+8. Identify all existing animations and interactions.
+9. Identify which elements are real product functionality versus visual/demo
+   content.
+
+Then improve the existing experience.
+
+Do NOT rebuild working functionality merely because you think you can create
+a different implementation.
+
+===========================================================
+EXISTING BRAND — PRESERVE IT
+===========================================================
+
+The current 5-Star.AI brand direction is intentional.
+
+PRESERVE:
+
+- 5-Star.AI logo
+- brand identity
+- dark navy / black visual environment
+- existing typography direction
+- Google-inspired visual language
+- purple / blue accent colors
+- subtle gradients
+- premium editorial feel
+- rounded UI cards
+- thin borders
+- sophisticated spacing
+- restrained animations
+- current overall personality
+
+The current website should still clearly look like 5-Star.AI after your work.
+
+Do NOT turn it into:
+- a generic Linear clone
+- a generic Stripe clone
+- a generic AI SaaS template
+- a colorful startup landing page
+- an overly animated WebGL website
+- a completely different visual identity
+
+Think:
+
+"5-Star.AI, but significantly more polished."
+
+===========================================================
+PRIMARY OBJECTIVE
+===========================================================
+
+Improve the landing page across this entire journey:
+
+FIRST IMPRESSION
+        ↓
+UNDERSTANDING
+        ↓
+PRODUCT EXPERIENCE
+        ↓
+TRUST
+        ↓
+VALUE
+        ↓
+7-DAY TRIAL
+        ↓
+SIGNUP
+
+A visitor should understand within approximately 5 seconds:
+
+1. What 5-Star.AI does
+2. Who it is for
+3. How it works
+4. Why it is useful
+5. What they should do next
+
+The primary conversion action should be:
+
+START 7-DAY FREE TRIAL
+
+Secondary CTA:
+
+SEE HOW IT WORKS
+
+The 7-day trial should be visible above the fold.
+
+Where accurate, clearly communicate:
+
+7-day free trial
+No credit card required
+Cancel anytime
+
+Do not invent any commercial terms that don't already exist in the product.
+
+===========================================================
+THE EXISTING INTERACTIVE CUSTOMER EXPERIENCE
+===========================================================
+
+THIS IS EXTREMELY IMPORTANT.
+
+The existing customer experience section is ALREADY INTERACTIVE.
+
+It is NOT a static screenshot.
+
+It is NOT a concept.
+
+It is an existing product experience where a customer can interact with the
+business/review interface and generate an AI-assisted review.
+
+DO NOT REPLACE IT WITH A NEW DEMO.
+
+DO NOT TURN IT INTO A STATIC IMAGE.
+
+DO NOT REMOVE ITS FUNCTIONALITY.
+
+DO NOT REWRITE the underlying functionality unless absolutely necessary.
+
+Instead:
+
+AUDIT IT.
+
+UNDERSTAND IT.
+
+THEN MAKE IT LOOK AND FEEL MORE PREMIUM.
+
+The existing experience should remain one of the HERO elements of the site.
+
+The visitor should immediately understand:
+
+"This is what my customer will actually experience."
+
+The experience should visually communicate the journey:
+
+Business
+↓
+Customer experience
+↓
+Rating / feedback
+↓
+AI-assisted review generation
+↓
+Customer reviews/edits the generated content
+↓
+Google / review destination
+
+Preserve the existing functionality and interaction model.
+
+Improve:
+
+- visual hierarchy
+- spacing
+- typography
+- transitions
+- micro-interactions
+- visual feedback
+- perceived product quality
+- mobile experience
+- explanatory labels
+- CTA placement
+- loading states
+- success states
+
+Do not make the interaction more complicated merely for the sake of
+animation.
+
+===========================================================
+UPCOMING SOCIAL INTEGRATIONS
+===========================================================
+
+Social/review destination integrations are being added to the product shortly.
+
+Design the current interface so that these integrations can be added naturally
+without requiring another major redesign.
+
+The UI should be able to accommodate destinations such as:
+
+- Google
+- Facebook
+- Instagram
+- TripAdvisor
+- Yelp
+- other supported platforms
+
+IMPORTANT:
+
+Do NOT claim that integrations already exist if they are not implemented.
+
+Do NOT fabricate functionality.
+
+Instead, design the visual architecture so the additional platforms can be
+introduced cleanly when they become available.
+
+For example, the existing destination selector/icon area can be designed as
+a scalable integration system.
+
+===========================================================
+HERO SECTION
+===========================================================
+
+The current hero has a strong visual direction.
+
+Do NOT completely replace it.
+
+Optimize it.
+
+The hero should immediately establish:
+
+WHAT:
+AI-powered review and reputation platform
+
+WHO:
+Local businesses, agencies and multi-location businesses
+
+OUTCOME:
+Make it easier for customers to share genuine experiences and help businesses
+manage their online reputation.
+
+Potential headline directions:
+
+"Your reputation deserves a system."
+
+"Turn every customer experience into a Google review."
+
+"More genuine reviews. Less asking."
+
+"Turn happy customers into more reviews."
+
+Evaluate these directions against the existing brand voice.
+
+Choose ONE strong final headline rather than presenting multiple options to
+the user.
+
+The supporting copy should be short.
+
+Primary CTA:
+
+Start 7-Day Free Trial
+
+Secondary CTA:
+
+See How It Works
+
+Add appropriate reassurance beneath the CTA.
+
+===========================================================
+DO NOT OVERSELL "AI-GENERATED REVIEWS"
+===========================================================
+
+Position the product carefully.
+
+5-Star.AI should help customers express their own genuine experience.
+
+Avoid messaging that implies:
+
+- fake reviews
+- fabricated reviews
+- guaranteed positive reviews
+- guaranteed Google ranking improvements
+- automatically posting fabricated content
+
+Prefer:
+
+"AI-assisted review creation"
+
+"Help customers express their genuine experience."
+
+"Customers stay in control of what they submit."
+
+"Turn real customer experiences into natural review drafts."
+
+The customer should remain in control of the final review.
+
+===========================================================
+PRODUCT CLARITY
+===========================================================
+
+One weakness of the current page is that the philosophy and brand story are
+stronger than the immediate explanation of the complete product.
+
+Improve this without making the page boring.
+
+Introduce a clear product section after the hero:
+
+"Everything you need to build and manage your reputation."
+
+Potential capabilities:
+
+1. Review Collection
+
+Create QR codes and shareable links that make it easy for customers to
+start the review experience.
+
+2. AI Review Assistant
+
+Help customers express their genuine experience naturally.
+
+3. AI Review Replies
+
+Help businesses respond to reviews with thoughtful, on-brand replies.
+
+4. Reputation Dashboard
+
+Understand review activity, ratings and reputation trends.
+
+5. Customer Experience
+
+Create a branded customer-facing experience before customers reach the
+review destination.
+
+6. Multi-location / Agency Management
+
+Manage businesses, locations and clients from a centralized platform.
+
+ONLY SHOW FEATURES THAT ACTUALLY EXIST OR ARE ALREADY IMPLEMENTED.
+
+Do not invent product functionality.
+
+If something is planned but not available, don't present it as currently
+available.
+
+===========================================================
+MAKE THE EXISTING PRODUCT DEMO THE STAR
+===========================================================
+
+Instead of adding another generic "product screenshot" section, use the
+existing interactive customer experience as a core storytelling device.
+
+The page should progressively explain what the visitor is seeing.
+
+For example:
+
+"Your customer sees this."
+
+Then show the existing experience.
+
+Then:
+
+"Your business gets this."
+
+Show the relevant business-side dashboard/product visualization.
+
+The visitor should understand both sides:
+
+CUSTOMER
+Experience → Review
+
+BUSINESS
+Collect → Manage → Respond → Understand
+
+This should feel like one connected system.
+
+===========================================================
+HOW IT WORKS
+===========================================================
+
+Create a visually strong explanation of the product.
+
+CUSTOMER JOURNEY:
+
+01
+Scan QR / Open Link
+
+02
+Share Experience
+
+03
+AI-Assisted Review
+
+04
+Customer Edits
+
+05
+Continue to Review Destination
+
+BUSINESS JOURNEY:
+
+01
+Create Business
+
+02
+Create Campaign / Experience
+
+03
+Share QR or Link
+
+04
+Collect Customer Interactions
+
+05
+Manage Reputation
+
+Use animations and visual connections where useful.
+
+Do not make this look like a generic five-step icon section.
+
+===========================================================
+"BEFORE 5-STAR.AI / WITH 5-STAR.AI"
+===========================================================
+
+Add a concise visual comparison.
+
+BEFORE:
+
+Customer finishes experience
+↓
+Business remembers to ask
+↓
+Customer forgets
+↓
+No review
+
+WITH 5-STAR.AI:
+
+Customer finishes experience
+↓
+QR / link
+↓
+Guided experience
+↓
+AI assistance
+↓
+Customer controls final review
+↓
+Review destination
+↓
+Business manages reputation
+
+Keep this elegant and consistent with the existing dark design.
+
+===========================================================
+FEATURE SECTIONS
+===========================================================
+
+The existing page already contains several sections.
+
+Do not automatically add more sections simply to make the page longer.
+
+Instead audit every existing section and ask:
+
+"Does this section move the visitor closer to understanding or trusting
+5-Star.AI?"
+
+If yes:
+Improve it.
+
+If redundant:
+Condense it.
+
+If weak:
+Rewrite it.
+
+If strong:
+Preserve it.
+
+Avoid landing-page bloat.
+
+===========================================================
+SOCIAL PROOF
+===========================================================
+
+The current page has testimonial/social-proof elements.
+
+Improve their presentation.
+
+Do NOT invent:
+
+- customer names
+- companies
+- review counts
+- revenue numbers
+- percentage improvements
+- ratings
+- case-study results
+
+Only use real data already available in the application.
+
+If testimonials are placeholders, preserve the structure but make it easy for
+real testimonials to be inserted later.
+
+When real social proof is added, prioritize:
+
+- actual customer logos
+- screenshots
+- Google review excerpts
+- actual customer quotes
+- real product usage data
+- real case studies
+
+===========================================================
+7-DAY FREE TRIAL
+===========================================================
+
+The 7-day trial is a major selling point.
+
+Do not hide it near the bottom of the page.
+
+Bring it into the conversion journey.
+
+Create a strong section:
+
+"Seven days to experience 5-Star.AI."
+
+Show the onboarding journey:
+
+DAY 1
+Connect your business
+
+DAY 2
+Set up your customer experience
+
+DAY 3
+Create your QR / link
+
+DAY 4
+Put it in front of customers
+
+DAY 5
+Start collecting interactions
+
+DAY 6
+Review your dashboard
+
+DAY 7
+See what is working
+
+Only describe actions that actually exist.
+
+Then:
+
+"Start your 7-day free trial"
+
+No credit card required
+[only if this is actually true]
+
+The trial should feel like a low-friction product experience rather than a
+sales gimmick.
+
+===========================================================
+PRICING
+===========================================================
+
+Audit the existing pricing situation.
+
+If pricing is already implemented and publicly available:
+
+Create a clean pricing section.
+
+If pricing is not finalized:
+
+DO NOT invent prices.
+
+Instead create the architecture for a pricing section that can later be
+connected to the actual pricing.
+
+Potential segmentation:
+
+Business
+Growth
+Agency
+
+But only use plans/features that actually exist.
+
+===========================================================
+AGENCY POSITIONING
+===========================================================
+
+5-Star.AI is also intended for agencies.
+
+Make this clearer without taking attention away from the core business
+product.
+
+Create a strong agency message such as:
+
+"For agencies, reputation management becomes a service you can scale."
+
+Possible capabilities, ONLY if they exist:
+
+- multiple clients
+- multiple businesses
+- multiple locations
+- centralized management
+- reporting
+- client management
+- branded experiences
+
+Do not fabricate functionality.
+
+===========================================================
+MULTI-LOCATION
+===========================================================
+
+If multi-location functionality exists, explain it visually.
+
+Example:
+
+ONE BRAND
+├── Location 01
+├── Location 02
+├── Location 03
+└── Location 04
+
+Centralized reputation management.
+
+Again, only show functionality that exists.
+
+===========================================================
+FAQ
+===========================================================
+
+Improve the existing FAQ.
+
+Prioritize questions that remove conversion friction:
+
+What is 5-Star.AI?
+
+How does the 7-day free trial work?
+
+Do I need a credit card?
+
+How does the AI review assistant work?
+
+Can customers edit the AI-generated draft?
+
+Can customers choose what they submit?
+
+Do customers need to install an app?
+
+Can I use QR codes?
+
+Can I use a direct link?
+
+Can I manage multiple locations?
+
+Can agencies manage multiple businesses?
+
+How does AI review reply work?
+
+How do I cancel?
+
+Only answer based on actual product functionality.
+
+===========================================================
+NAVIGATION
+===========================================================
+
+Audit the current navigation.
+
+Keep it minimal.
+
+Potential structure:
+
+Product
+How It Works
+For Agencies
+Pricing
+Resources
+
+CTA:
+
+Start 7-Day Free Trial
+
+Do not add navigation items merely for completeness.
+
+===========================================================
+MICRO-INTERACTIONS
+===========================================================
+
+This is where I want you to demonstrate your design expertise.
+
+Add tasteful micro-interactions to existing sections.
+
+Examples:
+
+- subtle hover states
+- smooth card transitions
+- elegant section reveals
+- button feedback
+- interactive feature previews
+- subtle gradient movement
+- product UI animations
+- animated data transitions
+- smooth accordion opening
+- refined scroll-based transitions
+- visual feedback when the customer interacts with the existing demo
+
+IMPORTANT:
+
+Do not turn the page into an animation showcase.
+
+The interaction should communicate PRODUCT QUALITY.
+
+Not "look what our frontend developer can do."
+
+Respect prefers-reduced-motion.
+
+===========================================================
+VISUAL PRODUCT QUALITY
+===========================================================
+
+The page should feel:
+
+Premium
+Calm
+Trustworthy
+Technical
+Modern
+Intelligent
+Human
+
+Avoid:
+
+Cheap SaaS
+Overly colorful AI aesthetic
+Excessive gradients
+Huge glowing text
+Unnecessary 3D
+Excessive glassmorphism
+Over-animation
+Generic stock illustrations
+
+Use whitespace aggressively.
+
+Typography should do much of the visual work.
+
+===========================================================
+MOBILE
+===========================================================
+
+Audit the entire website on mobile.
+
+Especially inspect the EXISTING INTERACTIVE CUSTOMER EXPERIENCE.
+
+It must remain genuinely usable on:
+
+320px
+375px
+390px
+430px
+
+Make sure:
+
+- touch targets are large enough
+- inputs are readable
+- buttons are accessible
+- cards don't become cramped
+- product screenshots remain understandable
+- the interactive experience remains intuitive
+- animations remain smooth
+- no horizontal overflow occurs
+
+Consider a mobile sticky CTA:
+
+"Start 7-Day Free Trial"
+
+Only implement if it improves the actual mobile experience.
+
+===========================================================
+PERFORMANCE
+===========================================================
+
+Do not sacrifice performance for visual effects.
+
+Audit:
+
+- JavaScript bundle impact
+- animation performance
+- image optimization
+- lazy loading
+- font loading
+- layout shifts
+- mobile performance
+
+Keep the landing page fast.
+
+===========================================================
+SEO
+===========================================================
+
+Audit the existing:
+
+- title
+- meta description
+- H1
+- H2 hierarchy
+- image alt text
+- Open Graph metadata
+- structured data where appropriate
+
+Do not keyword-stuff.
+
+The primary topic should naturally communicate:
+
+Google reviews
+review management
+customer reviews
+reputation management
+AI review assistant
+
+===========================================================
+COPYWRITING STYLE
+===========================================================
+
+The current website has an editorial, premium writing style.
+
+KEEP THAT.
+
+But improve clarity.
+
+Use:
+
+Short sentences.
+Strong headlines.
+Concrete benefits.
+Minimal jargon.
+Confident language.
+
+Avoid repeating:
+
+"AI-powered"
+"revolutionary"
+"game-changing"
+"next-generation"
+
+The product should feel intelligent without constantly saying "AI."
+
+===========================================================
+IMPORTANT: DO NOT FABRICATE
+===========================================================
+
+Never invent:
+
+- customers
+- testimonials
+- logos
+- statistics
+- product capabilities
+- integrations
+- pricing
+- review counts
+- revenue claims
+- conversion rates
+- guarantees
+
+If data doesn't exist, design the UI so real data can be inserted later.
+
+===========================================================
+IMPLEMENTATION PROCESS
+===========================================================
+
+PHASE 1 — AUDIT
+
+Before editing:
+
+Inspect the entire project.
+
+Identify:
+
+- framework
+- routes
+- components
+- design system
+- landing page structure
+- interactive customer experience
+- existing animations
+- trial/signup flow
+- existing backend connections
+- existing integrations
+- existing responsive behavior
+
+PHASE 2 — DESIGN STRATEGY
+
+Determine:
+
+- which sections should remain
+- which sections should be improved
+- which sections should be condensed
+- where the product story is unclear
+- where CTA friction exists
+- where visual hierarchy can improve
+
+PHASE 3 — IMPLEMENT
+
+Implement the improvements while preserving existing functionality.
+
+PHASE 4 — QA
+
+Run the application.
+
+Test:
+
+Desktop
+Tablet
+Mobile
+
+Test:
+
+- all buttons
+- all links
+- trial CTA
+- existing interactive customer experience
+- review generation
+- forms
+- FAQ
+- navigation
+- responsive layouts
+- animations
+
+Check:
+
+- console errors
+- broken links
+- layout shifts
+- overflow
+- accessibility
+- performance
+
+===========================================================
+CRITICAL FINAL REQUIREMENT
+===========================================================
+
+When finished, the site should NOT look like a completely different website.
+
+Someone familiar with the current 5-Star.AI website should immediately think:
+
+"This is the same 5-Star.AI, but dramatically more polished."
+
+The existing interactive customer experience should remain intact and become
+one of the strongest elements of the website.
+
+The 7-day free trial should become much more prominent.
+
+The product should become easier to understand.
+
+The CTA path should become clearer.
+
+The website should feel ready for serious international SaaS marketing.
+
+Do not simply add more sections.
+
+Improve the QUALITY of the existing experience.
+
+Before making the final changes, compare the result against the original
+implementation and ensure that you have preserved the strongest elements of
+the current design.
