@@ -41,7 +41,7 @@ export function PricingSection() {
           <p className="mk-eyebrow">Pricing</p>
           <h2 id="pricing-heading" className="mt-3 font-display text-3xl font-semibold tracking-[-0.04em] text-balance sm:text-5xl">Pricing shaped around your business.</h2>
           <p className="mt-5 leading-relaxed text-muted-foreground">Start with a free guided trial. If you continue, you receive a written custom quote before any paid service begins.</p>
-          <div className="mt-8"><TrialCta testId="button-pricing-trial" /></div>
+          <div className="mt-8"><TrialCta testId="button-pricing-trial" placement="pricing" /></div>
         </div>
         <div className="mk-card p-6 sm:p-8">
           <h3 className="flex items-center gap-2 text-base font-semibold"><FileText className="h-4 w-4 text-primary" aria-hidden /> Your written quote covers</h3>

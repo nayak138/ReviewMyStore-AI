@@ -113,7 +113,7 @@ export default function BlogPost() {
               <p className="text-sm text-muted-foreground mb-6">
                 Set up your first campaign in minutes. Free during early access.
               </p>
-              <BookDemoDialog>
+              <BookDemoDialog placement="blog_post_cta">
                 <Button className="h-10 px-6">Start the 7-day trial</Button>
               </BookDemoDialog>
             </div>

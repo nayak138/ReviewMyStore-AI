@@ -15,6 +15,10 @@ const response = (body: unknown, status = 200): Response => ({
 }) as Response;
 
 beforeEach(() => {
+  Object.defineProperty(window, "umami", {
+    configurable: true,
+    value: { track: vi.fn() },
+  });
   vi.stubGlobal("fetch", vi.fn().mockResolvedValue(response({ reviewText: "A genuine draft." })));
   vi.stubGlobal("requestAnimationFrame", vi.fn());
   vi.stubGlobal("crypto", { randomUUID: () => "fixed-session" });
@@ -27,6 +31,7 @@ beforeEach(() => {
 });
 afterEach(() => {
   cleanup();
+  delete (window as Window & { umami?: unknown }).umami;
   vi.unstubAllGlobals();
 });
 
@@ -70,6 +75,19 @@ describe("single live customer demo", () => {
     expect(screen.getByRole("link", { name: "Google Maps" })).toHaveAttribute("href", expect.stringContaining("search.google.com/local/writereview"));
   });
 
+  it("tracks only draft outcome and Google handoff, never the draft or form inputs", async () => {
+    render(<InteractiveReviewDemo />);
+    await chooseRating();
+    await userEvent.type(screen.getByRole("textbox", { name: /your name/i }), "Private name");
+    await generate();
+    await screen.findByRole("textbox", { name: "Generated Google review" });
+    expect(window.umami?.track).toHaveBeenCalledWith("demo_draft_generation", { outcome: "success" });
+
+    await userEvent.click(screen.getByRole("button", { name: /copy and continue/i }));
+    expect(window.umami?.track).toHaveBeenCalledWith("demo_google_handoff");
+    expect(window.umami?.track).toHaveBeenCalledTimes(2);
+  });
+
   it.each([
     ["Enthusiastic", ReviewTone.ENTHUSIASTIC],
     ["Short", ReviewTone.SHORT_DIRECT],
@@ -108,12 +126,14 @@ describe("single live customer demo", () => {
     ["invalid", () => ({ ok: true, text: async () => "<invalid>" }) as Response, "invalid response"],
     ["network", () => Promise.reject(new Error("Network unavailable")), "Network unavailable"],
   ])("retains inputs and recovers after %s failure", async (_case, failed, message) => {
+    const track = window.umami!.track;
     vi.mocked(fetch).mockImplementationOnce(async () => failed());
     render(<InteractiveReviewDemo />);
     await chooseRating();
     await userEvent.type(screen.getByRole("textbox", { name: /Mention a team member/i }), "My visit");
     await generate();
     expect(await screen.findByRole("alert")).toHaveTextContent(message);
+    expect(track).toHaveBeenCalledWith("demo_draft_generation", { outcome: "failure" });
     expect(screen.getByRole("textbox", { name: /Mention a team member/i })).toHaveValue("My visit");
     await generate();
     expect(await screen.findByRole("textbox", { name: "Generated Google review" })).toHaveValue("A genuine draft.");

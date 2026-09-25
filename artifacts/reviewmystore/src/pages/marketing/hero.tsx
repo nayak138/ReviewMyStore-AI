@@ -1,6 +1,7 @@
 import { ArrowRight, BookOpen, Check, PencilLine, Send, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { BookDemoDialog } from "@/components/book-demo-dialog";
+import type { TrialDialogPlacement } from "@/components/book-demo-dialog";
 import { scrollToSection } from "./scroll";
 
 export const REASSURANCE = ["7-Day Free Trial", "No Credit Card", "No Sign Up"] as const;
@@ -19,9 +20,9 @@ export function ReassuranceGroup({ className = "" }: { className?: string }) {
   );
 }
 
-export function TrialCta({ testId }: { testId: string }) {
+export function TrialCta({ testId, placement }: { testId: string; placement: TrialDialogPlacement }) {
   return (
-    <BookDemoDialog marketingDark>
+    <BookDemoDialog marketingDark placement={placement}>
       <Button data-testid={testId} className="h-12 rounded-full bg-foreground px-6 text-[15px] font-semibold text-background shadow-[0_10px_30px_-14px_hsl(var(--primary)/0.9)] transition-[opacity,transform] hover:bg-foreground/90 active:scale-[0.98]">
         Start 7-Day Free Trial <ArrowRight className="ml-2 h-4 w-4" aria-hidden />
       </Button>
@@ -60,7 +61,7 @@ export function HeroSection() {
           5-Star.AI helps local businesses, agencies, and multi-location teams invite genuine Google reviews, manage feedback, and draft thoughtful replies. Customers keep control of their final words.
         </p>
         <div className="mk-fade-in mt-8 flex flex-col gap-3 sm:flex-row [animation-delay:140ms]">
-          <TrialCta testId="button-hero-trial" />
+          <TrialCta testId="button-hero-trial" placement="hero" />
           <HowItWorksLink testId="link-hero-how-it-works" />
         </div>
         <div className="mt-8 max-w-2xl border-t border-border pt-5">

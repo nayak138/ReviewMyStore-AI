@@ -211,7 +211,7 @@ export function CtaBand() {
         <div className="relative">
           <h2 id="start-heading" className="mx-auto max-w-3xl font-display text-4xl font-semibold tracking-[-0.05em] text-balance sm:text-6xl">Start your 7-day free trial.</h2>
           <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
-            <TrialCta testId="button-final-trial" />
+            <TrialCta testId="button-final-trial" placement="final_cta" />
             <HowItWorksLink testId="link-final-how-it-works" />
           </div>
           <ReassuranceGroup className="mt-8 justify-center" />

@@ -162,7 +162,7 @@ export default function About() {
           <p className="text-muted-foreground max-w-xl mx-auto mb-8">
             Set up your first review campaign in minutes. Free during early access.
           </p>
-           <BookDemoDialog>
+           <BookDemoDialog placement="about_cta">
              <Button size="lg" className="h-12 px-8 text-base shadow-sm transition-all hover:shadow">
                Start the 7-day trial
              </Button>

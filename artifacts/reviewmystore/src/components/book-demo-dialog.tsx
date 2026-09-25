@@ -26,6 +26,19 @@ import { Button } from "@/components/ui/button";
 import { RadioGroup } from "@/components/ui/radio-group";
 import { useToast } from "@/hooks/use-toast";
 import { useCreateDemoRequest } from "@workspace/api-client-react";
+import { trackEvent } from "@/lib/analytics";
+
+export type TrialDialogPlacement =
+  | "hero"
+  | "pricing"
+  | "final_cta"
+  | "header_desktop"
+  | "header_mobile"
+  | "footer_team"
+  | "about_cta"
+  | "resources_cta"
+  | "blog_post_cta"
+  | "auth_contact";
 
 const demoFormSchema = z.object({
   name: z.string().trim().min(1, "Please enter your name").max(200),
@@ -40,7 +53,7 @@ const demoFormSchema = z.object({
 
 type DemoFormValues = z.infer<typeof demoFormSchema>;
 
-export function BookDemoDialog({ children, marketingDark = false }: { children: ReactNode; marketingDark?: boolean }) {
+export function BookDemoDialog({ children, placement, marketingDark = false }: { children: ReactNode; placement: TrialDialogPlacement; marketingDark?: boolean }) {
   const [open, setOpen] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [requestError, setRequestError] = useState(false);
@@ -86,6 +99,7 @@ export function BookDemoDialog({ children, marketingDark = false }: { children: 
         website: values.website || undefined,
       },
     }).then(() => {
+      trackEvent("guided_trial_request_succeeded", { placement });
       if (openRef.current && requestGeneration.current === generation) {
         setSubmitted(true);
       }
@@ -114,8 +128,12 @@ export function BookDemoDialog({ children, marketingDark = false }: { children: 
   };
 
   const handleOpenChange = (next: boolean) => {
+    const wasOpen = openRef.current;
     openRef.current = next;
     setOpen(next);
+    if (next && !wasOpen) {
+      trackEvent("guided_trial_dialog_opened", { placement });
+    }
     if (next && resetTimer.current) {
       clearTimeout(resetTimer.current);
       resetTimer.current = null;

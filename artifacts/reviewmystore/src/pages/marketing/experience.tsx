@@ -13,6 +13,7 @@ import { ArrowRight, Lock, MessageSquareText, QrCode, ScanLine, Star } from "luc
 import { InteractiveReviewDemo } from "./review-demo";
 import { SAMPLE_BUSINESSES, SAMPLE_DATA_LABEL } from "./business-fixtures";
 import { focusSection, scrollToSection } from "./scroll";
+import { trackEvent } from "@/lib/analytics";
 
 export type ExperienceView = "customer" | "business";
 
@@ -59,6 +60,17 @@ export function ViewSwitch({ idPrefix, label }: { idPrefix: string; label: strin
   const { view, setView } = useExperience();
   const refs = useRef<(HTMLButtonElement | null)[]>([]);
 
+  const selectView = (nextView: ExperienceView) => {
+    if (nextView !== view) {
+      trackEvent("landing_view_switched", {
+        placement: idPrefix,
+        from_view: view,
+        to_view: nextView,
+      });
+    }
+    setView(nextView);
+  };
+
   const onKeyDown = (e: KeyboardEvent<HTMLButtonElement>, index: number) => {
     let next = -1;
     if (e.key === "ArrowRight" || e.key === "ArrowDown") next = (index + 1) % VIEWS.length;
@@ -67,7 +79,7 @@ export function ViewSwitch({ idPrefix, label }: { idPrefix: string; label: strin
     if (e.key === "End") next = VIEWS.length - 1;
     if (next < 0) return;
     e.preventDefault();
-    setView(VIEWS[next].id);
+    selectView(VIEWS[next].id);
     refs.current[next]?.focus();
   };
 
@@ -86,7 +98,7 @@ export function ViewSwitch({ idPrefix, label }: { idPrefix: string; label: strin
           aria-controls={PANEL_IDS[v.id]}
           tabIndex={view === v.id ? 0 : -1}
           data-testid={`${idPrefix}-tab-${v.id}`}
-          onClick={() => setView(v.id)}
+          onClick={() => selectView(v.id)}
           onKeyDown={(e) => onKeyDown(e, i)}
         >
           {v.label}

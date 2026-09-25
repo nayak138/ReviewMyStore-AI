@@ -178,7 +178,7 @@ export function SignInPage() {
           </p>
           <div className="inline-flex max-w-full items-center gap-2 rounded-full border border-amber-200 bg-amber-100 p-1 pl-3 text-xs font-medium text-amber-900">
             <span>Agency access only</span>
-            <BookDemoDialog>
+            <BookDemoDialog placement="auth_contact">
               <Button
                 type="button"
                 size="sm"

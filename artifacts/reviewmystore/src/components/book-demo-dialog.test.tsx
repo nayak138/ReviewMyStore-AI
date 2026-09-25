@@ -31,7 +31,7 @@ vi.mock("@workspace/api-client-react", () => ({
 async function openDialog(marketingDark = false) {
   const user = userEvent.setup();
   render(
-    <BookDemoDialog marketingDark={marketingDark}>
+    <BookDemoDialog marketingDark={marketingDark} placement="hero">
       <button type="button">Start 7-Day Free Trial</button>
     </BookDemoDialog>,
   );
@@ -47,6 +47,10 @@ async function fillValid(user: ReturnType<typeof userEvent.setup>) {
 }
 
 beforeEach(() => {
+  Object.defineProperty(window, "umami", {
+    configurable: true,
+    value: { track: vi.fn() },
+  });
   mocks.mutate.mockClear();
   mocks.reset.mockClear();
   mocks.toast.mockClear();
@@ -55,12 +59,14 @@ beforeEach(() => {
 
 afterEach(() => {
   cleanup();
+  delete (window as Window & { umami?: unknown }).umami;
   vi.useRealTimers();
 });
 
 describe("guided trial request dialog", () => {
   it("explains that submission requests a guided trial and scopes optional portal dark mode", async () => {
     await openDialog(true);
+    expect(window.umami?.track).toHaveBeenCalledWith("guided_trial_dialog_opened", { placement: "hero" });
     expect(screen.getByRole("dialog")).toHaveClass("dark");
     expect(screen.getByRole("dialog")).toHaveTextContent("No 5-Star.AI account or credit card is needed to request it");
     expect(screen.getByRole("dialog")).toHaveTextContent("does not automatically renew or charge");
@@ -146,6 +152,7 @@ describe("guided trial request dialog", () => {
     await user.click(screen.getByRole("button", { name: /Sending request/i }));
     expect(mocks.mutate).toHaveBeenCalledTimes(1);
     await act(async () => mocks.fail());
+    expect(window.umami?.track).not.toHaveBeenCalledWith("guided_trial_request_succeeded", expect.anything());
     expect(screen.getByRole("alert")).toHaveTextContent("Your details are still here");
     expect(screen.getByRole("textbox", { name: "Name *" })).toHaveValue("Jane Smith");
     await user.click(screen.getByRole("button", { name: /Send guided trial request/i }));
@@ -196,6 +203,10 @@ describe("guided trial request dialog", () => {
     await fillValid(user);
     await user.click(screen.getByRole("button", { name: /Send guided trial request/i }));
     await act(async () => mocks.complete());
+    expect(window.umami?.track).toHaveBeenNthCalledWith(1, "guided_trial_dialog_opened", { placement: "hero" });
+    expect(window.umami?.track).toHaveBeenNthCalledWith(2, "guided_trial_request_succeeded", { placement: "hero" });
+    expect(window.umami?.track).toHaveBeenCalledTimes(2);
+    expect(window.umami?.track).not.toHaveBeenCalledWith("trial_started", expect.anything());
     expect(screen.getByRole("status")).toHaveTextContent("Your trial has not started yet");
     await user.click(screen.getByRole("button", { name: "Done" }));
     await waitFor(() => expect(mocks.reset).toHaveBeenCalled());

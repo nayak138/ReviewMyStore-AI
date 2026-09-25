@@ -19,6 +19,7 @@ import { downloadVCard } from "@/lib/vcard";
 import { cn } from "@/lib/utils";
 import { isRtlLanguage } from "@/lib/languages";
 import { getReviewPageStrings } from "@/lib/reviewPageTranslations";
+import { trackEvent } from "@/lib/analytics";
 
 const DEMO_GOOGLE_URL =
   "https://search.google.com/local/writereview?placeid=ChIJA5LATO4Z2jER111V-v6abAI";
@@ -123,6 +124,7 @@ export function InteractiveReviewDemo({ active = true, onStatusChange }: { activ
       }
       setReviewText(result.reviewText);
       setHasDraft(true);
+      trackEvent("demo_draft_generation", { outcome: "success" });
       setStatus("Your editable draft is ready.");
       onStatusChange?.("Your editable draft is ready. Return to Customer View to review it.");
       if (activeRef.current) window.requestAnimationFrame(() => {
@@ -137,6 +139,7 @@ export function InteractiveReviewDemo({ active = true, onStatusChange }: { activ
         });
       });
     } catch (generationError) {
+      trackEvent("demo_draft_generation", { outcome: "failure" });
       const message = generationError instanceof Error ? generationError.message : "The review could not be generated.";
       setError(message);
       setStatus("");
@@ -170,7 +173,10 @@ export function InteractiveReviewDemo({ active = true, onStatusChange }: { activ
   };
 
   const copyAndOpenGoogle = async () => {
-    if (await copyReview()) window.location.assign(DEMO_GOOGLE_URL);
+    if (await copyReview()) {
+      trackEvent("demo_google_handoff");
+      window.location.assign(DEMO_GOOGLE_URL);
+    }
   };
 
   const moveRating = (event: KeyboardEvent<HTMLButtonElement>, value: number) => {

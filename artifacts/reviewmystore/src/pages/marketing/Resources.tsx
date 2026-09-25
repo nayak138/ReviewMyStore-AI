@@ -186,7 +186,7 @@ export default function Resources() {
             <p className="text-muted-foreground max-w-xl mx-auto mb-8">
               Free during early access — set up your first campaign in minutes.
             </p>
-             <BookDemoDialog>
+              <BookDemoDialog placement="resources_cta">
                <Button size="lg" className="h-12 px-8 text-base shadow-sm transition-all hover:shadow">
                  Start the 7-day trial
                </Button>

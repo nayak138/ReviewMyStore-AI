@@ -127,7 +127,7 @@ export function MarketingLayout({ children, dark = false }: { children: ReactNod
           </nav>
 
           <div className="hidden items-center gap-3 lg:flex">
-            <BookDemoDialog marketingDark={dark}>
+            <BookDemoDialog marketingDark={dark} placement="header_desktop">
               <Button data-testid="button-header-trial" className="h-10 rounded-full bg-foreground px-5 text-sm font-semibold text-background hover:bg-foreground/90">
                 Start 7-Day Trial <ArrowUpRight className="ml-1.5 h-4 w-4" aria-hidden />
               </Button>
@@ -150,7 +150,7 @@ export function MarketingLayout({ children, dark = false }: { children: ReactNod
                 <a key={link.label} href={`/#${link.id}`} data-testid={`link-mobile-${slug(link.label)}`} onClick={(e) => goToSection(e, link.id!)} className="min-h-[44px] border-b border-border py-4 text-lg font-medium">{link.label}</a>
               ),
             )}
-            <BookDemoDialog marketingDark={dark}>
+            <BookDemoDialog marketingDark={dark} placement="header_mobile">
               <Button data-testid="button-mobile-trial" className="mt-7 h-12 w-full rounded-full bg-foreground text-background hover:bg-foreground/90">
                 Start 7-Day Trial <ArrowUpRight className="ml-2 h-4 w-4" aria-hidden />
               </Button>
@@ -167,7 +167,7 @@ export function MarketingLayout({ children, dark = false }: { children: ReactNod
             <div>
               <BrandLogo className="mb-5 h-10 w-auto max-w-[12rem] object-contain" />
               <p className="max-w-xs text-sm leading-relaxed text-muted-foreground">A hands-on reputation partner for local businesses and the agencies that help them grow.</p>
-              <BookDemoDialog marketingDark={dark}>
+              <BookDemoDialog marketingDark={dark} placement="footer_team">
                 <button type="button" className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-foreground underline decoration-primary/50 underline-offset-4 transition-colors hover:text-primary">Talk with our team <ArrowUpRight className="h-4 w-4" /></button>
               </BookDemoDialog>
             </div>

@@ -26,6 +26,10 @@ const ok = (body: unknown) => ({ ok: true, status: 200, text: async () => JSON.s
 const scrollIntoView = vi.fn();
 
 beforeEach(() => {
+  Object.defineProperty(window, "umami", {
+    configurable: true,
+    value: { track: vi.fn() },
+  });
   fetchMock.mockClear();
   scrollIntoView.mockClear();
   vi.stubGlobal("fetch", fetchMock);
@@ -39,6 +43,7 @@ beforeEach(() => {
 });
 afterEach(() => {
   cleanup();
+  delete (window as Window & { umami?: unknown }).umami;
   vi.unstubAllGlobals();
 });
 
@@ -46,6 +51,25 @@ const customerPanel = () => screen.getByTestId("panel-customer");
 const generateButton = () => within(customerPanel()).getByRole("button", { name: /generate/i });
 
 describe("Marketing with the real live demo", () => {
+  it("tracks deliberate Customer/Business switches with fixed view values", () => {
+    render(<Marketing />);
+    fireEvent.click(screen.getByTestId("experience-tab-business"));
+    fireEvent.click(screen.getByTestId("experience-tab-business"));
+    fireEvent.click(screen.getByTestId("experience-tab-customer"));
+
+    expect(window.umami?.track).toHaveBeenNthCalledWith(1, "landing_view_switched", {
+      placement: "experience",
+      from_view: "customer",
+      to_view: "business",
+    });
+    expect(window.umami?.track).toHaveBeenNthCalledWith(2, "landing_view_switched", {
+      placement: "experience",
+      from_view: "business",
+      to_view: "customer",
+    });
+    expect(window.umami?.track).toHaveBeenCalledTimes(2);
+  });
+
   it("has no duplicate element ids", () => {
     const { container } = render(<Marketing />);
     const ids = Array.from(container.querySelectorAll("[id]")).map((e) => e.id);
