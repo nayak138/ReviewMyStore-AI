@@ -9,7 +9,7 @@
     "start": "node --enable-source-maps ./dist/index.mjs",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "check:bundle-social-import-history": "tsx src/scripts/checkBundleSocialImportHistory.ts",
-    "test": "tsx --test \"src/**/*.test.ts\""
+    "test": "pnpm --filter @workspace/scripts run ensure-api-test-schema && tsx --test \"src/**/*.test.ts\""
   },
   "dependencies": {
     "@clerk/express": "^2.1.49",

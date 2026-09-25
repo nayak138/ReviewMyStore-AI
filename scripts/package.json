@@ -6,6 +6,7 @@
   "scripts": {
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "ensure-shared-provider-usage-schema": "tsx ensure-shared-provider-usage-schema.ts",
+    "ensure-api-test-schema": "tsx ensure-api-test-schema.ts",
     "ensure-team-schema": "tsx ensure-team-schema.ts",
     "verify-team-schema": "tsx verify-team-schema.ts"
   },
