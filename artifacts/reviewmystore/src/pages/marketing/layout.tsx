@@ -1,23 +1,35 @@
-import { ReactNode, useEffect, useState } from "react";
+import { ReactNode, useCallback, useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "wouter";
 import { ArrowUpRight, Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { BookDemoDialog } from "@/components/book-demo-dialog";
 import { BrandLogo } from "@/components/brand-logo";
+import { focusSection, scrollToSection } from "./scroll";
+import "./landing.css";
 
-function scrollToId(id: string, attempts = 20) {
-  const el = document.getElementById(id);
-  if (el) {
-    el.scrollIntoView({ behavior: "smooth", block: "start" });
-  } else if (attempts > 0) {
-    window.setTimeout(() => scrollToId(id, attempts - 1), 50);
-  }
-}
+export const NAV_LINKS: { label: string; id?: string; href?: string }[] = [
+  { label: "Product", id: "features" },
+  { label: "How It Works", id: "how-it-works" },
+  { label: "For Agencies", id: "agencies" },
+  { label: "Pricing", id: "pricing" },
+  { label: "Resources", href: "/resources" },
+];
 
-export function MarketingLayout({ children }: { children: ReactNode }) {
+const slug = (s: string) => s.toLowerCase().replaceAll(" ", "-");
+
+/**
+ * Shared marketing shell. `dark` applies the homepage-only dark environment
+ * (scoped `.dark.marketing-dark` wrapper); other marketing routes, the global
+ * theme provider and authenticated screens are unaffected.
+ */
+export function MarketingLayout({ children, dark = false }: { children: ReactNode; dark?: boolean }) {
   const [location, setLocation] = useLocation();
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const toggleRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const mainRef = useRef<HTMLElement>(null);
+  const footerRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 16);
@@ -26,109 +38,145 @@ export function MarketingLayout({ children }: { children: ReactNode }) {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  const closeMenu = useCallback((restoreFocus: boolean) => {
+    setMobileMenuOpen(false);
+    if (restoreFocus) window.requestAnimationFrame(() => toggleRef.current?.focus());
+  }, []);
+
   useEffect(() => {
     setMobileMenuOpen(false);
   }, [location]);
 
+  // While the full-screen menu is open: hide the covered page from focus and
+  // assistive tech, contain Tab to toggle + menu, and close on Escape. Both
+  // handlers stand down while a (portaled) dialog such as the trial form is open.
+  useEffect(() => {
+    if (!mobileMenuOpen) return;
+    const covered = [mainRef.current, footerRef.current].filter(Boolean) as HTMLElement[];
+    covered.forEach((el) => {
+      el.setAttribute("inert", "");
+      el.setAttribute("aria-hidden", "true");
+    });
+    menuRef.current?.querySelector<HTMLElement>("a,button")?.focus();
+    const dialogOpen = () => Boolean(document.querySelector('[role="dialog"][data-state="open"], [role="alertdialog"][data-state="open"]'));
+    const onKey = (e: KeyboardEvent) => {
+      if (e.defaultPrevented || dialogOpen()) return;
+      if (e.key === "Escape") {
+        closeMenu(true);
+        return;
+      }
+      if (e.key !== "Tab") return;
+      const items = [
+        toggleRef.current,
+        ...Array.from(menuRef.current?.querySelectorAll<HTMLElement>("a[href],button:not([disabled])") ?? []),
+      ].filter(Boolean) as HTMLElement[];
+      if (items.length === 0) return;
+      const first = items[0];
+      const last = items[items.length - 1];
+      const current = document.activeElement as HTMLElement | null;
+      const inside = current ? items.includes(current) : false;
+      if (e.shiftKey && (current === first || !inside)) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && (current === last || !inside)) {
+        e.preventDefault();
+        first.focus();
+      }
+    };
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      covered.forEach((el) => {
+        el.removeAttribute("inert");
+        el.removeAttribute("aria-hidden");
+      });
+    };
+  }, [mobileMenuOpen, closeMenu]);
+
   const goToSection = (e: React.MouseEvent<HTMLAnchorElement>, id: string) => {
+    // Let modified/middle clicks keep native open-in-new-tab behaviour.
+    if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
     e.preventDefault();
-    if (location !== "/") setLocation("/");
-    scrollToId(id);
+    setMobileMenuOpen(false);
+    if (location !== "/") {
+      setLocation("/");
+      window.setTimeout(() => scrollToSection(id, { onDone: focusSection }), 0);
+    } else {
+      scrollToSection(id, { onDone: focusSection });
+    }
   };
 
-  const navLinks = [
-    { label: "Approach", id: "approach" },
-    { label: "How it works", id: "how-it-works" },
-    { label: "For agencies", id: "agencies" },
-    { label: "Resources", href: "/resources" },
-  ];
+  const linkClass = "text-sm font-medium text-foreground/65 transition-colors hover:text-foreground";
 
   return (
-    <div className="min-h-[100dvh] bg-slate-50 pb-24 font-sans text-zinc-900 antialiased dark:bg-slate-950 dark:text-zinc-100">
-      <header className={`fixed inset-x-0 top-0 z-50 transition-all duration-300 ${isScrolled ? "border-b border-border/80 bg-background/90 backdrop-blur-xl" : "bg-background/70 backdrop-blur-sm"}`}>
-        <div className="mx-auto flex h-[4.75rem] max-w-[80rem] items-center justify-between px-5 sm:px-8 lg:px-10">
-          <Link href="/" data-testid="link-home" className="flex shrink-0 items-center">
+    <div className={`min-h-[100dvh] font-sans antialiased ${dark ? "dark marketing-dark" : "bg-slate-50 text-zinc-900 dark:bg-slate-950 dark:text-zinc-100"}`} data-testid="marketing-root">
+      <header data-marketing-header className={`fixed inset-x-0 top-0 z-50 transition-colors duration-300 ${isScrolled ? "border-b border-border/80 bg-background/90 backdrop-blur-xl" : "bg-background/70 backdrop-blur-sm"}`}>
+        <div className="mx-auto flex h-[4.75rem] max-w-[80rem] items-center justify-between gap-4 px-5 sm:px-8 lg:px-10">
+          <Link href="/" data-testid="link-home" aria-label="5-Star.AI home" className="flex shrink-0 items-center">
             <BrandLogo className="h-9 w-auto max-w-[11.5rem] object-contain sm:h-10" />
           </Link>
 
-          <nav className="hidden items-center gap-8 lg:flex" aria-label="Main navigation">
-            {navLinks.map((link) =>
+          <nav className="hidden items-center gap-7 lg:flex" aria-label="Main navigation">
+            {NAV_LINKS.map((link) =>
               link.href ? (
-                <Link key={link.label} href={link.href} data-testid={`link-nav-${link.label.toLowerCase().replaceAll(" ", "-")}`} className="text-sm font-medium text-foreground/65 transition-colors hover:text-foreground">
-                  {link.label}
-                </Link>
+                <Link key={link.label} href={link.href} data-testid={`link-nav-${slug(link.label)}`} className={linkClass}>{link.label}</Link>
               ) : (
-                <a key={link.label} href={`#${link.id}`} data-testid={`link-nav-${link.label.toLowerCase().replaceAll(" ", "-")}`} onClick={(e) => goToSection(e, link.id!)} className="text-sm font-medium text-foreground/65 transition-colors hover:text-foreground">
-                  {link.label}
-                </a>
+                <a key={link.label} href={`/#${link.id}`} data-testid={`link-nav-${slug(link.label)}`} onClick={(e) => goToSection(e, link.id!)} className={linkClass}>{link.label}</a>
               ),
             )}
           </nav>
 
           <div className="hidden items-center gap-3 lg:flex">
-            <Link href="/about" className="px-2 text-sm font-medium text-foreground/65 transition-colors hover:text-foreground">About</Link>
-            <BookDemoDialog>
-              <Button data-testid="button-header-book-demo" className="h-10 rounded-full bg-foreground px-5 text-sm font-semibold text-background shadow-[0_7px_18px_-11px_hsl(var(--foreground)/0.7)] hover:bg-foreground/90">
-                Book a strategy call <ArrowUpRight className="ml-1.5 h-4 w-4" />
+            <BookDemoDialog marketingDark={dark}>
+              <Button data-testid="button-header-trial" className="h-10 rounded-full bg-foreground px-5 text-sm font-semibold text-background hover:bg-foreground/90">
+                Start 7-Day Trial <ArrowUpRight className="ml-1.5 h-4 w-4" aria-hidden />
               </Button>
             </BookDemoDialog>
           </div>
 
-          <Button variant="ghost" size="icon" data-testid="button-mobile-menu" onClick={() => setMobileMenuOpen((open) => !open)} className="min-h-[44px] min-w-[44px] text-foreground transition-all duration-150 active:scale-95 lg:hidden" aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}>
+          <Button ref={toggleRef} variant="ghost" size="icon" data-testid="button-mobile-menu" onClick={() => (mobileMenuOpen ? closeMenu(false) : setMobileMenuOpen(true))} className="min-h-[44px] min-w-[44px] text-foreground lg:hidden" aria-label={mobileMenuOpen ? "Close menu" : "Open menu"} aria-expanded={mobileMenuOpen} aria-controls="marketing-mobile-menu">
             {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </Button>
         </div>
       </header>
 
       {mobileMenuOpen && (
-        <div className="fixed inset-0 z-40 bg-background/98 pt-[4.75rem] lg:hidden">
+        <div id="marketing-mobile-menu" ref={menuRef} className="fixed inset-0 z-40 overflow-y-auto bg-background pt-[4.75rem] lg:hidden" data-testid="mobile-menu">
           <nav className="mx-auto flex max-w-2xl flex-col px-5 py-6 sm:px-8" aria-label="Mobile navigation">
-            {navLinks.map((link) =>
+            {NAV_LINKS.map((link) =>
               link.href ? (
-                <Link key={link.label} href={link.href} className="min-h-[44px] border-b border-border py-4 text-lg font-medium">{link.label}</Link>
+                <Link key={link.label} href={link.href} onClick={() => setMobileMenuOpen(false)} className="min-h-[44px] border-b border-border py-4 text-lg font-medium">{link.label}</Link>
               ) : (
-                <a key={link.label} href={`#${link.id}`} onClick={(e) => goToSection(e, link.id!)} className="min-h-[44px] border-b border-border py-4 text-lg font-medium">{link.label}</a>
+                <a key={link.label} href={`/#${link.id}`} data-testid={`link-mobile-${slug(link.label)}`} onClick={(e) => goToSection(e, link.id!)} className="min-h-[44px] border-b border-border py-4 text-lg font-medium">{link.label}</a>
               ),
             )}
-            <Link href="/about" className="min-h-[44px] border-b border-border py-4 text-lg font-medium">About</Link>
-            <BookDemoDialog>
-              <Button data-testid="button-mobile-book-demo" className="mt-7 h-12 w-full rounded-full bg-foreground text-background hover:bg-foreground/90">
-                Book a strategy call <ArrowUpRight className="ml-2 h-4 w-4" />
+            <BookDemoDialog marketingDark={dark}>
+              <Button data-testid="button-mobile-trial" className="mt-7 h-12 w-full rounded-full bg-foreground text-background hover:bg-foreground/90">
+                Start 7-Day Trial <ArrowUpRight className="ml-2 h-4 w-4" aria-hidden />
               </Button>
             </BookDemoDialog>
           </nav>
         </div>
       )}
 
-      <main className="w-full overflow-hidden pb-6 pt-[4.75rem]">{children}</main>
+      <main ref={mainRef} className="w-full pt-[4.75rem]">{children}</main>
 
-      <div className="fixed inset-x-0 bottom-0 z-50 mx-auto flex max-w-md items-center justify-between gap-3 border-t border-zinc-200/80 bg-white/90 p-3 shadow-lg backdrop-blur-md dark:border-zinc-800 dark:bg-zinc-950/90">
-        <div className="flex min-w-0 flex-col">
-          <span className="text-xs font-bold text-zinc-900 dark:text-zinc-100">Start Free</span>
-          <span className="text-[10px] text-zinc-500 dark:text-zinc-400">No credit card needed</span>
-        </div>
-        <BookDemoDialog>
-          <Button data-testid="button-floating-start-free" className="min-h-[44px] max-w-[200px] flex-1 rounded-xl bg-indigo-600 px-4 text-xs font-semibold text-white shadow-md shadow-indigo-200 transition-all duration-150 hover:bg-indigo-700 active:scale-95 dark:shadow-indigo-950/50">
-            Get Started Now <ArrowUpRight className="ml-1.5 h-3.5 w-3.5" />
-          </Button>
-        </BookDemoDialog>
-      </div>
-
-      <footer className="border-t border-border bg-secondary/35" id="about">
+      <footer ref={footerRef} className="border-t border-border bg-secondary/35" id="about">
         <div className="mx-auto max-w-[80rem] px-5 py-16 sm:px-8 lg:px-10 lg:py-20">
           <div className="grid gap-12 md:grid-cols-[1.35fr_0.65fr_0.65fr_0.65fr]">
             <div>
               <BrandLogo className="mb-5 h-10 w-auto max-w-[12rem] object-contain" />
               <p className="max-w-xs text-sm leading-relaxed text-muted-foreground">A hands-on reputation partner for local businesses and the agencies that help them grow.</p>
-              <BookDemoDialog>
+              <BookDemoDialog marketingDark={dark}>
                 <button type="button" className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-foreground underline decoration-primary/50 underline-offset-4 transition-colors hover:text-primary">Talk with our team <ArrowUpRight className="h-4 w-4" /></button>
               </BookDemoDialog>
             </div>
             <FooterColumn title="Explore" links={[
-              { label: "Approach", href: "#approach", anchor: "approach" },
-              { label: "How it works", href: "#how-it-works", anchor: "how-it-works" },
-              { label: "For agencies", href: "#agencies", anchor: "agencies" },
-              { label: "Questions", href: "#faq", anchor: "faq" },
+              { label: "Product", href: "/#features", anchor: "features" },
+              { label: "How it works", href: "/#how-it-works", anchor: "how-it-works" },
+              { label: "For agencies", href: "/#agencies", anchor: "agencies" },
+              { label: "Pricing", href: "/#pricing", anchor: "pricing" },
+              { label: "Questions", href: "/#faq", anchor: "faq" },
             ]} goToSection={goToSection} />
             <FooterColumn title="Resources" links={[
               { label: "Resource library", href: "/resources" },

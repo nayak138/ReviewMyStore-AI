@@ -14,3 +14,9 @@ The existing named hotel demonstration is not customer endorsement evidence. Bus
 **Why:** The landing brief requires genuine evidence, and the supplied demonstration includes a real external review destination. Visual credibility is not permission to claim endorsement or post a review.
 
 **How to apply:** Require approval and sourcing before publishing testimonials/results; label illustrative content and intercept external publishing during tests.
+
+The free guided trial must not be represented as a permanently free product or a public paid price, including machine-readable metadata.
+
+**Why:** Commercial approval is for a free request-led trial followed only by an accepted written custom quote. A generic zero-price software offer tells crawlers a different story from the visible pricing policy.
+
+**How to apply:** Apply the same quote/trial distinction to structured data, social previews, and crawler summaries as to visible pricing copy.

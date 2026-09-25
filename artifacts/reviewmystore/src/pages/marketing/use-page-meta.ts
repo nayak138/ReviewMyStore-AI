@@ -1,7 +1,8 @@
 import { useEffect } from "react";
 import { SITE_URL } from "@/site";
+import { DEFAULT_META } from "./route-meta";
 
-const DEFAULT_TITLE = "5-Star.AI — Your reputation partner";
+const DEFAULT_TITLE = DEFAULT_META.title;
 
 type MetaSelector =
   | { attr: "name"; value: string }

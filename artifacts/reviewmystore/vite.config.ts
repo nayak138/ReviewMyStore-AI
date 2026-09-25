@@ -93,7 +93,7 @@ function buildLlmsTxt(siteUrl: string): string {
   const lines = [
     "# 5-Star.AI",
     "",
-    "> 5-Star.AI helps local businesses collect more Google reviews, improve local search visibility, and manage their online reputation.",
+    "> 5-Star.AI helps customers share genuine experiences with QR codes and editable AI-assisted drafts, and helps businesses manage Google reviews and reply drafts. Guided trial requests require contact details but no account or credit card.",
     "",
     "Use the canonical pages below for product information, setup guidance, and educational content about Google reviews, local SEO, and reputation management.",
   ];
@@ -185,7 +185,12 @@ function injectRouteMeta(
   const blogPost = route.startsWith("/blog/")
     ? blogPosts.find((post) => `/blog/${post.slug}` === route)
     : undefined;
+  // The build shell may already have passed through transformIndexHtml.
+  // Replace route-specific tags rather than accumulating the homepage canonical.
   let out = html
+    .replace(/\s*<link rel="canonical"[^>]*>/g, "")
+    .replace(/\s*<meta property="og:url"[^>]*>/g, "")
+    .replace(/\s*<script type="application\/ld\+json" data-route-schema>[\s\S]*?<\/script>/g, "")
     .replace(/<title>[^<]*<\/title>/, `<title>${title}</title>`)
     .replace(
       /(<meta name="description" content=")[^"]*(")/,
@@ -212,7 +217,7 @@ function injectRouteMeta(
       `$1${imageAlt}$2`,
     );
   const articleJsonLd = blogPost
-    ? buildBlogPostingJsonLd(blogPost, siteUrl)
+    ? buildBlogPostingJsonLd(blogPost, siteUrl).replace('type="application/ld+json"', 'type="application/ld+json" data-route-schema')
     : "";
   const extra = `    <meta property="og:url" content="${url}" />\n    <link rel="canonical" href="${url}" />\n${articleJsonLd}  </head>`;
   out = out.replace("</head>", extra);

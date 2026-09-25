@@ -1,6 +1,6 @@
 # 5-Star.AI landing page and demo — approval draft
 
-**Status:** Planning only. Application code, backend contracts, authentication, data, and deployment are unchanged. Implementation and regression verification below require approval; they have not been performed.
+**Status:** Approved for implementation by the user on 2026-09-25. This document records the approved specification and the original planning baseline; the planning turn itself did not perform implementation or regression verification. Implementation results are recorded separately.
 
 ## 1. Direction
 

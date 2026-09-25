@@ -8,9 +8,9 @@ export interface RouteMeta {
 }
 
 export const DEFAULT_META: RouteMeta = {
-  title: "5-Star.AI — Your reputation partner",
+  title: "5-Star.AI — Google Review & Reputation Management",
   description:
-    "5-Star.AI helps local businesses and agencies turn great customer moments into a stronger Google presence with practical reputation support.",
+    "Help customers share genuine experiences with QR codes and AI-assisted drafts. Manage Google reviews, replies, and business activity. Request a guided 7-day free trial.",
 };
 
 export const ABOUT_META: RouteMeta = {

@@ -1,6 +1,5 @@
-import { useRef, useState } from "react";
+import { useRef, useState, type KeyboardEvent } from "react";
 import {
-  BadgeCheck,
   Check,
   Copy,
   Globe,
@@ -44,7 +43,7 @@ const tones = [
 type DemoLanguage = SupportedLanguage | string;
 const demoHeaderImage = `${import.meta.env.BASE_URL}marina-bay-sands-singapore.jpg`;
 
-export function InteractiveReviewDemo() {
+export function InteractiveReviewDemo({ active = true, onStatusChange }: { active?: boolean; onStatusChange?: (message: string) => void }) {
   const [rating, setRating] = useState<number | null>(null);
   const [selectedHighlights, setSelectedHighlights] = useState<string[]>([]);
   const [tone, setTone] = useState<ReviewTone | null>(null);
@@ -53,12 +52,19 @@ export function InteractiveReviewDemo() {
   const [customerName, setCustomerName] = useState("");
   const [occasion, setOccasion] = useState("");
   const [reviewText, setReviewText] = useState("");
+  const [hasDraft, setHasDraft] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState("");
+  const [status, setStatus] = useState("");
   const [copied, setCopied] = useState(false);
+  const [copyError, setCopyError] = useState("");
   const [shared, setShared] = useState(false);
   const [headerImageFailed, setHeaderImageFailed] = useState(false);
   const demoFooterRef = useRef<HTMLDivElement>(null);
+  const activeRef = useRef(active);
+  activeRef.current = active;
+  const pendingRef = useRef(false);
+  const ratingRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const strings = getReviewPageStrings(language);
   const rtl = isRtlLanguage(language);
 
@@ -71,12 +77,16 @@ export function InteractiveReviewDemo() {
   };
 
   const generateReview = async () => {
-    if (!rating || isGenerating) return;
+    if (!rating || pendingRef.current) return;
 
     const activeElement = document.activeElement;
-    if (activeElement instanceof HTMLElement) activeElement.blur();
+    if (activeRef.current && activeElement instanceof HTMLElement) activeElement.blur();
+    pendingRef.current = true;
     setIsGenerating(true);
     setError("");
+    setCopyError("");
+    setStatus("Generating your draft.");
+    onStatusChange?.("Generating your draft.");
     try {
       const response = await fetch("/api/v1/public/demo-review/generate", {
         method: "POST",
@@ -97,45 +107,86 @@ export function InteractiveReviewDemo() {
       let result: { reviewText?: string; message?: string } = {};
       if (responseText.trim()) {
         try {
-          result = JSON.parse(responseText) as { reviewText?: string; message?: string };
+          const parsed: unknown = JSON.parse(responseText);
+          if (parsed === null || typeof parsed !== "object" || Array.isArray(parsed)) {
+            throw new Error("Invalid review response");
+          }
+          result = parsed as { reviewText?: string; message?: string };
         } catch {
           throw new Error("The review service returned an invalid response. Please try again.");
         }
       }
-      if (!response.ok || !result.reviewText) {
-        throw new Error(result.message || "The review service is temporarily unavailable. Please try again.");
+      if (!response.ok || typeof result.reviewText !== "string" || !result.reviewText.trim()) {
+        throw new Error(typeof result.message === "string" && result.message.trim()
+          ? result.message
+          : "The review service is temporarily unavailable. Please try again.");
       }
       setReviewText(result.reviewText);
-      window.requestAnimationFrame(() => {
+      setHasDraft(true);
+      setStatus("Your editable draft is ready.");
+      onStatusChange?.("Your editable draft is ready. Return to Customer View to review it.");
+      if (activeRef.current) window.requestAnimationFrame(() => {
         window.requestAnimationFrame(() => {
-          demoFooterRef.current?.scrollIntoView({
-            behavior: "smooth",
-            block: "end",
-            inline: "nearest",
-          });
+          if (activeRef.current) {
+            demoFooterRef.current?.scrollIntoView({
+              behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth",
+              block: "end",
+              inline: "nearest",
+            });
+          }
         });
       });
     } catch (generationError) {
-      setError(generationError instanceof Error ? generationError.message : "The review could not be generated.");
+      const message = generationError instanceof Error ? generationError.message : "The review could not be generated.";
+      setError(message);
+      setStatus("");
+      onStatusChange?.(`Draft generation failed: ${message}`);
     } finally {
+      pendingRef.current = false;
       setIsGenerating(false);
     }
   };
 
   const copyReview = async () => {
-    if (!reviewText) return;
+    if (!reviewText.trim()) {
+      setCopyError("Write a draft before copying it.");
+      return false;
+    }
     try {
       await navigator.clipboard.writeText(reviewText);
       setCopied(true);
+      setCopyError("");
+      setStatus("Draft copied to clipboard.");
+      onStatusChange?.("Draft copied to clipboard.");
       window.setTimeout(() => setCopied(false), 1800);
+      return true;
     } catch {
       setCopied(false);
+      setCopyError("Could not copy automatically. Select the draft text above and copy it manually before continuing to Google.");
+      setStatus("");
+      onStatusChange?.("Could not copy automatically. Select and copy your draft manually.");
+      return false;
     }
   };
 
   const copyAndOpenGoogle = async () => {
-    await copyReview();
-    window.location.assign(DEMO_GOOGLE_URL);
+    if (await copyReview()) window.location.assign(DEMO_GOOGLE_URL);
+  };
+
+  const moveRating = (event: KeyboardEvent<HTMLButtonElement>, value: number) => {
+    let next: number;
+    switch (event.key) {
+      case "ArrowRight":
+      case "ArrowUp": next = value === 5 ? 1 : value + 1; break;
+      case "ArrowLeft":
+      case "ArrowDown": next = value === 1 ? 5 : value - 1; break;
+      case "Home": next = 1; break;
+      case "End": next = 5; break;
+      default: return;
+    }
+    event.preventDefault();
+    setRating(next);
+    ratingRefs.current[next - 1]?.focus();
   };
 
   const shareDemo = async () => {
@@ -164,75 +215,50 @@ export function InteractiveReviewDemo() {
   };
 
   return (
-    <section id="review-demo" className="relative overflow-hidden border-b border-zinc-200 bg-slate-50 px-4 py-12 dark:border-zinc-800 dark:bg-slate-950 sm:py-16">
-      <div className="editorial-grid pointer-events-none absolute inset-0 opacity-30 [mask-image:linear-gradient(to_bottom,black,transparent_78%)]" aria-hidden="true" />
-      <div className="pointer-events-none absolute -right-48 top-24 h-[32rem] w-[32rem] rounded-full bg-primary/10 blur-3xl" aria-hidden="true" />
-      <div className="mx-auto w-full max-w-md md:max-w-5xl">
-        <div className="mx-auto mb-6 text-center sm:mb-8">
-          <p className="inline-flex items-center gap-2 rounded-full border border-indigo-200/80 bg-indigo-50 px-6 py-3 text-xl font-extrabold tracking-tight text-indigo-700 shadow-sm dark:border-indigo-900 dark:bg-indigo-950/60 dark:text-indigo-300">Live Customer Preview</p>
-          <h1 className="mx-auto mt-6 max-w-3xl font-display text-4xl font-semibold leading-tight tracking-[-0.04em] text-zinc-950 dark:text-white sm:text-5xl">
-            Turn happy customers into more Google reviews
-          </h1>
+    <section id="review-demo" className="relative min-w-0 border-b border-zinc-200 bg-slate-50 py-8 dark:border-zinc-800 dark:bg-slate-950 sm:px-4 sm:py-12">
+      <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
+        <div className="editorial-grid absolute inset-0 opacity-30 [mask-image:linear-gradient(to_bottom,black,transparent_78%)]" />
+        <div className="absolute -right-48 top-24 h-[32rem] w-[32rem] rounded-full bg-primary/10 blur-3xl" />
+      </div>
+      <div className="relative mx-auto w-full min-w-0 max-w-md md:max-w-5xl">
+        <div className="mx-auto mb-4 text-center sm:mb-6">
+          <p className="text-xs font-bold uppercase tracking-widest text-indigo-700 dark:text-indigo-300">Live Customer Preview</p>
+          <h3 className="mx-auto mt-2 max-w-3xl font-display text-xl font-semibold leading-tight text-zinc-950 dark:text-white sm:text-2xl">
+            Try an editable review draft
+          </h3>
         </div>
 
-        <div className="grid gap-4 rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900 md:grid-cols-2 md:gap-6 md:p-6">
-          <div className="flex items-center justify-between border-b border-zinc-100 pb-2 text-xs font-medium text-zinc-500 dark:border-zinc-800 dark:text-zinc-400 md:col-span-2">
+        <div className="grid min-w-0 gap-4 rounded-2xl border border-zinc-200 bg-white p-2 shadow-sm dark:border-zinc-800 dark:bg-zinc-900 sm:p-4 md:grid-cols-2 md:gap-6 md:p-6">
+          <div className="flex min-w-0 flex-wrap items-center justify-between gap-2 border-b border-zinc-100 pb-2 text-xs font-medium text-zinc-500 dark:border-zinc-800 dark:text-zinc-400 md:col-span-2">
             <span>Interactive review demo</span>
             <span className="inline-flex items-center"><span className="mr-1 inline-block h-2 w-2 animate-pulse rounded-full bg-emerald-500" />Interactive</span>
           </div>
-          <header className="relative min-h-[220px] overflow-hidden rounded-xl bg-[linear-gradient(130deg,#0c1a39_0%,#173c69_44%,#0b142b_100%)] sm:min-h-[260px] md:row-span-2 md:min-h-[440px]">
+          <header className="relative min-w-0 min-h-[220px] rounded-xl bg-[linear-gradient(130deg,#0c1a39_0%,#173c69_44%,#0b142b_100%)] sm:min-h-[260px] md:row-span-2 md:min-h-[440px]">
             {!headerImageFailed && (
               <img
                 src={demoHeaderImage}
                 alt="Exterior of Marina Bay Sands Singapore"
-                className="absolute inset-0 h-full w-full object-cover"
+                className="absolute inset-0 h-full w-full rounded-xl object-cover"
                 fetchPriority="high"
                 onError={() => setHeaderImageFailed(true)}
               />
             )}
-            <div className="absolute inset-0 bg-gradient-to-t from-[#050713]/90 via-[#050713]/25 to-[#050713]/10" />
-            <div className="absolute left-3 top-3 flex items-center gap-2 sm:left-4 sm:top-4">
-              <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-[#081126]/90 px-4 py-2 text-sm font-bold text-white shadow-[0_8px_24px_rgba(0,0,0,0.25)] backdrop-blur-md">
-                <span
-                  className="font-sans text-[20px] font-black leading-none"
-                  style={{
-                    backgroundImage: "conic-gradient(from -45deg, #4285f4 0 25%, #34a853 25% 45%, #fbbc05 45% 65%, #ea4335 65% 85%, #4285f4 85% 100%)",
-                    WebkitBackgroundClip: "text",
-                    WebkitTextFillColor: "transparent",
-                  }}
-                  aria-hidden="true"
-                >
-                  G
-                </span>
-                Google Verified
-              </div>
-            </div>
+            <div className="absolute inset-0 rounded-xl bg-gradient-to-t from-[#050713]/90 via-[#050713]/25 to-[#050713]/10" />
             <div className="absolute right-3 top-3 sm:right-4 sm:top-4">
               <LanguageSelector value={language} onChange={setLanguage} />
             </div>
             <div className="absolute inset-x-4 bottom-4 text-white sm:inset-x-5 sm:bottom-5">
-              <h3 className="font-display text-3xl font-semibold leading-tight">
-                Marina Bay Sands{" "}
-                <span className="inline-flex items-center gap-2 whitespace-nowrap">
-                  Singapore
-                  <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center align-middle sm:h-9 sm:w-9" title="Verified business" aria-label="Verified business">
-                    <BadgeCheck className="h-8 w-8 fill-[#22c875] text-[#075b37] drop-shadow-[0_2px_5px_rgba(34,200,117,0.35)] sm:h-9 sm:w-9" aria-hidden="true" />
-                  </span>
-                </span>
-              </h3>
+              <h3 className="font-display text-2xl font-semibold leading-tight sm:text-3xl">Marina Bay Sands Singapore</h3>
               <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-white/85">
-                <span>5-star hotel</span>
+                <span>Illustrative hotel experience</span>
                 <span className="inline-flex items-center gap-1"><MapPin className="h-3 w-3" aria-hidden="true" />10 Bayfront Avenue, Singapore</span>
-              </div>
-              <div className="mt-2 flex items-center gap-1.5 text-sm font-semibold">
-                <Star className="h-4 w-4 fill-[#fbbc04] text-[#fbbc04]" aria-hidden="true" />
-                4.7 <span className="font-normal text-white/80">(61,738)</span>
               </div>
             </div>
           </header>
+          <p className="min-w-0 text-xs leading-relaxed text-muted-foreground md:col-start-1">Illustrative demo, not a customer endorsement. The Google button opens this business’s real review page. Only submit a review based on your genuine visit.</p>
 
-          <div className="rounded-xl border border-zinc-200 bg-slate-50 p-3 dark:border-zinc-800 dark:bg-zinc-950 sm:p-4 md:col-start-2">
-            <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center">
+          <div className="min-w-0 rounded-xl border border-zinc-200 bg-slate-50 p-3 dark:border-zinc-800 dark:bg-zinc-950 sm:p-4 md:col-start-2">
+            <div className="grid grid-cols-1 gap-2 min-[380px]:grid-cols-2 sm:flex sm:flex-wrap sm:items-center">
               <Button asChild size="sm" className="min-h-[44px] w-full rounded-xl bg-indigo-600 px-3 text-xs font-semibold text-white shadow-md shadow-indigo-200 transition-all duration-150 hover:bg-indigo-700 active:scale-95 sm:w-auto sm:px-5 sm:text-sm">
                 <a href="tel:+6566888888"><Phone className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" />Call</a>
               </Button>
@@ -240,7 +266,7 @@ export function InteractiveReviewDemo() {
                 <IdCard className="mr-1.5 h-4 w-4 text-[#5b83ff]" aria-hidden="true" />Save Contact
               </Button>
             </div>
-            <div className="mt-3 flex w-full items-center justify-center gap-2">
+            <div className="mt-3 flex w-full flex-wrap items-center justify-center gap-2">
               <Button asChild variant="outline" size="sm" aria-label="Directions" title="Directions" className="min-h-[44px] min-w-[44px] rounded-xl border-emerald-200 bg-emerald-50 p-0 text-emerald-700 transition-all duration-150 hover:bg-emerald-100 active:scale-95">
                 <a href="https://www.google.com/maps/dir/?api=1&destination=Marina%20Bay%20Sands%20Singapore" target="_blank" rel="noopener noreferrer"><MapPin className="h-5 w-5 text-[#19b892]" aria-hidden="true" /></a>
               </Button>
@@ -253,16 +279,16 @@ export function InteractiveReviewDemo() {
             </div>
           </div>
 
-          <section className="mx-auto w-full max-w-[760px] space-y-4 px-0 pb-2 pt-1 sm:px-0 md:col-start-2 md:row-start-3" dir={rtl ? "rtl" : "ltr"}>
-            {!reviewText ? (
-              <div className="rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900 sm:p-5">
+          <section className="mx-auto w-full min-w-0 max-w-[760px] space-y-4 px-0 pb-2 pt-1 md:col-start-2" dir={rtl ? "rtl" : "ltr"}>
+             {!hasDraft ? (
+              <div className="rounded-xl border border-zinc-200 bg-white p-3 dark:border-zinc-800 dark:bg-zinc-900 sm:p-5">
                 <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.16em] text-[#2860c8] dark:text-[#82b3ff]">Step 1</p>
-                <div className="flex items-center justify-between gap-4">
-                  <div>
+                  <div className="flex min-w-0 flex-wrap items-center justify-between gap-2">
+                   <div className="min-w-0">
                     <h4 className="font-display text-2xl font-semibold tracking-tight text-foreground">{strings.ratingQuestion}</h4>
-                      <div className="mt-3 flex gap-1" role="radiogroup" aria-label="Rating">
+                       <div className="mt-3 flex w-full min-w-0 justify-between gap-0.5 sm:justify-start sm:gap-1" role="radiogroup" aria-label={strings.ratingQuestion}>
                       {[1, 2, 3, 4, 5].map((value) => (
-                          <button key={value} type="button" aria-label={`${value} star${value === 1 ? "" : "s"}`} aria-pressed={rating === value} onClick={() => setRating(value)} className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg text-2xl transition-all duration-150 hover:scale-110 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500">
+                           <button key={value} ref={(element) => { ratingRefs.current[value - 1] = element; }} type="button" role="radio" aria-label={`${value} star${value === 1 ? "" : "s"}`} aria-checked={rating === value} tabIndex={rating === value || (rating === null && value === 1) ? 0 : -1} onKeyDown={(event) => moveRating(event, value)} onClick={() => setRating(value)} className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg text-2xl transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500">
                           <Star className={cn("h-8 w-8 transition-colors", rating && value <= rating ? "fill-[#fbbc04] text-[#fbbc04]" : "text-[#9bb0d4]")} />
                         </button>
                       ))}
@@ -277,46 +303,57 @@ export function InteractiveReviewDemo() {
                       <p className="mb-3 text-[11px] font-bold uppercase tracking-[0.16em] text-primary">Step 2</p>
                       <h4 className="mb-3 font-display text-2xl font-semibold tracking-tight text-foreground">{strings.highlightsTitle}</h4>
                       <div className="flex flex-wrap gap-2">
-                        {highlights.map((highlight) => (
-                           <button key={highlight} type="button" aria-pressed={selectedHighlights.includes(highlight)} onClick={() => toggleHighlight(highlight)} className={cn("rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-xs font-medium text-zinc-700 transition-all duration-150 hover:border-indigo-500 hover:bg-indigo-50/50 active:scale-95 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200", selectedHighlights.includes(highlight) && "border-indigo-600 bg-indigo-600 text-white hover:bg-indigo-700")}>{highlight}</button>
+                         {highlights.map((highlight) => (
+                            <button key={highlight} type="button" aria-pressed={selectedHighlights.includes(highlight)} onClick={() => toggleHighlight(highlight)} className={cn("min-h-[44px] rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-sm font-medium text-zinc-700 transition-colors duration-150 hover:border-indigo-500 hover:bg-indigo-50/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200", selectedHighlights.includes(highlight) && "border-indigo-600 bg-indigo-600 text-white hover:bg-indigo-700")}>{highlight}</button>
                         ))}
                       </div>
-                      <input value={detail} onChange={(event) => setDetail(event.target.value)} maxLength={60} placeholder={strings.mentionPlaceholder} className="mt-4 w-full rounded-xl border border-input bg-background/70 px-3.5 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" />
+                       <label className="mt-4 block text-sm font-medium text-foreground">{strings.mentionLabel}
+                         <input value={detail} onChange={(event) => setDetail(event.target.value)} maxLength={60} placeholder={strings.mentionPlaceholder} className="mt-2 w-full min-w-0 rounded-xl border border-input bg-background/70 px-3.5 py-2.5 text-base text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" />
+                       </label>
                     </div>
                     <div>
                       <p className="mb-3 text-[11px] font-bold uppercase tracking-[0.16em] text-primary">Step 3</p>
                       <h4 className="mb-3 font-display text-2xl font-semibold tracking-tight text-foreground">{strings.toneTitle}</h4>
                       <div className="grid grid-cols-2 gap-2.5">
-                        {tones.map((option) => <button key={option.value} type="button" aria-pressed={tone === option.value} onClick={() => setTone(option.value)} className={cn("rounded-xl border px-3.5 py-3 text-left text-sm font-medium transition-all", tone === option.value ? "border-primary bg-primary text-primary-foreground shadow-sm" : "border-border bg-background/70 text-foreground hover:border-primary/50 hover:bg-accent")}>{strings[option.key]}</button>)}
+                         {tones.map((option) => <button key={option.value} type="button" aria-pressed={tone === option.value} onClick={() => setTone(option.value)} className={cn("min-h-[44px] min-w-0 rounded-xl border px-2 py-3 text-start text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 sm:px-3.5", tone === option.value ? "border-primary bg-primary text-primary-foreground shadow-sm" : "border-border bg-background/70 text-foreground hover:border-primary/50 hover:bg-accent")}>{strings[option.key]}</button>)}
                       </div>
+                       <p className="mt-2 text-xs text-muted-foreground">{tone ? `${strings.toneTitle}: ${strings[tones.find((option) => option.value === tone)!.key]}` : `${strings.toneTitle}: ${strings.toneWarm}`}</p>
                     </div>
                     <div className="grid gap-3 sm:grid-cols-2">
-                      <input value={customerName} onChange={(event) => setCustomerName(event.target.value)} maxLength={60} placeholder={strings.namePlaceholder} className="w-full rounded-xl border border-input bg-background/70 px-3.5 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" />
-                      <input value={occasion} onChange={(event) => setOccasion(event.target.value)} maxLength={60} placeholder={strings.occasionPlaceholder} className="w-full rounded-xl border border-input bg-background/70 px-3.5 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" />
+                       <label className="min-w-0 text-sm font-medium text-foreground">{strings.namePlaceholder}
+                         <input value={customerName} onChange={(event) => setCustomerName(event.target.value)} maxLength={60} placeholder={strings.namePlaceholder} className="mt-2 w-full min-w-0 rounded-xl border border-input bg-background/70 px-3.5 py-2.5 text-base text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" />
+                       </label>
+                       <label className="min-w-0 text-sm font-medium text-foreground">{strings.occasionPlaceholder}
+                         <input value={occasion} onChange={(event) => setOccasion(event.target.value)} maxLength={60} placeholder={strings.occasionPlaceholder} className="mt-2 w-full min-w-0 rounded-xl border border-input bg-background/70 px-3.5 py-2.5 text-base text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" />
+                       </label>
                     </div>
                   </div>
                 )}
 
                 {error && <p className="mt-5 rounded-xl bg-destructive/10 px-4 py-3 text-sm text-destructive" role="alert">{error}</p>}
-                 <Button className="mt-5 min-h-[44px] w-full rounded-xl bg-indigo-600 text-sm font-semibold text-white shadow-md shadow-indigo-200 transition-all duration-150 hover:bg-indigo-700 active:scale-95 disabled:!opacity-100 disabled:bg-indigo-300" size="lg" disabled={!rating || isGenerating} onClick={() => void generateReview()}>
+                  <Button className="mt-5 h-auto min-h-[44px] w-full min-w-0 whitespace-normal rounded-xl bg-indigo-600 px-3 py-3 text-sm font-semibold text-white shadow-md shadow-indigo-200 transition-colors duration-150 hover:bg-indigo-700 disabled:!opacity-100 disabled:bg-indigo-300" size="lg" disabled={!rating || isGenerating} onClick={() => void generateReview()}>
                   {isGenerating ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />{strings.generatingButton}</> : <><Sparkles className="mr-2 h-4 w-4" />{strings.generateButton}</>}
                 </Button>
-                <p className="mt-3 text-center text-xs text-muted-foreground">You’ll get to read and edit it before anything is posted.</p>
+                 <p className="mt-3 text-center text-xs text-muted-foreground">{!rating ? "Choose a rating to generate a draft. " : ""}You can read and edit your draft. Nothing is posted automatically.</p>
               </div>
             ) : (
                <div className="rounded-xl border border-indigo-200 bg-indigo-50/40 p-4 text-zinc-700 dark:border-indigo-900 dark:bg-indigo-950/30 dark:text-zinc-200 sm:p-5">
                 <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.16em] text-primary">Ready when you are</p>
                 <h4 className="font-display text-2xl font-semibold tracking-tight text-foreground">Your review is ready.</h4>
-                 <textarea value={reviewText} onChange={(event) => setReviewText(event.target.value)} rows={6} aria-label="Generated Google review" className="mt-5 w-full resize-y rounded-xl border border-indigo-200 bg-white px-4 py-3 text-sm leading-relaxed text-zinc-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 dark:border-indigo-900 dark:bg-zinc-900 dark:text-zinc-200" />
-                <div className="mt-6">
-                   <Button className="min-h-[44px] w-full rounded-xl bg-indigo-600 text-sm font-semibold text-white shadow-md shadow-indigo-200 transition-all duration-150 hover:bg-indigo-700 active:scale-95" onClick={() => void copyAndOpenGoogle()}>
+                  <textarea value={reviewText} onChange={(event) => { setReviewText(event.target.value); setCopied(false); }} rows={6} aria-label="Generated Google review" className="mt-5 w-full min-w-0 resize-y rounded-xl border border-indigo-200 bg-white px-4 py-3 text-base leading-relaxed text-zinc-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 dark:border-indigo-900 dark:bg-zinc-900 dark:text-zinc-200" />
+                 <p className="mt-3 text-sm text-muted-foreground">This draft is yours to edit or discard. Nothing is posted automatically. Google may ask you to sign in before you publish.</p>
+                 {copyError && <p className="mt-3 text-sm text-destructive" role="alert">{copyError}</p>}
+                 <div className="mt-6 grid gap-2 sm:grid-cols-2">
+                   <Button variant="outline" className="min-h-[44px] w-full rounded-xl" disabled={!reviewText.trim()} onClick={() => void copyReview()}><Copy className="mr-2 h-4 w-4" aria-hidden="true" />{copied ? strings.copiedLabel : "Copy draft"}</Button>
+                    <Button className="h-auto min-h-[44px] w-full min-w-0 whitespace-normal rounded-xl bg-indigo-600 px-3 py-3 text-sm font-semibold text-white shadow-md shadow-indigo-200 transition-colors duration-150 hover:bg-indigo-700" disabled={!reviewText.trim()} onClick={() => void copyAndOpenGoogle()}>
                     {copied ? <Check className="mr-2 h-4 w-4" aria-hidden="true" /> : <Copy className="mr-2 h-4 w-4" aria-hidden="true" />}
-                    {copied ? strings.copiedLabel : "Copy and Review on Google"}
+                     Copy and continue to Google
                   </Button>
                 </div>
-                <Button variant="ghost" className="mt-3 h-10 w-full text-sm text-muted-foreground" onClick={() => setReviewText("")}>{strings.regenerateButton}</Button>
+                 <Button variant="ghost" className="mt-3 h-10 w-full text-sm text-muted-foreground" onClick={() => { setReviewText(""); setHasDraft(false); setCopied(false); setCopyError(""); setStatus(""); }}>{strings.regenerateButton}</Button>
               </div>
             )}
+             <p className="sr-only" role="status" aria-live="polite">{status}</p>
           </section>
           <div ref={demoFooterRef} className="scroll-mb-4 flex items-center justify-center gap-3 border-t border-[#d8e2fb] bg-[#eef3ff] py-5 text-xs text-muted-foreground dark:border-white/10 dark:bg-[#0a1430] md:col-span-2">
             <span>Powered by</span>
