@@ -44,3 +44,4 @@
 - [Replit feedback widget](replit-feedback-widget.md) — the published-app feedback panel and badge are platform-injected, not application source.
 - [Clerk branding replacement](clerk-branding-replacement.md) — replace the logo directly; the Remove flow can report missing organization permission even when dashboard access is authorized.
 - [Notion public-page publishing](notion-public-page-publishing.md) — the API can create/edit pages but cannot toggle Notion’s “Publish to web” setting.
+- [Landing marketing claims](landing-marketing-claims.md) — “No Sign Up” means no account to request the guided trial; demonstration businesses are not endorsement evidence.

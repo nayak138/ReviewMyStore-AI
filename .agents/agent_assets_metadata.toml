@@ -1,0 +1,16 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "rfpaR1J3UISQdp1sg4ILl"
+uri = "file://planning/landing-polish/approval-plan.md"
+type = "text"
+title = "5-Star.AI landing polish — approval draft"
+description = "Planning-only specification with the requested page order, verified product capabilities, preserved demo flow, trial wording, and implementation checks."
+logical_id = "9e15fb02-925e-43e4-af62-98068925c04f"
+content_hash = "sha256:f3fb5ab69fd9bb44fd8344d4cc56e2a631d7fe58a06bedea097d5acb85783f5a"
+size = 25200
+mtime_ms = 1790299250084
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:a7771e41-c768-431f-a46b-aa9b35b1887b/9e15fb02-925e-43e4-af62-98068925c04f/44024bd5-a8e0-4059-bfdf-95356284024f"
+storage_version_token = "1790299301067917"
+content_type = "text/markdown"
