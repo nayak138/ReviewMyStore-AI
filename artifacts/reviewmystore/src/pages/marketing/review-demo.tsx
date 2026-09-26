@@ -330,7 +330,7 @@ export function InteractiveReviewDemo({ active = true, onStatusChange }: { activ
                       <p className="mb-3 text-[11px] font-bold uppercase tracking-[0.16em] text-primary">Step 3</p>
                       <h4 className="mb-3 font-display text-2xl font-semibold tracking-tight text-foreground">{strings.toneTitle}</h4>
                       <div className="grid grid-cols-2 gap-2.5">
-                         {tones.map((option) => <button key={option.value} type="button" aria-pressed={tone === option.value} onClick={() => setTone(option.value)} className="min-h-[44px] min-w-0 rounded-xl border px-2 py-3 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 sm:px-3.5 border-border text-foreground hover:border-primary/50 hover:bg-accent bg-ring text-center">{strings[option.key]}</button>)}
+                         {tones.map((option) => <button key={option.value} type="button" aria-pressed={tone === option.value} onClick={() => setTone(option.value)} className="min-h-[44px] min-w-0 rounded-xl border px-2 py-3 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 sm:px-3.5 border-border text-foreground hover:border-primary/50 hover:bg-accent text-center bg-[#71f577]">{strings[option.key]}</button>)}
                       </div>
                        <p className="mt-2 text-xs text-muted-foreground">{tone ? `${strings.toneTitle}: ${strings[tones.find((option) => option.value === tone)!.key]}` : `${strings.toneTitle}: ${strings.toneWarm}`}</p>
                     </div>
