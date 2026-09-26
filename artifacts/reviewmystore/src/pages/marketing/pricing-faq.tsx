@@ -4,9 +4,9 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { TrialCta, USAGE_GUIDE_URL } from "./hero";
 
 const TRIAL_DAYS = [
-  { day: "Day 1", title: "Business setup", body: "We set up your business and its Google review destination together." },
-  { day: "Day 3", title: "QR, link or campaign rollout", body: "Your first campaign goes live at the counter, on invoices or by message." },
-  { day: "Day 7", title: "Review activity, agree next steps", body: "We look at what happened and decide together whether to continue." },
+  { day: "Day 1", title: "Set up and start inviting customers", body: "Add your business and Google review destination, then launch a QR code, link or campaign so customers can start leaving genuine reviews right away." },
+  { day: "Day 3", title: "Keep your campaigns going", body: "Share your QR code, link or campaign at the counter, on invoices or by message. Use the platform features you need throughout your free trial." },
+  { day: "Day 7", title: "Review activity, choose next steps", body: "Review how the platform worked for your business and decide whether to continue. There is no automatic charge." },
 ];
 
 /** Section 11. */
@@ -15,7 +15,7 @@ export function TrialJourney() {
     <section id="trial" aria-labelledby="trial-heading" className="py-20 sm:py-24" data-testid="section-trial">
       <div className="mx-auto max-w-[80rem] px-5 sm:px-8 lg:px-10">
         <p className="mk-eyebrow">Guided trial</p>
-        <h2 id="trial-heading" className="mt-3 max-w-2xl font-display text-3xl font-semibold tracking-[-0.04em] text-balance sm:text-5xl">Seven days to experience 5-Star.AI.</h2>
+        <h2 id="trial-heading" className="mt-3 max-w-2xl font-display text-3xl font-semibold tracking-[-0.04em] text-balance sm:text-5xl">Seven free days to put 5-Star.AI to work.</h2>
         <ol className="relative mt-12 grid gap-4 md:grid-cols-3">
           <span className="mk-hairline absolute left-0 right-0 top-[1.1rem] hidden md:block" aria-hidden />
           {TRIAL_DAYS.map((d) => (
@@ -26,7 +26,7 @@ export function TrialJourney() {
             </li>
           ))}
         </ol>
-        <p className="mt-10 max-w-2xl text-sm text-muted-foreground">The trial is guided by our team, not automatically provisioned, and it is not a promise of review volume.</p>
+        <p className="mt-10 max-w-2xl text-sm text-muted-foreground">Use 5-Star.AI platform features free for seven days, with review invitations available from Day 1. Our team can help with setup. Review volume depends on customer participation.</p>
       </div>
     </section>
   );
@@ -95,7 +95,7 @@ export function TestimonialsSection() {
 
 export const FAQS = [
   { q: "What is 5-Star.AI?", a: "A review and reputation workflow for local businesses, agencies, and multiple locations: QR codes and links, customer-assisted drafts, a review inbox, reply drafts, and reporting." },
-  { q: "How does the seven-day trial work?", a: "Request a guided trial, then arrange business setup, a first QR code, link or campaign, and a review of activity with the team. Submitting a request does not automatically provision access." },
+  { q: "How does the seven-day trial work?", a: "Once your guided trial access is activated, use 5-Star.AI platform features free for seven days and start inviting customers to leave genuine reviews from Day 1. Our team can help set up your business and Google review destination. Review volume depends on customer participation." },
   { q: "Do I need a credit card or an account?", a: "Neither is required to request the guided trial. The form collects contact details so the team can follow up. Google may separately require sign-in when a customer publishes a review." },
   { q: "Can customers edit or discard the AI draft?", a: "Yes. The draft is a suggestion based on their experience; customers control the final words and whether to continue to Google. Nothing posts automatically." },
   { q: "Do customers need an app? Can they use QR or a direct link?", a: "QR codes and shareable links open in their normal browser. No app installation is required." },
