@@ -1,0 +1,174 @@
+/*
+ * Homepage-only dark environment. Scoped to .marketing-dark so the
+ * authenticated app, saved theme preference and global tokens are untouched.
+ * The wrapper also carries `.dark`, so Tailwind dark: variants apply inside.
+ */
+.marketing-dark {
+  --background: 228 44% 6%;
+  --foreground: 222 30% 94%;
+  --card: 227 38% 9.5%;
+  --card-foreground: 222 30% 94%;
+  --card-border: 226 26% 17%;
+  --popover: 227 38% 10%;
+  --popover-foreground: 222 30% 94%;
+  --popover-border: 226 26% 19%;
+  --primary: 222 92% 70%;
+  --primary-foreground: 228 44% 7%;
+  --secondary: 226 30% 13%;
+  --secondary-foreground: 222 30% 94%;
+  --muted: 226 28% 13%;
+  --muted-foreground: 223 15% 67%;
+  --accent: 258 72% 74%;
+  --accent-foreground: 228 44% 7%;
+  --border: 226 26% 17%;
+  --input: 226 22% 24%;
+  --ring: 222 92% 70%;
+  --mk-violet: 258 72% 74%;
+  --mk-header-h: 4.75rem;
+
+  background-color: hsl(var(--background));
+  background-image:
+    radial-gradient(60rem 36rem at 85% -8%, hsl(var(--primary) / 0.13), transparent 70%),
+    radial-gradient(40rem 30rem at -5% 22%, hsl(var(--mk-violet) / 0.09), transparent 70%);
+  background-repeat: no-repeat;
+  color: hsl(var(--foreground));
+  color-scheme: dark;
+}
+
+.marketing-dark ::selection {
+  background: hsl(var(--primary) / 0.3);
+}
+
+/* Header-aware anchors for native hash jumps and assistive tech. */
+.marketing-dark section[id],
+.marketing-dark [data-section] {
+  scroll-margin-top: calc(var(--mk-header-h) + 1rem);
+}
+
+.mk-eyebrow {
+  color: hsl(var(--primary));
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+.mk-card {
+  background: linear-gradient(160deg, hsl(var(--card)) 0%, hsl(var(--background)) 130%);
+  border: 1px solid hsl(var(--border));
+  border-radius: 1.25rem;
+  transition:
+    border-color 220ms ease,
+    background-color 220ms ease,
+    transform 220ms cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+.mk-card-hover:hover {
+  border-color: hsl(var(--primary) / 0.45);
+  transform: translateY(-2px);
+}
+
+.mk-hairline {
+  background: linear-gradient(90deg, transparent, hsl(var(--primary) / 0.5), hsl(var(--mk-violet) / 0.5), transparent);
+  height: 1px;
+}
+
+.mk-grid-bg {
+  background-image:
+    linear-gradient(to right, hsl(var(--foreground) / 0.04) 1px, transparent 1px),
+    linear-gradient(to bottom, hsl(var(--foreground) / 0.04) 1px, transparent 1px);
+  background-size: 4rem 4rem;
+  mask-image: radial-gradient(ellipse at 50% 0%, black 20%, transparent 72%);
+}
+
+/* View switch: a single sliding indicator behind two tabs. */
+.mk-switch {
+  position: relative;
+  display: inline-grid;
+  grid-template-columns: 1fr 1fr;
+  padding: 0.25rem;
+  border-radius: 999px;
+  border: 1px solid hsl(var(--border));
+  background: hsl(var(--secondary) / 0.7);
+  max-width: 100%;
+}
+
+.mk-switch::before {
+  content: "";
+  position: absolute;
+  inset: 0.25rem auto 0.25rem 0.25rem;
+  width: calc(50% - 0.25rem);
+  border-radius: 999px;
+  background: hsl(var(--foreground));
+  transition: transform 260ms cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+.mk-switch[data-view="business"]::before {
+  transform: translateX(100%);
+}
+
+.mk-switch [role="tab"] {
+  position: relative;
+  z-index: 1;
+  min-height: 44px;
+  min-width: 0;
+  padding: 0 1rem;
+  border-radius: 999px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: hsl(var(--foreground) / 0.7);
+  transition: color 200ms ease;
+  white-space: nowrap;
+}
+
+.mk-switch [role="tab"][aria-selected="true"] {
+  color: hsl(var(--background));
+}
+
+.mk-switch [role="tab"]:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 3px;
+}
+
+.mk-fade-in {
+  animation: mk-fade 360ms ease both;
+}
+
+@keyframes mk-fade {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.mk-pulse-dot {
+  animation: mk-pulse 2.4s ease-in-out infinite;
+}
+
+@keyframes mk-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .marketing-dark *,
+  .marketing-dark *::before,
+  .marketing-dark *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+  .mk-card-hover:hover {
+    transform: none;
+  }
+}

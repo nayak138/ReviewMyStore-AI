@@ -1,0 +1,76 @@
+@import url("https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,600;9..144,700&display=swap");
+ .landing-graphics-scope {
+  --app-font-sans: "DM Sans", sans-serif;
+  --app-font-display: "Fraunces", serif;
+  --font-sans: var(--app-font-sans);
+  --radius: 0.7rem;
+
+  /* A warm editorial canvas with ink, clay and an electric blue signature. */
+  --background: 39 38% 96%;
+  --foreground: 222 35% 15%;
+  --card: 40 45% 99%;
+  --card-foreground: 222 35% 15%;
+  --card-border: 38 22% 85%;
+  --popover: 40 45% 99%;
+  --popover-foreground: 222 35% 15%;
+  --popover-border: 38 22% 85%;
+  --primary: 221 78% 52%;
+  --primary-foreground: 40 45% 99%;
+  --secondary: 38 29% 90%;
+  --secondary-foreground: 222 35% 15%;
+  --muted: 38 28% 91%;
+  --muted-foreground: 222 12% 47%;
+  --accent: 14 67% 62%;
+  --accent-foreground: 222 35% 15%;
+  --destructive: 5 67% 47%;
+  --destructive-foreground: 40 45% 99%;
+  --success: 157 36% 35%;
+  --success-foreground: 40 45% 99%;
+  --warning: 37 81% 48%;
+  --warning-foreground: 222 35% 15%;
+  --border: 38 22% 85%;
+  --input: 38 18% 77%;
+  --ring: 221 78% 52%;
+
+  --google-blue: 221 78% 52%;
+  --google-red: 5 75% 56%;
+  --google-yellow: 39 93% 51%;
+  --google-green: 157 48% 43%;
+}
+
+ .landing-graphics-scope.dark {
+  --background: 222 31% 11%;
+  --foreground: 39 38% 95%;
+  --card: 222 28% 15%;
+  --card-foreground: 39 38% 95%;
+  --card-border: 222 18% 27%;
+  --popover: 222 28% 15%;
+  --popover-foreground: 39 38% 95%;
+  --popover-border: 222 18% 27%;
+  --primary: 216 86% 68%;
+  --primary-foreground: 222 31% 11%;
+  --secondary: 222 21% 21%;
+  --secondary-foreground: 39 38% 95%;
+  --muted: 222 21% 21%;
+  --muted-foreground: 39 13% 70%;
+  --accent: 14 43% 33%;
+  --accent-foreground: 39 86% 88%;
+  --destructive: 5 70% 63%;
+  --destructive-foreground: 222 31% 11%;
+  --success: 157 36% 53%;
+  --success-foreground: 222 31% 11%;
+  --warning: 37 81% 61%;
+  --warning-foreground: 222 31% 11%;
+  --border: 222 18% 27%;
+  --input: 222 18% 33%;
+  --ring: 216 86% 68%;
+
+  --google-blue: 216 86% 68%;
+  --google-red: 5 75% 64%;
+  --google-yellow: 39 93% 60%;
+  --google-green: 157 48% 56%;
+}
+
+
+.landing-graphics-scope .font-display {font-family:var(--app-font-display)}
+.landing-graphics-scope .editorial-grid {background-image:linear-gradient(to right,hsl(var(--foreground)/0.055) 1px,transparent 1px),linear-gradient(to bottom,hsl(var(--foreground)/0.055) 1px,transparent 1px);background-size:4rem 4rem}
