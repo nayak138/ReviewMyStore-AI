@@ -33,11 +33,11 @@ export function TrialCta({ testId, placement }: { testId: string; placement: Tri
 export function HowItWorksLink({ testId }: { testId: string }) {
   return (
     <a
-      href="#how-it-works"
+      href="#review-demo"
       data-testid={testId}
       onClick={(e) => {
         e.preventDefault();
-        scrollToSection("how-it-works");
+        scrollToSection("review-demo");
       }}
       className="inline-flex h-12 items-center rounded-full border border-border px-6 text-[15px] font-semibold text-foreground transition-colors hover:border-primary/50 hover:bg-secondary/60"
     >

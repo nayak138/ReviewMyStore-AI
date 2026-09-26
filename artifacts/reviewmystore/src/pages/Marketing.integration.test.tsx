@@ -80,6 +80,19 @@ describe("Marketing with the real live demo", () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
+  it("See How It Works links scroll directly to the interactive demo", () => {
+    render(<Marketing />);
+    const links = screen.getAllByRole("link", { name: "See How It Works" });
+
+    expect(links).toHaveLength(2);
+    for (const link of links) {
+      expect(link).toHaveAttribute("href", "#review-demo");
+      fireEvent.click(link);
+      expect(window.location.hash).toBe("#review-demo");
+      expect(window.scrollTo).toHaveBeenCalled();
+    }
+  });
+
   it("pending generation resolves while in Business View without scroll/focus theft, then the draft is retained and editable", async () => {
     render(<Marketing />);
     fireEvent.click(within(customerPanel()).getByRole("radio", { name: "4 stars" }));
