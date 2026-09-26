@@ -9,6 +9,8 @@ import { JSDOM } from "jsdom";
 const root = fileURLToPath(new URL("../dist/public/", import.meta.url));
 // Leaves roughly 30% headroom over the current 153.45 kB gzip baseline.
 const maxHomepageEntryGzipBytes = 200 * 1024;
+// Leaves about 37% headroom over the current 29.21 KiB gzip stylesheet baseline.
+const maxHomepageStylesheetGzipBytes = 40 * 1024;
 async function htmlFiles(directory) {
   const entries = await readdir(directory, { withFileTypes: true });
   const nested = await Promise.all(entries.map(async (entry) => {
@@ -27,22 +29,23 @@ const homepage = new JSDOM(homepageHtml).window.document;
 const entryScripts = homepage.querySelectorAll('script[type="module"][src]');
 assert.equal(entryScripts.length, 1, "Homepage must reference exactly one module entry script");
 
-// Measure only the entry referenced by the homepage, not deferred route/form chunks.
+// Resolve only assets referenced by the homepage, not deferred route/form chunks.
 const buildOrigin = "https://marketing-build.invalid/";
 const entryUrl = new URL(entryScripts[0].getAttribute("src"), buildOrigin);
 const configuredBase = new URL(process.env.BASE_PATH || "/", buildOrigin);
-let entryAssetPath = decodeURIComponent(entryUrl.pathname);
-if (configuredBase.pathname !== "/" && entryAssetPath.startsWith(configuredBase.pathname)) {
-  entryAssetPath = entryAssetPath.slice(configuredBase.pathname.length);
+function homepageAssetPath(reference, description) {
+  let assetPathname = decodeURIComponent(new URL(reference, buildOrigin).pathname);
+  if (configuredBase.pathname !== "/" && assetPathname.startsWith(configuredBase.pathname)) {
+    assetPathname = assetPathname.slice(configuredBase.pathname.length);
+  }
+  const assetPath = path.resolve(root, `.${path.sep}${assetPathname.replace(/^\/+/, "")}`);
+  assert(
+    assetPath.startsWith(`${path.resolve(root)}${path.sep}`),
+    `Homepage ${description} must resolve to an asset inside dist/public`,
+  );
+  return assetPath;
 }
-const entryPath = path.resolve(
-  root,
-  `.${path.sep}${entryAssetPath.replace(/^\/+/, "")}`,
-);
-assert(
-  entryPath.startsWith(`${path.resolve(root)}${path.sep}`),
-  "Homepage entry script must resolve to an asset inside dist/public",
-);
+const entryPath = homepageAssetPath(entryScripts[0].getAttribute("src"), "entry script");
 const entryBytes = await readFile(entryPath);
 const entryGzipBytes = gzipSync(entryBytes).byteLength;
 assert(
@@ -51,6 +54,23 @@ assert(
 );
 console.log(
   `Homepage entry script: ${(entryBytes.byteLength / 1000).toFixed(2)} kB raw, ${(entryGzipBytes / 1024).toFixed(2)} KiB gzip (200 KiB budget).`,
+);
+
+const homepageStylesheets = homepage.querySelectorAll('link[rel="stylesheet"][href]');
+assert(homepageStylesheets.length > 0, "Homepage must reference at least one stylesheet");
+const stylesheetSizes = await Promise.all(Array.from(homepageStylesheets, async (stylesheet) => {
+  const stylesheetPath = homepageAssetPath(stylesheet.getAttribute("href"), "stylesheet");
+  const bytes = await readFile(stylesheetPath);
+  return { rawBytes: bytes.byteLength, gzipBytes: gzipSync(bytes).byteLength };
+}));
+const stylesheetRawBytes = stylesheetSizes.reduce((total, size) => total + size.rawBytes, 0);
+const stylesheetGzipBytes = stylesheetSizes.reduce((total, size) => total + size.gzipBytes, 0);
+assert(
+  stylesheetGzipBytes <= maxHomepageStylesheetGzipBytes,
+  `Homepage stylesheets are ${(stylesheetGzipBytes / 1024).toFixed(2)} KiB gzip; budget is ${Math.round(maxHomepageStylesheetGzipBytes / 1024)} KiB`,
+);
+console.log(
+  `Homepage stylesheets: ${(stylesheetRawBytes / 1000).toFixed(2)} kB raw, ${(stylesheetGzipBytes / 1024).toFixed(2)} KiB gzip (40 KiB budget).`,
 );
 
 const titles = new Set();
