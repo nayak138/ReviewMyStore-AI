@@ -74,7 +74,7 @@ console.log(
 );
 
 const titles = new Set();
-const sections = ["top", "experience", "proof", "approach", "features", "how-it-works", "walkthrough", "comparison", "tools", "agencies", "trial", "pricing", "stories", "faq", "start"];
+const sections = ["top", "product-preview", "demo-generator", "how-it-works", "features", "pricing", "trial-request", "faq", "resources"];
 
 for (const file of files) {
   const html = await readFile(file, "utf8");
@@ -106,18 +106,18 @@ for (const file of files) {
   }
   if (route === "/") {
     assert.equal(document.title, "5-Star.AI — Google Review & Reputation Management");
-    assert.equal(content.querySelector("h1").textContent, "Your reputation deserves a system.");
+    assert(content.querySelector("h1").textContent.includes("Reviews and Replies."), "New homepage headline");
     let previous = -1;
     for (const id of sections) {
       const position = html.indexOf(`id="${id}"`);
       assert(position > previous, `Homepage section order: ${id}`);
       previous = position;
     }
-    assert.equal(content.querySelectorAll("#review-demo").length, 1, "One mounted customer demo");
+    assert.equal(content.querySelectorAll("#demo-generator").length, 1, "One illustrative customer demo");
     assert(content.textContent.includes("No Sign Up"));
-    assert(content.textContent.includes("Sample data — not customer results"));
-    assert(content.textContent.includes("written custom quote"));
-    assert(content.querySelector(".marketing-dark.dark"), "Scoped dark homepage in static HTML");
+    assert(content.textContent.includes("Illustrative"));
+    assert(content.textContent.includes("written quote"));
+    assert(content.querySelector(".repo-landing"), "Scoped dark homepage in static HTML");
   } else {
     assert(!content.querySelector(".marketing-dark"), `${route}: no forced homepage dark scope`);
   }

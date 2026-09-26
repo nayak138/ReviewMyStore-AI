@@ -1,0 +1,66 @@
+@import url("https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600;6..72,700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap");
+
+.repo-landing {
+  --repo-bg: #070a13;
+  --repo-deep: #05070e;
+  --repo-panel: #0d1322;
+  --repo-panel-2: #11182a;
+  --repo-line: #1e293b;
+  --repo-blue: #1a73e8;
+  --repo-blue-hover: #1557b0;
+  --repo-ink: #f3efe8;
+  --repo-muted: #cbd5e1;
+  min-height: 100dvh;
+  background: var(--repo-bg);
+  color: var(--repo-ink);
+  font-family: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+  isolation: isolate;
+}
+
+.repo-landing .repo-serif {
+  font-family: "Newsreader", Georgia, serif;
+}
+
+.repo-landing .repo-scrollbar::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.repo-landing .repo-scrollbar::-webkit-scrollbar-track {
+  background: #0a0f1d;
+}
+
+.repo-landing .repo-scrollbar::-webkit-scrollbar-thumb {
+  background: #1e293b;
+  border-radius: 4px;
+}
+
+.repo-landing .repo-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #334155;
+}
+
+.repo-landing button,
+.repo-landing a,
+.repo-landing input,
+.repo-landing textarea,
+.repo-landing select {
+  -webkit-tap-highlight-color: transparent;
+}
+
+.repo-landing button:focus-visible,
+.repo-landing a:focus-visible,
+.repo-landing input:focus-visible,
+.repo-landing textarea:focus-visible,
+.repo-landing select:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+@keyframes repo-float-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.repo-landing .repo-enter {
+  animation: repo-float-in 700ms ease-out both;
+}

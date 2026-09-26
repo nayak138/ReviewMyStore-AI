@@ -1,0 +1,1 @@
+export type PolicyContent = "about" | "resources" | null;

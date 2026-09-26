@@ -48,7 +48,12 @@ function setCanonical(href: string): () => void {
  * @param path optional route path (e.g. "/blog/my-post") used for the
  *   canonical link and og:url; when omitted those tags are left untouched.
  */
-export function usePageMeta(title: string, description: string, path?: string) {
+export function usePageMeta(
+  title: string,
+  description: string,
+  path?: string,
+  robots?: string,
+) {
   useEffect(() => {
     document.title = title;
 
@@ -65,10 +70,13 @@ export function usePageMeta(title: string, description: string, path?: string) {
       restores.push(setMeta({ attr: "property", value: "og:url" }, url));
       restores.push(setCanonical(url));
     }
+    if (robots) {
+      restores.push(setMeta({ attr: "name", value: "robots" }, robots));
+    }
 
     return () => {
       document.title = DEFAULT_TITLE;
       for (const restore of restores) restore();
     };
-  }, [title, description, path]);
+  }, [title, description, path, robots]);
 }
