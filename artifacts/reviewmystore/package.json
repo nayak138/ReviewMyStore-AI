@@ -9,6 +9,7 @@
     "serve": "vite preview --config vite.config.ts --host 0.0.0.0",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "verify:marketing": "node scripts/verify-marketing-build.mjs",
+    "test:marketing:slow-network": "pnpm run build && node scripts/marketing-slow-network-smoke.mjs",
     "test": "vitest run",
     "test:browser": "vitest run --config vitest.browser.config.ts"
   },
