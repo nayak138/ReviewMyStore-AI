@@ -1,4 +1,4 @@
-import { ArrowUpRight, FileText, Quote } from "lucide-react";
+import { ArrowRight, ArrowUpRight, FileText } from "lucide-react";
 import { Link } from "wouter";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { TrialCta, USAGE_GUIDE_URL } from "./hero";
@@ -68,17 +68,26 @@ export function PricingSection() {
 /** Section 13 — content-ready, no invented quotes, names or ratings. */
 export function TestimonialsSection() {
   return (
-    <section id="stories" aria-labelledby="stories-heading" className="py-20 sm:py-24" data-testid="section-stories">
-      <div className="mx-auto max-w-[80rem] px-5 sm:px-8 lg:px-10">
-        <div className="mk-card grid gap-6 p-6 sm:p-10 md:grid-cols-[auto_1fr]">
-          <Quote className="h-8 w-8 text-primary/70" aria-hidden />
-          <div>
-            <h2 id="stories-heading" className="font-display text-3xl font-semibold tracking-[-0.04em] sm:text-4xl">Customer stories, with permission.</h2>
-            <p className="mt-4 max-w-2xl leading-relaxed text-muted-foreground">
-              We only publish customer stories with permission. Until approved stories are available, explore the live demo and product guides to see how the workflow works.
-            </p>
-          </div>
+    <section id="stories" aria-labelledby="stories-heading" className="vr-chapter vr-feedback" data-testid="section-stories">
+      <div className="vr-section-wrap">
+        <p className="mk-eyebrow">What the flow can sound like</p>
+        <h2 id="stories-heading" className="vr-section-title font-display">Real voices are the point.</h2>
+        <p className="vr-body vr-feedback-intro">
+          These fictional examples illustrate the kind of specific, human feedback a customer might write. They are not customer testimonials or published reviews. We only publish customer stories with permission.
+        </p>
+        <div className="vr-feedback-grid">
+          <article className="vr-feedback-card">
+            <small>Illustrative feedback / fictional example</small>
+            <p>“The team remembered we were celebrating, and the view from our room made the whole weekend feel special. I’d come back for that kind of care.”</p>
+            <footer>Example of a customer-owned review draft · Not a testimonial</footer>
+          </article>
+          <article className="vr-feedback-card">
+            <small>Illustrative feedback / fictional example</small>
+            <p>“We had to wait a little longer than expected, but the staff checked in with us and made sure everything was right by the end.”</p>
+            <footer>Example of balanced, honest feedback · Not a testimonial</footer>
+          </article>
         </div>
+        <a href="#experience" className="vr-feedback-link">Try the live preview <ArrowRight className="h-4 w-4" aria-hidden="true" /></a>
       </div>
     </section>
   );

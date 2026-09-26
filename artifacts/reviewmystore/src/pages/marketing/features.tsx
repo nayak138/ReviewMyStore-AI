@@ -1,5 +1,5 @@
 import { useRef, useState, type KeyboardEvent } from "react";
-import { BarChart3, Building2, Check, Inbox, MessageSquareReply, Minus, QrCode, Sparkles } from "lucide-react";
+import { BarChart3, Building2, Check, ClipboardEdit, Inbox, MessageSquareReply, MessageSquareText, Minus, QrCode, ScanLine, Sparkles, WandSparkles } from "lucide-react";
 import { SAMPLE_BUSINESSES, SAMPLE_DATA_LABEL } from "./business-fixtures";
 import { HowItWorksLink, ReassuranceGroup, TrialCta } from "./hero";
 
@@ -16,12 +16,20 @@ function SectionHead({ eyebrow, title, id, children }: { eyebrow: string; title:
 /** Section 4 — retains the #approach deep link. */
 export function WhyBusinessesLoveUs() {
   return (
-    <section id="approach" aria-labelledby="approach-heading" className="py-20 sm:py-24" data-testid="section-approach">
-      <div className="mx-auto grid max-w-[80rem] gap-8 px-5 sm:px-8 lg:grid-cols-2 lg:px-10">
-        <SectionHead eyebrow="The problem" title="Review requests are inconsistent." id="approach-heading" />
-        <p className="self-end text-lg leading-relaxed text-muted-foreground">
-          Asking relies on someone remembering at the right moment. Customers who do agree start from a blank page. And the team has no repeatable way to follow up, read what comes back, and reply well.
-        </p>
+    <section id="approach" aria-labelledby="approach-heading" className="vr-chapter vr-approach" data-testid="section-approach">
+      <div className="vr-section-wrap vr-split">
+        <div>
+          <p className="mk-eyebrow">The problem</p>
+          <h2 id="approach-heading" className="vr-section-title font-display">Review requests are inconsistent.</h2>
+          <p className="vr-body">
+            Asking relies on someone remembering at the right moment. Customers who do agree start from a blank page. And the team has no repeatable way to follow up, read what comes back, and reply well.
+          </p>
+        </div>
+        <div className="vr-friction" aria-label="The three gaps in a typical review request">
+          <div className="vr-friction-row"><span className="vr-friction-mark">01</span><span>The moment passes before anyone asks.</span></div>
+          <div className="vr-friction-row"><span className="vr-friction-mark">02</span><span>A blank review box leaves customers stuck.</span></div>
+          <div className="vr-friction-row"><span className="vr-friction-mark">03</span><span>Feedback and replies end up scattered.</span></div>
+        </div>
       </div>
     </section>
   );
@@ -56,33 +64,34 @@ export function FeaturesGrid() {
   );
 }
 
-const JOURNEYS = [
-  { title: "Customer", steps: ["Scan or open the link", "Share an experience", "Get a draft", "Edit it", "Choose whether to continue to Google"] },
-  { title: "Business", steps: ["Set up a business", "Create a campaign", "Share a QR code or link", "Inspect interactions", "Manage reviews and replies"] },
+const CUSTOMER_FLOW = [
+  { icon: QrCode, title: "Invite", body: "A campaign QR code or link gives customers a simple place to begin." },
+  { icon: MessageSquareText, title: "Listen", body: "They share a rating and the details that actually mattered." },
+  { icon: WandSparkles, title: "Draft", body: "A suggestion helps them put their own experience into words." },
+  { icon: ClipboardEdit, title: "Decide", body: "They edit, discard or choose whether to continue to Google." },
 ];
 
 /** Section 6. */
 export function HowItWorks() {
   return (
-    <section id="how-it-works" aria-labelledby="how-heading" className="border-y border-border/70 bg-secondary/25 py-20 sm:py-24" data-testid="section-how-it-works">
-      <div className="mx-auto max-w-[80rem] px-5 sm:px-8 lg:px-10">
-        <SectionHead eyebrow="Two journeys" title="How it works." id="how-heading" />
-        <div className="mt-12 grid gap-4 lg:grid-cols-2">
-          {JOURNEYS.map((j) => (
-            <div key={j.title} className="mk-card p-6 sm:p-8">
-              <h3 className="text-lg font-semibold">{j.title}</h3>
-              <ol className="mt-6 space-y-0">
-                {j.steps.map((s, i) => (
-                  <li key={s} className="relative flex gap-4 pb-5 last:pb-0">
-                    {i < j.steps.length - 1 && <span className="absolute left-[0.9rem] top-8 h-[calc(100%-1.75rem)] w-px bg-border" aria-hidden />}
-                    <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full border border-primary/40 text-xs font-bold tabular-nums text-primary">{i + 1}</span>
-                    <span className="pt-0.5">{s}</span>
-                  </li>
-                ))}
-              </ol>
+    <section id="how-it-works" aria-labelledby="how-heading" className="vr-chapter" data-testid="section-how-it-works">
+      <div className="vr-section-wrap vr-flow">
+        <div className="vr-flow-head">
+          <p className="mk-eyebrow">Two journeys</p>
+          <h2 id="how-heading" className="vr-section-title font-display">How it works.</h2>
+          <p className="vr-body">A clear path for the customer. A repeatable workflow for the team behind them.</p>
+        </div>
+        <div className="vr-flow-rail" aria-label="Customer review journey">
+          {CUSTOMER_FLOW.map(({ icon: Icon, title, body }, index) => (
+            <div className="vr-flow-step" key={title}>
+              <span className="vr-flow-num">0{index + 1} / 04</span>
+              <span className="vr-flow-visual"><Icon aria-hidden="true" /></span>
+              <h3>{title}</h3>
+              <p>{body}</p>
             </div>
           ))}
         </div>
+        <p className="vr-team-flow"><ScanLine aria-hidden="true" /> For teams: set up a business, share a campaign, inspect interactions and manage replies.</p>
       </div>
     </section>
   );

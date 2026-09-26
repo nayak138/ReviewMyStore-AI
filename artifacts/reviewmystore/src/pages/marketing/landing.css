@@ -172,3 +172,862 @@
     transform: none;
   }
 }
+
+/* Approved refreshed homepage: keep every rule inside the marketing shell. */
+.marketing-dark .font-display {
+  font-family: "Fraunces", serif;
+}
+
+.marketing-dark h1,
+.marketing-dark h2,
+.marketing-dark h3 {
+  letter-spacing: -0.035em;
+}
+
+.marketing-dark .vr-hero {
+  position: relative;
+  display: grid;
+  min-height: min(780px, 85svh);
+  align-items: center;
+  overflow: hidden;
+  border-bottom: 1px solid #303955;
+  background: radial-gradient(ellipse at 75% 48%, #252e61 0%, #11182f 42%, #0c1023 75%);
+}
+
+.marketing-dark .vr-hero::before {
+  position: absolute;
+  inset: 0;
+  background-image: linear-gradient(#a5b8ff0b 1px, transparent 1px), linear-gradient(90deg, #a5b8ff0b 1px, transparent 1px);
+  background-size: 72px 72px;
+  mask-image: linear-gradient(90deg, transparent, #000 75%);
+  content: "";
+  pointer-events: none;
+}
+
+.marketing-dark .vr-hero-inner {
+  position: relative;
+  display: grid;
+  width: min(100%, 1280px);
+  grid-template-columns: minmax(0, 1.02fr) minmax(0, 0.98fr);
+  align-items: center;
+  gap: 24px;
+  margin: auto;
+  padding: 48px 40px 64px;
+}
+
+.marketing-dark .vr-hero-copy {
+  position: relative;
+  z-index: 2;
+}
+
+.marketing-dark .vr-overline {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: #b9c6ff;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.19em;
+  text-transform: uppercase;
+}
+
+.marketing-dark .vr-overline::before {
+  width: 22px;
+  height: 1px;
+  background: #aebcff;
+  content: "";
+}
+
+.marketing-dark .vr-hero h1 {
+  max-width: 780px;
+  margin: 27px 0 28px;
+  font-size: clamp(3.25rem, 5.1vw, 5.8rem);
+  font-weight: 600;
+  line-height: 1.08;
+  letter-spacing: -0.055em;
+  text-wrap: balance;
+}
+
+.marketing-dark .vr-hero-lede {
+  max-width: 560px;
+  color: #bec9df;
+  font-size: clamp(1rem, 1.4vw, 1.14rem);
+  line-height: 1.75;
+}
+
+.marketing-dark .vr-hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 34px;
+}
+
+.marketing-dark .vr-hero-actions button,
+.marketing-dark .vr-hero-actions a {
+  min-height: 52px;
+}
+
+.marketing-dark .vr-terms {
+  max-width: 550px;
+  margin-top: 34px;
+  padding-top: 18px;
+  border-top: 1px solid #57618177;
+  color: #aebbd4;
+  font-size: 13px;
+  line-height: 1.65;
+}
+
+.marketing-dark .vr-terms strong {
+  display: block;
+  margin-bottom: 3px;
+  color: #e1e7ff;
+  font-size: 13px;
+}
+
+.marketing-dark .vr-hero-art {
+  position: relative;
+  display: grid;
+  min-width: 0;
+  align-self: stretch;
+  place-items: center;
+}
+
+.marketing-dark .vr-hero-art img {
+  width: min(100%, 590px);
+  aspect-ratio: 1;
+  object-fit: cover;
+  mix-blend-mode: screen;
+  filter: contrast(1.04);
+  mask-image: radial-gradient(circle, #000 48%, transparent 74%);
+}
+
+.marketing-dark .vr-orbit-note {
+  position: absolute;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  border: 1px solid #b6c5ff59;
+  border-radius: 12px;
+  background: #192443d9;
+  box-shadow: 0 20px 60px #05081680;
+  color: #ecedff;
+  font-size: 12px;
+  font-weight: 700;
+  backdrop-filter: blur(12px);
+}
+
+.marketing-dark .vr-orbit-note svg {
+  width: 17px;
+  height: 17px;
+  color: #a6b9ff;
+}
+
+.marketing-dark .vr-note-a {
+  top: 19%;
+  left: 0;
+  transform: rotate(-5deg);
+}
+
+.marketing-dark .vr-note-b {
+  right: 0;
+  bottom: 18%;
+  transform: rotate(4deg);
+}
+
+.marketing-dark .vr-proof-strip {
+  border-bottom: 1px solid #303955;
+  background: #11182e;
+}
+
+.marketing-dark .vr-proof-strip-inner {
+  display: grid;
+  max-width: 1280px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  margin: auto;
+  padding: 23px 40px;
+}
+
+.marketing-dark .vr-proof-strip-inner span {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #d9e1f7;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.marketing-dark .vr-proof-strip-inner svg {
+  flex: none;
+  width: 19px;
+  color: #aebeff;
+}
+
+.marketing-dark .vr-proof-links {
+  display: flex;
+  justify-content: center;
+  gap: 24px;
+  padding: 0 20px 18px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.marketing-dark .vr-proof-links a {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: #bdcaff;
+}
+
+.marketing-dark .vr-chapter {
+  border-top: 1px solid #303955;
+}
+
+.marketing-dark .vr-section-wrap {
+  max-width: 1280px;
+  margin: auto;
+  padding: 110px 40px;
+}
+
+.marketing-dark .vr-split {
+  display: grid;
+  grid-template-columns: 0.8fr 1.2fr;
+  align-items: center;
+  gap: 8%;
+}
+
+.marketing-dark .vr-section-title {
+  max-width: 700px;
+  margin: 13px 0 20px;
+  font-size: clamp(2.25rem, 4vw, 4.5rem);
+  font-weight: 600;
+  line-height: 1.15;
+  text-wrap: balance;
+}
+
+.marketing-dark .vr-body {
+  color: #adbad4;
+  font-size: 16px;
+  line-height: 1.75;
+}
+
+.marketing-dark .vr-approach {
+  background: #121b35;
+}
+
+.marketing-dark .vr-friction {
+  position: relative;
+  padding: 27px;
+  border: 1px solid #424e73;
+  border-radius: 20px;
+  background: linear-gradient(145deg, #1b2646, #131b33);
+}
+
+.marketing-dark .vr-friction::before {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 44px;
+  width: 1px;
+  background: #66739b77;
+  content: "";
+}
+
+.marketing-dark .vr-friction-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 17px 0;
+  color: #d4dced;
+  font-size: 15px;
+}
+
+.marketing-dark .vr-friction-row:not(:last-child) {
+  border-bottom: 1px solid #ffffff17;
+}
+
+.marketing-dark .vr-friction-mark {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  width: 34px;
+  height: 34px;
+  flex: none;
+  place-items: center;
+  border: 1px solid #b3c4ff55;
+  border-radius: 50%;
+  background: #242f50;
+  color: #b6c5ff;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.marketing-dark .vr-flow {
+  padding-top: 100px;
+  padding-bottom: 105px;
+}
+
+.marketing-dark .vr-flow-head {
+  max-width: 680px;
+}
+
+.marketing-dark .vr-flow-rail {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  overflow: hidden;
+  margin-top: 50px;
+  border: 1px solid #374263;
+  border-radius: 22px;
+  background: #141d38;
+}
+
+.marketing-dark .vr-flow-step {
+  position: relative;
+  min-height: 255px;
+  padding: 28px;
+  border-right: 1px solid #374263;
+}
+
+.marketing-dark .vr-flow-step:last-child {
+  border-right: 0;
+}
+
+.marketing-dark .vr-flow-step::after {
+  position: absolute;
+  top: 42px;
+  right: -7px;
+  z-index: 1;
+  width: 13px;
+  height: 13px;
+  border-top: 1px solid #aebeff;
+  border-right: 1px solid #aebeff;
+  background: #141d38;
+  content: "";
+  transform: rotate(45deg);
+}
+
+.marketing-dark .vr-flow-step:last-child::after {
+  display: none;
+}
+
+.marketing-dark .vr-flow-num {
+  color: #a8b9ff;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+}
+
+.marketing-dark .vr-flow-visual {
+  display: grid;
+  height: 80px;
+  place-items: center;
+  margin: 13px 0;
+  color: #b8c6ff;
+}
+
+.marketing-dark .vr-flow-visual svg {
+  width: 47px;
+  height: 47px;
+  stroke-width: 1.25;
+}
+
+.marketing-dark .vr-flow-step h3 {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.marketing-dark .vr-flow-step p {
+  margin-top: 7px;
+  color: #a8b4ce;
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.marketing-dark .vr-team-flow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 20px;
+  color: #aebbd4;
+  font-size: 14px;
+}
+
+.marketing-dark .vr-team-flow svg {
+  width: 16px;
+  height: 16px;
+  flex: none;
+  color: #aebeff;
+}
+
+.marketing-dark .vr-feedback {
+  background: #171f3b;
+}
+
+.marketing-dark .vr-feedback-intro {
+  max-width: 680px;
+}
+
+.marketing-dark .vr-feedback-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 35px;
+}
+
+.marketing-dark .vr-feedback-card {
+  min-width: 0;
+  padding: 27px;
+  border: 1px solid #465175;
+  border-radius: 19px;
+  background: #202a49;
+}
+
+.marketing-dark .vr-feedback-card:nth-child(2) {
+  background: #262a4b;
+}
+
+.marketing-dark .vr-feedback-card small {
+  color: #b6c4ff;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.marketing-dark .vr-feedback-card p {
+  margin-top: 23px;
+  color: #e9edfa;
+  font-size: 17px;
+  line-height: 1.65;
+}
+
+.marketing-dark .vr-feedback-card footer {
+  margin-top: 22px;
+  padding-top: 14px;
+  border-top: 1px solid #ffffff24;
+  color: #a9b6ce;
+  font-size: 12px;
+}
+
+.marketing-dark .vr-feedback-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 30px;
+  color: #bdcaff;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.marketing-dark .vr-experience {
+  background: #10172c;
+}
+
+.marketing-dark .vr-experience > div {
+  max-width: 1280px;
+}
+
+.marketing-dark #experience [data-testid="panel-customer"] {
+  overflow: visible;
+}
+
+.marketing-dark #experience .mk-switch {
+  flex: none;
+}
+
+.marketing-dark #review-demo {
+  border: 0;
+  padding: 0;
+  background: transparent;
+}
+
+.marketing-dark #review-demo > div:first-child {
+  display: none;
+}
+
+.marketing-dark #review-demo > div:nth-child(2) {
+  max-width: 1280px;
+  padding: 0;
+}
+
+.marketing-dark .vr-demo-heading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+  color: #f5f7ff;
+}
+
+.marketing-dark .vr-demo-badge {
+  flex: none;
+  padding: 8px 12px;
+  border: 1px solid #6474ab;
+  border-radius: 999px;
+  color: #c8d2ff;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.marketing-dark .vr-demo-frame {
+  display: grid;
+  grid-template-columns: minmax(0, 0.86fr) minmax(0, 1.14fr);
+  align-items: start;
+  gap: 18px;
+  padding: 18px;
+  border: 1px solid #465373;
+  border-radius: 22px;
+  background: #18223f;
+}
+
+.marketing-dark .vr-demo-media,
+.marketing-dark .vr-demo-form {
+  min-width: 0;
+}
+
+.marketing-dark .vr-demo-image {
+  position: relative;
+  min-height: 360px;
+  height: min(48vw, 550px);
+  overflow: hidden;
+  border-radius: 15px;
+  background: #1a2847;
+}
+
+.marketing-dark .vr-demo-image > img {
+  object-fit: cover;
+}
+
+.marketing-dark .vr-demo-disclosure {
+  margin-top: 14px;
+  color: #b1bfd8;
+  font-size: 12px;
+  line-height: 1.65;
+}
+
+.marketing-dark .vr-demo-contact {
+  margin-top: 15px;
+  padding: 14px;
+  border: 1px solid #d8dfed;
+  border-radius: 15px;
+  background: #f6f8ff;
+}
+
+.marketing-dark .vr-demo-shortcuts {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.marketing-dark .vr-demo-form {
+  padding: 20px;
+  border-radius: 15px;
+  background: #f6f8ff;
+  color: #17203a;
+  color-scheme: light;
+}
+
+.marketing-dark .vr-demo-form input,
+.marketing-dark .vr-demo-form textarea {
+  border-color: #b6c2d9;
+  background: #fff;
+  color: #17203a;
+}
+
+.marketing-dark .vr-demo-form h4,
+.marketing-dark .vr-demo-form .text-foreground {
+  color: #17203a;
+}
+
+.marketing-dark .vr-demo-form .text-muted-foreground {
+  color: #53617c;
+}
+
+.marketing-dark .vr-demo-form .bg-white {
+  background: #fff;
+}
+
+.marketing-dark .vr-demo-form .bg-slate-50,
+.marketing-dark .vr-demo-form .dark\:bg-zinc-950,
+.marketing-dark .vr-demo-form .dark\:bg-zinc-900 {
+  background: #fff;
+}
+
+.marketing-dark .vr-demo-form .border-border,
+.marketing-dark .vr-demo-form .dark\:border-zinc-800 {
+  border-color: #d8dfed;
+}
+
+.marketing-dark .vr-demo-footer {
+  grid-column: 1 / -1;
+  flex-wrap: wrap;
+  padding: 15px 4px 0;
+  color: #b1bfd8;
+}
+
+.marketing-dark .vr-demo-footer img {
+  max-width: 140px;
+}
+
+.marketing-dark #features {
+  background: #0d1429;
+}
+
+.marketing-dark #features li {
+  min-height: 195px;
+}
+
+.marketing-dark #features li:first-child,
+.marketing-dark #features li:last-child {
+  min-height: 240px;
+  background: linear-gradient(135deg, #263569, #171f3c);
+  border-color: #5368a6;
+}
+
+.marketing-dark #features li:first-child h3,
+.marketing-dark #features li:last-child h3 {
+  font-size: 24px;
+}
+
+.marketing-dark #comparison {
+  background: #10172b;
+}
+
+.marketing-dark #tools {
+  background: #17203a;
+}
+
+.marketing-dark #agencies figure {
+  box-shadow: 25px 25px 0 #242c4a;
+}
+
+.marketing-dark #trial {
+  background: #111a32;
+}
+
+.marketing-dark #trial ol {
+  padding-top: 12px;
+  border-top: 1px solid #566387;
+}
+
+.marketing-dark #pricing .mk-card {
+  background: #1d2848;
+}
+
+.marketing-dark #stories .mk-card {
+  background: #202b4b;
+  border-color: #536287;
+}
+
+.marketing-dark #start > div {
+  background: #1a2440;
+}
+
+.marketing-dark #faq {
+  background: #0e1529;
+}
+
+.marketing-dark a:focus-visible,
+.marketing-dark button:focus-visible {
+  outline: 2px solid #b7c6ff;
+  outline-offset: 3px;
+}
+
+@media (max-width: 900px) {
+  .marketing-dark .vr-hero-inner {
+    grid-template-columns: 1fr;
+    gap: 10px;
+    padding: 42px 32px 45px;
+  }
+
+  .marketing-dark .vr-hero-art {
+    width: 100%;
+    max-width: 620px;
+    margin: auto;
+  }
+
+  .marketing-dark .vr-hero-art img {
+    width: 100%;
+    max-height: 440px;
+  }
+
+  .marketing-dark .vr-hero h1 {
+    max-width: 760px;
+  }
+
+  .marketing-dark .vr-flow-rail {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .marketing-dark .vr-flow-step:nth-child(2) {
+    border-right: 0;
+  }
+
+  .marketing-dark .vr-flow-step:nth-child(-n + 2) {
+    border-bottom: 1px solid #374263;
+  }
+
+  .marketing-dark .vr-flow-step:nth-child(2)::after {
+    display: none;
+  }
+
+  .marketing-dark .vr-split {
+    grid-template-columns: 1fr;
+    gap: 30px;
+  }
+
+  .marketing-dark .vr-demo-frame {
+    grid-template-columns: 1fr;
+  }
+
+  .marketing-dark .vr-demo-image {
+    height: min(68vw, 460px);
+  }
+}
+
+@media (max-width: 650px) {
+  .marketing-dark .vr-hero {
+    min-height: 0;
+  }
+
+  .marketing-dark .vr-hero-inner {
+    padding: 38px 20px 40px;
+  }
+
+  .marketing-dark .vr-hero h1 {
+    margin: 20px 0;
+    font-size: clamp(2.65rem, 9.7vw, 3.75rem);
+    letter-spacing: -0.055em;
+  }
+
+  .marketing-dark .vr-hero-lede {
+    font-size: 15px;
+    line-height: 1.65;
+  }
+
+  .marketing-dark .vr-hero-actions {
+    flex-direction: column;
+    align-items: stretch;
+    margin-top: 26px;
+  }
+
+  .marketing-dark .vr-hero-actions > * {
+    width: 100%;
+  }
+
+  .marketing-dark .vr-terms {
+    margin-top: 25px;
+  }
+
+  .marketing-dark .vr-hero-art img {
+    max-height: 350px;
+  }
+
+  .marketing-dark .vr-orbit-note {
+    padding: 8px 10px;
+    font-size: 10px;
+  }
+
+  .marketing-dark .vr-note-a {
+    top: 18%;
+    left: 0;
+  }
+
+  .marketing-dark .vr-note-b {
+    right: 0;
+    bottom: 15%;
+  }
+
+  .marketing-dark .vr-proof-strip-inner {
+    grid-template-columns: 1fr;
+    padding: 22px 20px;
+  }
+
+  .marketing-dark .vr-proof-links {
+    flex-wrap: wrap;
+    padding-bottom: 20px;
+  }
+
+  .marketing-dark .vr-section-wrap {
+    padding: 72px 20px;
+  }
+
+  .marketing-dark .vr-flow-rail {
+    grid-template-columns: 1fr;
+    margin-top: 30px;
+  }
+
+  .marketing-dark .vr-flow-step {
+    min-height: 0;
+    padding: 24px;
+    border-right: 0 !important;
+    border-bottom: 1px solid #374263;
+  }
+
+  .marketing-dark .vr-flow-step::after {
+    display: none;
+  }
+
+  .marketing-dark .vr-flow-step:last-child {
+    border-bottom: 0;
+  }
+
+  .marketing-dark .vr-flow-visual {
+    height: 52px;
+    place-items: start;
+    margin: 9px 0;
+  }
+
+  .marketing-dark .vr-flow-visual svg {
+    width: 40px;
+    height: 40px;
+  }
+
+  .marketing-dark .vr-feedback-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .marketing-dark .vr-demo-heading {
+    align-items: start;
+    flex-direction: column;
+  }
+
+  .marketing-dark .vr-demo-frame {
+    gap: 9px;
+    padding: 9px;
+  }
+
+  .marketing-dark .vr-demo-image {
+    min-height: 230px;
+    height: 230px;
+  }
+
+  .marketing-dark .vr-demo-form {
+    padding: 13px;
+  }
+
+  .marketing-dark #experience .mk-switch [role="tab"] {
+    padding-right: 11px;
+    padding-left: 11px;
+    font-size: 12px;
+  }
+
+  .marketing-dark #features li,
+  .marketing-dark #features li:first-child,
+  .marketing-dark #features li:last-child {
+    min-height: 0;
+  }
+
+  .marketing-dark #agencies figure {
+    box-shadow: 10px 10px 0 #242c4a;
+  }
+
+  .marketing-dark .vr-team-flow {
+    align-items: flex-start;
+  }
+}

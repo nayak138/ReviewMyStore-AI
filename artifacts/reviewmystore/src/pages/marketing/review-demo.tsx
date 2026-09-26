@@ -235,66 +235,67 @@ export function InteractiveReviewDemo({ active = true, onStatusChange }: { activ
         <div className="editorial-grid absolute inset-0 opacity-30 [mask-image:linear-gradient(to_bottom,black,transparent_78%)]" />
         <div className="absolute -right-48 top-24 h-[32rem] w-[32rem] rounded-full bg-primary/10 blur-3xl" />
       </div>
-      <div className="relative mx-auto w-full min-w-0 max-w-md md:max-w-5xl">
-        <div className="mx-auto mb-4 text-center sm:mb-6">
-          <p className="text-xs font-bold uppercase tracking-widest text-indigo-700 dark:text-indigo-300">Live Customer Preview</p>
-          <h3 className="mx-auto mt-2 max-w-3xl font-display text-xl font-semibold leading-tight text-zinc-950 dark:text-white sm:text-2xl">
-            Try an editable review draft
-          </h3>
+      <div className="relative mx-auto w-full min-w-0 max-w-[80rem]">
+        <div className="vr-demo-heading">
+          <div>
+            <p className="mk-eyebrow">Try the flow yourself</p>
+            <h3 className="mt-2 max-w-3xl font-display text-2xl font-semibold leading-tight text-zinc-950 dark:text-white sm:text-3xl">
+              From a real moment to your own words.
+            </h3>
+          </div>
+          <span className="vr-demo-badge">Fictional demo business</span>
         </div>
 
-        <div className="grid min-w-0 gap-4 rounded-2xl border border-zinc-200 bg-white p-2 shadow-sm dark:border-zinc-800 dark:bg-zinc-900 sm:p-4 md:grid-cols-2 md:gap-6 md:p-6">
-          <div className="flex min-w-0 flex-wrap items-center justify-between gap-2 border-b border-zinc-100 pb-2 text-xs font-medium text-zinc-500 dark:border-zinc-800 dark:text-zinc-400 md:col-span-2">
-            <span>Interactive review demo</span>
-            <span className="inline-flex items-center"><span className="mr-1 inline-block h-2 w-2 animate-pulse rounded-full bg-emerald-500" />Interactive</span>
-          </div>
-          <header className="relative min-w-0 min-h-[220px] rounded-xl bg-[linear-gradient(130deg,#0c1a39_0%,#173c69_44%,#0b142b_100%)] sm:min-h-[260px] md:row-span-2 md:min-h-[440px]">
-            {!headerImageFailed && (
-              <img
-                src={demoHeaderImage}
-                alt="Exterior of Marina Bay Sands Singapore"
-                className="absolute inset-0 h-full w-full rounded-xl object-cover"
-                fetchPriority="high"
-                onError={() => setHeaderImageFailed(true)}
-              />
-            )}
-            <div className="absolute inset-0 rounded-xl bg-gradient-to-t from-[#050713]/90 via-[#050713]/25 to-[#050713]/10" />
-            <div className="absolute right-3 top-3 sm:right-4 sm:top-4">
-              <LanguageSelector value={language} onChange={setLanguage} />
-            </div>
-            <div className="absolute inset-x-4 bottom-4 text-white sm:inset-x-5 sm:bottom-5">
-              <h3 className="font-display text-2xl font-semibold leading-tight sm:text-3xl">Marina Bay Sands Singapore</h3>
-              <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-white/85">
-                <span>Illustrative hotel experience</span>
-                <span className="inline-flex items-center gap-1"><MapPin className="h-3 w-3" aria-hidden="true" />10 Bayfront Avenue, Singapore</span>
+        <div className="vr-demo-frame">
+          <div className="vr-demo-media">
+            <header className="vr-demo-image">
+              {!headerImageFailed && (
+                <img
+                  src={demoHeaderImage}
+                  alt="Exterior of Marina Bay Sands Singapore"
+                  className="absolute inset-0 h-full w-full rounded-xl object-cover"
+                  loading="lazy"
+                  fetchPriority="low"
+                  decoding="async"
+                  onError={() => setHeaderImageFailed(true)}
+                />
+              )}
+              <div className="absolute inset-0 rounded-xl bg-gradient-to-t from-[#050713]/90 via-[#050713]/25 to-[#050713]/10" />
+              <div className="absolute right-3 top-3 z-10 sm:right-4 sm:top-4">
+                <LanguageSelector value={language} onChange={setLanguage} />
+              </div>
+              <div className="absolute inset-x-4 bottom-4 text-white sm:inset-x-5 sm:bottom-5">
+                <p className="mb-2 text-[11px] font-bold uppercase tracking-[.18em] text-[#d4dcff]">Fictional demo business</p>
+                <h4 className="font-display text-2xl font-semibold leading-tight sm:text-3xl">Marina Bay Sands Singapore</h4>
+                <p className="mt-2 flex items-center gap-1 text-xs text-[#e1e7f6]"><MapPin className="h-3 w-3" aria-hidden="true" />10 Bayfront Avenue, Singapore</p>
+              </div>
+            </header>
+            <p className="vr-demo-disclosure">Fictional sample business and details, not a customer endorsement. The Google link opens this business’s review page. Only submit a review based on your genuine visit.</p>
+
+            <div className="vr-demo-contact">
+              <div className="grid grid-cols-1 gap-2 min-[380px]:grid-cols-2">
+                <Button asChild size="sm" className="min-h-[44px] w-full rounded-xl bg-indigo-600 px-3 text-xs font-semibold text-white shadow-md shadow-indigo-200 transition-all duration-150 hover:bg-indigo-700 active:scale-95 sm:px-5 sm:text-sm">
+                  <a href="tel:+6566888888"><Phone className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" />Call</a>
+                </Button>
+                <Button variant="outline" size="sm" className="min-h-[44px] w-full rounded-xl border-indigo-200 bg-indigo-50 px-3 text-xs font-semibold text-indigo-700 transition-all duration-150 hover:bg-indigo-100 active:scale-95 sm:px-4 sm:text-sm" onClick={() => downloadVCard({ name: "Marina Bay Sands Singapore", phone: "+65 6688 8888", address: "10 Bayfront Avenue, Singapore 018956", website: "https://www.marinabaysands.com/" })}>
+                  <IdCard className="mr-1.5 h-4 w-4 text-[#5b83ff]" aria-hidden="true" />Save Contact
+                </Button>
+              </div>
+              <div className="vr-demo-shortcuts">
+                <Button asChild variant="outline" size="sm" aria-label="Directions" title="Directions" className="min-h-[44px] min-w-[44px] rounded-xl border-emerald-200 bg-emerald-50 p-0 text-emerald-700 transition-all duration-150 hover:bg-emerald-100 active:scale-95">
+                  <a href="https://www.google.com/maps/dir/?api=1&destination=Marina%20Bay%20Sands%20Singapore" target="_blank" rel="noopener noreferrer"><MapPin className="h-5 w-5 text-[#19b892]" aria-hidden="true" /></a>
+                </Button>
+                <Button variant="outline" size="sm" aria-label={shared ? "Link copied" : "Share"} title={shared ? "Link copied" : "Share"} className="min-h-[44px] min-w-[44px] rounded-xl border-indigo-200 bg-indigo-50 p-0 text-indigo-600 transition-all duration-150 hover:bg-indigo-100 active:scale-95" onClick={() => void shareDemo()}>
+                  {shared ? <Check className="h-5 w-5 text-[#19d7a5]" aria-hidden="true" /> : <Share2 className="h-5 w-5 text-[#9f7aea]" aria-hidden="true" />}
+                </Button>
+                <a href="https://www.marinabaysands.com/" target="_blank" rel="noopener noreferrer" aria-label="Website" title="Website" className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-xl border border-indigo-200 bg-indigo-50 text-indigo-600 transition-all duration-150 hover:bg-indigo-100 active:scale-95"><Globe className="h-5 w-5" aria-hidden="true" /></a>
+                <a href={DEMO_GOOGLE_URL} target="_blank" rel="noopener noreferrer" aria-label="Google Maps" title="Google Maps" className="flex min-h-[44px] min-w-[44px] items-center justify-center overflow-hidden rounded-xl border border-zinc-200 bg-white transition-all duration-150 hover:bg-indigo-50 active:scale-95"><img src={GOOGLE_MAPS_ICON} alt="" className="h-7 w-7 object-contain" /></a>
+                <a href="https://www.instagram.com/marinabaysands/" target="_blank" rel="noopener noreferrer" aria-label="Instagram" title="Instagram" className="flex min-h-[44px] min-w-[44px] items-center justify-center overflow-hidden rounded-xl border border-zinc-200 bg-white transition-all duration-150 hover:bg-indigo-50 active:scale-95"><img src={INSTAGRAM_ICON} alt="" className="h-7 w-7 object-contain" /></a>
               </div>
             </div>
-          </header>
-          <p className="min-w-0 text-xs leading-relaxed text-muted-foreground md:col-start-1">Illustrative demo, not a customer endorsement. The Google button opens this business’s real review page. Only submit a review based on your genuine visit.</p>
-
-          <div className="min-w-0 rounded-xl border border-zinc-200 bg-slate-50 p-3 dark:border-zinc-800 dark:bg-zinc-950 sm:p-4 md:col-start-2">
-            <div className="grid grid-cols-1 gap-2 min-[380px]:grid-cols-2 sm:flex sm:flex-wrap sm:items-center">
-              <Button asChild size="sm" className="min-h-[44px] w-full rounded-xl bg-indigo-600 px-3 text-xs font-semibold text-white shadow-md shadow-indigo-200 transition-all duration-150 hover:bg-indigo-700 active:scale-95 sm:w-auto sm:px-5 sm:text-sm">
-                <a href="tel:+6566888888"><Phone className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" />Call</a>
-              </Button>
-              <Button variant="outline" size="sm" className="min-h-[44px] w-full rounded-xl border-indigo-200 bg-indigo-50 px-3 text-xs font-semibold text-indigo-700 transition-all duration-150 hover:bg-indigo-100 active:scale-95 dark:border-indigo-900 dark:bg-indigo-950/60 dark:text-indigo-300 sm:w-auto sm:px-4 sm:text-sm" onClick={() => downloadVCard({ name: "Marina Bay Sands Singapore", phone: "+65 6688 8888", address: "10 Bayfront Avenue, Singapore 018956", website: "https://www.marinabaysands.com/" })}>
-                <IdCard className="mr-1.5 h-4 w-4 text-[#5b83ff]" aria-hidden="true" />Save Contact
-              </Button>
-            </div>
-            <div className="mt-3 flex w-full flex-wrap items-center justify-center gap-2">
-              <Button asChild variant="outline" size="sm" aria-label="Directions" title="Directions" className="min-h-[44px] min-w-[44px] rounded-xl border-emerald-200 bg-emerald-50 p-0 text-emerald-700 transition-all duration-150 hover:bg-emerald-100 active:scale-95">
-                <a href="https://www.google.com/maps/dir/?api=1&destination=Marina%20Bay%20Sands%20Singapore" target="_blank" rel="noopener noreferrer"><MapPin className="h-5 w-5 text-[#19b892]" aria-hidden="true" /></a>
-              </Button>
-              <Button variant="outline" size="sm" aria-label={shared ? "Link copied" : "Share"} title={shared ? "Link copied" : "Share"} className="min-h-[44px] min-w-[44px] rounded-xl border-indigo-200 bg-indigo-50 p-0 text-indigo-600 transition-all duration-150 hover:bg-indigo-100 active:scale-95" onClick={() => void shareDemo()}>
-                {shared ? <Check className="h-5 w-5 text-[#19d7a5]" aria-hidden="true" /> : <Share2 className="h-5 w-5 text-[#9f7aea]" aria-hidden="true" />}
-              </Button>
-              <a href="https://www.marinabaysands.com/" target="_blank" rel="noopener noreferrer" aria-label="Website" title="Website" className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-xl border border-indigo-200 bg-indigo-50 text-indigo-600 transition-all duration-150 hover:bg-indigo-100 active:scale-95"><Globe className="h-5 w-5" aria-hidden="true" /></a>
-              <a href={DEMO_GOOGLE_URL} target="_blank" rel="noopener noreferrer" aria-label="Google Maps" title="Google Maps" className="flex min-h-[44px] min-w-[44px] items-center justify-center overflow-hidden rounded-xl border border-zinc-200 bg-white transition-all duration-150 hover:bg-indigo-50 active:scale-95"><img src={GOOGLE_MAPS_ICON} alt="" className="h-7 w-7 object-contain" /></a>
-              <a href="https://www.instagram.com/marinabaysands/" target="_blank" rel="noopener noreferrer" aria-label="Instagram" title="Instagram" className="flex min-h-[44px] min-w-[44px] items-center justify-center overflow-hidden rounded-xl border border-zinc-200 bg-white transition-all duration-150 hover:bg-indigo-50 active:scale-95"><img src={INSTAGRAM_ICON} alt="" className="h-7 w-7 object-contain" /></a>
-            </div>
           </div>
 
-          <section className="mx-auto w-full min-w-0 max-w-[760px] space-y-4 px-0 pb-2 pt-1 md:col-start-2" dir={rtl ? "rtl" : "ltr"}>
+          <section className="vr-demo-form min-w-0 space-y-4" dir={rtl ? "rtl" : "ltr"}>
              {!hasDraft ? (
               <div className="rounded-xl border border-zinc-200 bg-white p-3 dark:border-zinc-800 dark:bg-zinc-900 sm:p-5">
                 <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.16em] text-[#2860c8] dark:text-[#82b3ff]">Step 1</p>
@@ -312,14 +313,13 @@ export function InteractiveReviewDemo({ active = true, onStatusChange }: { activ
                   <div className="hidden rounded-2xl bg-[#e8efff] p-3 text-[#3f63c5] sm:block dark:bg-[#1a315c] dark:text-[#9ab8ff]"><Sparkles className="h-5 w-5" aria-hidden="true" /></div>
                 </div>
 
-                {rating !== null && (
                   <div className="mt-6 space-y-6 border-t border-border pt-6">
                     <div>
                       <p className="mb-3 text-[11px] font-bold uppercase tracking-[0.16em] text-primary">Step 2</p>
                       <h4 className="mb-3 font-display text-2xl font-semibold tracking-tight text-foreground">{strings.highlightsTitle}</h4>
                       <div className="flex flex-wrap gap-2">
                          {highlights.map((highlight) => (
-                            <button key={highlight} type="button" aria-pressed={selectedHighlights.includes(highlight)} onClick={() => toggleHighlight(highlight)} className={cn("min-h-[44px] rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-sm font-medium text-zinc-700 transition-colors duration-150 hover:border-indigo-500 hover:bg-indigo-50/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200", selectedHighlights.includes(highlight) && "border-indigo-600 bg-indigo-600 text-white hover:bg-indigo-700")}>{highlight}</button>
+                             <button key={highlight} type="button" aria-pressed={selectedHighlights.includes(highlight)} onClick={() => toggleHighlight(highlight)} className={cn("min-h-[44px] rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-sm font-medium text-zinc-700 transition-colors duration-150 hover:border-indigo-500 hover:bg-indigo-50/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500", selectedHighlights.includes(highlight) && "border-indigo-600 bg-indigo-600 text-white hover:bg-indigo-700")}>{highlight}</button>
                         ))}
                       </div>
                        <label className="mt-4 block text-sm font-medium text-foreground">{strings.mentionLabel}
@@ -343,10 +343,9 @@ export function InteractiveReviewDemo({ active = true, onStatusChange }: { activ
                        </label>
                     </div>
                   </div>
-                )}
 
                 {error && <p className="mt-5 rounded-xl bg-destructive/10 px-4 py-3 text-sm text-destructive" role="alert">{error}</p>}
-                  <Button className="mt-5 h-auto min-h-[44px] w-full min-w-0 whitespace-normal rounded-xl bg-indigo-600 px-3 py-3 text-sm font-semibold text-white shadow-md shadow-indigo-200 transition-colors duration-150 hover:bg-indigo-700 disabled:!opacity-100 disabled:bg-indigo-300" size="lg" disabled={!rating || isGenerating} onClick={() => void generateReview()}>
+                  <Button className="mt-5 h-auto min-h-[44px] w-full min-w-0 whitespace-normal rounded-xl bg-indigo-600 px-3 py-3 text-sm font-semibold text-white shadow-md shadow-indigo-200 transition-colors duration-150 hover:bg-indigo-700 disabled:!opacity-100 disabled:bg-indigo-300 disabled:!text-[#17203a]" size="lg" disabled={!rating || isGenerating} onClick={() => void generateReview()}>
                   {isGenerating ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />{strings.generatingButton}</> : <><Sparkles className="mr-2 h-4 w-4" />{strings.generateButton}</>}
                 </Button>
                  <p className="mt-3 text-center text-xs text-muted-foreground">{!rating ? "Choose a rating to generate a draft. " : ""}You can read and edit your draft. Nothing is posted automatically.</p>
@@ -370,9 +369,10 @@ export function InteractiveReviewDemo({ active = true, onStatusChange }: { activ
             )}
              <p className="sr-only" role="status" aria-live="polite">{status}</p>
           </section>
-          <div ref={demoFooterRef} className="scroll-mb-4 flex items-center justify-center gap-3 border-t border-[#d8e2fb] bg-[#eef3ff] py-5 text-xs text-muted-foreground dark:border-white/10 dark:bg-[#0a1430] md:col-span-2">
+          <div ref={demoFooterRef} className="vr-demo-footer scroll-mb-4 flex items-center justify-center gap-3 border-t border-[#d8e2fb] bg-[#eef3ff] py-5 text-xs text-muted-foreground dark:border-white/10 dark:bg-[#0a1430]">
             <span>Powered by</span>
             <BrandLogo className="h-8 w-auto max-w-[11rem] opacity-90" />
+            <span> · Demo inputs stay in place when you switch views.</span>
           </div>
         </div>
       </div>

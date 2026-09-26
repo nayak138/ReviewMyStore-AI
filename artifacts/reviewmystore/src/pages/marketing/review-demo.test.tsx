@@ -45,7 +45,11 @@ async function generate() {
 describe("single live customer demo", () => {
   it("sends the exact public request, all selected context, and no request on mount", async () => {
     render(<InteractiveReviewDemo />);
-    expect(screen.getByRole("heading", { name: "Try an editable review draft", level: 3 })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "From a real moment to your own words.", level: 3 })).toBeInTheDocument();
+    expect(screen.getAllByText("Fictional demo business")).toHaveLength(2);
+    expect(screen.getByText(/Fictional sample business and details, not a customer endorsement/)).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Directions" })).toHaveAttribute("href", expect.stringContaining("google.com/maps/dir"));
+    expect(screen.getByRole("link", { name: "Website" })).toHaveAttribute("href", "https://www.marinabaysands.com/");
     expect(fetch).not.toHaveBeenCalled();
     await chooseRating();
     await userEvent.click(screen.getByRole("button", { name: "Beautiful views" }));

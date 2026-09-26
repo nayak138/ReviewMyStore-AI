@@ -60,7 +60,8 @@ describe("Marketing homepage", () => {
     expect(h1s).toHaveLength(1);
     expect(h1s[0]).toHaveTextContent("Your reputation deserves a system.");
     expect(screen.getByRole("heading", { level: 2, name: "Pricing shaped around your business." })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { level: 2, name: "Customer stories, with permission." })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 2, name: "Real voices are the point." })).toBeInTheDocument();
+    expect(screen.getAllByText("Illustrative feedback / fictional example")).toHaveLength(2);
   });
 
   it("uses exact navigation labels and a local dark scope", () => {

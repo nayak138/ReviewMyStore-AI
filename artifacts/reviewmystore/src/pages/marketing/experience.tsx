@@ -124,16 +124,16 @@ export function ExperienceSection() {
   }, [focusRequest, view]);
 
   return (
-    <section id={EXPERIENCE_SECTION_ID} aria-labelledby="experience-heading" className="relative border-y border-border/70 bg-background/40 py-16 sm:py-20" data-testid="section-experience">
+    <section id={EXPERIENCE_SECTION_ID} aria-labelledby="experience-heading" className="vr-experience relative border-y border-border/70 bg-background/40 py-16 sm:py-20" data-testid="section-experience">
       <div className="mx-auto max-w-[80rem] px-4 sm:px-8 lg:px-10">
         <div className="flex flex-col items-start justify-between gap-6 md:flex-row md:items-end">
           <div className="min-w-0 max-w-2xl">
-            <p className="mk-eyebrow">Live product preview</p>
+              <p className="mk-eyebrow">The product, in practice</p>
             <h2 id="experience-heading" className="mt-3 font-display text-3xl font-semibold tracking-[-0.04em] text-balance sm:text-5xl">
               Your customer’s experience. Your team’s view.
             </h2>
             <p className="mt-4 text-base leading-relaxed text-muted-foreground">
-              Try the real customer flow, then switch sides to see how a team follows up. Your inputs stay put while you switch.
+              Try the customer flow, then switch sides to see how a team follows up. Your inputs stay put while you switch.
             </p>
           </div>
           <ViewSwitch idPrefix="experience" label="Choose a view of the demo" />
