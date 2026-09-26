@@ -3,9 +3,12 @@ import { readFile, readdir } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import vm from "node:vm";
+import { gzipSync } from "node:zlib";
 import { JSDOM } from "jsdom";
 
 const root = fileURLToPath(new URL("../dist/public/", import.meta.url));
+// Leaves roughly 30% headroom over the current 153.45 kB gzip baseline.
+const maxHomepageEntryGzipBytes = 200 * 1024;
 async function htmlFiles(directory) {
   const entries = await readdir(directory, { withFileTypes: true });
   const nested = await Promise.all(entries.map(async (entry) => {
@@ -18,6 +21,38 @@ async function htmlFiles(directory) {
 
 const files = await htmlFiles(root);
 assert(files.length >= 6, "Build must emit all public marketing routes");
+
+const homepageHtml = await readFile(path.join(root, "index.html"), "utf8");
+const homepage = new JSDOM(homepageHtml).window.document;
+const entryScripts = homepage.querySelectorAll('script[type="module"][src]');
+assert.equal(entryScripts.length, 1, "Homepage must reference exactly one module entry script");
+
+// Measure only the entry referenced by the homepage, not deferred route/form chunks.
+const buildOrigin = "https://marketing-build.invalid/";
+const entryUrl = new URL(entryScripts[0].getAttribute("src"), buildOrigin);
+const configuredBase = new URL(process.env.BASE_PATH || "/", buildOrigin);
+let entryAssetPath = decodeURIComponent(entryUrl.pathname);
+if (configuredBase.pathname !== "/" && entryAssetPath.startsWith(configuredBase.pathname)) {
+  entryAssetPath = entryAssetPath.slice(configuredBase.pathname.length);
+}
+const entryPath = path.resolve(
+  root,
+  `.${path.sep}${entryAssetPath.replace(/^\/+/, "")}`,
+);
+assert(
+  entryPath.startsWith(`${path.resolve(root)}${path.sep}`),
+  "Homepage entry script must resolve to an asset inside dist/public",
+);
+const entryBytes = await readFile(entryPath);
+const entryGzipBytes = gzipSync(entryBytes).byteLength;
+assert(
+  entryGzipBytes <= maxHomepageEntryGzipBytes,
+  `Homepage entry script is ${Math.round(entryGzipBytes / 1024)} KiB gzip; budget is ${Math.round(maxHomepageEntryGzipBytes / 1024)} KiB`,
+);
+console.log(
+  `Homepage entry script: ${(entryBytes.byteLength / 1000).toFixed(2)} kB raw, ${(entryGzipBytes / 1024).toFixed(2)} KiB gzip (200 KiB budget).`,
+);
+
 const titles = new Set();
 const sections = ["top", "experience", "proof", "approach", "features", "how-it-works", "walkthrough", "comparison", "tools", "agencies", "trial", "pricing", "stories", "faq", "start"];
 
