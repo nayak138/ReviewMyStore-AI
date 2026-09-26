@@ -92,6 +92,22 @@ describe("single live customer demo", () => {
     expect(window.umami?.track).toHaveBeenCalledTimes(2);
   });
 
+  it("highlights the default and selected tone while keeping a pale-green hover state", async () => {
+    render(<InteractiveReviewDemo />);
+    const warmButton = screen.getByRole("button", { name: "Warm & Grateful" });
+    const enthusiasticButton = screen.getByRole("button", { name: "Enthusiastic" });
+
+    expect(warmButton).toHaveAttribute("aria-pressed", "true");
+    expect(warmButton).toHaveClass("bg-emerald-100");
+    expect(enthusiasticButton).toHaveAttribute("aria-pressed", "false");
+    expect(enthusiasticButton).toHaveClass("bg-ring", "hover:bg-emerald-50");
+
+    await userEvent.click(enthusiasticButton);
+    expect(enthusiasticButton).toHaveAttribute("aria-pressed", "true");
+    expect(enthusiasticButton).toHaveClass("bg-emerald-100");
+    expect(warmButton).toHaveAttribute("aria-pressed", "false");
+  });
+
   it.each([
     ["Enthusiastic", ReviewTone.ENTHUSIASTIC],
     ["Short", ReviewTone.SHORT_DIRECT],
