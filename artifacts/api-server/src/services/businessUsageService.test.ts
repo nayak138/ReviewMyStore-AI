@@ -69,6 +69,11 @@ after(async () => {
   await pool.end();
 });
 
+test("public AI generation allowance is 600 per business per month", () => {
+  assert.equal(BUSINESS_USAGE_CONFIG.PUBLIC_AI_GENERATIONS.limit, 600);
+  assert.equal(BUSINESS_USAGE_CONFIG.PUBLIC_AI_GENERATIONS.window, "MONTHLY");
+});
+
 test("each metered action is isolated by business and releases failed work", async () => {
   const now = new Date("2026-09-22T12:00:00.000Z");
 

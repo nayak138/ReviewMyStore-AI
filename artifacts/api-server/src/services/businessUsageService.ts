@@ -62,7 +62,7 @@ export const BUSINESS_USAGE_CONFIG: Record<
   },
   PUBLIC_AI_GENERATIONS: {
     label: "AI review generations",
-    limit: 50,
+    limit: 600,
     window: "MONTHLY",
   },
   SOCIAL_POSTS: {
