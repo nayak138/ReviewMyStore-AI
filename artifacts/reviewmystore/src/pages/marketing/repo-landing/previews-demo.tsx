@@ -109,5 +109,288 @@ export const ReviewGeneratorDemo: FC = () => {
     setPostNotice("Demo only — this reply was not posted to Google.");
   };
   return <section id="demo-generator" className="py-20 lg:py-28 bg-[#070A13] relative overflow-hidden"><div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10"><div className="max-w-3xl mx-auto text-center space-y-4 mb-10"><div className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-blue-400"><Sparkles className="w-3.5 h-3.5 text-amber-400" />Interactive illustrative prototype</div><h2 className="repo-serif text-3xl sm:text-5xl text-[#F8FAFC]">Try the AI Review Generator</h2><p className="text-base sm:text-lg text-slate-300 leading-relaxed">Test the drafting engine firsthand. Everything here is local, editable, and never posts to Google.</p><span data-testid="text-demo-disclaimer" className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono text-amber-300 bg-amber-950/40 border border-amber-800/40"><Info className="w-3.5 h-3.5" />Sample data — not customer results. Fictional businesses for demo only.</span><div className="pt-3 flex justify-center"><div className="p-1 bg-[#11182A] border border-[#1E293B] rounded-xl inline-flex"><button onClick={() => setMode("customer")} data-testid="button-demo-customer-mode" className={`px-5 py-2 rounded-lg text-xs sm:text-sm font-medium ${mode === "customer" ? "bg-[#1A73E8] text-white" : "text-slate-400"}`}>Customer Review Mode</button><button onClick={() => setMode("business")} data-testid="button-demo-business-mode" className={`px-5 py-2 rounded-lg text-xs sm:text-sm font-medium ${mode === "business" ? "bg-[#1A73E8] text-white" : "text-slate-400"}`}>Business Owner Reply Mode</button></div></div></div>
-    <Panel className="max-w-5xl mx-auto overflow-hidden"><div className="px-5 py-3.5 bg-[#11182A] border-b border-[#1E293B] flex flex-wrap items-center justify-between gap-3"><div className="flex items-center gap-3"><BrandIcon size={26} /><div><span className="text-xs font-semibold text-white block">{mode === "customer" ? "Customer Review Assistant" : "Owner Response Desk"}</span><span className="text-[11px] text-slate-400">Illustrative local demo state</span></div></div><select value={business.id} data-testid="select-demo-business" onChange={(e) => { const next = businesses.find((item) => item.id === e.target.value) ?? businesses[0]; setBusiness(next); setHighlights(next.highlights.slice(0, 2)); setDetails(next.details); }} className="bg-[#0A0F1D] text-slate-200 border border-[#22304C] rounded-lg px-2.5 py-1.5 text-xs"><option value="cedar">Cedar & Stone (fictional)</option><option value="apex">Apex Wellness (fictional)</option></select></div><div className="p-6 sm:p-8 grid grid-cols-1 lg:grid-cols-12 gap-8"><div className="lg:col-span-6 space-y-6">{mode === "customer" ? <><div><label className="text-xs font-semibold uppercase tracking-wider text-slate-300 block">1. Select Your Rating</label><div className="flex items-center gap-2 mt-2"><div className="flex gap-1.5 p-2 rounded-xl bg-[#090D18] border border-[#1E293B]">{[1,2,3,4,5].map((s) => <button key={s} type="button" onClick={() => setRating(s)} data-testid={`button-demo-rating-${s}`} aria-label={`Rate ${s} out of 5 stars`} className="p-1"><Star className={`w-6 h-6 ${rating >= s ? "fill-amber-400 text-amber-400" : "text-slate-600"}`} /></button>)}</div><span className="text-xs text-slate-400">{rating === 5 ? "Exceptional example" : "Illustrative public-draft example"}</span></div></div><div><label className="text-xs font-semibold uppercase tracking-wider text-slate-300 block">2. Key Experience Highlights</label><div className="flex flex-wrap gap-2 mt-2">{business.highlights.map((h) => { const selected = highlights.includes(h); return <button key={h} onClick={() => setHighlights(selected ? highlights.filter((x) => x !== h) : [...highlights, h])} data-testid={`button-demo-highlight-${h.toLowerCase().replaceAll(" ", "-")}`} aria-pressed={selected} className={`text-xs px-3 py-1.5 rounded-lg border ${selected ? "bg-blue-600/20 text-blue-300 border-blue-500/60" : "bg-[#11182A] text-slate-400 border-[#1E293B]"}`}>{selected ? "Selected · " : "Choose · "}{h}</button>; })}</div></div><div><label className="text-xs font-semibold uppercase tracking-wider text-slate-300 block">3. Draft Tone</label><div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-2">{["Warm","Enthusiastic","Short & Direct","Detailed"].map((t) => <button key={t} onClick={() => setTone(t)} data-testid={`button-demo-tone-${t.toLowerCase().replaceAll(" ", "-")}`} className={`py-2 px-2.5 rounded-lg text-xs border ${tone === t ? "bg-amber-500/15 text-amber-300 border-amber-500/50" : "bg-[#11182A] text-slate-400 border-[#1E293B]"}`}>{t}</button>)}</div></div><div><label className="text-xs font-medium text-slate-300 block">Optional Visit Details</label><input value={details} onChange={(e) => setDetails(e.target.value)} data-testid="input-demo-visit-details" className="w-full mt-1 bg-[#090D18] text-xs text-slate-200 border border-[#1E293B] rounded-lg px-3 py-2" /></div></> : <div><label className="text-xs font-semibold uppercase tracking-wider text-slate-300 block">Customer Review to Answer</label><textarea rows={5} defaultValue="We visited on Friday night. The food was sensational, but drinks took nearly 25 minutes." data-testid="textarea-demo-owner-review" className="w-full mt-2 bg-[#090D18] text-xs text-slate-200 border border-[#1E293B] rounded-lg p-3 resize-none" /><p className="text-xs text-slate-500 mt-2">Use this illustrative workspace to explore reply drafting.</p></div>}<button onClick={generate} data-testid="button-demo-generate" className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#1A73E8] text-white text-xs font-semibold"><Sparkles className="w-4 h-4 text-amber-300" />{mode === "customer" ? "Generate Customer Draft" : "Draft Owner Reply"}</button></div><div className="lg:col-span-6"><div className="min-h-[340px] rounded-xl bg-[#090D18] border border-[#1E293B] p-4 sm:p-5 flex flex-col"><div className="flex items-center justify-between pb-3 border-b border-[#1A233A]"><span className="text-xs font-semibold text-white flex items-center gap-2"><Sparkles className="w-4 h-4 text-amber-400" />{mode === "customer" ? "Customer Draft (Fully Editable)" : "Suggested Business Reply"}</span><span className="text-[10px] text-emerald-400 bg-emerald-950/60 border border-emerald-800/40 px-2 py-0.5 rounded">Ready to edit</span></div><textarea value={draft} onChange={(e) => setDraft(e.target.value)} data-testid="textarea-demo-draft" rows={8} className="w-full flex-1 mt-4 bg-[#070A13] text-sm text-slate-100 p-3.5 rounded-lg border border-[#22304C] resize-none leading-relaxed" /><div className="flex items-center justify-between gap-3 pt-3 border-t border-[#1A233A] mt-3"><span className="text-[11px] text-slate-500">{draft.length} characters · Edit any sentence</span><div className="flex gap-2"><button onClick={copy} data-testid="button-demo-copy" className="inline-flex items-center gap-1.5 py-2 px-3.5 rounded-lg bg-[#162035] border border-[#263352] text-xs text-slate-200">{copied ? <><Check className="w-3.5 h-3.5 text-emerald-400" />Copied</> : <><Copy className="w-3.5 h-3.5" />Copy Draft</>}</button>{mode === "customer" && <button onClick={() => setHandoff(true)} data-testid="button-demo-continue-google" className="inline-flex items-center gap-1.5 py-2 px-4 rounded-lg bg-[#1A73E8] text-xs font-semibold text-white">Continue to Google<ExternalLink className="w-3.5 h-3.5" /></button>}</div></div></div></div></div><div className="px-6 py-3 bg-[#0A0F1D] border-t border-[#1E293B] flex flex-col sm:flex-row items-center justify-between gap-2 text-[11px] text-slate-400"><span>Illustrative frontend prototype — no review is posted.</span><span className="font-mono text-[10px] text-slate-500">Customer makes the final submission</span></div></Panel></div>{handoff && <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm" role="dialog" aria-modal="true"><div className="max-w-md w-full rounded-2xl bg-[#0D1322] border border-[#263352] p-6 shadow-2xl space-y-4"><div className="flex items-start justify-between"><div className="flex items-center gap-2.5"><BrandIcon size={32} /><h3 className="text-base font-semibold text-white">How Google Handoff Works</h3></div><button onClick={() => setHandoff(false)} data-testid="button-close-google-handoff" aria-label="Close dialog" className="text-slate-400 hover:text-white p-1"><X className="w-5 h-5" /></button></div><div className="space-y-3 text-xs text-slate-300 leading-relaxed"><p>The live product helps a customer copy their editable draft and open the official Google review flow. This page is only a fictional demo.</p><div className="p-3 rounded-xl bg-[#11182A] border border-[#1E293B]"><div className="font-semibold text-white flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4 text-emerald-400" />Customer retains 100% control</div><p className="text-slate-400 mt-1">No review is posted or redirected from this illustrative prototype.</p></div></div><div className="flex justify-end"><button onClick={() => setHandoff(false)} data-testid="button-dismiss-google-handoff" className="px-4 py-2 rounded-lg bg-[#1A73E8] text-xs font-semibold text-white">Understood</button></div></div></div>}</section>;
+      <Panel className="max-w-5xl mx-auto overflow-hidden">
+        <div className="px-5 py-3.5 bg-[#11182A] border-b border-[#1E293B] flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <BrandIcon size={26} />
+            <div>
+              <span className="text-xs font-semibold text-white block">
+                {mode === "customer" ? "Customer Review Assistant" : "Owner Response Desk"}
+              </span>
+              <span className="text-[11px] text-slate-400">Illustrative local demo state</span>
+            </div>
+          </div>
+          <select
+            value={business.id}
+            data-testid="select-demo-business"
+            onChange={(e) => {
+              const next = businesses.find((item) => item.id === e.target.value) ?? businesses[0];
+              setBusiness(next);
+              setHighlights(next.highlights.slice(0, 2));
+              setDetails(next.details);
+              setOwnerReview(next.ownerReview);
+              setOwnerReply(createOwnerReply(next.ownerReview, next.name));
+              setPostNotice("");
+            }}
+            className="bg-[#0A0F1D] text-slate-200 border border-[#22304C] rounded-lg px-2.5 py-1.5 text-xs"
+          >
+            <option value="cedar">Cedar & Stone (fictional)</option>
+            <option value="apex">Apex Wellness (fictional)</option>
+          </select>
+        </div>
+
+        <div className="p-6 sm:p-8 grid grid-cols-1 lg:grid-cols-12 gap-8">
+          <div className="lg:col-span-6 space-y-6">
+            {mode === "customer" ? (
+              <>
+                <div>
+                  <label className="text-xs font-semibold uppercase tracking-wider text-slate-300 block">
+                    1. Select Your Rating
+                  </label>
+                  <div className="flex items-center gap-2 mt-2">
+                    <div className="flex gap-1.5 p-2 rounded-xl bg-[#090D18] border border-[#1E293B]">
+                      {[1, 2, 3, 4, 5].map((s) => (
+                        <button
+                          key={s}
+                          type="button"
+                          onClick={() => setRating(s)}
+                          data-testid={`button-demo-rating-${s}`}
+                          aria-label={`Rate ${s} out of 5 stars`}
+                          className="p-1"
+                        >
+                          <Star
+                            className={`w-6 h-6 ${rating >= s ? "fill-amber-400 text-amber-400" : "text-slate-600"}`}
+                          />
+                        </button>
+                      ))}
+                    </div>
+                    <span className="text-xs text-slate-400">
+                      {rating === 5 ? "Exceptional example" : "Illustrative public-draft example"}
+                    </span>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-xs font-semibold uppercase tracking-wider text-slate-300 block">
+                    2. Key Experience Highlights
+                  </label>
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {business.highlights.map((highlight) => {
+                      const selected = highlights.includes(highlight);
+                      return (
+                        <button
+                          key={highlight}
+                          onClick={() =>
+                            setHighlights(
+                              selected
+                                ? highlights.filter((item) => item !== highlight)
+                                : [...highlights, highlight],
+                            )
+                          }
+                          data-testid={`button-demo-highlight-${highlight.toLowerCase().replaceAll(" ", "-")}`}
+                          aria-pressed={selected}
+                          className={`text-xs px-3 py-1.5 rounded-lg border ${selected ? "bg-blue-600/20 text-blue-300 border-blue-500/60" : "bg-[#11182A] text-slate-400 border-[#1E293B]"}`}
+                        >
+                          {selected ? "Selected · " : "Choose · "}
+                          {highlight}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-xs font-semibold uppercase tracking-wider text-slate-300 block">
+                    3. Draft Tone
+                  </label>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-2">
+                    {["Warm", "Enthusiastic", "Short & Direct", "Detailed"].map((option) => (
+                      <button
+                        key={option}
+                        onClick={() => setTone(option)}
+                        data-testid={`button-demo-tone-${option.toLowerCase().replaceAll(" ", "-")}`}
+                        className={`py-2 px-2.5 rounded-lg text-xs border ${tone === option ? "bg-amber-500/15 text-amber-300 border-amber-500/50" : "bg-[#11182A] text-slate-400 border-[#1E293B]"}`}
+                      >
+                        {option}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-xs font-medium text-slate-300 block">
+                    Optional Visit Details
+                  </label>
+                  <input
+                    value={details}
+                    onChange={(e) => setDetails(e.target.value)}
+                    data-testid="input-demo-visit-details"
+                    className="w-full mt-1 bg-[#090D18] text-xs text-slate-200 border border-[#1E293B] rounded-lg px-3 py-2"
+                  />
+                </div>
+              </>
+            ) : (
+              <div>
+                <label className="text-xs font-semibold uppercase tracking-wider text-slate-300 block">
+                  Customer Review to Answer
+                </label>
+                <textarea
+                  rows={5}
+                  value={ownerReview}
+                  onChange={(e) => {
+                    setOwnerReview(e.target.value);
+                    setPostNotice("");
+                  }}
+                  data-testid="textarea-demo-owner-review"
+                  className="w-full mt-2 bg-[#090D18] text-xs text-slate-200 border border-[#1E293B] rounded-lg p-3 resize-none"
+                />
+                <p className="text-xs text-slate-500 mt-2">
+                  Use this illustrative workspace to explore reply drafting.
+                </p>
+              </div>
+            )}
+
+            <button
+              onClick={generate}
+              data-testid="button-demo-generate"
+              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#1A73E8] text-white text-xs font-semibold"
+            >
+              <Sparkles className="w-4 h-4 text-amber-300" />
+              {mode === "customer" ? "Generate Customer Draft" : "Draft Owner Reply"}
+            </button>
+          </div>
+
+          <div className="lg:col-span-6">
+            <div className="min-h-[340px] rounded-xl bg-[#090D18] border border-[#1E293B] p-4 sm:p-5 flex flex-col">
+              <div className="flex items-center justify-between pb-3 border-b border-[#1A233A]">
+                <span className="text-xs font-semibold text-white flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 text-amber-400" />
+                  {mode === "customer" ? "Customer Draft (Fully Editable)" : "Suggested Business Reply"}
+                </span>
+                <span className="text-[10px] text-emerald-400 bg-emerald-950/60 border border-emerald-800/40 px-2 py-0.5 rounded">
+                  Ready to edit
+                </span>
+              </div>
+              <textarea
+                value={draft}
+                onChange={(e) => updateDraft(e.target.value)}
+                data-testid="textarea-demo-draft"
+                rows={8}
+                className="w-full flex-1 mt-4 bg-[#070A13] text-sm text-slate-100 p-3.5 rounded-lg border border-[#22304C] resize-none leading-relaxed"
+              />
+              <div className="flex items-center justify-between gap-3 pt-3 border-t border-[#1A233A] mt-3">
+                <span className="text-[11px] text-slate-500">
+                  {draft.length} characters · Edit any sentence
+                </span>
+                <div className="flex gap-2">
+                  {mode === "customer" ? (
+                    <button
+                      onClick={copy}
+                      data-testid="button-demo-copy"
+                      className="inline-flex items-center gap-1.5 py-2 px-3.5 rounded-lg bg-[#162035] border border-[#263352] text-xs text-slate-200"
+                    >
+                      {copied ? (
+                        <>
+                          <Check className="w-3.5 h-3.5 text-emerald-400" />
+                          Copied
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="w-3.5 h-3.5" />
+                          Copy Draft
+                        </>
+                      )}
+                    </button>
+                  ) : (
+                    <button
+                      onClick={postReply}
+                      data-testid="button-demo-post-reply"
+                      className="inline-flex items-center gap-1.5 py-2 px-3.5 rounded-lg bg-[#1A73E8] text-xs font-semibold text-white"
+                    >
+                      <Send className="w-3.5 h-3.5" aria-hidden="true" />
+                      Post Reply
+                    </button>
+                  )}
+                  {mode === "customer" && (
+                    <button
+                      onClick={() => setHandoff(true)}
+                      data-testid="button-demo-continue-google"
+                      className="inline-flex items-center gap-1.5 py-2 px-4 rounded-lg bg-[#1A73E8] text-xs font-semibold text-white"
+                    >
+                      Continue to Google
+                      <ExternalLink className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
+              </div>
+              {postNotice && (
+                <p
+                  className="mt-3 text-[11px] text-amber-300"
+                  role="status"
+                  data-testid="text-demo-post-notice"
+                >
+                  {postNotice}
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <div className="px-6 py-3 bg-[#0A0F1D] border-t border-[#1E293B] flex flex-col sm:flex-row items-center justify-between gap-2 text-[11px] text-slate-400">
+          <span>Illustrative frontend prototype — no reviews or replies are posted.</span>
+          <span className="font-mono text-[10px] text-slate-500">
+            {mode === "customer" ? "Customer makes the final submission" : "Owner controls the final reply"}
+          </span>
+        </div>
+      </Panel>
+      {handoff && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
+          role="dialog"
+          aria-modal="true"
+        >
+          <div className="max-w-md w-full rounded-2xl bg-[#0D1322] border border-[#263352] p-6 shadow-2xl space-y-4">
+            <div className="flex items-start justify-between">
+              <div className="flex items-center gap-2.5">
+                <BrandIcon size={32} />
+                <h3 className="text-base font-semibold text-white">How Google Handoff Works</h3>
+              </div>
+              <button
+                onClick={() => setHandoff(false)}
+                data-testid="button-close-google-handoff"
+                aria-label="Close dialog"
+                className="text-slate-400 hover:text-white p-1"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="space-y-3 text-xs text-slate-300 leading-relaxed">
+              <p>
+                The live product helps a customer copy their editable draft and open the official
+                Google review flow. This page is only a fictional demo.
+              </p>
+              <div className="p-3 rounded-xl bg-[#11182A] border border-[#1E293B]">
+                <div className="font-semibold text-white flex items-center gap-1.5">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                  Customer retains 100% control
+                </div>
+                <p className="text-slate-400 mt-1">
+                  No review is posted or redirected from this illustrative prototype.
+                </p>
+              </div>
+            </div>
+            <div className="flex justify-end">
+              <button
+                onClick={() => setHandoff(false)}
+                data-testid="button-dismiss-google-handoff"
+                className="px-4 py-2 rounded-lg bg-[#1A73E8] text-xs font-semibold text-white"
+              >
+                Understood
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  </section>;
 };
