@@ -262,7 +262,7 @@ export function BusinessTeamsCard({
     },
   });
 
-  const canInvite = !!email.trim() && hasGrant(grants) && !!selectedBusinessId;
+  const canInvite = !!email.trim() && hasGrant(grants) && !!businessId;
   const isBusy =
     createInvitation.isPending ||
     updateMember.isPending ||
@@ -284,7 +284,7 @@ export function BusinessTeamsCard({
     }
     createInvitation.mutate({
       data: {
-        businessId: selectedBusinessId,
+        businessId,
         email: email.trim(),
         invitedName: invitedName.trim() || undefined,
         ...grants,
@@ -317,7 +317,7 @@ export function BusinessTeamsCard({
   );
 
   return (
-    <section className="lg:col-span-2" data-testid="settings-teams-section">
+    <section className="w-full" data-testid="business-teams-section">
       <div className="rounded-xl border border-border bg-card text-card-foreground shadow-sm">
         <CardHeader className="border-b border-border/80 bg-secondary/30 pb-5">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
@@ -328,7 +328,7 @@ export function BusinessTeamsCard({
               <div>
                 <CardTitle>Business teams</CardTitle>
                 <CardDescription className="mt-1">
-                  Invite teammates to specific businesses with the minimum access they need.
+                  Invite teammates to {businessName} with the minimum access they need.
                 </CardDescription>
               </div>
             </div>
@@ -339,43 +339,17 @@ export function BusinessTeamsCard({
           </div>
         </CardHeader>
         <CardContent className="space-y-6 p-5 sm:p-6">
-          {businessesQuery.isLoading ? (
-            <div className="rounded-xl border border-border/80 bg-secondary/20 p-4 text-sm text-muted-foreground">
-              Loading your businesses…
+          <div className="flex flex-col gap-3 rounded-xl border border-border/80 bg-secondary/20 p-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="min-w-0 flex-1 space-y-1.5">
+              <span className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Business</span>
+              <p className="truncate text-sm font-medium text-foreground" data-testid="teams-business-name">
+                {businessName}
+              </p>
             </div>
-          ) : businessesQuery.isError ? (
-            <div className="flex items-center justify-between gap-3 rounded-xl border border-destructive/20 bg-destructive/5 p-4 text-sm">
-              <span className="flex items-center gap-2 text-destructive">
-                <CircleAlert className="h-4 w-4" aria-hidden="true" /> Businesses could not load.
-              </span>
-              <Button type="button" variant="outline" size="sm" onClick={() => void businessesQuery.refetch()}>
-                Try again
-              </Button>
+            <div className="shrink-0 rounded-lg border border-primary/20 bg-primary/5 px-3 py-2 text-sm font-medium text-primary" data-testid="teams-seat-counter">
+              {seatsLabel}
             </div>
-          ) : businesses.length === 0 ? (
-            <div className="rounded-xl border border-dashed border-border p-5 text-sm text-muted-foreground">
-              Create a business before inviting teammates.
-            </div>
-          ) : (
-            <>
-              <div className="flex flex-col gap-3 rounded-xl border border-border/80 bg-secondary/20 p-4 sm:flex-row sm:items-center sm:justify-between">
-                <label className="min-w-0 flex-1 space-y-1.5">
-                  <span className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Business</span>
-                  <Select value={selectedBusinessId} onValueChange={(value) => { setSelectedBusinessId(value); setMessage(null); }}>
-                    <SelectTrigger className="bg-background" data-testid="teams-business-selector">
-                      <SelectValue placeholder="Choose a business" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {businesses.map((business) => (
-                        <SelectItem key={business.id} value={business.id}>{business.name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </label>
-                <div className="shrink-0 rounded-lg border border-primary/20 bg-primary/5 px-3 py-2 text-sm font-medium text-primary" data-testid="teams-seat-counter">
-                  {seatsLabel}
-                </div>
-              </div>
+          </div>
 
               {message && (
                 <div
@@ -454,7 +428,7 @@ export function BusinessTeamsCard({
                           )}
                           {confirmRemove === member.id && (
                             <div className="mt-3 flex flex-col gap-2 rounded-lg border border-destructive/20 bg-destructive/5 p-3 text-sm sm:flex-row sm:items-center sm:justify-between">
-                              <span className="text-destructive">Remove this teammate’s access to {selectedBusiness?.name}?</span>
+                              <span className="text-destructive">Remove this teammate’s access to {businessName}?</span>
                               <span className="flex gap-2">
                                 <Button type="button" size="sm" variant="ghost" onClick={() => setConfirmRemove(null)}>Cancel</Button>
                                 <Button type="button" size="sm" variant="destructive" onClick={() => removeMember.mutate({ id: member.id })} disabled={removeMember.isPending}>Remove</Button>
@@ -508,8 +482,6 @@ export function BusinessTeamsCard({
                   </div>
                 </div>
               </div>
-            </>
-          )}
         </CardContent>
       </div>
     </section>

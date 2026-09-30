@@ -17,7 +17,8 @@ import {
   CheckCircle2,
   AlertCircle,
   Loader2,
-  Star
+  Star,
+  Users,
 } from "lucide-react";
 import { 
   useListBusinesses,
@@ -44,6 +45,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { BusinessSearch } from "@/components/business-search";
+import { BusinessTeamsCard } from "@/components/teams/business-teams-card";
 import { placePhotoUrl } from "@/lib/selected-place";
 import { LANGUAGES } from "@/lib/languages";
 import { useToast } from "@/hooks/use-toast";
@@ -109,6 +111,7 @@ export default function Businesses() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingBusiness, setEditingBusiness] = useState<Business | null>(null);
+  const [teamBusiness, setTeamBusiness] = useState<Business | null>(null);
 
   // Create-flow only: "search" = Google Places lookup, "form" = confirm/edit details
   const [createStep, setCreateStep] = useState<"search" | "form">("search");
@@ -529,6 +532,9 @@ export default function Businesses() {
                       <DropdownMenuItem onClick={() => handleOpenEdit(business)}>
                         <Pencil className="mr-2 h-4 w-4" /> Edit Details
                       </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => setTeamBusiness(business)}>
+                        <Users className="mr-2 h-4 w-4" /> Manage team access
+                      </DropdownMenuItem>
 
                       <DropdownMenuSeparator />
 
@@ -837,6 +843,32 @@ export default function Businesses() {
             </form>
           </Form>
           </>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Business team access */}
+      <Dialog
+        open={teamBusiness !== null}
+        onOpenChange={(open) => {
+          if (!open) setTeamBusiness(null);
+        }}
+      >
+        <DialogContent className="max-h-[92vh] max-w-6xl overflow-y-auto p-3 sm:p-6">
+          {teamBusiness && (
+            <>
+              <DialogHeader className="sr-only">
+                <DialogTitle>Team access for {teamBusiness.name}</DialogTitle>
+                <DialogDescription>
+                  Invite teammates and manage their access to {teamBusiness.name}.
+                </DialogDescription>
+              </DialogHeader>
+              <BusinessTeamsCard
+                key={teamBusiness.id}
+                businessId={teamBusiness.id}
+                businessName={teamBusiness.name}
+              />
+            </>
           )}
         </DialogContent>
       </Dialog>

@@ -41,7 +41,6 @@ import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { Switch } from "@/components/ui/switch";
-import { BusinessTeamsCard } from "@/components/teams/business-teams-card";
 
 function formatDate(value: string | null | undefined) {
   if (!value) return "Not available";
@@ -312,7 +311,6 @@ export default function Settings() {
               </div>
 
               <div className="grid gap-6 lg:grid-cols-2">
-                {account?.role === "OWNER" && <BusinessTeamsCard />}
                 <Card className="border-border shadow-sm" data-testid="settings-security-card">
                   <CardHeader>
                     <div className="flex items-center gap-3">

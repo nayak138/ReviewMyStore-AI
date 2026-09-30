@@ -96,6 +96,7 @@ const mocks = vi.hoisted(() => {
     keywordMutation,
     accountDataExportMutation,
     accountDeactivationMutation,
+    teamBusinessQueries: [] as string[],
     navigate: vi.fn(),
     mutation: () => ({ mutate: vi.fn(), isPending: false }),
     qrError: null as Error | null,
@@ -165,11 +166,14 @@ vi.mock("@workspace/api-client-react", () => ({
   useRequestAccountDeactivation: () => mocks.accountDeactivationMutation,
   useListBusinesses: () => ({ data: { businesses: mocks.businesses }, isLoading: false }),
   getListBusinessTeamQueryKey: (params: unknown) => ["business-team", params],
-  useListBusinessTeam: () => ({
-    data: { seatLimit: 5, seatsUsed: 0, members: [], invitations: [] },
-    isLoading: false,
-    isError: false,
-  }),
+  useListBusinessTeam: ({ businessId }: { businessId: string }) => {
+    mocks.teamBusinessQueries.push(businessId);
+    return {
+      data: { seatLimit: 5, seatsUsed: 0, members: [], invitations: [] },
+      isLoading: false,
+      isError: false,
+    };
+  },
   useCreateTeamInvitation: mocks.mutation,
   useUpdatePendingTeamInvitation: mocks.mutation,
   useResendTeamInvitation: mocks.mutation,
@@ -269,6 +273,22 @@ describe("authenticated business workspace", () => {
 
     expect(screen.getByRole("dialog", { name: "Edit Business" })).toBeInTheDocument();
     expect(screen.getByDisplayValue("Northstar Coffee")).toBeInTheDocument();
+  });
+
+  it("opens team invitations and permissions from the selected business actions", async () => {
+    const user = userEvent.setup();
+    mocks.teamBusinessQueries.length = 0;
+    renderWithQueryClient(<Businesses />);
+
+    const businessCard = screen.getByRole("link", { name: "Open Northstar Coffee workspace" });
+    await user.click(within(businessCard).getByRole("button", { name: "Actions for Northstar Coffee" }));
+    await user.click(await screen.findByRole("menuitem", { name: "Manage team access" }));
+
+    const dialog = await screen.findByRole("dialog", { name: "Team access for Northstar Coffee" });
+    expect(within(dialog).getByTestId("business-teams-section")).toBeInTheDocument();
+    expect(within(dialog).getByTestId("teams-business-name")).toHaveTextContent("Northstar Coffee");
+    expect(within(dialog).queryByTestId("teams-business-selector")).not.toBeInTheDocument();
+    expect(mocks.teamBusinessQueries).toContain("business-1");
   });
 
   it("keeps the selected business in every workspace tab", () => {
@@ -414,6 +434,7 @@ describe("authenticated business workspace", () => {
     expect(screen.getByRole("link", { name: "Businesses" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Insights" })).toHaveAttribute("href", "/insights");
     expect(screen.getByRole("link", { name: "Settings" })).toBeInTheDocument();
+    expect(screen.queryByTestId("business-teams-section")).not.toBeInTheDocument();
 
     const sidebar = screen.getByRole("navigation");
     expect(within(sidebar).getAllByRole("link")).toHaveLength(3);
