@@ -10,7 +10,7 @@ import {
  * ever require changing this constant (or promoting it to a DB-backed
  * setting) — never touching call sites in routes or other services.
  */
-const REVIEW_MODEL = "openai/gpt-5.4-mini";
+const REVIEW_MODEL = "openai/gpt-4o-mini";
 /** Keep provider calls bounded so a stalled upstream cannot exhaust request
  * workers or leave a quota reservation pending indefinitely. */
 export const AI_REQUEST_TIMEOUT_MS = 45_000;
