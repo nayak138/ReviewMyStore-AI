@@ -1,11 +1,9 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   getListBusinessTeamQueryKey,
-  getListBusinessesQueryKey,
   useCreateTeamInvitation,
   useListBusinessTeam,
-  useListBusinesses,
   useRemoveTeamMember,
   useResendTeamInvitation,
   useRevokeTeamInvitation,
@@ -144,9 +142,14 @@ function grantValues(item: {
   };
 }
 
-export function BusinessTeamsCard() {
+export function BusinessTeamsCard({
+  businessId,
+  businessName,
+}: {
+  businessId: string;
+  businessName: string;
+}) {
   const queryClient = useQueryClient();
-  const [selectedBusinessId, setSelectedBusinessId] = useState("");
   const [email, setEmail] = useState("");
   const [invitedName, setInvitedName] = useState("");
   const [grants, setGrants] = useState<Grants>(EMPTY_GRANTS);
@@ -156,40 +159,21 @@ export function BusinessTeamsCard() {
   const [editGrants, setEditGrants] = useState<Grants>(EMPTY_GRANTS);
   const [confirmRemove, setConfirmRemove] = useState<string | null>(null);
 
-  const businessesQuery = useListBusinesses(
-    { includeArchived: false },
-    {
-      query: {
-        queryKey: getListBusinessesQueryKey({ includeArchived: false }),
-        refetchOnMount: "always",
-      },
-    },
-  );
-  const businesses = businessesQuery.data?.businesses ?? [];
-  const selectedBusiness = businesses.find((business) => business.id === selectedBusinessId);
-
-  useEffect(() => {
-    if (!selectedBusinessId && businesses[0]) setSelectedBusinessId(businesses[0].id);
-    if (selectedBusinessId && !businesses.some((business) => business.id === selectedBusinessId)) {
-      setSelectedBusinessId(businesses[0]?.id ?? "");
-    }
-  }, [businesses, selectedBusinessId]);
-
   const teamQuery = useListBusinessTeam(
-    { businessId: selectedBusinessId },
+    { businessId },
     {
       query: {
-        enabled: !!selectedBusinessId,
-        queryKey: getListBusinessTeamQueryKey({ businessId: selectedBusinessId }),
+        enabled: !!businessId,
+        queryKey: getListBusinessTeamQueryKey({ businessId }),
         refetchOnMount: "always",
       },
     },
   );
   const team = teamQuery.data;
   const refresh = () => {
-    if (selectedBusinessId) {
+    if (businessId) {
       void queryClient.invalidateQueries({
-        queryKey: getListBusinessTeamQueryKey({ businessId: selectedBusinessId }),
+        queryKey: getListBusinessTeamQueryKey({ businessId }),
       });
     }
   };
